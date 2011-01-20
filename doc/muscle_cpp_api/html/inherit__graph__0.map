@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmuscle_1_1_abstract_method_caller.html" title="calls a java method via JNI" alt="" coords="7,31,209,57"/>
+<area shape="rect" href="$classmuscle_1_1_method_caller.html" title="calls a java method via JNI" alt="" coords="280,5,424,32"/>
+<area shape="rect" href="$classmuscle_1_1_method_caller_static.html" title="calls a java method via JNI" alt="" coords="259,56,445,83"/>
+</map>
