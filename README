@@ -1,0 +1,14 @@
+
+1. run build.rb java
+2. run jni.sh
+3. run simulation
+
+To stop simulation use ctrl+c. Otf files will be saved.
+
+Attention:
+ 
+ sun.misc.Signal is internal proprietary API and may be removed in a future release
+ sun.misc.SignalHandler is internal proprietary API and may be removed in a future release
+
+
+You can run muscle across multiple machines. After that each machine will create seperate otf files. Please copy them into one folder and use merge.sh script.

@@ -11,6 +11,7 @@ import sun.misc.Signal;
 import sun.misc.SignalHandler;
 import muscle.core.ConnectionScheme;
 import muscle.core.CxADescription;
+
 public class OTFLogger {
 	// begin of the .orf file
 	private native static int begin(String path);
@@ -48,13 +49,16 @@ public class OTFLogger {
 		loadProperties();
 		
 		log("Declaring signal handle");
-		Signal.handle(new Signal("INT"), new SignalHandler () {
-        public void handle(Signal sig) {
-            log("Received SIGINT signal.");
-            close();
-            System.exit(1);
-        }
-      });
+      
+		SignalHandler handler = new SignalHandler () {
+			public void handle(Signal sig) {
+			   System.out.println("Shutdown hook ran!");
+						close();
+						//System.exit(1);
+			}
+		};
+		Signal.handle(new Signal("INT"), handler);
+			
 	}
 	
 	protected void finalize()
@@ -135,7 +139,7 @@ public class OTFLogger {
 	}
 
 	public void logSend(Object data, String sender, String receiver) {
-		if(ENABLED){
+		if(ENABLED) {
 			log("OTFLogger.logSend " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver + ")");
 			send(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
 		}
@@ -192,7 +196,7 @@ public class OTFLogger {
 	
 	private static void log(String text)
 	{
-		if(DEBUG)
+		if(ENABLED)
 		{
 			System.out.println(text);
 		}
@@ -227,7 +231,7 @@ public class OTFLogger {
 			DEBUG = false;
 		}
 	}
-	
+
 	static {
 		System.loadLibrary("muscle_utilities_OTFLogger");
 	}
