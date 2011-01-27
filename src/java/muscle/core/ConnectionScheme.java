@@ -23,6 +23,8 @@ package muscle.core;
 
 import jade.core.AID;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -439,6 +441,76 @@ public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 			this.conduit = newConduit;
 			this.exit = newExit;
 		}
+	}
+	
+	public List kernelList; // for otf
+	public List conduitList; // for otf
+
+	// for otf
+	public String getEntrance(String dstSink) {
+		for (ExitDescription exit : targetExitDescriptions) {
+			for (int i = 0;; i++) {
+				ConduitDescription conduit = exit.getConduitDescription(i);
+				if (conduit == null)
+					break;
+				EntranceDescription entrance = conduit.getEntranceDescription();
+
+				conduitList.add(exit.getID());
+				conduitList.add(entrance.getID());
+
+				if (dstSink.equals(exit.getID()))
+					return (entrance.getID());
+			}
+		}
+		return "";
+	}
+
+	// for otf
+	public void generateLists() {
+		conduitList = new ArrayList();
+		kernelList = new ArrayList();
+
+		for (ExitDescription exit : targetExitDescriptions) {
+
+			for (int i = 0;; i++) {
+				ConduitDescription conduit = exit.getConduitDescription(i);
+				if (conduit == null)
+					break;
+				EntranceDescription entrance = conduit.getEntranceDescription();
+
+				conduitList.add(exit.getID());
+				
+				try{
+				//	System.out.println("Adding entrance" + entrance.getID());
+					conduitList.add(entrance.getID());					
+				}
+				catch (Exception e)
+				{
+					//conduitList.add(entrance.getID());
+				}
+				
+
+				String temp1 = exit.getID().substring(exit.getID().indexOf("@") + 1);
+				if (!kernelList.contains(temp1))
+					kernelList.add(temp1);
+
+				String temp2 = null;
+				try{
+					temp2 = entrance.getID().substring(entrance.getID().indexOf("@") + 1);
+					if (!kernelList.contains(temp2))
+					{
+						//System.out.println("Adding kernel "+temp2);
+						kernelList.add(temp2);
+					}
+				}
+				catch (Exception e)
+				{
+					
+				}
+			}
+		}
+		Collections.sort(kernelList);
+		Collections.sort(conduitList);
 	}
 
 

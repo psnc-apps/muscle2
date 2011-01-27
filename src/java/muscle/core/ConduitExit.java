@@ -29,7 +29,7 @@ import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
-
+import muscle.utilities.OTFLogger;
 
 /**
 this is the (remote) tail of a conduit,
@@ -87,16 +87,19 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
 	return our unwrapped data once
 	*/
 	public T receive() {
-
 		DataMessage<DataWrapper<T>> dmsg = this.take();
+		OTFLogger.getInstance().conduitEnter(dmsg.getSinkID()); 
 
 		DataWrapper<T> wrapper = dmsg.getStored();
 		T data = wrapper.getData();
 
+		OTFLogger.getInstance().logReceive(data, OTFLogger.getInstance().getEntrance(dmsg.getSinkID()), dmsg.getSinkID()); 
+																								
+
 		assert this.getDataTemplate().getDataClass().isInstance(data);
 
 		this.increment();
-
+		OTFLogger.getInstance().conduitLeave(dmsg.getSinkID()); 
 		return data;
 	}
 

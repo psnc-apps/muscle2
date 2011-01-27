@@ -74,6 +74,7 @@ import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
+import muscle.utilities.OTFLogger;
 import utilities.JVM;
 import utilities.MiscTool;
 import utilities.OSTool;
@@ -202,14 +203,17 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 
 				@Override
 				public int onEnd() {
+					OTFLogger.getInstance().close();
 
 					// we are done, terminate agent
 					RawKernel.this.doDelete();
 
-               return super.onEnd();
+					return super.onEnd();
 				}
          });
 		}
+		
+		OTFLogger.getInstance().init(getAID().getLocalName());
 
 	}
 

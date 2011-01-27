@@ -32,7 +32,7 @@ import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
 import muscle.exception.MUSCLERuntimeException;
-
+import muscle.utilities.OTFLogger;
 
 /**
 this is the (remote) head of a conduit,
@@ -47,6 +47,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 	private static final long serialVersionUID = 1L;
 	private EntranceDependency[] dependencies;
 	private AID dstAgent;
+	private String srcSink; 
 	private String dstSink;
 	private DataMessage<DataWrapper<T>> dataMessage;
 	private boolean shouldPause = false;
@@ -57,6 +58,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 
 		this.dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list
+		srcSink = newPortalID.getName(); 
 	}
 
 
@@ -136,6 +138,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 	*/
 	public void send(T data) {
 
+		OTFLogger.getInstance().conduitEnter(srcSink);
 		DataWrapper<T> wrapper = new DataWrapper<T>(data, this.getSITime());
 		this.dataMessage.store(wrapper, null);
 
@@ -143,6 +146,8 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 
 		// send data to target kernel
 		this.put(this.dataMessage);
+		OTFLogger.getInstance().logSend(data, srcSink, dstSink); 
+		OTFLogger.getInstance().conduitLeave(srcSink); 
 	}
 
 

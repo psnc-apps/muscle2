@@ -148,7 +148,6 @@ module Targets
 		Misc.run "make -w --directory=#{cmake_dst} install"
 	end
 
-
 	#
 	def Targets.clean
 		rm_rf Dir.glob("#{$env[:muscle_dir]}/build/intermediate/*") if File.directory?("#{$env[:muscle_dir]}/build/intermediate")
