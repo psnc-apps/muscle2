@@ -4,11 +4,6 @@ OTFLogger
 2. run jni.sh
 3. run simulation
 
-Attention:
- 
- sun.misc.Signal is internal proprietary API and may be removed in a future release
- sun.misc.SignalHandler is internal proprietary API and may be removed in a future release
-
 You can run muscle across multiple machines. After that each machine will create seperate otf files. Please copy them into one folder and use merge.sh script.
 
 otf.properties attributes:

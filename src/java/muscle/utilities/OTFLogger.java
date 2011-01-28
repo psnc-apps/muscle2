@@ -13,8 +13,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import muscle.core.ConnectionScheme;
 import muscle.core.CxADescription;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 public class OTFLogger {
 	// Begin the .otf file
