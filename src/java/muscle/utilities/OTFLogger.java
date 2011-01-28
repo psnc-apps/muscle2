@@ -1,64 +1,64 @@
 package muscle.utilities;
 
 import java.io.*;
-import java.util.Iterator;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.Properties;
 import java.io.File;
 import java.io.FileInputStream;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
+import java.util.Calendar;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.Iterator;
+import java.util.Properties;
+import java.text.SimpleDateFormat;
+import java.util.Timer;
+import java.util.TimerTask;
 import muscle.core.ConnectionScheme;
 import muscle.core.CxADescription;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 public class OTFLogger {
-	// begin of the .orf file
+	// Begin the .otf file
 	private native static int begin(String path);
 
 	// Defines kernels and conduits lists
 	private native static void define(String[] kernelArray, String[] conduitArray);
 
-	// End of the .otf file
+	// End the .otf file
 	private native static void end();
 
-	private native static void conduitBegin(int functionm, int process);
+	private native static void conduitBegin(int function, int process);
 
-	private native static void conduitEnd(int functionm, int process);
+	private native static void conduitEnd(int function, int process);
 
 	private native static void send(int from, int to, int size);
 
 	private native static void receive(int from, int to, int size);
 
+	// Source of information about kernels and conduits
 	private ConnectionScheme d;
-
-	private int kernelsRun = 0;
-
-	private Properties properties;
-
-	private Lock lockObject = new ReentrantLock();
-
-	private static OTFLogger instance;
 	
+	// Number of kernels which ran OTFLogger
+	private int kernelsRun = 0;
+	
+	// Lock for kernelsRun
+	private Lock lockObject = new ReentrantLock();
+	
+	// Timer for time_limit
+	private Timer timer;
+	
+	// Singletone instance
+	private static OTFLogger instance;	
+	
+	// OTFLogger settings
 	private static boolean DEBUG = false;	
 	private String DIR = "";
 	private static boolean ENABLED = false;
 	private static boolean closed = false;
+	private static boolean TIMER_EXIT = false;
+	
 	private OTFLogger()
 	{ 
-		loadProperties();
-		
-		log("Declaring signal handle");
-      
-		SignalHandler handler = new SignalHandler () {
-			public void handle(Signal sig) {
-			   System.out.println("Shutdown hook ran!");
-						close();
-						//System.exit(1);
-			}
-		};
-		Signal.handle(new Signal("INT"), handler);
-			
+		loadProperties();	
 	}
 	
 	protected void finalize()
@@ -88,10 +88,10 @@ public class OTFLogger {
 						d.generateLists();
 						if(! (new File(DIR)).exists())
 							if(!(new File(DIR)).mkdir())
-								throw new FileNotFoundException("Change path");
+								throw new FileNotFoundException("Change otf logging directory");
 				
 						if (begin(DIR+"/"+kernel+".otf") != 0)
-							throw new Exception("Manager, writer or handlers failed");
+							throw new Exception("libotf Manager, writer or handlers failed");
 
 						String[] kernelArray = (String[]) d.kernelList.toArray(new String[d.kernelList.size()]);
 						String conduitArray[] = (String[]) d.conduitList.toArray(new String[d.conduitList.size()]);
@@ -105,61 +105,86 @@ public class OTFLogger {
 			}
 		}
 	}
+	
+	// Loads otf.properties file or sets default values
+	private void loadProperties()
+	{
+		Properties properties = new Properties();
+		File file = new File("otf.properties");	
+		
+		if(file.exists()){
+			try{
+				InputStream is = new FileInputStream(file);
+				properties.load(is);
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+					
+			DIR = properties.getProperty("dir","otf_files");
+			
+			if(properties.getProperty("debug","off").equals("on"))
+				DEBUG = true;
+			else
+				DEBUG = false;	
+				
+			if(properties.getProperty("generate_otf","disabled").equals("enabled"))
+				ENABLED = true;
+			else
+				ENABLED = false;
+				
+			if(properties.getProperty("timer_close","disabled").equals("enabled"))
+				TIMER_EXIT = true;
+			else
+				TIMER_EXIT = false;
+				
+			int seconds = Integer.parseInt(properties.getProperty("time_limit","0"));
+			
+			log("OTFLogger.loadProperties dir "+DIR );	
+			log("OTFLogger.loadProperties debug "+DEBUG );
+			log("OTFLogger.loadProperties generate_otf "+ENABLED );		
+			log("OTFLogger.loadProperties timer_close "+TIMER_EXIT );
+			log("OTFLogger.loadProperties time_limit "+seconds);
+			
+			if(seconds != 0)
+			{
+				log("OTFLogger.loadProperties Running timer");
+				TimerClose(seconds);
+			}
+		}
+		else{
+			DIR = "otf_files";
+			DEBUG = false;
+			ENABLED = false;
+		}
+	}
 
+	// Close otf file when all other kernels have ended
 	public void close() {
 		if(ENABLED &&  !closed){
-			synchronized(lockObject){
-					if (--kernelsRun == 0) {
+			synchronized(lockObject){					
+					if (--kernelsRun == 0) {	
+						ENABLED = false;
+						closed = true;				
 						log("OTFLogger close()");
-						end();
+						end();						
 					}
 			}
 		}
 	}
-
-	public String getEntrance(String sink) {
-		if(ENABLED)
-			return d.getEntrance(sink);
-		else 
-			return "";
-	}
-
-	private int getSize(Object data) {
-		int size = 0;
-		try {
-			ByteArrayOutputStream bout = new ByteArrayOutputStream();
-			ObjectOutputStream stream = new ObjectOutputStream(bout);
-			stream.writeObject(data);
-			stream.close();
-			size = bout.size();
-		} catch (IOException e) {
-			System.err.println("OTFLogger.getSize error: " + e.getMessage());
-		}
-		return size;
-	}
-
-	public void logSend(Object data, String sender, String receiver) {
-		if(ENABLED) {
-			log("OTFLogger.logSend " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver + ")");
-			send(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
+	
+	// Close otf file immediately
+	public void closeNow() {
+		if(ENABLED &&  !closed){
+			synchronized(lockObject){			
+						ENABLED = false;	
+						closed = true;		
+						log("OTFLogger closeNow()");
+						end();
+			}
 		}
 	}
-
-	public void logReceive(Object data, String sender, String receiver) {
-		if(ENABLED)	{
-			log("OTFLogger.logReceive " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver +")");
-			receive(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
-		}
-	}
-
-	private int getConduitIndex(String sink) {
-		return d.conduitList.indexOf(sink) + 2;
-	}
-
-	private int getKernelIndex(String sink) {
-		return d.kernelList.indexOf(sink.substring(sink.indexOf("@") + 1)) + 2;
-	}
-
+	
 	public void conduitEnter(String sink) {
 		if(ENABLED)
 		{
@@ -174,19 +199,20 @@ public class OTFLogger {
 			conduitEnd(getConduitIndex(sink),getKernelIndex(sink));
 		}
 	}
-
+	
+	// Display all conduits and kernels
 	private void displayConduitsKernels() {
 		try {
 			ConnectionScheme d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
 
 			Iterator i = d.conduitList.iterator();
 			while (i.hasNext()) {
-				System.out.println("Conduit:" + i.next());
+				log("OTFLogger.displayConduitsKernels Conduit:" + i.next());
 			}
 
 			Iterator j = d.kernelList.iterator();
 			while (j.hasNext()) {
-				System.out.println("kernel:" + j.next());
+				log("OTFLogger.displayConduitsKernels kernel:" + j.next());
 			}
 
 		} catch (Exception e) {
@@ -194,41 +220,86 @@ public class OTFLogger {
 		}
 	}
 	
+	// Gets conduit part of the sink index from conduits list
+	private int getConduitIndex(String sink) {
+		return d.conduitList.indexOf(sink) + 2;
+	}
+
+
+	// Get kernel part of the sink index from kernels list
+	private int getKernelIndex(String sink) {
+		return d.kernelList.indexOf(sink.substring(sink.indexOf("@") + 1)) + 2;
+	}
+
+	// Get entrace of given sink
+	public String getEntrance(String sink) {
+		if(ENABLED)
+			return d.getEntrance(sink);
+		else 
+			return "";
+	}
+
+	// Gets size of given data
+	private int getSize(Object data) {
+		int size = 0;
+		try {
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			ObjectOutputStream stream = new ObjectOutputStream(bout);
+			stream.writeObject(data);
+			stream.close();
+			size = bout.size();
+		} catch (IOException e) {
+			System.err.println("OTFLogger.getSize error: " + e.getMessage());
+		}
+		return size;
+	}
+	
+	// Log text to standard output
 	private static void log(String text)
 	{
-		if(ENABLED)
+		String dateFormat = "yyyy-MM-dd HH:mm:ss";
+		
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+		String time =  sdf.format(cal.getTime());
+		
+		if(ENABLED && DEBUG)
 		{
-			System.out.println(text);
+			System.out.println(time+" "+text);
+		}
+	}
+
+	// Logs to otf sending data from sender to receiver
+	public void logSend(Object data, String sender, String receiver) {
+		if(ENABLED) {
+			log("OTFLogger.logSend " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver + ")");
+			send(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
+		}
+	}
+
+	// Logs to otf receiving data from sender in receiver
+	public void logReceive(Object data, String sender, String receiver) {
+		if(ENABLED)	{
+			log("OTFLogger.logReceive " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver +")");
+			receive(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
 		}
 	}
 	
-	private void loadProperties()
+	// Starts timer which stops logging nad if specified closes
+	// application after time_limit
+	private void TimerClose(int seconds)
 	{
-		properties = new Properties();
-		File file = new File("otf.properties");	
-		
-		if(file.exists()){
-			try{
-				InputStream is = new FileInputStream(file);
-				properties.load(is);
-			}
-			catch(Exception e){
-				e.printStackTrace();
-			}
-					
-			DIR = properties.getProperty("dir","otf_files");
-			if(properties.getProperty("debug","off").equals("on"))
-				DEBUG = true;
-			else
-				DEBUG = false;
-			if(properties.getProperty("generate_otf","disabled").equals("enabled"))
-				ENABLED = true;
-			else
-				ENABLED = false;
-		}
-		else{
-			DIR = "otf_files";
-			DEBUG = false;
+		timer = new Timer();
+		timer.schedule(new TimerCloseAction(), seconds * 1000); 
+	}
+	
+	class TimerCloseAction extends TimerTask {
+		public void run(){
+			log("OTFLogger.TimerCloseAction");
+			closeNow();					
+			timer.cancel();
+			if(TIMER_EXIT)
+				System.exit(1);
 		}
 	}
 
