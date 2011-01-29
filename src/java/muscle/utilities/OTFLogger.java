@@ -44,6 +44,8 @@ public class OTFLogger {
 	// Timer for time_limit
 	private Timer timer;
 	
+	private Lock lockInstance = new ReentrantLock();
+	
 	// Singletone instance
 	private static OTFLogger instance;	
 	
@@ -65,11 +67,12 @@ public class OTFLogger {
 		instance = null;
 	}
 
-	public static OTFLogger getInstance()
+	public synchronized static OTFLogger getInstance()
 	{
 		if(instance == null){	
 			instance = new OTFLogger();
 		}
+
 			
 		return instance;
 	}
