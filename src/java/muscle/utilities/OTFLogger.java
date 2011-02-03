@@ -32,8 +32,6 @@ public class OTFLogger {
 
 	private native static void receive(int from, int to, int size);
 
-	private native static void test();
-
 	// Source of information about kernels and conduits
 	private ConnectionScheme d;
 	
@@ -61,8 +59,7 @@ public class OTFLogger {
 	
 	private OTFLogger()
 	{ 
-		if(!LIBOTF_NOT_FOUND)
-			loadProperties();			
+		loadProperties();			
 	}
 	
 	protected void finalize()
@@ -119,6 +116,7 @@ public class OTFLogger {
 			try{
 				InputStream is = new FileInputStream(file);
 				properties.load(is);
+				is.close();
 			}
 			catch(Exception e){
 				e.printStackTrace();
@@ -126,15 +124,24 @@ public class OTFLogger {
 					
 			DIR = properties.getProperty("dir","otf_files");
 			
-			if(properties.getProperty("debug","off").equals("on"))
-				DEBUG = true;
-			else
-				DEBUG = false;	
-				
 			if(properties.getProperty("generate_otf","disabled").equals("enabled"))
 				ENABLED = true;
 			else
 				ENABLED = false;
+			
+			if(ENABLED && LIBOTF_NOT_FOUND)
+			{
+				ENABLED = false;
+				System.err.println("OTFLogger libotf not available!");
+			}			
+			
+			if(LIBOTF_NOT_FOUND)
+				return;
+			
+			if(properties.getProperty("debug","off").equals("on"))
+				DEBUG = true;
+			else
+				DEBUG = false;	
 				
 			if(properties.getProperty("timer_close","disabled").equals("enabled"))
 				TIMER_EXIT = true;
@@ -154,11 +161,6 @@ public class OTFLogger {
 				log("OTFLogger.loadProperties Running timer");
 				TimerClose(seconds);
 			}
-		}
-		else{
-			DIR = "otf_files";
-			DEBUG = false;
-			ENABLED = false;
 		}
 	}
 
@@ -309,7 +311,6 @@ public class OTFLogger {
 		catch(UnsatisfiedLinkError e)
 		{
 			LIBOTF_NOT_FOUND = true;
-			System.out.println("Libotf not available");
 		}
 	}
 
