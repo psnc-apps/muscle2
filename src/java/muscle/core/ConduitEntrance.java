@@ -144,9 +144,9 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 
 		this.increment();
 
-		// send data to target kernel
-		this.put(this.dataMessage);
 		OTFLogger.getInstance().logSend(data, srcSink, dstSink); 
+		// send data to target kernel
+		this.put(this.dataMessage);		
 		OTFLogger.getInstance().conduitLeave(srcSink); 
 	}
 
