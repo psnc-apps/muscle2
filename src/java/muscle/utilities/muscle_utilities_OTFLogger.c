@@ -153,3 +153,4 @@ JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_receive
 {
 	OTF_Writer_writeRecvMsg(writer, clockGet(), to, from, 0, 0, size, 0);
 }
+

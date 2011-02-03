@@ -192,6 +192,7 @@ def main
 	end
 	
 	puts "building [#{targets.join(', ')}] took "+sprintf("%.0f", benchmark)+" second(s)."
+	%x[ ./jni.sh ]
 end
 
 # 

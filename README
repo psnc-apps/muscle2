@@ -1,8 +1,7 @@
 OTFLogger
 
 1. run build.rb java
-2. run jni.sh
-3. run simulation
+2. run simulation
 
 You can run muscle across multiple machines. After that each machine will create seperate otf files. Please copy them into one folder and use merge.sh script.
 
@@ -15,3 +14,5 @@ otf.properties attributes:
 	timer_close - possible values enabled, disabled , enables killing simulation after time_limit; default disabled
 
 Default values are used when otf.properties file cannot be found.
+
+otf.properties file is taken from directory you are in when you run muscle.

@@ -32,6 +32,8 @@ public class OTFLogger {
 
 	private native static void receive(int from, int to, int size);
 
+	private native static void test();
+
 	// Source of information about kernels and conduits
 	private ConnectionScheme d;
 	
@@ -55,10 +57,12 @@ public class OTFLogger {
 	private static boolean ENABLED = false;
 	private static boolean closed = false;
 	private static boolean TIMER_EXIT = false;
+	private static boolean LIBOTF_NOT_FOUND = false;
 	
 	private OTFLogger()
 	{ 
-		loadProperties();	
+		if(!LIBOTF_NOT_FOUND)
+			loadProperties();			
 	}
 	
 	protected void finalize()
@@ -299,7 +303,14 @@ public class OTFLogger {
 	}
 
 	static {
-		System.loadLibrary("muscle_utilities_OTFLogger");
+		try{
+			System.loadLibrary("muscle_utilities_OTFLogger");
+		}
+		catch(UnsatisfiedLinkError e)
+		{
+			LIBOTF_NOT_FOUND = true;
+			System.out.println("Libotf not available");
+		}
 	}
 
 }
