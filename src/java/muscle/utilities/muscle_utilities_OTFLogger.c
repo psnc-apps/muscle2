@@ -13,6 +13,13 @@ static OTF_Writer *writer = NULL;
 static OTF_HandlerArray* handlers = NULL;
 
 static int number_of_streams = 10;
+
+/* Length of kernels list - number of kernels*/
+static int kernelsLength;
+
+/* Length of conduits list - number of conduits */
+static int conduitsLength;
+
 static uint64_t timestamp = 0;
 
 uint64_t clockGet(void) {
@@ -43,24 +50,21 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_begin(JNIEnv *env,
 	OTF_Writer_writeDefTimerResolution(writer, 1, 1.0e9L);
 
 	if (manager == NULL) {
-		printf("manager failed\n");
+		printf("OTFLogger libotf manager failed\n");
 		return 1;
 	}
 	if (writer == NULL) {
-		printf("open failed!!\n");
+		printf("OTFLogger libotf open failed!!\n");
 		return 1;
 	}
 
 	if (handlers == NULL) {
-		printf("handlers failed!!\n");
+		printf("OTFLogger libotf handlers failed!!\n");
 		return 1;
 	}
 
 	return 0;
 }
-
-static int kernelsLength;
-static int conduitsLength;
 
 JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_define
 (JNIEnv *env, jobject obj, jobjectArray kernelArray, jobjectArray conduitArray)
@@ -70,6 +74,9 @@ JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_define
 	const char ** kernels = (const char **)calloc(kernelsLength, sizeof (char *));
 	const char ** conduits = (const char **)calloc(conduitsLength, sizeof (char *));
 	int i = 0;
+
+	 /* Create the parent container */
+    OTF_Writer_writeDefProcess(writer, 1, 1, "Plumber", 0);
 
 	for(i = 0; i < kernelsLength; i++)
 	{
@@ -118,7 +125,7 @@ JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_end
 	OTF_Writer_writeEndProcess (writer, clockGet(), 1);
 	OTF_HandlerArray_close(handlers);
 	if( OTF_Writer_close(writer) != 1)
-		printf("Log path does not exits\n"); 
+		printf("OTFLogger Log path does not exits\n"); 
 
 	OTF_FileManager_close(manager);
 }
