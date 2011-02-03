@@ -72,38 +72,36 @@ public class OTFLogger {
 		if(instance == null){	
 			instance = new OTFLogger();
 		}
-
 			
 		return instance;
 	}
 	
-	public void init(String kernel) {	
+	public synchronized void init(String kernel) {	
 		if(ENABLED)	{	
 			log("OTFLogger.init invoke");			
+
+			if(kernelsRun++ == 0) {
+				log("OTFLogger init()");
 			
-			synchronized(lockObject) {
-				 if(kernelsRun++ == 0) {
-					log("OTFLogger init()");
-					try {				
-						d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
-						d.generateLists();
-						if(! (new File(DIR)).exists())
-							if(!(new File(DIR)).mkdir())
-								throw new FileNotFoundException("Change otf logging directory");
-				
-						if (begin(DIR+"/"+kernel+".otf") != 0)
-							throw new Exception("libotf Manager, writer or handlers failed");
+				try {				
+					d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
+					d.generateLists();
+					if(! (new File(DIR)).exists())
+						if(!(new File(DIR)).mkdir())
+							throw new FileNotFoundException("Change otf logging directory");
+			
+					if (begin(DIR+"/"+kernel+".otf") != 0)
+						throw new Exception("libotf Manager, writer or handlers failed");
 
-						String[] kernelArray = (String[]) d.kernelList.toArray(new String[d.kernelList.size()]);
-						String conduitArray[] = (String[]) d.conduitList.toArray(new String[d.conduitList.size()]);
+					String[] kernelArray = (String[]) d.kernelList.toArray(new String[d.kernelList.size()]);
+					String conduitArray[] = (String[]) d.conduitList.toArray(new String[d.conduitList.size()]);
 
-						define(kernelArray, conduitArray);
-					} catch (Exception e) {
-						System.err.println("OTFLogger.init error " + e.getMessage());
-						e.printStackTrace();
-					}
+					define(kernelArray, conduitArray);
+				} catch (Exception e) {
+					System.err.println("OTFLogger.init error " + e.getMessage());
+					e.printStackTrace();
 				}
-			}
+			}			
 		}
 	}
 	
@@ -161,32 +159,28 @@ public class OTFLogger {
 	}
 
 	// Close otf file when all other kernels have ended
-	public void close() {
+	public synchronized void close() {
 		if(ENABLED &&  !closed){
-			synchronized(lockObject){					
-					if (--kernelsRun == 0) {	
-						ENABLED = false;
-						closed = true;				
-						log("OTFLogger close()");
-						end();						
-					}
+			if (--kernelsRun == 0) {	
+				ENABLED = false;
+				closed = true;				
+				log("OTFLogger close()");
+				end();						
 			}
 		}
 	}
 	
 	// Close otf file immediately
-	public void closeNow() {
+	public synchronized void closeNow() {
 		if(ENABLED &&  !closed){
-			synchronized(lockObject){			
-						ENABLED = false;	
-						closed = true;		
-						log("OTFLogger closeNow()");
-						end();
-			}
+			ENABLED = false;	
+			closed = true;		
+			log("OTFLogger closeNow()");
+			end();
 		}
 	}
 	
-	public void conduitEnter(String sink) {
+	public synchronized void conduitEnter(String sink) {
 		if(ENABLED)
 		{
 			log("OTFLogger.conduitEnter " + sink + " " + getConduitIndex(sink) +" " +getKernelIndex(sink));
@@ -194,7 +188,7 @@ public class OTFLogger {
 		}
 	}
 
-	public void conduitLeave(String sink) {
+	public synchronized void conduitLeave(String sink) {
 		if(ENABLED) {		
 			log("OTFLogger.conduiLeave " + sink + " " + getConduitIndex(sink) +" " +getKernelIndex(sink));
 			conduitEnd(getConduitIndex(sink),getKernelIndex(sink));
@@ -271,7 +265,7 @@ public class OTFLogger {
 	}
 
 	// Logs to otf sending data from sender to receiver
-	public void logSend(Object data, String sender, String receiver) {
+	public synchronized void logSend(Object data, String sender, String receiver) {
 		if(ENABLED) {
 			log("OTFLogger.logSend " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver + ")");
 			send(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
@@ -279,7 +273,7 @@ public class OTFLogger {
 	}
 
 	// Logs to otf receiving data from sender in receiver
-	public void logReceive(Object data, String sender, String receiver) {
+	public synchronized void logReceive(Object data, String sender, String receiver) {
 		if(ENABLED)	{
 			log("OTFLogger.logReceive " + getConduitIndex(sender) + " " + getConduitIndex(receiver) + " ( " + sender + " -> " + receiver +")");
 			receive(getKernelIndex(sender), getKernelIndex(receiver), getSize(data));
