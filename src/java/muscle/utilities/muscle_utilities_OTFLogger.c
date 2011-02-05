@@ -12,8 +12,6 @@ static OTF_FileManager *manager = NULL;
 static OTF_Writer *writer = NULL;
 static OTF_HandlerArray* handlers = NULL;
 
-static int number_of_streams = 10;
-
 /* Length of kernels list - number of kernels*/
 static int kernelsLength;
 
