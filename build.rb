@@ -170,11 +170,13 @@ def main
 	$env[:muscle_dir] = File.dirname(File.expand_path(__FILE__))
 
 	# assert used dir is a muscle dir
-	if( (%w(build doc src thirdparty)-Dir.entries($env[:muscle_dir])).size != 0 )
+	if( (%w(doc src thirdparty)-Dir.entries($env[:muscle_dir])).size != 0 )
 		abort "can not run: used directory <#{$env[:muscle_dir]}> does not seem to be a muscle directory"
 	else
 		puts "executing in muscle directory <#{$env[:muscle_dir]}>"
 	end
+
+	Dir.mkdir("build") if !File.directory?("build")
 
 	targets = ARGV
 	targets = %w(default) if targets.empty?

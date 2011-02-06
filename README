@@ -1,18 +1,30 @@
 OTFLogger
 
-1. run build.rb java
-2. run simulation
+INSTALLATION
+------------
 
-You can run muscle across multiple machines. After that each machine will create seperate otf files. Please copy them into one folder and use merge.sh script.
+1. Download, compile and install the OTF library:
+  http://tu-dresden.de/die_tu_dresden/zentrale_einrichtungen/zih/forschung/software_werkzeuge_zur_unterstuetzung_von_programmierung_und_optimierung/otf/dateien/OTF-1.8.1sturgeon.tar.gz
+2. Simply run build.rb java
+
+TRACE GENERATION
+----------------
+
+You can run muscle across multiple machines. After that each machine will create seperate otf files. Please copy them into one folder and use merge.sh script (consult the next section for details)
+
+In order to enable trace generation you must place the `otf.properties` file in the current simulation directory
 
 otf.properties attributes:
 
-	generate_otf - possible values enabled, disabled, enables generation of otf files; default disabled
-	dir  - Directory in which otf files will be stored, default otf_files
-	debug - Enables logging OTFLogger events to standard output, possible values on, off; default off	
-	time_limit= - time in seconds after which otf logging will be ended; default 0 - time limit disabled
-	timer_close - possible values enabled, disabled , enables killing simulation after time_limit; default disabled
+	generate_otf - valid values: enabled, disabled; Enables generation of otf files; default: disabled
+	dir  - a directory in which otf files will be placed, default: otf_files
+	debug - enables logging OTFLogger events to standard output; possible values on, off; default: off	
+	time_limit= - time limit (in seconds) after which otf trace generation will be stopped; default 0 - continue generating traces until the end of application
+	timer_close - possible values: enabled, disabled; Enables killing simulation after time_limit; default: disabled
 
 Default values are used when otf.properties file cannot be found.
 
-otf.properties file is taken from directory you are in when you run muscle.
+The otf.properties file is searched in the initial current working directory of the simulation.
+
+MERGING TRACE FILES
+-------------------
