@@ -112,10 +112,11 @@ public class OTFLogger {
 	// Loads otf.properties file or sets default values
 	private void loadProperties()
 	{
+		File file;
 		Properties properties = new Properties();
-		File file = new File("otf.properties");	
+		String path = System.getProperty("muscle.otf.conf");
 		
-		if(file.exists()){
+		if(path != null && (file = new File(path)).exists()){
 			try{
 				InputStream is = new FileInputStream(file);
 				properties.load(is);
