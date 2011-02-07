@@ -35,8 +35,12 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_begin(JNIEnv *env,
 	uint32_t number_of_streams = 100;
 	manager = OTF_FileManager_open(number_of_streams);
 
-	if ((writer = OTF_Writer_open((char *) path, number_of_streams, manager))
-			== 0) {
+	if (manager == NULL) {
+		printf("OTFLogger libotf manager failed\n");
+		return 1;
+	}
+
+	if ((writer = OTF_Writer_open((char *) path, number_of_streams, manager)) == 0) {
 		printf("OTF_Writer_open failed\n");
 		(*env)->ReleaseStringUTFChars(env, jpath, path);
 		return 1;
@@ -44,33 +48,29 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_begin(JNIEnv *env,
 	(*env)->ReleaseStringUTFChars(env, jpath, path);
 
 	handlers = OTF_HandlerArray_open();
-	OTF_Writer_setCompression(writer, OTF_FILECOMPRESSION_UNCOMPRESSED);
-	OTF_Writer_writeDefTimerResolution(writer, 1, 1.0e9L);
-
-	if (manager == NULL) {
-		printf("OTFLogger libotf manager failed\n");
-		return 1;
-	}
-	if (writer == NULL) {
-		printf("OTFLogger libotf open failed!!\n");
-		return 1;
-	}
-
+	
 	if (handlers == NULL) {
 		printf("OTFLogger libotf handlers failed!!\n");
 		return 1;
 	}
+	
+	OTF_Writer_setCompression(writer, OTF_FILECOMPRESSION_UNCOMPRESSED);
+	OTF_Writer_writeDefTimerResolution(writer, 1, 1.0e9L);
 
 	return 0;
 }
 
-JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_define
+JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_define
 (JNIEnv *env, jobject obj, jobjectArray kernelArray, jobjectArray conduitArray)
 {	
 	kernelsLength = (*env)->GetArrayLength(env, kernelArray);
 	conduitsLength = (*env)->GetArrayLength(env, conduitArray);
 	const char ** kernels = (const char **)calloc(kernelsLength, sizeof (char *));
 	const char ** conduits = (const char **)calloc(conduitsLength, sizeof (char *));
+	
+	if(kernels == NULL || conduits == NULL)
+		return 1;
+	
 	int i = 0;
 
 	 /* Create the parent container */
@@ -109,9 +109,10 @@ JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_define
 		OTF_Writer_writeBeginProcess (writer, clockGet()+1, i+2);
 	}
 
+	return 0;
 }
 
-JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_end
+JNIEXPORT int JNICALL Java_muscle_utilities_OTFLogger_end
 (JNIEnv *env, jobject obj)
 {
 	int i = 0;
@@ -123,9 +124,11 @@ JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_end
 	OTF_Writer_writeEndProcess (writer, clockGet(), 1);
 	OTF_HandlerArray_close(handlers);
 	if( OTF_Writer_close(writer) != 1)
-		printf("OTFLogger Log path does not exits\n"); 
+		return 1;
 
 	OTF_FileManager_close(manager);
+	
+	return 0;
 }
 
 JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_conduitBegin
