@@ -229,13 +229,13 @@ public class OTFLogger {
 	
 	// Gets conduit part of the sink index from conduits list
 	private int getConduitIndex(String sink) {
-		return d.conduitList.indexOf(sink) + 2;
+		return d.conduitList.indexOf(sink) + 1;
 	}
 
 
 	// Get kernel part of the sink index from kernels list
 	private int getKernelIndex(String sink) {
-		return d.kernelList.indexOf(sink.substring(sink.indexOf("@") + 1)) + 2;
+		return d.kernelList.indexOf(sink.substring(sink.indexOf("@") + 1)) + 1;
 	}
 
 	// Get entrace of given sink

@@ -73,13 +73,10 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_define
 	
 	int i = 0;
 
-	 /* Create the parent container */
-    OTF_Writer_writeDefProcess(writer, 1, 1, "Plumber", 0);
-
 	for(i = 0; i < kernelsLength; i++)
 	{
 		kernels[i] = (*env)->GetStringUTFChars(env,(*env)->GetObjectArrayElement(env, kernelArray, i),0);
-		OTF_Writer_writeDefProcess(writer, 1, i+2, kernels[i], 1);
+		OTF_Writer_writeDefProcess(writer, 1, i + 1, kernels[i], 0);
 	}
 
 	OTF_Writer_writeDefFunctionGroup(writer, 1, 1, "Kernel State");
@@ -87,7 +84,7 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_define
 	for(i = 0; i < conduitsLength; i++)
 	{
 		conduits[i] = (*env)->GetStringUTFChars(env,(*env)->GetObjectArrayElement(env, conduitArray, i),0);
-		OTF_Writer_writeDefFunction(writer, 1, i+2, conduits[i], 1, 0);
+		OTF_Writer_writeDefFunction(writer, 1, i + 2, conduits[i], 1, 0);
 
 	}
 
@@ -103,10 +100,9 @@ JNIEXPORT jint JNICALL Java_muscle_utilities_OTFLogger_define
 
 	timestamp = clockGet();
 
-	OTF_Writer_writeBeginProcess (writer, clockGet(), 1);
 	for(i = 0; i < kernelsLength; i++)
 	{
-		OTF_Writer_writeBeginProcess (writer, clockGet()+1, i+2);
+		OTF_Writer_writeBeginProcess (writer, clockGet() + 1, i + 1);
 	}
 
 	return 0;
@@ -119,9 +115,8 @@ JNIEXPORT int JNICALL Java_muscle_utilities_OTFLogger_end
 	
 	for(i = 0; i < kernelsLength; i++)
 	{
-		OTF_Writer_writeEndProcess (writer, clockGet()+1, i+2);
+		OTF_Writer_writeEndProcess (writer, clockGet()+1, i+1);
 	}
-	OTF_Writer_writeEndProcess (writer, clockGet(), 1);
 	OTF_HandlerArray_close(handlers);
 	if( OTF_Writer_close(writer) != 1)
 		return 1;
@@ -134,13 +129,13 @@ JNIEXPORT int JNICALL Java_muscle_utilities_OTFLogger_end
 JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_conduitBegin
 (JNIEnv *env, jobject obj, jint function, jint process)
 {
-	OTF_Writer_writeEnter (writer, clockGet(), function, process, 0);
+	OTF_Writer_writeEnter (writer, clockGet(), function + 1, process, 0);
 }
 
 JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_conduitEnd
 (JNIEnv *env, jobject obj, jint function, jint process)
 {
-	OTF_Writer_writeLeave (writer, clockGet(), function, process, 0);
+	OTF_Writer_writeLeave (writer, clockGet(), function + 1, process, 0);
 }
 
 JNIEXPORT void JNICALL Java_muscle_utilities_OTFLogger_send
