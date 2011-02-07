@@ -1,8 +1,8 @@
-JNIH = /usr/lib/jvm/java-6-openjdk/include/
+JNIH = $(JAVA_HOME)/include/
 JAVAH = javah
 
 all:
-	@echo " Muscle can run with unsuccessful OTFLogger build"
+	@echo " Muscle can run without OTFLogger"
 	@echo -n " Compiling OTFLogger..."
 	@rm -f build/intermediate/classes/muscle_utilities_OTFLogger.h 
 	@cp src/java/muscle/utilities/muscle_utilities_OTFLogger.c build/intermediate/classes/ 

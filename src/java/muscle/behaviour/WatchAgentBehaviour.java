@@ -66,6 +66,11 @@ public class WatchAgentBehaviour extends SimpleBehaviour {
 	public void action() {
 
 		assert this.containerRequester != null;
+		try {
+			Thread.sleep(1000); /* yields for a while - avoid acitve waiting */
+		} catch (InterruptedException ex) {
+			ex.printStackTrace();
+		}
 		if(this.containerRequester.done()) {
 			Location location = this.containerRequester.getLocation();
 			this.myAgent.removeBehaviour(this.containerRequester); // this is probably not necessary
