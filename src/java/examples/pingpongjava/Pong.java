@@ -36,7 +36,7 @@ import muscle.core.Scale;
 a simple java example kernel which receives data and prints its content to stdout
 @author Jan Hegewald
 */
-public class ConsoleWriter extends muscle.core.kernel.CAController {
+public class Pong extends muscle.core.kernel.CAController {
 
 	/**
 	 *

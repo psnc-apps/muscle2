@@ -36,7 +36,7 @@ import muscle.core.Scale;
 a simple java example kernel which sends data
 @author Jan Hegewald
 */
-public class Sender extends muscle.core.kernel.CAController {
+public class Ping extends muscle.core.kernel.CAController {
 
 	/**
 	 *
