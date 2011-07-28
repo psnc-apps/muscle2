@@ -47,31 +47,28 @@ public class Utilities {
       int val = (int)((rawVal+1)/2.0*1023.0);
 
       int r = 0;
-      if(0 <= val && val < 2*256) {
-		r = 0;
-	} else if(2*256 <= val && val < 3*256) {
-		r = val - 2*256;
-	} else if(3*256 <= val && val < 4*256) {
-		r = 256-1;
-	}
+      if(0 <= val && val < 2*256)
+         r = 0;
+      else if(2*256 <= val && val < 3*256)
+         r = val - 2*256;
+      else if(3*256 <= val && val < 4*256)
+         r = 256-1;
 
       int g = 0;
-      if(0 <= val && val < 256) {
-		g = val;
-	} else if(256 <= val && val < 3*256) {
-		g = 256-1;
-	} else if(3*256 <= val && val < 4*256) {
-		g = 4*256-1 -val;
-	}
+      if(0 <= val && val < 256)
+         g = val;
+      else if(256 <= val && val < 3*256)
+         g = 256-1;
+      else if(3*256 <= val && val < 4*256)
+         g = 4*256-1 -val;
 
       int b = 0;
-      if(0 <= val && val < 256) {
-		b = 256-1;
-	} else if(256 <= val && val < 2*256) {
-		b = 2*256-1-val;
-	} else if(2*256 <= val && val < 4*256) {
-		b = 0;
-	}
+      if(0 <= val && val < 256)
+         b = 256-1;
+      else if(256 <= val && val < 2*256)
+         b = 2*256-1-val;
+      else if(2*256 <= val && val < 4*256)
+         b = 0;
 
       return new Color(r,g,b);
    }
@@ -82,16 +79,10 @@ public class Utilities {
 	*/
    public static void main(String[] args) {
 
-      System.out.println(Utilities.getColor(-0.1));
+      System.out.println(getColor(-0.1));
       javax.swing.JFrame f = new javax.swing.JFrame();
       javax.swing.JPanel p = new javax.swing.JPanel() {
-         /**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		protected void paintComponent(java.awt.Graphics g) {
+         protected void paintComponent(java.awt.Graphics g) {
            for(int i = 0; i < (4*256); i++) {
 
             g.setColor(Utilities.getColor( 2D*i/1023D -1 ));
@@ -106,6 +97,6 @@ public class Utilities {
 
       f.setVisible(true);
       f.repaint();
-
+      
    }
 }

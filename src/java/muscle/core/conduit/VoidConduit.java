@@ -32,34 +32,28 @@ this is a placeholder conduit which does not pass any data. instead it directly 
 @author Jan Hegewald
 */
 public class VoidConduit extends BasicConduit {
-
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
-//
+	
+	
+	//
    @Override
 	protected void constructMessagePassingMechanism() {
 
 		// test if entrance and exit templates match, but do not create a filter chain
 		// there should be no filter mechanism for this conduit
-
+		
 		// we do not use any manipulating filters here,
 		// so the out template must be identical with the in template
 		try {
-			if( !DataTemplate.match(this.getEntranceDataTemplate(), this.getExitDataTemplate()) ) {
-				throw new muscle.exception.DataTemplateMismatchException(this.getEntranceDataTemplate().toString()+" vs. "+this.getExitDataTemplate().toString());
+			if( !DataTemplate.match(getEntranceDataTemplate(), getExitDataTemplate()) ) {
+				throw new muscle.exception.DataTemplateMismatchException(getEntranceDataTemplate().toString()+" vs. "+getExitDataTemplate().toString());
 			}
 		}
 		catch (muscle.exception.DataTemplateMismatchException e) {
 			throw new MUSCLERuntimeException(e);
 		}
 	}
-
-
+	
+	
 	/**
 	connect so source kernel (e.g. a remote sender)
 	*/
@@ -68,14 +62,14 @@ public class VoidConduit extends BasicConduit {
 
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setProtocol(Constant.Protocol.PORTAL_ATTACH);
-		msg.addUserDefinedParameter("entrance", this.entranceName);
-		msg.addUserDefinedParameter("exit", this.exitName);
-		msg.addReceiver(this.entranceAgent);
-		msg.setContent(this.exitName); // sink id
+		msg.addUserDefinedParameter("entrance", entranceName);
+		msg.addUserDefinedParameter("exit", exitName);
+		msg.addReceiver(entranceAgent);
+		msg.setContent(exitName); // sink id
 
 		// overwrite us as sender with the exitAgent
-		msg.setSender(this.exitAgent);
+		msg.setSender(exitAgent);
 
-		this.send(msg);
+		send(msg);
 	}
 }

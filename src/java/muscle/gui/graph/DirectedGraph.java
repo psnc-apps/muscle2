@@ -32,40 +32,38 @@ public class DirectedGraph {
 
 	LinkedList<Edge> edges = new LinkedList<Edge>();
 	LinkedList<Vertex> vertices = new LinkedList<Vertex>();
-
-
+	
+	
 	//
 	public void addEdge(Edge edge, Vertex source, Vertex dest) {
-
-		if(!this.vertices.contains(source) || !this.vertices.contains(dest)) {
+	
+		if(!vertices.contains(source) || !vertices.contains(dest))
 			return;
-		}
 		edge.setSource(source);
 		edge.setDest(dest);
-		this.edges.add(edge);
+		edges.add(edge);
 	}
-
-
+	
+	
 	//
 	public void addVertex(Vertex vertex) {
 
-		if(!this.vertices.contains(vertex)) {
-			this.vertices.add(vertex);
-		}
+		if(!vertices.contains(vertex))
+			vertices.add(vertex);
 	}
 
-
+	
 	//
 	public LinkedList<Edge> getEdges() {
 
-		return this.edges;
+		return edges;
 	}
 
-
+	
 	//
 	public LinkedList<Vertex> getVertices() {
 
-		return this.vertices;
+		return vertices;
 	}
 
 }

@@ -22,8 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
+import java.lang.management.OperatingSystemMXBean;
 
 
 /**
@@ -71,55 +71,53 @@ public class Timing {
 		if ( !(osBean instanceof com.sun.management.OperatingSystemMXBean) ) {
 			throw new java.lang.UnsupportedOperationException("can not determine cpu time because there is not a <com.sun.management.OperatingSystemMXBean>, but a <"+osBean.getClass()+">");
 		}
-
+		
 		return ((com.sun.management.OperatingSystemMXBean)osBean).getProcessCpuTime();
-	}
-
-
+	}	
+	
+	
 	//
 	private long threadStartTime;
 	private long totalStartTime;
 	private boolean isCounting;
 	private long threadTime;
 	private long totalTime;
-
+	
 	//
 	public Timing() {
-
-		this.threadStartTime = Timing.getThreadCpuTime();
+	
+		threadStartTime = getThreadCpuTime();
 //		totalStartTime = getJVMCpuTime();
-		this.totalStartTime = 0;
-		this.isCounting = true;
+		totalStartTime = 0;
+		isCounting = true;
 	}
-
-
+	
+	
 	//
 	public void stop() {
-
-		if( this.isCounting ) {
-			this.threadTime = Timing.getThreadCpuTime() - this.threadStartTime;
-			this.totalTime = Timing.getJVMCpuTime() - this.totalStartTime;
-			this.isCounting = false;
+	
+		if( isCounting ) {
+			threadTime = getThreadCpuTime() - threadStartTime;
+			totalTime = getJVMCpuTime() - totalStartTime;
+			isCounting = false;
 		}
 	}
 
 
 	//
 	public boolean isCounting() {
-
-		return this.isCounting;
+	
+		return isCounting;
 	}
-
+	
 	//
-	@Override
 	public String toString() {
-
-		this.stop();
+		
+		stop();
 		float percent = 100.0f;
-		if( this.totalTime > 0 ) {
-			percent = this.threadTime/(float)this.totalTime*100.0f;
-		}
-		return (this.threadTime)/1000000000.0f+" s /"+(this.totalTime)/1000000000.0f+" s = "+percent+" %";
+		if( totalTime > 0 )
+			percent = threadTime/(float)totalTime*100.0f;
+		return (threadTime)/1000000000.0f+" s /"+(totalTime)/1000000000.0f+" s = "+percent+" %";
 	}
 
 
@@ -129,6 +127,7 @@ public class Timing {
 		Timing t = new Timing();
 		System.out.println(t);
 		for(int i = 0; i< 10000042; i++) {
+			String s = i+"foo"+i/42.42;
 		}
 		System.out.println(t);
 	}

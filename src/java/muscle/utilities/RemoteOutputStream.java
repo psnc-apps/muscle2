@@ -24,16 +24,17 @@ package muscle.utilities;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
+import jade.core.behaviours.SimpleBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentController;
 import jadetool.ContainerControllerTool;
 import jadetool.MessageTool;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
-
 import muscle.exception.MUSCLERuntimeException;
 
 
@@ -47,22 +48,21 @@ public class RemoteOutputStream extends OutputStream {
 
 	private byte buffer[];
 	private int validLength;
-
+	
 	private Agent myAgent;
 	private AID receiver;
 
 	//
 	public RemoteOutputStream(Agent newMyAgent, Location newTargetLocation, String newOutputStreamName, int newBufferSize) {
 
-		this.myAgent = newMyAgent;
+		myAgent = newMyAgent;
 
-		if(newBufferSize <= 0) {
+		if(newBufferSize <= 0)
 			throw new IllegalArgumentException("Buffer size <= 0 <"+newBufferSize+">");
-		}
-		this.buffer = new byte[newBufferSize];
+		buffer = new byte[newBufferSize];
 
 		// spawn receiver agent
-		this.receiver = this.spawn(newTargetLocation, newOutputStreamName);
+		receiver = spawn(newTargetLocation, newOutputStreamName);
 	}
 
 
@@ -70,20 +70,19 @@ public class RemoteOutputStream extends OutputStream {
 	@Override
 	public void write(int inByte) throws IOException {
 
-		if(this.validLength >= this.buffer.length) {
-			this.flushBuffer();
-		}
-
-		this.buffer[this.validLength++] = (byte)inByte;
+		if(validLength >= buffer.length)
+			flushBuffer();
+		
+		buffer[validLength++] = (byte)inByte;
 	}
 
-
+	
 	//
 	@Override
 	public void flush() throws IOException {
-
+		
 		super.flush();
-		this.flushBuffer();
+		flushBuffer();
 	}
 
 
@@ -91,15 +90,15 @@ public class RemoteOutputStream extends OutputStream {
 	@Override
 	public void close() throws IOException {
 
-		this.flush();
-
+		flush();
+		
 		// send the close message
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.addReceiver(this.receiver);
+		msg.addReceiver(receiver);
 		msg.setProtocol(RemoteOutputStream.PROTOCOL);
 
 		msg.setByteSequenceContent(null);
-		this.myAgent.send(msg);
+		myAgent.send(msg);			
 	}
 
 
@@ -112,16 +111,16 @@ public class RemoteOutputStream extends OutputStream {
 		// generate message template to receive on the remote side
 		MessageTemplate template = MessageTool.concatenate(
 											MessageTemplate.MatchProtocol(RemoteOutputStream.PROTOCOL)
-											, MessageTemplate.MatchSender(this.myAgent.getAID())
+											, MessageTemplate.MatchSender(myAgent.getAID())
 											);
-
+		
 		RemoteOutputStreamReceiverAgent.RemoteOutputStreamReceiverAgentArgs args = new RemoteOutputStreamReceiverAgent.RemoteOutputStreamReceiverAgentArgs(
 				newTargetLocation, template, outputStreamName);
-
+		
 		Object[] rawArgs = {args};
 
 		String agentName = javatool.ClassTool.getName(RemoteOutputStreamReceiverAgent.class);
-		AgentController controller = ContainerControllerTool.createUniqueNewAgent(this.myAgent.getContainerController(), agentName, javatool.ClassTool.getName(RemoteOutputStreamReceiverAgent.class), rawArgs);
+		AgentController controller = ContainerControllerTool.createUniqueNewAgent(myAgent.getContainerController(), agentName, javatool.ClassTool.getName(RemoteOutputStreamReceiverAgent.class), rawArgs);
 
 		// get the AID of the new agent
 		AID spawnedAID = null;
@@ -133,12 +132,12 @@ public class RemoteOutputStream extends OutputStream {
 		simpleLogger.info("spawning agent: <"+spawnedAID.getName()+">");
 
 		try {
-			controller.start();
+			controller.start();			
 		} catch (jade.wrapper.StaleProxyException e) {
 			simpleLogger.severe("can not spawn agent: "+spawnedAID.getName());
 			throw new MUSCLERuntimeException(e);
 		}
-
+		
 		return spawnedAID;
 	}
 
@@ -146,14 +145,14 @@ public class RemoteOutputStream extends OutputStream {
 	//
 	private void flushBuffer() throws IOException {
 
-		if (this.validLength > 0) {
-			//byte[] data = java.util.Arrays.copyOfRange(buffer, 0, validLength); // Java 6
+		if (validLength > 0) {
+			//byte[] data = java.util.Arrays.copyOfRange(buffer, 0, validLength); // Java 6			
 			// Java 5 workaround
-			byte[] data = new byte[this.validLength];
-			System.arraycopy(this.buffer, 0, data, 0, data.length);
-			this.sendBuffer(data);
-
-			this.validLength = 0;
+			byte[] data = new byte[validLength];
+			System.arraycopy(buffer, 0, data, 0, data.length);
+			sendBuffer(data);
+			
+			validLength = 0;
 		}
 	}
 
@@ -163,10 +162,10 @@ public class RemoteOutputStream extends OutputStream {
 
 		// send data to remote receiver
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.addReceiver(this.receiver);
+		msg.addReceiver(receiver);
 		msg.setProtocol(RemoteOutputStream.PROTOCOL);
 
 		msg.setByteSequenceContent(data);
-		this.myAgent.send(msg);
+		myAgent.send(msg);			
 	}
 }

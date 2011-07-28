@@ -34,7 +34,6 @@ public class NullOutputStream extends OutputStream {
 
 
 	//
-	@Override
 	public void write(int inByte) throws IOException {
 
 		// we do nothing here

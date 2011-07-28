@@ -29,11 +29,6 @@ custom exception
 public class DataSizeMismatchException extends Exception {
 
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	//
 	public DataSizeMismatchException(String message) {
 		super(message);

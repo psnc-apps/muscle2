@@ -23,16 +23,23 @@ package muscle.core;
 
 import jade.core.ContainerID;
 import jade.core.Location;
+import javatool.PropertiesTool;
 
 import java.io.File;
-import java.util.Iterator;
+import java.io.FileInputStream;
+import java.util.Properties;
 import java.util.logging.Logger;
 
+import utilities.MiscTool;
 import muscle.Constant;
 import muscle.exception.MUSCLERuntimeException;
-import utilities.Env;
+import muscle.core.kernel.KernelBootInfo;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import muscle.core.kernel.RawKernel;
 import utilities.JVM;
-import utilities.MiscTool;
+import utilities.Env;
 
 
 /**
@@ -41,12 +48,6 @@ singleton which holds information about the current CxA
 */
 public class CxADescription extends utilities.Env implements java.io.Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
 	static public class Key {
 		static public final String FINEST_DT = "finest_dt";
 		static public final String COARSEST_DT = "coarsest_dt";
@@ -54,7 +55,7 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 
 		static public final String GUI = "gui";
 	}
-
+		
 //	static private final String[] MANDATORY_KEYS = {
 ////			Constant.Key.CONNECTION_SCHEME,
 ////			Constant.Key.TRACE_DATA_TRANSFER,
@@ -64,7 +65,7 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 //			Key.COARSEST_DT,
 //			Key.MAX_TIMESTEPS,
 //	};
-
+	
 	static private final Env DEFAULT_ENV = new Env();
 	//
 	static {
@@ -79,97 +80,96 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 
 	// be careful to init all other static fields we may use here before our singleton
 	public static CxADescription ONLY = new CxADescription(); // handle for the singleton
-
+	
    private Location sharedLocation;
 	private Logger logger;
 	private File tmpDir;
-
+	
 	{
-		this.putAll(DEFAULT_ENV);
+		putAll(DEFAULT_ENV);
 
 		// load (mandatory) cxa properties from muscle environment
 		Env env = muscle.Env.ONLY.subenv(this.getClass());
-		this.putAll(env);
+		putAll(env);		
 	}
 
 	// disallow instantiation from everywhere
 	protected CxADescription() {
+	
+		logger = muscle.logging.Logger.getLogger(getClass());
 
-		this.logger = muscle.logging.Logger.getLogger(this.getClass());
-
-		this.initEnv();
+		initEnv();
 
 		// init default shared Location if any
-		this.sharedLocation = new ContainerID((String)this.get(Constant.Key.TRACE_DATA_TRANSFER, "Main-Container"/*default value*/), null);
+		sharedLocation = new ContainerID((String)get(Constant.Key.TRACE_DATA_TRANSFER, "Main-Container"/*default value*/), null);
    }
-
-
+	
+	
 	// tmps path where kernels can create individual subdirs
 	public String getTmpRootPath() {
-
-		return this.tmpDir.toString();
+	
+		return tmpDir.toString();
 	}
 
 
 	/**
 	this is called from the plumber to know with which class to load the communication graph
 	*/
-	@SuppressWarnings("unchecked")
 	public Class<? extends ConnectionScheme> getConnectionSchemeClass() {
-
-		String className = (String)this.getEnvAndAssert(Constant.Key.CONNECTION_SCHEME_CLASS);
-		Class<? extends ConnectionScheme> loaderClass = null;
+	
+		String className = (String)getEnvAndAssert(Constant.Key.CONNECTION_SCHEME_CLASS);
+		Class loaderClass = null;
 		try {
-			loaderClass = (Class<? extends ConnectionScheme>) Class.forName(className);
+			loaderClass = Class.forName(className);
 		}
 		catch(java.lang.ClassNotFoundException e) {
 			throw new MUSCLERuntimeException(e);
 		}
-
-		return loaderClass;
+		
+		return (Class<? extends ConnectionScheme>)loaderClass;
 	}
 
 
 	//
 	public Location getSharedLocation() {
-
-		return this.sharedLocation;
+	
+		return sharedLocation;
 	}
 
 
 	//
 	public String getProperty(String key) {
-
-		return this.get(key).toString();
+	
+		return get(key).toString();
 	}
 
 
 	//
 	public String getPathProperty(String key) {
-
-		return MiscTool.resolveTilde(this.getEnvAndAssert(key).toString());
+	
+		return MiscTool.resolveTilde(getEnvAndAssert(key).toString());
 	}
 
 
 	//
 	public boolean getBooleanProperty(String key) {
-
-		return (Boolean)this.getEnvAndAssert(key);
+	
+		return (Boolean)getEnvAndAssert(key);
 	}
 
 
 	//
 	public int getIntProperty(String key) {
-
+	
 		// json only uses Long, not Integer
-		return ((Long)this.getEnvAndAssert(key)).intValue();
+		return ((Long)getEnvAndAssert(key)).intValue();
 	}
 
 
 	//
 	public double getDoubleProperty(String key) {
-
-		return (Double)this.getEnvAndAssert(key);
+	
+		return (Double)getEnvAndAssert(key);
 	}
 
 
@@ -181,15 +181,15 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 	public String getLegacyProperties() {
 
 		StringBuilder text = new StringBuilder();
-		for(Iterator<Object> e = this.keySet().iterator(); e.hasNext();) {
+		for(Iterator e = keySet().iterator(); e.hasNext();) {
 			Object key = e.next();
 			text.append(key.toString());
 			text.append(" ");
-			text.append(this.get(key).toString());
+			text.append(get(key).toString());
 			text.append("\n");
 		}
-
-		return text.toString();
+		
+		return text.toString();	
 	}
 
 
@@ -197,33 +197,111 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 	private Object readResolve() {
 		return ONLY;
 	}
-
-
+	
+	
 	/**
 	configure this CxA from the muscle environment
 	*/
 	private void initEnv() {
-
+	
 		// init tmp dir
 		String tmpDirPath = JVM.ONLY.tmpDir().toString();
 		if(tmpDirPath == null) {
-			this.tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			this.logger.info("using default tmp directory <"+this.tmpDir+">");
+			tmpDir = new File(System.getProperty("java.io.tmpdir"));
+			logger.info("using default tmp directory <"+tmpDir+">");
 		}
 		else {
-			this.tmpDir = new File(MiscTool.resolveTilde(tmpDirPath));
+			tmpDir = new File(MiscTool.resolveTilde(tmpDirPath));
 		}
-		if(!this.tmpDir.isDirectory()) {
-			File oldTmp = this.tmpDir;
-			this.tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			this.logger.info("omitting invalid tmp directory <"+oldTmp+">, using default tmp directory <"+this.tmpDir+">");
+		if(!tmpDir.isDirectory()) {
+			File oldTmp = tmpDir;
+			tmpDir = new File(System.getProperty("java.io.tmpdir"));
+			logger.info("omitting invalid tmp directory <"+oldTmp+">, using default tmp directory <"+tmpDir+">");
 		}
 		else {
-			this.logger.info("using tmp directory <"+this.tmpDir+">");
+			logger.info("using tmp directory <"+tmpDir+">");
 		}
 
 //		if( !PropertiesTool.hasKeys(props, MANDATORY_KEYS) )
 //			throw new InvalidCxADescription("required keys: <"+MiscTool.joinItems(MANDATORY_KEYS, ", ")+">");
+	}
+
+
+	/**
+	generates kernel infos from a properties file
+	either put
+	kernel.example.SomeKernel
+	or
+	name kernel.example.SomeKernel
+	in the file<br>
+	commented lines are allowed as described in http://java.sun.com/javase/6/docs/api/java/util/Properties.html#load(java.io.Reader)
+	*/
+	private static List<KernelBootInfo> kernelBootInfosFromFile(File file) throws java.io.FileNotFoundException {
+	
+		// load kernel info properties from file
+		Properties props = new Properties();
+		try {
+			FileInputStream in = new FileInputStream(file);
+			props.load(in);
+		}
+		catch(java.io.IOException e) {
+			throw new MUSCLERuntimeException(e);
+		}
+
+		List<KernelBootInfo> kbi = new ArrayList<KernelBootInfo>();
+		for(Iterator<String> iter = props.stringPropertyNames().iterator(); iter.hasNext();) {
+			String key = iter.next();
+			String val = props.getProperty(key);
+			// strip any leading and trailing whitespace from class name
+			val = val.trim();
+			
+			if( val.equals("") )
+				val = key; // only class name given
+			Class<? extends RawKernel> cls = null;
+			try {
+				// do not initialize the kernel class here, else e.g. their static code is already called
+				cls = (Class<? extends RawKernel>)Class.forName(val, false, CxADescription.class.getClassLoader());
+			}
+			catch(java.lang.ClassNotFoundException e) {
+			MUSCLERuntimeException cre = new MUSCLERuntimeException("unknown class <"+cls+">");
+			cre.setStackTrace(e.getStackTrace());
+				throw new MUSCLERuntimeException(cre);
+			}
+			kbi.add(new KernelBootInfo(key, cls));
+		}
+
+		return kbi;
+	}
+	
+	
+	/**
+	returns a file which might be specific to the local machine:<br>
+	either path.HOSTNAME or path is returned
+	*/
+	private static File localFile(String path) {
+	
+		String localPath = path+"."+MiscTool.hostName();
+		File file = new File(localPath);
+		if( file.exists() )
+			return file;
+			
+		return new File(path);
+	}
+
+
+	//
+	static private class InvalidCxADescription extends RuntimeException {
+		public InvalidCxADescription() {
+		}
+		public InvalidCxADescription(String message) {
+			super(message);
+		}
+		public InvalidCxADescription(Throwable cause) {
+			super(cause);
+		}
+		public InvalidCxADescription(String message, Throwable cause) {
+			super(message, cause);
+		}
 	}
 
 }

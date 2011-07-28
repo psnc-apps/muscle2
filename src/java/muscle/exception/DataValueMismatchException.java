@@ -29,11 +29,6 @@ custom exception
 public class DataValueMismatchException extends Exception {
 
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	//
 	public DataValueMismatchException(String message) {
 		super(message);

@@ -27,12 +27,8 @@ custom exception
 @author Jan Hegewald
 */
 public class SpawnAgentException extends Exception {
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	public SpawnAgentException() {
-
+		
 	}
 	public SpawnAgentException(String message) {
 		super(message);

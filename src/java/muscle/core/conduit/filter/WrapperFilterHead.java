@@ -24,6 +24,8 @@ package muscle.core.conduit.filter;
 import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
 
+import com.thoughtworks.xstream.XStream;
+
 
 /**
 entry point for a filter chain used within conduits
@@ -33,32 +35,32 @@ public class WrapperFilterHead implements muscle.core.conduit.filter.WrapperFilt
 
 	WrapperFilter childFilter;
 	DataTemplate template;
-
-
+	
+	
 	//
 	public WrapperFilterHead(WrapperFilter newChildFilter, DataTemplate newTemplate) throws muscle.exception.DataTemplateMismatchException {
-
-		this.childFilter = newChildFilter;
-		this.template = newTemplate;
-
-		if( !DataTemplate.match(this.template, this.childFilter.getInTemplate()) ) {
-			throw new muscle.exception.DataTemplateMismatchException(this.template.toString()+" vs. "+this.childFilter.getInTemplate().toString());
+	
+		childFilter = newChildFilter;
+		template = newTemplate;
+		
+		if( !DataTemplate.match(template, childFilter.getInTemplate()) ) {			
+			throw new muscle.exception.DataTemplateMismatchException(template.toString()+" vs. "+childFilter.getInTemplate().toString());
 		}
 	}
-
-
+	
+	
 	// feed filter chain with data
 	public void put(DataWrapper inData) {
 
 		// feed filter chain
-		this.childFilter.put(inData);
+		childFilter.put(inData);
 	}
-
-
+	
+	
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.template;
+	
+		return template;
 	}
 }
 

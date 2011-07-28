@@ -21,14 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.math.BigDecimal;
-
+import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
+import muscle.core.Scale;
+import javax.measure.unit.SI;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
-
-import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import java.math.BigDecimal;
 
 
 /**
@@ -43,31 +42,30 @@ public class BlockAfterTimeFilter implements muscle.core.conduit.filter.WrapperF
 
 	//
 	public BlockAfterTimeFilter(WrapperFilter newChildFilter, int newMaxTime/*in seconds*/) {
+	
+		childFilter = newChildFilter;
+		
+		maxTime = new DecimalMeasure(new BigDecimal(newMaxTime), SI.SECOND);
 
-		this.childFilter = newChildFilter;
-
-		this.maxTime = new DecimalMeasure(new BigDecimal(newMaxTime), SI.SECOND);
-
-		DataTemplate outTemplate = this.childFilter.getInTemplate();
-		this.inTemplate = outTemplate;
+		DataTemplate outTemplate = childFilter.getInTemplate();
+		inTemplate = outTemplate;
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper newInData) {
-
-		if(newInData.getSITime().compareTo(this.maxTime) < 1) {
-			this.childFilter.put(newInData);
-		} else {
+		
+		if(newInData.getSITime().compareTo(maxTime) < 1)
+			childFilter.put(newInData);
+		else
 			System.out.println("warning: blocking data for time <"+newInData.getSITime()+">");
-		}
 	}
 
 }

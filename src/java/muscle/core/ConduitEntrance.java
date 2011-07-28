@@ -23,16 +23,14 @@ package muscle.core;
 
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
-
 import java.io.IOException;
-
 import muscle.Constant;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.utilities.OTFLogger;
+
 
 /**
 this is the (remote) head of a conduit,
@@ -41,78 +39,79 @@ an entrance sends data to the conduit agent
 */
 public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> implements RemoteDataSinkHead<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private EntranceDependency[] dependencies;
 	private AID dstAgent;
-	private String srcSink; 
 	private String dstSink;
 	private DataMessage<DataWrapper<T>> dataMessage;
 	private boolean shouldPause = false;
 
 
 	//
-	public ConduitEntrance(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate<T> newDataTemplate, EntranceDependency ... newDependencies) {
+	public ConduitEntrance(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-
-		this.dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list
-		srcSink = newPortalID.getName(); 
+						
+		dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list		
 	}
 
 
    //
+	@Override
    public AID dstAgent() {
-		return this.dstAgent;
+		return dstAgent;
    }
 
 
 	//
+   @Override
    public void pause() {
-		this.shouldPause = true;
+		shouldPause = true;
    }
 
-
+   
 	//
+	@Override
    public void resume() {
-		this.shouldPause = false;
+		shouldPause = false;
    }
-
-
+	
+	
 	//
+   @Override
    public void put(DataMessage<DataWrapper<T>> dmsg) {
 
-		while( this.shouldPause ) {
+		while( shouldPause ) {
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
-			}
+			}			
 		}
 
-		this.ownerAgent.sendDataMessage(dmsg);
+		ownerAgent.sendDataMessage(dmsg);
 	}
 
 
 	//
+   @Override
    public DataMessage<DataWrapper<T>> take() {
-
-		throw new java.lang.UnsupportedOperationException("can not take from "+this.getClass());
+		
+		throw new java.lang.UnsupportedOperationException("can not take from "+getClass());
 	}
 
-
+   
 	//
+	@Override
    public DataMessage<DataWrapper<T>> poll() {
-
-		throw new java.lang.UnsupportedOperationException("can not poll from "+this.getClass());
+		
+		throw new java.lang.UnsupportedOperationException("can not poll from "+getClass());
 	}
 
 
 	//
+   @Override
    public String id() {
-
-		return this.dstSink;
+		
+		return dstSink;
 	}
 
 
@@ -120,16 +119,15 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 	public void setDestination(AID newDstAgent, String newDstSink) {
 
 		// allow only once to connect this sender
-		if(this.dstAgent != null) {
-			throw new IllegalStateException("already connected to <"+this.dstAgent+":"+this.dstSink+">");
-		}
-
-		this.dstAgent = newDstAgent;
-		this.dstSink = newDstSink;
-
+		if(dstAgent != null)
+			throw new IllegalStateException("already connected to <"+dstAgent+":"+dstSink+">");
+		
+		dstAgent = newDstAgent;
+		dstSink = newDstSink;
+		
 		// set up message dummy for outgoing data messages
-		this.dataMessage = new DataMessage<DataWrapper<T>>(this.id());
-		this.dataMessage.addReceiver(this.dstAgent());
+		dataMessage = new DataMessage(id());
+		dataMessage.addReceiver(dstAgent());
 	}
 
 
@@ -138,41 +136,38 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 	*/
 	public void send(T data) {
 
-		OTFLogger.getInstance().conduitEnter(srcSink);
-		DataWrapper<T> wrapper = new DataWrapper<T>(data, this.getSITime());
-		this.dataMessage.store(wrapper, null);
+		DataWrapper wrapper = new DataWrapper<T>(data, getSITime());
+		dataMessage.store(wrapper, null);
 
-		this.increment();
+		increment();
 
-		OTFLogger.getInstance().logSend(data, srcSink, dstSink); 
 		// send data to target kernel
-		this.put(this.dataMessage);		
-		OTFLogger.getInstance().conduitLeave(srcSink); 
+		put(dataMessage);
 	}
 
 
 	//
 	public EntranceDependency[] getDependencies() {
-		return this.dependencies;
+		return dependencies;
 	}
 
 
 	//
 	public void detachDestination() {
 
-		assert this.ownerAgent != null;
-		// if we are connected to a conduit, tell conduit to detach this exit
-		if( this.dstAgent != null ) {
-			this.ownerAgent.send(this.getDetachDstMessage());
+		assert ownerAgent != null;
+		// if we are connected to a conduit, tell conduit to detach this exit		
+		if( dstAgent != null ) {
+			ownerAgent.send(getDetachDstMessage());
 		}
-
-		this.dstAgent = null;
+		
+		dstAgent = null;
 	}
 
 
 	//
 	private ACLMessage getDetachDstMessage() {
-
+	
 		// bulid message which tells the conduit to detach this portal
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setProtocol(Constant.Protocol.PORTAL_DETACH);
@@ -181,8 +176,8 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 		} catch (IOException e) {
 			throw new MUSCLERuntimeException();
 		}
-
-		msg.addReceiver(this.dstAgent);
+		
+		msg.addReceiver(dstAgent);
 		return msg;
 	}
 }

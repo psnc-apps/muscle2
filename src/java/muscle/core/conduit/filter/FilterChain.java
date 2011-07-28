@@ -21,10 +21,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import muscle.core.conduit.*;
 import jade.core.AID;
-
+import jade.lang.acl.MessageTemplate;
 import java.util.ArrayList;
-
+import java.io.OutputStreamWriter;
 import muscle.core.DataTemplate;
 import muscle.core.messaging.jade.DataMessage;
 
@@ -42,36 +43,44 @@ public class FilterChain {
 	String exitName;
 	private DataTemplate exitDataTemplate;
 	private ArrayList<Object> optionalArgs;
+	private MessageTemplate receiveTemplate;
+	
+	private ResourceStrategy resourceStrategy;
+	
+	private OutputStreamWriter traceReceiveWriter;
+	private OutputStreamWriter traceSendWriter;
+	
+
 	//
 	public ArrayList<Object> getOptionalArgs() {
-
-		return this.optionalArgs;
+	
+		return optionalArgs;
 	}
-
-
+	
+	
 	//
 	public DataTemplate getEntranceDataTemplate() {
-
-		return this.entranceDataTemplate;
+	
+		return entranceDataTemplate;
 	}
 
 
 	//
 	public DataTemplate getExitDataTemplate() {
-
-		return this.exitDataTemplate;
+	
+		return exitDataTemplate;
 	}
-
-
+	
+	
 	//
 	public FilterChain() {
-
+	
 	}
-
-
+	
+	
 	//
 	protected Filter initFilterChain(Filter filterTail) {
-
+	
 		// we do not insert other filters by default
 		// by default we directly pass the entrance data to the exit
 		return filterTail;
@@ -79,27 +88,27 @@ public class FilterChain {
 
 	//
 	private Filter initHeadFilters(Filter remainingFilters) {
-
+			
 		return remainingFilters;
 	}
 
 	//
 	protected Filter initTailFilters(Filter lastFilter) {
-
+		
 		return lastFilter;
 	}
 
 
-
+	
 	public Filter buildFilterChain(Filter<DataMessage> senderFilter) {
 
 		// init filters
 
-		Filter filters = this.initTailFilters(senderFilter);
+		Filter filters = initTailFilters(senderFilter);
 
-		filters = this.initFilterChain(filters);
+		filters = initFilterChain(filters);
 
-		filters = this.initHeadFilters(filters);
+		filters = initHeadFilters(filters);
 
       return filters;
 	}

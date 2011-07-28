@@ -21,15 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplejava;
 
+import muscle.core.ConduitEntrance;
+import muscle.core.Scale;
+import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-
-import muscle.core.ConduitEntrance;
-import muscle.core.Scale;
 
 
 /**
@@ -38,18 +37,12 @@ a simple java example kernel which sends data
 */
 public class Sender extends muscle.core.kernel.CAController {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	private ConduitEntrance<double[]> entrance;
-
+	
 	private int time;
 
 
 	//
-	@Override
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
@@ -58,28 +51,26 @@ public class Sender extends muscle.core.kernel.CAController {
 
 
 	//
-	@Override
 	protected void addPortals() {
-
-		this.entrance = this.addEntrance("data", 1, double[].class);
+	
+		entrance = addEntrance("data", 1, double[].class);
 	}
 
 
 	//
-	@Override
 	protected void execute() {
 
 		double[] dataA = new double[5];
-
-		for(this.time = 0; !this.willStop(); this.time ++) {
-
+		
+		for(time = 0; !willStop(); time ++) {
+								
 			// process data
 			for(int i = 0; i < dataA.length; i++) {
 				dataA[i] = i;
 			}
-
+						
 			// dump to our portals
-			this.entrance.send(dataA);
+			entrance.send(dataA);
 		}
 	}
 

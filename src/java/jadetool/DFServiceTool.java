@@ -21,15 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package jadetool;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -44,17 +44,17 @@ public class DFServiceTool {
 	registers a single agent service description at the default DF
 	*/
 	static public void register(Agent agent, String serviceType, String serviceName) throws FIPAException {
-
-		DFAgentDescription dfd = new DFAgentDescription();
+	
+		DFAgentDescription dfd = new DFAgentDescription();    
 		dfd.setName(agent.getAID());
-
+	
 		ServiceDescription sd = new ServiceDescription();
 		sd.setType(serviceType); // this is mandatory
 		sd.setName(serviceName); // this is mandatory
-
+	
 		dfd.addServices(sd);
 
-		DFService.register(agent, dfd);
+		DFService.register(agent, dfd);	
 	}
 
 
@@ -64,19 +64,16 @@ public class DFServiceTool {
 	*/
 	static public List<AID> agentForService(Agent agent, boolean block, String serviceType, String serviceName) throws FIPAException {
 
-		if(serviceType == null && serviceName == null) {
+		if(serviceType == null && serviceName == null)
 			throw new IllegalArgumentException("<String serviceType> and <String serviceName> can not both be null");
-		}
-
+		
 		long loopDelay = 500L;
 		DFAgentDescription dfd = new DFAgentDescription();
 		ServiceDescription sd = new ServiceDescription();
-		if(serviceType != null) {
+		if(serviceType != null)
 			sd.setType(serviceType);
-		}
-		if(serviceName != null) {
+		if(serviceName != null)
 			sd.setName(serviceName);
-		}
 		dfd.addServices(sd);
 
 		List<AID> serviceAgents = new ArrayList<AID>();
@@ -87,9 +84,9 @@ public class DFServiceTool {
 
 			DFAgentDescription[] results = DFService.search(agent, dfd);
 			if( (results != null) && (results.length > 0) ) {
-
+				
 				for(DFAgentDescription description : results) {
-					//dfd = result[0];
+					//dfd = result[0]; 
 					serviceAgents.add( description.getName() );
 				}
 
@@ -105,9 +102,9 @@ public class DFServiceTool {
 				Thread.sleep(loopDelay);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
-			}
+			}			
 		}
-
+		
 		return serviceAgents;
 	}
 
@@ -116,7 +113,7 @@ public class DFServiceTool {
 	true if this platform already has the specified singleton agent
 	*/
 	static public boolean hasSingletonAgent(Agent agent, final String id) {
-
+	
 		// search if this singleton id has already registered
 		List<AID> otherIDs = null;
 		try {
@@ -139,20 +136,20 @@ public class DFServiceTool {
 	this singleton registration does allow to register multiple agents with the same id if they are launched simultaneously from a single command
 	*/
 	static public void registerSingletonAgent(Agent agent, final String id) throws RegisterSingletonAgentException {
-
+	
 		// exit here if singleton already exists
-		if( DFServiceTool.hasSingletonAgent(agent, id) ) {
+		if( hasSingletonAgent(agent, id) ) {
 			throw new RegisterSingletonAgentException("agent with id <"+id+"> is already registered");
 		}
 
 		// register with df
-		DFAgentDescription dfd = new DFAgentDescription();
+		DFAgentDescription dfd = new DFAgentDescription();    
 		dfd.setName(agent.getAID());
 		ServiceDescription sd = new ServiceDescription();
 		sd.setType(id); // this is mandatory
 		sd.setName(id); // this is mandatory
 		dfd.addServices(sd);
-
+		
 		try {
 			DFService.register(agent, dfd);
 		} catch (FIPAException e) {
@@ -164,12 +161,8 @@ public class DFServiceTool {
 
 	//
 	public static class RegisterSingletonAgentException extends Exception {
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
 		public RegisterSingletonAgentException() {
-
+			
 		}
 		public RegisterSingletonAgentException(String message) {
 			super(message);
@@ -180,5 +173,5 @@ public class DFServiceTool {
 		public RegisterSingletonAgentException(String message, Throwable cause) {
 			super(message, cause);
 		}
-	}
+	}		
 }

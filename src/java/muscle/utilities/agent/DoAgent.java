@@ -22,23 +22,21 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.utilities.agent;
 
 
-import jade.core.AID;
 import jade.core.Agent;
+import jade.core.AID;
+import java.util.logging.Logger;
+import java.util.ArrayList;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.DataStore;
 import jade.core.behaviours.SequentialBehaviour;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentController;
+import muscle.logging.AgentLogger;
+import jade.lang.acl.MessageTemplate;
+import muscle.Constant;
 import jadetool.ContainerControllerTool;
 import jadetool.MessageTool;
-
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import muscle.Constant;
+import jade.lang.acl.ACLMessage;
+import jade.core.behaviours.DataStore;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.logging.AgentLogger;
 
 
 
@@ -48,10 +46,6 @@ helper agent to perform a task (usually a behaviour) and send back results to it
 */
 public class DoAgent extends Agent {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private static final int MANDATORY_ARG_COUNT = 1;
 	private AgentLogger logger;
 //	private DoAgentArgs args;
@@ -64,7 +58,7 @@ public class DoAgent extends Agent {
 
 		// do not create a simple logger with an agent class name because we might use the agent class name to create an AgentLogger
 		Logger simpleLogger = java.util.logging.Logger.getLogger(javatool.ClassTool.getName(doAgentClass)+".spawn");
-
+				
 		Object[] rawArgs = new Object[DoAgent.MANDATORY_ARG_COUNT+optionalArgs.length];
 		int i = 0;
 		rawArgs[i] = newOwnerAgent;
@@ -73,10 +67,10 @@ public class DoAgent extends Agent {
 			rawArgs[i] = o;
 			i++;
 		}
-
+			
 		String agentName = doAgentClass.getName()+"<"+newOwnerAgent.here().getName()+"><"+System.currentTimeMillis()+">";
 		simpleLogger.info("spawning agent: <"+agentName+">");
-
+			
 		AgentController controller = ContainerControllerTool.createUniqueNewAgent(newOwnerAgent.getContainerController(), agentName, javatool.ClassTool.getName(doAgentClass), rawArgs);
 
 		// get the AID of the agent
@@ -98,22 +92,21 @@ public class DoAgent extends Agent {
 												MessageTemplate.MatchProtocol(Constant.Protocol.DOAGENT_RESULTS)
 												, MessageTemplate.MatchSender(spawnedAID)
 												);
-
+		
 		return template;
 	}
-
-
+	
+	
 	//
-	@Override
 	final protected void setup() {
 
-		this.logger = AgentLogger.getLogger(this);
+		logger = AgentLogger.getLogger(this);
 
-		Object[] rawArgs = this.getArguments();
-
+		Object[] rawArgs = getArguments();
+		
 		if(rawArgs.length < DoAgent.MANDATORY_ARG_COUNT) {
-			this.logger.severe("got no args to configure from -> terminating");
-			this.doDelete();
+			logger.severe("got no args to configure from -> terminating");
+			doDelete();		
 			return;
 		}
 
@@ -122,40 +115,34 @@ public class DoAgent extends Agent {
 		Object[] optionalArgs = new Object[rawArgs.length - DoAgent.MANDATORY_ARG_COUNT];
 		System.arraycopy(rawArgs, 0, mandatoryArgs, 0, mandatoryArgs.length);
 		System.arraycopy(rawArgs, DoAgent.MANDATORY_ARG_COUNT, optionalArgs, 0, optionalArgs.length);
-
+		
 		// process optional args
-		this.optionalSetup(optionalArgs);
-
-
+		optionalSetup(optionalArgs);
+		
+		
 		if(! (mandatoryArgs[0] instanceof Agent)) {
-			this.logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(mandatoryArgs[0].getClass())+"> -> terminating");
-			this.doDelete();
-			return;
+			logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(mandatoryArgs[0].getClass())+"> -> terminating");
+			doDelete();
+			return;		
 		}
 
-		this.ownerAgent = (Agent)mandatoryArgs[0];
-
+		ownerAgent = (Agent)mandatoryArgs[0];
+		
 		SequentialBehaviour mainBehaviour = new SequentialBehaviour(this) {
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
 			public int onEnd() {
-
-				DoAgent.this.sendReply();
-				DoAgent.this.doDelete();
+			
+				sendReply();
+				doDelete();
 				return super.onEnd();
 			}
 		};
-		this.resultData = mainBehaviour.getDataStore();
-		this.addBehaviour(mainBehaviour);
-
-		ArrayList<Behaviour> subBehaviours = this.getSubBehaviours();
+		resultData = mainBehaviour.getDataStore();
+		addBehaviour(mainBehaviour);
+		
+		ArrayList<Behaviour> subBehaviours = getSubBehaviours();
 		for( Behaviour b : subBehaviours ) {
 			b.setAgent(this);
-			b.setDataStore(this.resultData);
+			b.setDataStore(resultData);
 			mainBehaviour.addSubBehaviour(b);
 		}
 
@@ -167,7 +154,7 @@ public class DoAgent extends Agent {
 	called before getSubBehaviours
 	*/
 	protected void optionalSetup(Object[] args) {
-
+			
 		// do nothing by default
 	}
 
@@ -177,27 +164,27 @@ public class DoAgent extends Agent {
 	called after optionalSetup
 	*/
 	protected ArrayList<Behaviour> getSubBehaviours() {
-
+			
 		// do nothing by default
 		return new ArrayList<Behaviour>();
 	}
-
-
+	
+	
 	//
 	private void sendReply() {
-
+	
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setProtocol(Constant.Protocol.DOAGENT_RESULTS);
-		msg.addReceiver(this.ownerAgent.getAID());
-
+		msg.addReceiver(ownerAgent.getAID());
+		
 		try {
-			msg.setContentObject(this.resultData);
+			msg.setContentObject(resultData);
 		}
 		catch(java.io.IOException e) {
 			e.printStackTrace();
 		}
-
-		this.send(msg);
+		
+		send(msg);
 	}
 
 }

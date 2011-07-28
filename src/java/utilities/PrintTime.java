@@ -28,7 +28,7 @@ prints milliseconds since January 1 1970 UTC (midnight)
 public class PrintTime {
 
     public static void main (String args[]) {
-
+        
         System.out.println(System.currentTimeMillis());
     }
 }

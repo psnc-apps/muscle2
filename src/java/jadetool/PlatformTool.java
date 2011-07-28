@@ -21,13 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package jadetool;
 
-import jade.core.Profile;
-import jade.core.ProfileImpl;
-import jade.core.Runtime;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+
+import muscle.utilities.NullOutputStream;
+import jade.core.IMTPException;
+import jade.core.Profile;
+import jade.core.ProfileImpl;
+import jade.core.Runtime;
+import jade.wrapper.AgentContainer;
 
 
 /**
@@ -53,7 +56,7 @@ public class PlatformTool {
 		// create a default Profile
 		Profile profile = new ProfileImpl(null, port/*use -1 for default port*/, null/*use default platform name*/);
 
-		rt.createMainContainer(profile);
+		AgentContainer mc = rt.createMainContainer(profile);
 	}
 
 
@@ -61,7 +64,7 @@ public class PlatformTool {
 	public static void main(String[] args) {
 
 		int port = 1099;
-
+		
 		// try to read cli args
 		if(args.length > 0) {
 			try {
@@ -70,8 +73,8 @@ public class PlatformTool {
 			catch(NumberFormatException e) {
 			}
 		}
-
-
+		
+		
 		PrintStream originalOut = System.out;
 		PrintStream originalErr = System.err;
 		// be silent
@@ -80,9 +83,9 @@ public class PlatformTool {
 		System.setOut(new PrintStream(outBuffer));
 		System.setErr(new PrintStream(errBuffer));
 
-		Thread.currentThread();
-		PlatformTool.launchMainContainer(false, port);
-
+		Thread mainThread = Thread.currentThread();
+		launchMainContainer(false, port);
+		
 		// reactivate default out/err streams
 		System.setOut(originalOut);
 		System.setErr(originalErr);
@@ -92,15 +95,14 @@ public class PlatformTool {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		
 		// see if an error occured
-		if( errBuffer.toString().indexOf("No ICP active") > -1 ) {
+		if( errBuffer.toString().indexOf("No ICP active") > -1 )
 			java.lang.Runtime.getRuntime().exit(1); // an error occured
-		}
-
+	
 		// kill the running Main-Container and this JVM
 		assert Thread.activeCount() > 1; // else the Main-Container is not running
 		java.lang.Runtime.getRuntime().exit(0);
 	}
-
+	
 }

@@ -22,7 +22,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.DataTemplate;
+import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
+import com.thoughtworks.xstream.XStream;
 
 
 /**
@@ -35,34 +38,34 @@ public class MultiplyFilterDouble implements muscle.core.conduit.filter.WrapperF
 	private DataTemplate inTemplate;
 	private WrapperFilter childFilter;
 
-
+	
 	//
 	public MultiplyFilterDouble(WrapperFilter newChildFilter, double newFactor) {
 
-		this.childFilter = newChildFilter;
-		this.inTemplate = this.childFilter.getInTemplate();
-		this.factor = newFactor;
+		childFilter = newChildFilter;
+		inTemplate = childFilter.getInTemplate();
+		factor = newFactor;
 	}
-
+	
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
-
-
-	//
+	
+	
+	//	
 	public void put(DataWrapper newInData) {
-
+		
 		double[] inData = (double[])newInData.getData();
 
-		for (int i = 0; i < inData.length; i++) {
-			inData[i] *= this.factor;
-		}
+		for (int i = 0; i < inData.length; i++) {			
+			inData[i] *= factor;
+		}		
 
-		this.childFilter.put(newInData);
+		childFilter.put(newInData);
 	}
-
+	
 }
 

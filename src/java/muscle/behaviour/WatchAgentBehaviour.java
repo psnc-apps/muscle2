@@ -21,9 +21,31 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Result;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
+import jade.content.onto.UngroundedException;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLCodec.CodecException;
+import jade.proto.AchieveREInitiator;
+
+import java.util.HashMap;
+import java.util.Iterator;
+
+import jade.core.behaviours.DataStore;
 import jade.core.behaviours.SimpleBehaviour;
 
 
@@ -35,90 +57,78 @@ watch an agent (when it activates/terminates)
 */
 public class WatchAgentBehaviour extends SimpleBehaviour {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private AID targetID;
 	private WhereIsAgentBehaviour containerRequester;
 	//enum AgentState {ACTIVE, DELETED};
 	private final static int ACTIVE = 1;
 	private final static int GONE = 2;
 	private int agentState = GONE;
-
+	
 
 	//
 	public WatchAgentBehaviour(Agent ownerAgent, AID newTargetID) {
-
+		
 		super(ownerAgent);
-		this.targetID = newTargetID;
+		targetID = newTargetID;
 	}
 
-	@Override
 	public void onStart() {
-
+		
 		// add a requester to look for our agent
-		this.containerRequester = new WhereIsAgentBehaviour(this.myAgent, this.targetID);
-		this.myAgent.addBehaviour(this.containerRequester);
+		containerRequester = new WhereIsAgentBehaviour(myAgent, targetID);
+		myAgent.addBehaviour(containerRequester);
 	}
 
-	@Override
 	public void action() {
-
-		assert this.containerRequester != null;
-		try {
-			Thread.sleep(1000); /* yields for a while - avoid acitve waiting */
-		} catch (InterruptedException ex) {
-			ex.printStackTrace();
-		}
-		if(this.containerRequester.done()) {
-			Location location = this.containerRequester.getLocation();
-			this.myAgent.removeBehaviour(this.containerRequester); // this is probably not necessary
-			this.containerRequester = null;
-
+		
+		assert containerRequester != null;
+		if(containerRequester.done()) {
+			Location location = containerRequester.getLocation();
+			myAgent.removeBehaviour(containerRequester); // this is probably not necessary
+			containerRequester = null;
+			
 			if(location != null) {
-				if( this.agentState == GONE ) {
-					this.agentState = ACTIVE;
-					this.agentCreated(location);
+				if( agentState == GONE ) {
+					agentState = ACTIVE;
+					agentCreated(location);
 				}
 			}
 			else {
-				if( this.agentState == ACTIVE ) {
-					this.agentState = GONE;
-					this.agentDeleted();
+				if( agentState == ACTIVE ) {
+					agentState = GONE;
+					agentDeleted();
 				}
 			}
-
+			
 			// add a new requester to look for our agent
-			this.containerRequester = new WhereIsAgentBehaviour(this.myAgent, this.targetID);
-			this.myAgent.addBehaviour(this.containerRequester);
+			containerRequester = new WhereIsAgentBehaviour(myAgent, targetID);
+			myAgent.addBehaviour(containerRequester);
 		}
 	}
 
-	@Override
 	public boolean done() {
 
 		return false;
 	}
 
 	public AID getTargetID() {
-
-		return this.targetID;
+	
+		return targetID;
 	}
-
+	
 	//
 	protected void agentCreated(Location location) {
-
-		System.out.println("agent:"+this.targetID.getName()+" created at:"+location.getName());
+	
+		System.out.println("agent:"+targetID.getName()+" created at:"+location.getName());
 	}
 
 	//
 	protected void agentDeleted() {
-
-		System.out.println("agent:"+this.targetID.getName()+" deleted");
+	
+		System.out.println("agent:"+targetID.getName()+" deleted");		
 	}
-
-
+	
+	
 
 }
 

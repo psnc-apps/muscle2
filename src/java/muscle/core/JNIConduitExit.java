@@ -23,9 +23,21 @@ package muscle.core;
 
 import java.io.IOException;
 
+import jade.core.AID;
+import jade.core.Agent;
+import java.util.concurrent.LinkedBlockingQueue;
+import utilities.MiscTool;
+
 import muscle.core.kernel.RawKernel;
-import utilities.Transmutable;
+
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
+import muscle.Constant;
+import muscle.exception.MUSCLERuntimeException;
+import muscle.core.wrapper.DataWrapper;
 import utilities.jni.JNIMethod;
+import utilities.Transmutable;
 
 
 /**
@@ -35,31 +47,28 @@ C for conduit type, R for raw jni type
 */
 public class JNIConduitExit<C,R> extends ConduitExit<C> {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private Class<R> jniClass;
 	private Transmutable<C,R> transmuter;
 
-
+	
 	//
 	public JNIConduitExit(Transmutable<C,R> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-		this.transmuter = newTransmuter;
-		this.jniClass = newJNIClass;
-	}
-
-
+		transmuter = newTransmuter;
+		jniClass = newJNIClass;
+	}	
+	
+	
 	//
 	public JNIMethod fromJavaJNIMethod() {
-		return new JNIMethod(this, "fromJava", new Class[0], null, Object.class, this.jniClass);
+		return new JNIMethod(this, "fromJava", new Class[0], null, Object.class, jniClass);
 	}
-
+	
+	
 	//
 	public R fromJava() {
-		C data = this.receive();
-		R rawData = this.transmuter.transmute(data);
+		C data = receive();
+		R rawData = transmuter.transmute(data);
 		return rawData;
-	}
+	}			
 }

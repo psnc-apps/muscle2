@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.jni;
 
+import utilities.MiscTool;
 import javatool.ClassTool;
 
 /**
@@ -35,66 +36,68 @@ public class JNITool {
 	e.g. "Ljava/lang/String;" for String.class or "D" for double.class
 	*/
 	public static String toFieldDescriptor(Class<?> javaClass) {
-
-		if(javaClass.equals(void.class)) {
+			
+		if(javaClass.equals(void.class))
 			return "";
-		} else if(javaClass.equals(Void.class)) {
+		else if(javaClass.equals(Void.class))
 			return "";
-		}
-
+		
 		if(javaClass.isPrimitive()) {
-			return JNITool.getPrimitiveFieldDescriptor(javaClass);
+			return getPrimitiveFieldDescriptor(javaClass);
 		}
 		else if(javaClass.isArray()) {
-			return JNITool.getArrayFieldDescriptor(javaClass);
+			return getArrayFieldDescriptor(javaClass);
 		}
 		else {
-			return JNITool.getReferenceFieldDescriptor(javaClass);
-		}
+			return getReferenceFieldDescriptor(javaClass);		
+		}		
 	}
-
-
+	
+	
 	/**
 	@see #toFieldDescriptor(Class)
 	*/
 	public static String toFieldDescriptor(String javaClassName) throws ClassNotFoundException  {
 		Class<?> cls = ClassTool.forName(javaClassName);
-		return JNITool.toFieldDescriptor(cls);
+		return toFieldDescriptor(cls);
 	}
-
-
+	
+	
 	/**
 	the corresponding cpp typename
 	*/
 	public static String toCppTypename(Class<?> javaClass) {
-
-		if(javaClass.equals(boolean.class)) {
+	
+		if(javaClass.equals(boolean.class))
 			return "jboolean";
-		} else if(javaClass.equals(byte.class)) {
+		else if(javaClass.equals(byte.class))
 			return "jbyte";
-		} else if(javaClass.equals(char.class)) {
+		else if(javaClass.equals(char.class))
 			return "jchar";
-		} else if(javaClass.equals(short.class)) {
+		else if(javaClass.equals(short.class))
 			return "jshort";
-		} else if(javaClass.equals(int.class)) {
+		else if(javaClass.equals(int.class))
 			return "jint";
-		} else if(javaClass.equals(long.class)) {
+		else if(javaClass.equals(long.class))
 			return "jlong"; // uppercase j
-		} else if(javaClass.equals(float.class)) {
+		else if(javaClass.equals(float.class))
 			return "jfloat";
-		} else if(javaClass.equals(double.class)) {
+		else if(javaClass.equals(double.class))
 			return "jdouble";
-		} else if(javaClass.equals(void.class)) {
+
+		else if(javaClass.equals(void.class))
 			return "void";
-		} else if(javaClass.equals(Class.class)) {
+
+		else if(javaClass.equals(Class.class))
 			return "jclass";
-		} else if(javaClass.equals(String.class)) {
+		else if(javaClass.equals(String.class))
 			return "jstring";
-		} else if(javaClass.equals(Throwable.class)) {
+		else if(javaClass.equals(Throwable.class))
 			return "jthrowable";
-		} else if(javaClass.isArray()) {
+			
+		else if(javaClass.isArray()) {
 			if( javaClass.getComponentType().isPrimitive() ) {
-				return JNITool.toCppTypename(javaClass.getComponentType())+"Array";
+				return toCppTypename(javaClass.getComponentType())+"Array";
 			}
 			else {
 				return "jobjectArray";
@@ -102,58 +105,57 @@ public class JNITool {
 		}
 
 		assert javaClass.isPrimitive() == false;
-		return "jobject";
+		return "jobject";			
 	}
-
-
+	
+	
 	//
 	private static String getPrimitiveFieldDescriptor(Class<?> javaClass) {
-
+	
 		assert javaClass.isPrimitive() == true;
-
-		if(javaClass.equals(boolean.class)) {
+		
+		if(javaClass.equals(boolean.class))
 			return "Z";
-		} else if(javaClass.equals(byte.class)) {
+		else if(javaClass.equals(byte.class))
 			return "B";
-		} else if(javaClass.equals(char.class)) {
+		else if(javaClass.equals(char.class))
 			return "C";
-		} else if(javaClass.equals(short.class)) {
+		else if(javaClass.equals(short.class))
 			return "S";
-		} else if(javaClass.equals(int.class)) {
+		else if(javaClass.equals(int.class))
 			return "I";
-		} else if(javaClass.equals(long.class)) {
+		else if(javaClass.equals(long.class))
 			return "J"; // uppercase j
-		} else if(javaClass.equals(float.class)) {
+		else if(javaClass.equals(float.class))
 			return "F";
-		} else if(javaClass.equals(double.class)) {
+		else if(javaClass.equals(double.class))
 			return "D";
-		}
-
-		throw new IllegalArgumentException("unable to determine JNI field descriptor for primitive type <"+javatool.ClassTool.getName(javaClass)+">");
+				
+		throw new IllegalArgumentException("unable to determine JNI field descriptor for primitive type <"+javatool.ClassTool.getName(javaClass)+">");		
 	}
 
 
 	// java class can be e.g. java.lang.String[] or [D or java.lang.Integer[][][]
 	private static String getArrayFieldDescriptor(Class<?> javaClass) {
-
+	
 		assert javaClass.isArray() == true;
-		javatool.ClassTool.getName(javaClass);
+		String fullName = javatool.ClassTool.getName(javaClass);
 
 		Class<?> elementClass = javaClass.getComponentType();
-
-		return "["+JNITool.toFieldDescriptor(elementClass);
+				
+		return "["+toFieldDescriptor(elementClass);
 	}
 
 
 	//
 	private static String getReferenceFieldDescriptor(Class<?> javaClass) {
-
+	
 		assert javaClass.isPrimitive() == false;
-
+		
 		String classDescriptor = javatool.ClassTool.getName(javaClass).replaceAll("\\.", "/");
 		String fieldDescriptor = "L"+classDescriptor+";";
-
-		return fieldDescriptor;
+		
+		return fieldDescriptor;		
 	}
 
 }

@@ -21,28 +21,32 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
-import jade.core.AID;
-import jade.core.Agent;
-
+import muscle.core.DefaultProperties;
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
+import jade.core.AID;
+import jade.core.Agent;
+import java.util.logging.Level;
 import muscle.exception.MUSCLERuntimeException;
 
-
+	
 /**
-a logger which prefixes every log message with the agent
+a logger which prefixes every log message with the agent 
 @author Jan Hegewald
 */
 public class AgentLogger extends java.util.logging.Logger {
 
 	private AID aid;
-
-
+	
+	
 	//
 	private AgentLogger(String name, String resourceBundleName, AID newAid) {
 		super(name, resourceBundleName);
-		this.aid = newAid;
+		aid = newAid;
 	}
 
 
@@ -54,10 +58,10 @@ public class AgentLogger extends java.util.logging.Logger {
 	to get a unique logger for this agent
 	*/
 	private static synchronized AgentLogger getLogger(String loggerName, AID aid) {
-
+		
 		// make logger name unique for this agent, so we can create individual loggers for multiple agents of the same class (e.g. conduit)
 		loggerName += "."+aid.getName();
-
+		
 		LogManager manager = LogManager.getLogManager();
 		AgentLogger result = null;
 		try {
@@ -66,13 +70,13 @@ public class AgentLogger extends java.util.logging.Logger {
 		catch(java.lang.ClassCastException e) {
 			throw new MUSCLERuntimeException("can not create AgentLogger -- a Logger already exists but instance is from other class: <"+manager.getLogger(loggerName).getClass().getName()+">");
 		}
-
+		
 		if(result == null) {
 			result = new AgentLogger(loggerName, null, aid);
 			manager.addLogger(result);
 			result = (AgentLogger)manager.getLogger(loggerName);
 		}
-
+		
 		return result;
 	}
 	public static synchronized AgentLogger getLogger(Agent agent) {
@@ -80,14 +84,13 @@ public class AgentLogger extends java.util.logging.Logger {
 	}
 
 	//
-	@Override
 	public void log(LogRecord record) {
-
+	
 		// if we do not call this here, the SourceMethodName will be set to this very method, i.e. log, which will be the method name appearing in the log message
 		record.getSourceMethodName();
-
-		record.setMessage("["+this.aid.getLocalName()+"] "+record.getMessage());
-
+		
+		record.setMessage("["+aid.getLocalName()+"] "+record.getMessage());
+		
 		super.log(record);
 	}
 }

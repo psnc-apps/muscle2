@@ -21,8 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
 import muscle.gui.ProgressMeter;
 
 
@@ -40,23 +40,23 @@ public class ProgressFilter implements muscle.core.conduit.filter.WrapperFilter<
 	//
 	public ProgressFilter(WrapperFilter newChildFilter) {
 
-		this.childFilter = newChildFilter;
-		this.inTemplate = this.childFilter.getInTemplate();
+		childFilter = newChildFilter;
+		inTemplate = childFilter.getInTemplate();
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
-
-	//
+	
+	//	
 	public void put(DataWrapper newInData) {
-
-		this.progress.increment();
-		this.childFilter.put(newInData);
+		
+		progress.increment();
+		childFilter.put(newInData);
 	}
 
 }

@@ -32,13 +32,15 @@ public class BasicSerializer<T extends java.io.Serializable> implements Serializ
 
 
    //
-   public byte[] dump(java.io.Serializable object) {
-
+   @Override
+	public byte[] dump(java.io.Serializable object) {
+		
 		return MiscTool.serialize(object);
 	}
-
+	
 
    //
+   @Override
 	public T load(byte[] bytes) {
 
       return MiscTool.<T>deserialize(bytes);

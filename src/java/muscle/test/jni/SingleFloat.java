@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.test.jni;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import utilities.MiscTool;
 import utilities.jni.JNIMethod;
 
@@ -34,25 +36,29 @@ class SingleFloat {
 
 	//
 	public SingleFloat() {
-		System.out.println(this.getClass().getName()+" begin test ...");
-		this.callNative(0, new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", float.class));
-		this.confirm();
-		System.out.println(this.getClass().getName()+" end test\n");
+		System.out.println(getClass().getName()+" begin test ...");
+		callNative(0, new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", float.class));
+		confirm();
+		System.out.println(getClass().getName()+" end test\n");
 	}
-
+	
 	private native void callNative(int mode, JNIMethod fromJava, JNIMethod toJava);
-
+	
 	//
 	private float fromJava() {
 		return 123.456f;
 	}
-
+	
+	//
+	private void toJava(float data) {
+		nativeData = data;
+	}
+	
 	private void confirm() {
-		float expectedData = this.fromJava();
+		float expectedData = fromJava();
 		expectedData *= 10.0f;
-
-		if( !MiscTool.equalObjectValues(expectedData, this.nativeData, 1e-15) ) {
+		
+		if( !MiscTool.equalObjectValues(expectedData, nativeData, 1e-15) )
 			throw new RuntimeException("test failed");
-		}
 	}
 }

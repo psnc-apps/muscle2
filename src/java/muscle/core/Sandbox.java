@@ -49,20 +49,20 @@
 //	private List<ConnectionInfo> connections = new LinkedList<ConnectionInfo>();
 //	private AID firstAnnouncer;
 //	private boolean connectionSchemeIsComplete = false;
-//
+//	
 //	private final static Class CONDUIT_CLASS = muscle.core.conduit.BasicConduit.class;
 //
 //
 //	//
 //	protected void setup() {
 //		logger = AgentLogger.getLogger(this);
-//		super.setup();
+//		super.setup();		
 //	}
-//
-//
+//	
+//	
 //	//
 //	private void setFirstAnnouncer(AID announcer) {
-//
+//		
 //		assert firstAnnouncer == null;
 //		firstAnnouncer = announcer;
 //
@@ -75,7 +75,7 @@
 //			}
 //		});
 //	}
-//
+//	
 //
 //	//
 //	public void addEntrance(String entranceID, DataTemplate dataTemplate, AID controllerID, EntranceDependency[] dependencies) {
@@ -83,7 +83,7 @@
 //		if(firstAnnouncer == null) {
 //			setFirstAnnouncer(controllerID);
 //		}
-//
+//		
 //		// we only listen to one kernel
 //		if( controllerID.equals(firstAnnouncer) ) {
 //			if(!connectionSchemeIsComplete)
@@ -100,11 +100,11 @@
 //		if(firstAnnouncer == null) {
 //			setFirstAnnouncer(controllerID);
 //		}
-//
+//		
 //		// we only listen to one kernel
 //		if( controllerID.equals(firstAnnouncer) ) {
 //			if(!connectionSchemeIsComplete)
-//				createMockEntrance(exitID, dataTemplate);
+//				createMockEntrance(exitID, dataTemplate);	
 //		}
 //
 //		super.addExit(exitID, dataTemplate, controllerID);
@@ -113,7 +113,7 @@
 //
 //	//
 //	private void createMockExit(String entranceID, DataTemplate dataTemplate) {
-//
+//		
 //		mockIDs.add( new AID("MOCK#"+mockIDs.size(), AID.ISLOCALNAME) );
 //		AID lastID = mockIDs.get(mockIDs.size()-1);
 //		ConduitExit exit = new ConduitExit(new MOCKPortalID(entranceID, lastID), null, 1, dataTemplate);
@@ -129,27 +129,27 @@
 //		mockIDs.add( new AID("MOCK#"+mockIDs.size(), AID.ISLOCALNAME) );
 //		AID lastID = mockIDs.get(mockIDs.size()-1);
 //		ConduitEntrance entrance = new ConduitEntrance(new MOCKPortalID(exitID, lastID), null, 1, dataTemplate);
-//		spawnMockKernel(lastID.getLocalName(), ArraysTool.asArray(entrance));
-//
+//		spawnMockKernel(lastID.getLocalName(), ArraysTool.asArray(entrance));	
+//		
 //		connections.add( new ConnectionInfo(entrance.getLocalName(), CONDUIT_CLASS.getName(), entrance.getLocalName()+"-->"+exitID, new String[0], exitID) );
 //	}
-//
-//
+//	
+//	
 //	/**
 //	generates the portal id which which will be used within a sandbox cxa
 //	*/
 //	public static class MOCKPortalID extends PortalID {
-//
+//	
 //		private String originalStrippedName;
-//
+//	
 //		public MOCKPortalID(String localName, AID aid) {
 //			super("MOCK("+localName+")", aid);
 //			String[] parts = localName.split("@");
 //			originalStrippedName = parts[0];
 //		}
-//
+//		
 //		public String getOriginalStrippedName() {
-//
+//		
 //			return originalStrippedName;
 //		}
 //	}
@@ -157,20 +157,20 @@
 //
 //	//
 //	private void spawnMockKernel(String agentName, Portal[] portals) {
-//
+//	
 //		Class kernelClass = muscle.core.kernel.SandboxCounterpart.class;
 //		AgentController agentController;
 //		try {
 //			logger.info("spawning mock kernel <"+agentName+">");
 //			agentController = getContainerController().createNewAgent(agentName, kernelClass.getName(), ArraysTool.asArray(new SandboxCounterpart.Arguments(portals)));
 //			agentController.start();
-//
+//			
 //		} catch (jade.wrapper.StaleProxyException e) {
 //			throw new MUSCLERuntimeException(e);
 //		}
 //	}
-//
-//
+//	
+//	
 //	//	this is called once from the super class
 //	public ConnectionScheme initConnectionScheme() {
 //
@@ -178,7 +178,7 @@
 //	}
 //	// init our fake connection scheme after all moc agents are created
 //	private void doInitConnectionScheme() {
-//
+//		
 //		for(Iterator<ConnectionInfo> iter = connections.iterator(); iter.hasNext();) {
 //			ConnectionInfo c = iter.next();
 //			addConnection(c.entranceID, c.conduitClassName, c.conduitID, c.conduitArgs, c.exitID);
@@ -193,9 +193,9 @@
 //		String conduitID;
 //		String[] conduitArgs;
 //		String exitID;
-//
+//		
 //		ConnectionInfo(String newEntranceID, String newConduitClassName, String newConduitID, String[] newConduitArgs, String newExitID) {
-//
+//		
 //			entranceID = newEntranceID;
 //			conduitClassName = newConduitClassName;
 //			conduitID = newConduitID;
@@ -210,11 +210,11 @@
 //		private Logger logger = muscle.logging.Logger.getLogger(SandboxConnectionScheme.class);
 //
 ////		static protected utilities.Env loadEnv() {
-////			return CxADescription.ONLY.subenv(ConnectionScheme.class);
+////			return CxADescription.ONLY.subenv(ConnectionScheme.class);		
 ////		}
 //		//
 //		public boolean isComplete() {
-//
+//		
 //			return connectionSchemeIsComplete;
 //		}
 //	}
@@ -229,7 +229,7 @@
 ////		logger = AgentLogger.getLogger(getClass().getName(), getAID());
 ////		super.setup();
 ////	}
-////
+////	
 //////	private void initConnectionScheme() {
 //////		// no preconfigured connection scheme possible
 //////		// we generate connections as soon as all entrances/exits of our kernel are announced
@@ -245,7 +245,7 @@
 ////				logger.severe("ignoring entrance <"+entranceID+"> -- it belongs to a blocked kernel");
 ////				return;
 ////			}
-////
+////			
 ////			EntranceDescription entrance = new EntranceDescription(entranceID);
 ////			entrance.setAvailable(dataTemplate, controllerID, dependencies);
 ////			postponedPortals.add(entrance);
@@ -254,10 +254,10 @@
 ////			// behave as the plumber would do
 ////			super.addEntrance(entranceID, dataTemplate, controllerID, dependencies);
 ////		}
-////
+////		
 ////	}
-////
-////
+////	
+////	
 ////	//
 ////	private void firstContact(AID controllerID) {
 ////		// first portal announcement at all
@@ -275,7 +275,7 @@
 ////
 ////	//
 ////	private void targetKernelIsReady() {
-////
+////		
 ////		// generate our fake entrances/exits
 ////		List<? extends Portal> fakePortals = new LinkedList<? extends Portal>();
 ////		for(Iterator<Object> iter = postponedPortals.iterator(); iter.hasNext();) {
@@ -284,10 +284,10 @@
 ////				fakeExits.add( generateCounterpart((EntranceDescription)e) );
 ////			}
 ////			else if(description instanceof ExitDescription) {
-////				fakeExits.add( generateCounterpart((ExitDescription)e) );
+////				fakeExits.add( generateCounterpart((ExitDescription)e) );			
 ////			}
 ////		}
-////
+////		
 ////		// spawn a fake kernel which can be connected to our target kernel
 ////
 ////	}
@@ -295,13 +295,13 @@
 ////
 ////	//
 ////	private ConduitExit generateCounterpart(EntranceDescription e) {
-////
+////		
 ////		ConduitExit counterpart = new ConduitExit(PortalID newPortalID, CAController newOwner, DataTemplate newDataTemplate);
 //////		counterpart.setAvailable(DataTemplate newDataTemplate, AID newControllerID);
 ////		return counterpart;
 ////	}
-////
-////
+////	
+////	
 ////	//
 ////	private boolean connectionSchemeInited() {
 ////		return getConnectionSchemeRoot().size() > 0;

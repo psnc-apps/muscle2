@@ -21,28 +21,21 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.utilities.agent;
 
-import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import muscle.behaviour.KillPlatformBehaviour;
+import jade.wrapper.AgentController;
 
 
 /**
-helper agent to immediately quit the agent platform
+helper agent to immediately quit the agent platform 
 @author Jan Hegewald
 */
 public class QuickQuitUtilityAgent extends jade.core.Agent {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
 	//
-	@Override
 	protected void setup() {
-
-		this.addBehaviour(new KillPlatformBehaviour(this));
+		
+		addBehaviour(new KillPlatformBehaviour(this));
 	}
 
 
@@ -50,8 +43,8 @@ public class QuickQuitUtilityAgent extends jade.core.Agent {
 	static public void launch(ContainerController jadeContainer) throws muscle.exception.SpawnAgentException {
 
 		Class cls = QuickQuitUtilityAgent.class;
-
-		Object[] args = new Object[0];
+		
+		Object[] args = new Object[0];		
 
 		String agentName = cls.getName();
 		AgentController controller = null;

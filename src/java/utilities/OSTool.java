@@ -41,5 +41,5 @@ public class OSTool {
 
 		return Pattern.compile(filenameRegex).matcher(rawName).replaceAll(replacement);
 	}
-
+	
 }

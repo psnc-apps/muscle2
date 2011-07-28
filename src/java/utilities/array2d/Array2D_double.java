@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array2d;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 
 
@@ -32,37 +33,41 @@ import java.lang.reflect.Constructor;
 public class Array2D_double {
 
 	private double[] data;
+	private int xSize;
+	private int ySize;
 	private IndexStrategy indexStrategy;
-
+	
 	//
 	public Array2D_double(int newXSize, int newYSize) {
-
+	
 		this(newXSize, newYSize, new double[newXSize*newYSize], IndexStrategy.FortranIndexStrategy.class);
 	}
 
 	//
 	public Array2D_double(int newXSize, int newYSize, double[] newData) {
-
+	
 		this(newXSize, newYSize, newData, IndexStrategy.FortranIndexStrategy.class);
 	}
 
 	//
 	public Array2D_double(int newXSize, int newYSize, Class<? extends IndexStrategy> strategyClass) {
-
+	
 		this(newXSize, newYSize, new double[newXSize*newYSize], strategyClass);
 	}
 
 
 	//
 	public Array2D_double(int newXSize, int newYSize, double[] newData, Class<? extends IndexStrategy> strategyClass) {
+	
+		xSize = newXSize;
+		ySize = newYSize;
 
-		this.data = newData;
-
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) ) {
+		data = newData;
+		
+		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
 			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));
-		}
-
-
+			
+		
 		Constructor<? extends IndexStrategy> strategyConstructor = null;
 		try {
 			strategyConstructor = strategyClass.getConstructor(int.class, int.class);
@@ -71,7 +76,7 @@ public class Array2D_double {
 			throw new RuntimeException(e);
 		}
 		try {
-			this.indexStrategy = strategyConstructor.newInstance(newXSize, newYSize);
+			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize);
 		}
 		catch(java.lang.InstantiationException e) {
 			throw new RuntimeException(e);
@@ -88,27 +93,27 @@ public class Array2D_double {
 	//
 	public double get(int x1, int x2) {
 
-		return this.data[this.indexStrategy.index(x1, x2)];
+		return data[indexStrategy.index(x1, x2)];
 	}
-
+	
 	//
 	public double[] getData() {
 
-		return this.data;
+		return data;
 	}
 
 
 	//
 	public void set(int x1, int x2, double value) {
 
-		this.data[this.indexStrategy.index(x1, x2)] = value;
+		data[indexStrategy.index(x1, x2)] = value;
 	}
 
-
+	
 	//
 	public int size() {
 
-		return this.data.length;
+		return data.length;
 	}
 }
 

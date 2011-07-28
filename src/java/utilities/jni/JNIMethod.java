@@ -37,7 +37,7 @@ public final class JNIMethod {
 	private Method method;
 	private String descriptor; // the descriptor can be a specialized version of the descriptor which fits to our method (e.g. use int[] as arg instead of Object)
 
-
+	
 	//
 	public JNIMethod(Object newDelegate, String methodName, Class<?>... parameterTypes) {
 		this(newDelegate, methodName, parameterTypes, null, null, null);
@@ -52,61 +52,51 @@ public final class JNIMethod {
 	*/
 	public JNIMethod(Object newDelegate, String methodName, Class<?>[] parameterTypes, Class<?>[] specializedParameterTypes, Class<?> returnType, Class<?> specializedReturnType) {
 
-		if(specializedParameterTypes == null) {
+		if(specializedParameterTypes == null)
 			specializedParameterTypes = parameterTypes;
-		}
-		if(specializedReturnType == null) {
+		if(specializedReturnType == null)
 			specializedReturnType = returnType;
-		}
-		if(parameterTypes.length != specializedParameterTypes.length) {
+		if(parameterTypes.length != specializedParameterTypes.length)
 			throw new IllegalArgumentException("must have the same number of parameter types <"+parameterTypes+"> vs <"+specializedParameterTypes+">");
-		}
 		// assure that our specializedParameterTypes are subclasses of the parameterTypes
 		for(int i = 0; i < parameterTypes.length; i++) {
-			if( !parameterTypes[i].isAssignableFrom(specializedParameterTypes[i]) ) {
+			if( !parameterTypes[i].isAssignableFrom(specializedParameterTypes[i]) )
 				throw new IllegalArgumentException("<"+parameterTypes[i]+"> is not assignable from <"+specializedParameterTypes[i]+">");
-			}
 		}
-		if( returnType != null && !returnType.isAssignableFrom(specializedReturnType) ) {
+		if( returnType != null && !returnType.isAssignableFrom(specializedReturnType) )
 			throw new IllegalArgumentException("<"+returnType+"> is not assignable from <"+specializedReturnType+">");
-		}
-
-		this.delegate = newDelegate;
+		
+		delegate = newDelegate;
 		try {
-			this.method = this.delegate.getClass().getMethod(methodName, parameterTypes);
+			method = delegate.getClass().getMethod(methodName, parameterTypes);
 		}
 		catch(java.lang.NoSuchMethodException e) {
 			throw new IllegalArgumentException(e);
 		}
-		if( returnType != null && !returnType.equals(this.method.getReturnType()) ) {
-			throw new IllegalArgumentException("return types do not match <"+returnType+"> vs <"+this.method.getReturnType()+">");
-		}
-
+		if( returnType != null && !returnType.equals(method.getReturnType()) )
+			throw new IllegalArgumentException("return types do not match <"+returnType+"> vs <"+method.getReturnType()+">");
+		
 		// generate jni method name and descriptor from the Java method
-		this.name = this.method.getName();
-
-		if(returnType == null) {
-			returnType = this.method.getReturnType();
-		}
-		if(specializedReturnType == null) {
-			specializedReturnType = this.method.getReturnType();
-		}
-
+		name = method.getName();
+		
+		if(returnType == null)
+			returnType = method.getReturnType();
+		if(specializedReturnType == null)
+			specializedReturnType = method.getReturnType();
+		
 		// descriptor encodes agrument(s) and return type of the method
 		// get method args (if any)
 		String jniArgs = "";
-		for(Class<?> t : specializedParameterTypes) {
+		for(Class<?> t : specializedParameterTypes)
 			jniArgs += JNITool.toFieldDescriptor(t);
-		}
-
+		
 		String jniReturn = JNITool.toFieldDescriptor(specializedReturnType);
-		if( jniReturn.length() == 0 ) {
+		if( jniReturn.length() == 0 )
 			jniReturn = "V"; // only the method return type is marked as void, never the argument
-		}
-		this.descriptor = "("+jniArgs+")"+jniReturn;
+		descriptor = "("+jniArgs+")"+jniReturn;
 	}
-
-
+	
+	
 	//
 //	public JNIMethod(Object newDelegate, String newName, String newDescriptor) {
 //
@@ -115,44 +105,43 @@ public final class JNIMethod {
 //		delegate = newDelegate;
 //	}
 
-
+	
 	//
 	public String getName() {
-		return this.name;
+		return name;
 	}
-
-
+	
+	
 	//
 	public String getDescriptor() {
-		return this.descriptor;
+		return descriptor;
 	}
-
-
+	
+	
 	//
 	public Object getDelegate() {
-
-		return this.delegate;
+	
+		return delegate;
 	}
-
-
+	
+	
 	//
 	public Method getMethod() {
-
-		return this.method;
+	
+		return method;
 	}
 
-
+	
 	//
-	@Override
 	public String toString() {
-		return this.delegate+"."+this.name+" "+this.descriptor;
+		return delegate+"."+name+" "+descriptor;
 	}
 
 	// for testing purposes
 //	public static void main (String args[]) {
-//
+//				
 //		String s = "Text";
-//
+//		
 //		JNIMethod m1 = null;
 //		try {
 //			m1 = new JNIMethod(s, Test.class.getMethod("arr"));

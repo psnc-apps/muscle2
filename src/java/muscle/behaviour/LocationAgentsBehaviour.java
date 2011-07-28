@@ -21,14 +21,36 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
+import java.util.logging.Logger;
+
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Result;
+import jade.core.AID;
+import jade.core.Agent;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.content.onto.Ontology;
 import jade.content.onto.OntologyException;
 import jade.content.onto.UngroundedException;
-import jade.content.onto.basic.Result;
-import jade.core.Agent;
-import jade.core.Location;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLCodec.CodecException;
 import jade.proto.AchieveREInitiator;
+
+import java.util.HashMap;
+import java.util.Iterator;
+
+import jade.core.behaviours.DataStore;
+import jade.core.behaviours.SimpleBehaviour;
 import jadetool.MessageTool;
+import java.util.List;
+import jade.core.Location;
 import muscle.exception.JADERuntimeException;
 
 
@@ -37,24 +59,19 @@ requests AIDs available in a given location
 @author Jan Hegewald
 */
 public abstract class LocationAgentsBehaviour extends AchieveREInitiator {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	private jade.util.leap.List aids; // the leap list is not a generic class )-;
-
+	
 	public LocationAgentsBehaviour(Agent ownerAgent, Location location) {
 
 		super(ownerAgent, MessageTool.createQueryAgentsOnLocationRequest(ownerAgent, location));
 	}
-
-	@Override
+		
 	protected final void handleInform(ACLMessage inform) {
 		Result result = null;
 		try {
 
-			result = (Result)this.myAgent.getContentManager().extractContent(inform);
+			result = (Result)myAgent.getContentManager().extractContent(inform);
 		} catch (UngroundedException e) {
 			throw new JADERuntimeException(e);
 		} catch (OntologyException e) {
@@ -63,13 +80,13 @@ public abstract class LocationAgentsBehaviour extends AchieveREInitiator {
 			throw new JADERuntimeException(e);
 		}
 
-		this.aids = result.getItems();
+		aids = result.getItems();
 
 		// we are done
-		this.myAgent.removeBehaviour(this);
+		myAgent.removeBehaviour(this);
 
-		this.callback(this.aids);
+		callback(aids);		
 	}
-
+	
 	public abstract void callback(jade.util.leap.List agentIDs);
 }

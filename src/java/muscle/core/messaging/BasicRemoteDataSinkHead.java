@@ -30,41 +30,38 @@ import jade.core.AID;
 abstract public class BasicRemoteDataSinkHead<E extends java.io.Serializable> extends BasicDataSink<E> implements RemoteDataSinkHead<E> {
 
 	private AID dstAgent;
-
-
+	
+	
 	//
 	public BasicRemoteDataSinkHead(String newID, AID newDstAgent) {
 		super(newID);
-
-		this.dstAgent = newDstAgent;
+		
+		dstAgent = newDstAgent;
 	}
-
+	
 
 
 	//
 	public AID dstAgent() {
-
-		return this.dstAgent;
+	
+		return dstAgent;
 	}
 
 
 	//
-	@Override
 	public E poll() {
-		throw new java.lang.UnsupportedOperationException("can not poll from "+this.getClass());
+		throw new java.lang.UnsupportedOperationException("can not poll from "+getClass());
 	}
 
 
 	//
-	@Override
 	public E take() {
-		throw new java.lang.UnsupportedOperationException("can not take from "+this.getClass());
+		throw new java.lang.UnsupportedOperationException("can not take from "+getClass());
 	}
 
 
    //
-   @Override
-abstract public void put(E d);
+   abstract public void put(E d);
 
 }
 

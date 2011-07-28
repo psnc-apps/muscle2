@@ -32,24 +32,19 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 	// note: JADE sends messages differently if they are passed to a remote container or locally within the same container
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
+	
 	private static String SINKID_KEY = DataMessage.class.toString()+"#sinkId";
-
+   
    private transient E storedItem;
 
 	private String sinkID;
 	private Long byteCount;
-
+	
 	//
 	public DataMessage(String sid) {
 		super(ACLMessage.INFORM);
-		this.sinkID = sid;
-      this.addUserDefinedParameter(SINKID_KEY, this.sinkID);
+		sinkID = sid;
+      addUserDefinedParameter(SINKID_KEY, sinkID);
 	}
 
 
@@ -57,12 +52,11 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
    public static DataMessage extractFromACLMessage(ACLMessage aclmsg) {
 
       String sid;
-      if((sid = aclmsg.getUserDefinedParameter(SINKID_KEY))==null) {
-		//throw new IllegalArgumentException("can not convert this ACLMessage to a DataMessage");
-		return null;
-	}
+      if((sid = aclmsg.getUserDefinedParameter(SINKID_KEY))==null)
+         //throw new IllegalArgumentException("can not convert this ACLMessage to a DataMessage");
+			return null;
 
-      // copy some relevant settings from the
+      // copy some relevant settings from the 
 		DataMessage dmsg = new DataMessage(sid);
 		dmsg.setSender(aclmsg.getSender());
       dmsg.setLanguage(aclmsg.getLanguage());
@@ -81,22 +75,22 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 	public Object clone() {
 		return super.clone();
 	}
-
-
+	
+	
 	//
 	public void store(E item, Long newByteCount) {
 
 		//assert !hasByteSequenceContent();
 		assert newByteCount == null || newByteCount > 0;
-		this.byteCount = newByteCount;
-		this.storedItem = item;
+		byteCount = newByteCount;
+		storedItem = item;
 	}
-
-
+	
+	
 	//
 	public Long getByteCount() {
-
-		return this.byteCount;
+	
+		return byteCount;
 	}
 
 
@@ -104,13 +98,13 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 	public E getStored() {
 
 		//assert !hasByteSequenceContent();
-		return this.storedItem;
+		return storedItem;
 	}
-
-
+	
+	
 	//
 	public String getSinkID() {
-		return this.sinkID;
-	}
+		return sinkID;
+	}	
 
 }

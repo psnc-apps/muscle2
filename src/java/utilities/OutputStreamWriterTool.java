@@ -22,8 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.OutputStream;
 
 /**
 provies utility methods regarding output streams
@@ -38,13 +38,12 @@ public class OutputStreamWriterTool {
 	public static OutputStreamWriter create(OutputStream out) {
 
 		if(out.equals(System.out) || out.equals(System.err)) {
-			return new OutputStreamWriter(out) {
-				@Override
+			return new OutputStreamWriter(out) {		
 				public void close() throws IOException {
 				}
 			};
 		}
-
+		
 		return new OutputStreamWriter(out);
 	}
 

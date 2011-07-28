@@ -21,12 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import jade.core.AID;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
 import muscle.exception.MUSCLERuntimeException;
+
+import jade.core.AID;
 
 
 /**
@@ -35,10 +35,6 @@ stores info necessary to setup a conduit
 */
 public class ConduitDescription implements Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private String className;
 	private String id;
 	String additionalArgs[];
@@ -46,75 +42,72 @@ public class ConduitDescription implements Serializable {
 	private ArrayList<ExitDescription> targetExits = new ArrayList<ExitDescription>();
 	private AID conduitAID;
 
-	@Override
 	public boolean equals(Object b) {
-
-		return b != null && this.getClass().isInstance(b)
-			&& this.id.equals(this.getClass().cast(b).getID())
-			&& this.className.equals(this.getClass().cast(b).getClassName());
+		
+		return b != null && getClass().isInstance(b)
+			&& id.equals(getClass().cast(b).getID())
+			&& className.equals(getClass().cast(b).getClassName());
 	}
 
 	//
 	public ConduitDescription(String newClassName, String newID, String newAdditionalArgs[], EntranceDescription newEntrance) {
-
-		this.className = newClassName;
-		this.id = newID;
-		this.additionalArgs = newAdditionalArgs;
-		this.entrance = newEntrance;
+	
+		className = newClassName;
+		id = newID;
+		additionalArgs = newAdditionalArgs;
+		entrance = newEntrance;
 	}
-
+	
 	public void addExitDescription(ExitDescription description) {
-
-		for(int i = 0; i < this.targetExits.size(); i++) {
-			if(this.targetExits.get(i).getID().equals(description.getID())) {
-				throw new MUSCLERuntimeException("Error: can not add exit <"+description.getID()+"> twice to conduit <"+this.getID()+">");
-			}
+	
+		for(int i = 0; i < targetExits.size(); i++) {
+			if(targetExits.get(i).getID().equals(description.getID()))
+				throw new MUSCLERuntimeException("Error: can not add exit <"+description.getID()+"> twice to conduit <"+getID()+">");
 		}
-if(this.targetExits.size() > 1) {
-java.util.logging.Logger l = muscle.logging.Logger.getLogger(this.getClass());
+if(targetExits.size() > 1) {
+java.util.logging.Logger l = muscle.logging.Logger.getLogger(getClass());
 l.warning("Warning: multifeed conduits are not supported yet -- multiple conduits will be spawned instead");
 }
-		this.targetExits.add(description);
+		targetExits.add(description);
 	}
-
+	
 	public String getClassName() {
-
-		return this.className;
+	
+		return className;
 	}
 
 	public String getID() {
-
-		return this.id;
+	
+		return id;
 	}
 
 	public String[] getArgs() {
-
-		return this.additionalArgs;
+	
+		return additionalArgs;
 	}
 
-	@Override
 	public String toString() {
-
-		return this.className+"("+this.id+")";
+	
+		return className+"("+id+")";
 	}
-
+	
 	public EntranceDescription getEntranceDescription() {
 
-		assert this.entrance.hasConduit(this);
-		return this.entrance;
+		assert entrance.hasConduit(this);
+		return entrance;
 	}
-
+	
 	public boolean hasExit(ExitDescription exit) {
-		return this.targetExits.contains(exit);
+		return targetExits.contains(exit);
 	}
-
+	
 	public void markAvailable(AID newConduitAID) {
-
-		this.conduitAID = newConduitAID;
+	
+		conduitAID = newConduitAID;
 	}
 
 	public boolean isAvailable() {
-
-		return this.conduitAID != null;
-	}
+	
+		return conduitAID != null;
+	}		
 }

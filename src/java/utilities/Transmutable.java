@@ -27,8 +27,8 @@ generic method to transform an object into another one
 @author Jan Hegewald
 */
 public interface Transmutable<I,O> {
-
+	
 	O transmute(I in);
-
+		
 }
 

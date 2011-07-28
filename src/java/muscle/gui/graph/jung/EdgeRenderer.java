@@ -27,6 +27,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
@@ -54,7 +55,7 @@ import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
 
 /**
 draw custom lines from vertex to vertex. the default ones look too ugly
-@author Christian Schï¿½ps
+@author Christian Schöps
 @author Jan Hegewald
 */
 class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
@@ -62,31 +63,27 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
     public void paintEdge(RenderContext<V,E> rc, Layout<V, E> layout, E e) {
         GraphicsDecorator g2d = rc.getGraphicsContext();
         Graph<V,E> graph = layout.getGraph();
-        if (!rc.getEdgeIncludePredicate().evaluate(Context.<Graph<V,E>,E>getInstance(graph,e))) {
-			return;
-		}
-
+        if (!rc.getEdgeIncludePredicate().evaluate(Context.<Graph<V,E>,E>getInstance(graph,e)))
+            return;
+        
         // don't draw edge if either incident vertex is not drawn
         Pair<V> endpoints = graph.getEndpoints(e);
         V v1 = endpoints.getFirst();
         V v2 = endpoints.getSecond();
-        if (!rc.getVertexIncludePredicate().evaluate(Context.<Graph<V,E>,V>getInstance(graph,v1)) ||
-            !rc.getVertexIncludePredicate().evaluate(Context.<Graph<V,E>,V>getInstance(graph,v2))) {
-			return;
-		}
-
+        if (!rc.getVertexIncludePredicate().evaluate(Context.<Graph<V,E>,V>getInstance(graph,v1)) || 
+            !rc.getVertexIncludePredicate().evaluate(Context.<Graph<V,E>,V>getInstance(graph,v2)))
+            return;
+        
         Stroke new_stroke = rc.getEdgeStrokeTransformer().transform(e);
         Stroke old_stroke = g2d.getStroke();
-        if (new_stroke != null) {
-			g2d.setStroke(new_stroke);
-		}
-
-        this.drawSimpleEdge(rc, layout, e);
+        if (new_stroke != null)
+            g2d.setStroke(new_stroke);
+        
+        drawSimpleEdge(rc, layout, e);
 
         // restore paint and stroke
-        if (new_stroke != null) {
-			g2d.setStroke(old_stroke);
-		}
+        if (new_stroke != null)
+            g2d.setStroke(old_stroke);
 
     }
 
@@ -98,21 +95,21 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
      * <code>(x1,y1)</code> and <code>(x2,y2)</code>.
      */
     protected void drawSimpleEdge(RenderContext<V,E> rc, Layout<V,E> layout, E e) {
-
+        
         GraphicsDecorator g = rc.getGraphicsContext();
         Graph<V,E> graph = layout.getGraph();
         Pair<V> endpoints = graph.getEndpoints(e);
         V v1 = endpoints.getFirst();
         V v2 = endpoints.getSecond();
-
+        
         Point2D p1 = layout.transform(v1);
         Point2D p2 = layout.transform(v2);
         p1 = rc.getMultiLayerTransformer().transform(Layer.LAYOUT, p1);
         p2 = rc.getMultiLayerTransformer().transform(Layer.LAYOUT, p2);
-
+        
         Shape s1 = rc.getVertexShapeTransformer().transform(v1);
         Shape s2 = rc.getVertexShapeTransformer().transform(v2);
-
+        
         float x1;
     	float y1;
     	float x2;
@@ -128,10 +125,10 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
         	x2 = (float) p2.getX();
         	y2 = (float) p2.getY();
         }
-
+        
         boolean isLoop = v1.equals(v2);
         Shape edgeShape = rc.getEdgeShapeTransformer().transform(Context.<Graph<V,E>,E>getInstance(graph, e));
-
+        
         boolean edgeHit = true;
         boolean arrowHit = true;
         Rectangle deviceRectangle = null;
@@ -142,7 +139,7 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
         }
 
         AffineTransform xform = AffineTransform.getTranslateInstance(x1, y1);
-
+        
         if(isLoop) {
             // this is a self-loop. scale it is larger than the vertex
             // it decorates and translate it so that its nadir is
@@ -155,8 +152,7 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
             float dy = y2-y1;
             int index = 0;
             if(rc.getEdgeShapeTransformer() instanceof IndexedRendering) {
-            	@SuppressWarnings("unchecked")
-				EdgeIndexFunction<V,E> peif =
+            	EdgeIndexFunction<V,E> peif = 
             		((IndexedRendering<V,E>)rc.getEdgeShapeTransformer()).getEdgeIndexFunction();
             	index = peif.getIndex(graph, e);
             	index *= 20;
@@ -182,19 +178,19 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
             		gp.lineTo(dx+index, index);
             		gp.lineTo(dx+index, dy);
             		gp.lineTo(dx, dy);
-
+            		
             	} else {
             		gp.lineTo(0, -index);
             		gp.lineTo(dx+index, -index);
             		gp.lineTo(dx+index, dy);
             		gp.lineTo(dx, dy);
-
+            		
             	}
-
+            	
             }
 
             edgeShape = gp;
-
+        	
         } else {
             // this is a normal edge. Rotate it to the angle between
             // vertex endpoints, then scale it to the distance between
@@ -206,9 +202,9 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
             float dist = (float) Math.sqrt(dx*dx + dy*dy);
             xform.scale(dist, 1.0);
         }
-
+        
         edgeShape = xform.createTransformedShape(edgeShape);
-
+        
         MutableTransformer vt = rc.getMultiLayerTransformer().getTransformer(Layer.VIEW);
         if(vt instanceof LensTransformer) {
         	vt = ((LensTransformer)vt).getDelegate();
@@ -216,12 +212,12 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
         edgeHit = vt.transform(edgeShape).intersects(deviceRectangle);
 
         if(edgeHit == true) {
-
+            
             Paint oldPaint = g.getPaint();
-
+            
             // get Paints for filling and drawing
             // (filling is done first so that drawing and label use same Paint)
-            Paint fill_paint = rc.getEdgeFillPaintTransformer().transform(e);
+            Paint fill_paint = rc.getEdgeFillPaintTransformer().transform(e); 
             if (fill_paint != null)
             {
                 g.setPaint(fill_paint);
@@ -233,40 +229,35 @@ class EdgeRenderer<V,E> implements Renderer.Edge<V,E> {
                 g.setPaint(draw_paint);
                 g.draw(edgeShape);
             }
-
+            
             float scalex = (float)g.getTransform().getScaleX();
             float scaley = (float)g.getTransform().getScaleY();
             // see if arrows are too small to bother drawing
-            if(scalex < .3 || scaley < .3) {
-				return;
-			}
+            if(scalex < .3 || scaley < .3) return;
 
-
+            
             // AB HIER PFEIL
             if (rc.getEdgeArrowPredicate().evaluate(Context.<Graph<V,E>,E>getInstance(graph, e))) {
-
+            	
                 Stroke new_stroke = rc.getEdgeArrowStrokeTransformer().transform(e);
                 Stroke old_stroke = g.getStroke();
-                if (new_stroke != null) {
-					g.setStroke(new_stroke);
-				}
+                if (new_stroke != null)
+                    g.setStroke(new_stroke);
 
-
-                Shape destVertexShape =
+                
+                Shape destVertexShape = 
                     rc.getVertexShapeTransformer().transform(graph.getEndpoints(e).getSecond());
 
                 AffineTransform xf = AffineTransform.getTranslateInstance(x2, y2);
                 destVertexShape = xf.createTransformedShape(destVertexShape);
-
+                
                 arrowHit = rc.getMultiLayerTransformer().getTransformer(Layer.VIEW).transform(destVertexShape).intersects(deviceRectangle);
                 if(arrowHit) {
                     GeneralPath path = new GeneralPath(edgeShape);
 						  // Hier wird eine Transformation vorgenommen um die Position des Pfeils festzulegen!
-                    AffineTransform at = this.getArrowTransform(rc, path, destVertexShape);
-at = this.getCustomArrowTrafo(rc, path);
-                    if(at == null) {
-						return;
-					}
+                    AffineTransform at = getArrowTransform(rc, path, destVertexShape);
+at = getCustomArrowTrafo(rc, path);
+                    if(at == null) return;
                     Shape arrow = rc.getEdgeArrowTransformer().transform(Context.<Graph<V,E>,E>getInstance(graph, e));
                     arrow = at.createTransformedShape(arrow);
                     g.setPaint(rc.getArrowFillPaintTransformer().transform(e));
@@ -275,18 +266,16 @@ at = this.getCustomArrowTrafo(rc, path);
                     g.draw(arrow);
                 }
                 if (graph.getEdgeType(e) == EdgeType.UNDIRECTED) {
-                    Shape vertexShape =
+                    Shape vertexShape = 
                         rc.getVertexShapeTransformer().transform(graph.getEndpoints(e).getFirst());
                     xf = AffineTransform.getTranslateInstance(x1, y1);
                     vertexShape = xf.createTransformedShape(vertexShape);
-
+                    
                     arrowHit = rc.getMultiLayerTransformer().getTransformer(Layer.VIEW).transform(vertexShape).intersects(deviceRectangle);
-
+                    
                     if(arrowHit) {
-                        AffineTransform at = this.getReverseArrowTransform(rc, new GeneralPath(edgeShape), vertexShape, !isLoop);
-                        if(at == null) {
-							return;
-						}
+                        AffineTransform at = getReverseArrowTransform(rc, new GeneralPath(edgeShape), vertexShape, !isLoop);
+                        if(at == null) return;
                         Shape arrow = rc.getEdgeArrowTransformer().transform(Context.<Graph<V,E>,E>getInstance(graph, e));
                         arrow = at.createTransformedShape(arrow);
                         g.setPaint(rc.getArrowFillPaintTransformer().transform(e));
@@ -296,18 +285,17 @@ at = this.getCustomArrowTrafo(rc, path);
                     }
                 }
                 // restore paint and stroke
-                if (new_stroke != null) {
-					g.setStroke(old_stroke);
-				}
+                if (new_stroke != null)
+                    g.setStroke(old_stroke);
 
             }
-
+            
             // restore old paint
             g.setPaint(oldPaint);
         }
     }
-
-
+	
+	
 	public AffineTransform getCustomArrowTrafo(RenderContext<V,E> rc, GeneralPath edgeShape) {
 
 		int pathElements = 0;
@@ -320,7 +308,7 @@ at = this.getCustomArrowTrafo(rc, path);
         Point2D p2=null;
        int pi = 0;
 		  for(PathIterator i=edgeShape.getPathIterator(null,1); !i.isDone(); i.next(), pi++) {
-
+		  
             int ret = i.currentSegment(seg);
             if(ret == PathIterator.SEG_MOVETO) {
                 p2 = new Point2D.Float(seg[0],seg[1]);
@@ -336,7 +324,7 @@ at = this.getCustomArrowTrafo(rc, path);
 						}
                 }
             }
-
+				
 				assert false;
 				return null;
 		}
@@ -361,8 +349,8 @@ at = this.getCustomArrowTrafo(rc, path);
                 p1 = p2;
                 p2 = new Point2D.Float(seg[0],seg[1]);
                 if(vertexShape.contains(p2)) {
-                	// Hier ein mittleres Segment ï¿½bergeben!
-                    at = this.getArrowTransform(rc, new Line2D.Float(p1,p2),vertexShape);
+                	// Hier ein mittleres Segment übergeben!
+                    at = getArrowTransform(rc, new Line2D.Float(p1,p2),vertexShape);
                     break;
                 }
             }
@@ -375,16 +363,16 @@ at = this.getCustomArrowTrafo(rc, path);
      * point where it intersects the passed vertex shape.
      */
     public AffineTransform getReverseArrowTransform(RenderContext<V,E> rc, GeneralPath edgeShape, Shape vertexShape) {
-        return this.getReverseArrowTransform(rc, edgeShape, vertexShape, true);
+        return getReverseArrowTransform(rc, edgeShape, vertexShape, true);
     }
-
+            
     /**
      * <p>Returns a transform to position the arrowhead on this edge shape at the
      * point where it intersects the passed vertex shape.</p>
-     *
+     * 
      * <p>The Loop edge is a special case because its staring point is not inside
      * the vertex. The passedGo flag handles this case.</p>
-     *
+     * 
      * @param edgeShape
      * @param vertexShape
      * @param passedGo - used only for Loop edges
@@ -407,10 +395,10 @@ at = this.getCustomArrowTrafo(rc, path);
                     passedGo = true;
                  } else if(passedGo==true &&
                         vertexShape.contains(p2)==false) {
-                     at = this.getReverseArrowTransform(rc, new Line2D.Float(p1,p2),vertexShape);
+                     at = getReverseArrowTransform(rc, new Line2D.Float(p1,p2),vertexShape);
                     break;
                 }
-            }
+            } 
         }
         return at;
     }
@@ -431,7 +419,7 @@ at = this.getCustomArrowTrafo(rc, path);
         // arrowhead closer than 'arrowGap' to the vertex shape boundary
         while((dx*dx+dy*dy) > rc.getArrowPlacementTolerance()) {
             try {
-                edgeShape = this.getLastOutsideSegment(edgeShape, vertexShape);
+                edgeShape = getLastOutsideSegment(edgeShape, vertexShape);
             } catch(IllegalArgumentException e) {
                 System.err.println(e.toString());
                 return null;
@@ -440,7 +428,7 @@ at = this.getCustomArrowTrafo(rc, path);
             dy = (float) (edgeShape.getY1()-edgeShape.getY2());
         }
         double atheta = Math.atan2(dx,dy)+Math.PI/2;
-        AffineTransform at =
+        AffineTransform at = 
             AffineTransform.getTranslateInstance(edgeShape.getX1(), edgeShape.getY1());
         at.rotate(-atheta);
         return at;
@@ -461,7 +449,7 @@ at = this.getCustomArrowTrafo(rc, path);
         // arrowhead closer than 'arrowGap' to the vertex shape boundary
         while((dx*dx+dy*dy) > rc.getArrowPlacementTolerance()) {
             try {
-                edgeShape = this.getFirstOutsideSegment(edgeShape, vertexShape);
+                edgeShape = getFirstOutsideSegment(edgeShape, vertexShape);
             } catch(IllegalArgumentException e) {
                 System.err.println(e.toString());
                 return null;
@@ -475,7 +463,7 @@ at = this.getCustomArrowTrafo(rc, path);
         at.rotate(-atheta);
         return at;
     }
-
+    
     /**
      * Passed Line's point2 must be inside the passed shape or
      * an IllegalArgumentException is thrown
@@ -496,14 +484,14 @@ at = this.getCustomArrowTrafo(rc, path);
         // subdivide the line until its left segment intersects
         // the shape boundary
         do {
-            this.subdivide(line, left, right);
+            subdivide(line, left, right);
             line = right;
         } while(shape.contains(line.getP1())==false);
         // now that right is completely inside shape,
         // return left, which must be partially outside
         return left;
     }
-
+   
     /**
      * Passed Line's point1 must be inside the passed shape or
      * an IllegalArgumentException is thrown
@@ -513,9 +501,9 @@ at = this.getCustomArrowTrafo(rc, path);
      * @throws IllegalArgumentException if the passed line's point1 is not inside the shape
      */
     protected Line2D getFirstOutsideSegment(Line2D line, Shape shape) {
-
+        
         if(shape.contains(line.getP1())==false) {
-            String errorString =
+            String errorString = 
                 "line start point: "+line.getP1()+" is not contained in shape: "+shape.getBounds2D();
             throw new IllegalArgumentException(errorString);
         }
@@ -524,7 +512,7 @@ at = this.getCustomArrowTrafo(rc, path);
         // subdivide the line until its right side intersects the
         // shape boundary
         do {
-            this.subdivide(line, left, right);
+            subdivide(line, left, right);
             line = left;
         } while(shape.contains(line.getP2())==false);
         // now that left is completely inside shape,
@@ -546,7 +534,7 @@ at = this.getCustomArrowTrafo(rc, path);
         double y1 = src.getY1();
         double x2 = src.getX2();
         double y2 = src.getY2();
-
+        
         double mx = x1 + (x2-x1)/2.0;
         double my = y1 + (y2-y1)/2.0;
         if (left != null) {
@@ -557,16 +545,6 @@ at = this.getCustomArrowTrafo(rc, path);
         }
     }
 
-    @Override
-	public EdgeArrowRenderingSupport<?,?> getEdgeArrowRenderingSupport() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-    @SuppressWarnings("rawtypes")
-	@Override
-	public void setEdgeArrowRenderingSupport(EdgeArrowRenderingSupport arg0) {
-		// TODO Auto-generated method stub
-
-	}
+    public void setEdgeArrowRenderingSupport(EdgeArrowRenderingSupport ears) {}
+    public EdgeArrowRenderingSupport getEdgeArrowRenderingSupport() { return null; }
 }

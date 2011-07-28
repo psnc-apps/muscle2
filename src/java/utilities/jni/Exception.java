@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.jni;
 
+import java.lang.Throwable;
+//java.lang.StackTraceElement
 
 /**
 provides solutions for common JNI exception stuff
@@ -29,9 +31,9 @@ provides solutions for common JNI exception stuff
 public class Exception {
 
 	public static String stringFromThrowable(Throwable exception) {
-
+	
 		StringBuilder joined = null;
-
+		
 		StackTraceElement traces[] = exception.getStackTrace();
 		for( StackTraceElement t : traces ) {
 			if( joined == null ) {
@@ -42,7 +44,7 @@ public class Exception {
 				joined.append(t.toString());
 			}
 		}
-
+		
 		return joined == null ? "" : joined.toString();
 	}
 

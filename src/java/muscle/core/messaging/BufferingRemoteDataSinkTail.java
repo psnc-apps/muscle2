@@ -22,7 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.messaging;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import muscle.core.messaging.jade.DataMessage;
 
 
@@ -30,7 +29,7 @@ import muscle.core.messaging.jade.DataMessage;
 @author Jan Hegewald
 */
 public class BufferingRemoteDataSinkTail<E extends java.io.Serializable> extends muscle.core.messaging.BasicDataSink<E> implements muscle.core.messaging.RemoteDataSinkTail<E> {
-
+	
 
 	// we may add the messages to this queue from different threads, so this queue must be thread safe (or we must handle the synchronization ourself)
 	private ConcurrentLinkedQueue<E> messageQueue = new ConcurrentLinkedQueue<E>();
@@ -41,21 +40,21 @@ public class BufferingRemoteDataSinkTail<E extends java.io.Serializable> extends
 	public BufferingRemoteDataSinkTail(String newID) {
 		super(newID);
 	}
-
-
+	
+	
 	//
    @Override
 	public void put(E item) {
 
-		this.messageQueue.add(item);
+		messageQueue.add(item);
 	}
-
+	
 
 	// returns first element or null
    @Override
 	public E poll() {
-
-		return this.messageQueue.poll();
+		
+		return messageQueue.poll();
 	}
 
 
@@ -64,12 +63,13 @@ public class BufferingRemoteDataSinkTail<E extends java.io.Serializable> extends
    public E take() {
 
       E val = super.take();
-      this.sinkObserver.notifySinkWillYield((DataMessage<?>)val);
+      sinkObserver.notifySinkWillYield((DataMessage<?>)val);
       return val;
    }
 
+   @Override
    public void addObserver(SinkObserver<DataMessage<?>> o) {
-      this.sinkObserver = o;
+      sinkObserver = o;
    }
 
 }

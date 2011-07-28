@@ -29,7 +29,7 @@ public interface BoundaryCondition {
 
    public boolean applies(int x, int y);
    public double get(int x, int y, int step);
-
+	
    /**
 	boundary condition which applies to the main area of the grid<br>
 	calculates new value bases on the four neighbour values
@@ -40,33 +40,32 @@ public interface BoundaryCondition {
 		int ny;
 		BoundaryCondition[] otherConditions;
 		double[][] data;
-
+		
 		public AreaCondition(int newNx, int newNy, double[][] newData, BoundaryCondition ... newOtherConditions) {
-
-			this.nx = newNx;
-			this.ny = newNy;
-			this.otherConditions = newOtherConditions;
-			this.data = newData;
+		
+			nx = newNx;
+			ny = newNy;
+			otherConditions = newOtherConditions;
+			data = newData;
 		}
 
       public boolean applies(int x, int y) {
-
-			for (BoundaryCondition otherCondition : this.otherConditions) {
-				if(otherCondition.applies(x, y)) {
+		
+			for(int i = 0; i < otherConditions.length; i++) {
+				if(otherConditions[i].applies(x, y))
 					return false;
-				}
 			}
-
+			
 			return true;
 		}
 
       // calc new value based on the neighbours
       public double get(int x, int y, int step) {
 
-         double n = this.data[x][y+1];
-         double e = this.data[x+1][y];
-         double s = this.data[x][y-1];
-         double w = this.data[x-1][y];
+         double n = data[x][y+1];
+         double e = data[x+1][y];
+         double s = data[x][y-1];
+         double w = data[x-1][y];
 
          return (n+e+s+w)/4.0;
       }
@@ -78,90 +77,90 @@ public interface BoundaryCondition {
 
 		int nx;
 		int ny;
-
+		
 		public NorthBoundary(int newNx, int newNy, double[][] newData) {
-
-			this.nx = newNx;
-			this.ny = newNy;
+		
+			nx = newNx;
+			ny = newNy;
 		}
-
+		
       public boolean applies(int x, int y) {
-
-			return y == this.ny-1;
+		
+			return y == ny-1;
 		}
-
+		
       public double get(int x, int y, int step) {
 
-         return Math.sin(x * 2 * Math.PI / this.nx);
+         return Math.sin(x * 2 * Math.PI / nx);
       }
    }
-
+	
 
 	//
    public static class EastBoundary implements BoundaryCondition {
 
 		int nx;
 		int ny;
-
+		
 		public EastBoundary(int newNx, int newNy, double[][] newData) {
-
-			this.nx = newNx;
-			this.ny = newNy;
+		
+			nx = newNx;
+			ny = newNy;
 		}
 
       public boolean applies(int x, int y) {
-
-			return x == this.nx-1;
+		
+			return x == nx-1;
 		}
-
+		
       public double get(int x, int y, int step) {
-
+		
 			return 0D;
 		}
    }
-
-
+	
+	
 	//
    public static class SouthBoundary implements BoundaryCondition {
 
 		int nx;
 		int ny;
-
+		
 		public SouthBoundary(int newNx, int newNy, double[][] newData) {
-
-			this.nx = newNx;
-			this.ny = newNy;
+		
+			nx = newNx;
+			ny = newNy;
 		}
 
       public boolean applies(int x, int y) {
 
 			return y == 0;
 		}
-
+		
       public double get(int x, int y, int step) {
 
-         return Math.cos(x * 2 * Math.PI / this.nx + Math.PI);
+         return Math.cos(x * 2 * Math.PI / nx + Math.PI);
       }
    }
-
-
+	
+	
 	//
    public static class WestBoundary implements BoundaryCondition {
 
 		int nx;
 		int ny;
-
+		
 		public WestBoundary(int newNx, int newNy, double[][] newData) {
-
-			this.nx = newNx;
-			this.ny = newNy;
+		
+			nx = newNx;
+			ny = newNy;
 		}
 
       public boolean applies(int x, int y) {
-
+		
 			return x == 0;
 		}
-
+		
       public double get(int x, int y, int step) {
 
          return 0D;
@@ -176,18 +175,18 @@ public interface BoundaryCondition {
 
 		int nx;
 		int ny;
-
+		
 		public DefaultCondition(int newNx, int newNy, double[][] newData) {
-
-			this.nx = newNx;
-			this.ny = newNy;
+		
+			nx = newNx;
+			ny = newNy;
 		}
 
       public boolean applies(int x, int y) {
-
+		
 			return true;
 		}
-
+		
       public double get(int x, int y, int step) {
 
          return 0D;

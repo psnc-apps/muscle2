@@ -21,8 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
 
 
 /**
@@ -34,28 +34,28 @@ public class ConsoleWriterFilter implements muscle.core.conduit.filter.WrapperFi
 	private DataTemplate inTemplate;
 	private WrapperFilter childFilter;
 
-
+	
 	//
 	public ConsoleWriterFilter(WrapperFilter newChildFilter) {
 
-		this.childFilter = newChildFilter;
-		this.inTemplate = this.childFilter.getInTemplate();
+		childFilter = newChildFilter;
+		inTemplate = childFilter.getInTemplate();
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper newInData) {
-
+		
 		System.out.println(newInData.toString());
-
-		this.childFilter.put(newInData);
+		
+		childFilter.put(newInData);
 	}
 
 }

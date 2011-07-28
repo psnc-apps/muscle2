@@ -34,8 +34,8 @@ public interface WrapperFilter<E extends DataWrapper> extends Filter<E> {
 	usually modify data here and pass to next filter/device)
 	note: usually the filters shoult try to modify the data in place, so do not cache the pointer to the data passed to the next filter, as its contents might be changed
 	*/
-	//public void put(DataWrapper inData);
-
+	//public void put(DataWrapper inData);	
+	
 	/**
 	description of incomming data. most filters try to generate this at runtime from the in-template of their successive filter
 	*/

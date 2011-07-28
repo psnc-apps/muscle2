@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.test.jni;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import utilities.MiscTool;
 import utilities.jni.JNIMethod;
 
@@ -34,25 +36,29 @@ class SingleInt {
 
 	//
 	public SingleInt() {
-		System.out.println(javatool.ClassTool.getName(this.getClass())+" begin test ...");
-		this.callNative(0, new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", int.class));
-		this.confirm();
-		System.out.println(javatool.ClassTool.getName(this.getClass())+" end test\n");
+		System.out.println(javatool.ClassTool.getName(getClass())+" begin test ...");
+		callNative(0, new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", int.class));
+		confirm();
+		System.out.println(javatool.ClassTool.getName(getClass())+" end test\n");
 	}
-
+	
 	private native void callNative(int mode, JNIMethod fromJava, JNIMethod toJava);
-
+	
 	//
 	private int fromJava() {
 		return 123;
 	}
-
+	
+	//
+	private void toJava(int data) {
+		nativeData = data;
+	}
+	
 	private void confirm() {
-		int expectedData = this.fromJava();
+		int expectedData = fromJava();
 		expectedData *= 10;
-
-		if( !MiscTool.equalObjectValues(expectedData, this.nativeData, 0) ) {
+		
+		if( !MiscTool.equalObjectValues(expectedData, nativeData, 0) )
 			throw new RuntimeException("test failed");
-		}
 	}
 }

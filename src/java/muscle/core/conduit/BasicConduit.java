@@ -21,37 +21,39 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit;
 
+import muscle.core.conduit.filter.FilterChain;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.SimpleBehaviour;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import utilities.MiscTool;
 import muscle.Constant;
 import muscle.behaviour.MoveBehaviour;
 import muscle.core.ConduitEntrance;
+import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
+import muscle.utilities.RemoteOutputStream;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.core.conduit.filter.Filter;
-import muscle.core.conduit.filter.FilterChain;
 import muscle.core.messaging.BasicRemoteDataSinkHead;
 import muscle.core.messaging.BufferingRemoteDataSinkTail;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
-import muscle.exception.MUSCLERuntimeException;
-import utilities.MiscTool;
 
 
 /**
@@ -61,11 +63,7 @@ the readable end of a conduit is its "exit" (AKA source)
 @author Jan Hegewald
 */
 public class BasicConduit extends muscle.core.MultiDataAgent {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	AID entranceAgent;
 	String entranceName;
 	private DataTemplate entranceDataTemplate;
@@ -75,108 +73,107 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 	private ArrayList<Object> optionalArgs;
 	private MessageTemplate receiveTemplate;
 //	private MessageReceiverBehaviour receiver; // feeds the filter chain
-
+	
 	private ResourceStrategy resourceStrategy;
-
+	
 	private OutputStreamWriter traceReceiveWriter;
 	private OutputStreamWriter traceSendWriter;
-
+	
 
 	//
    @Override
-	public void takeDown() {
-
-		if(this.traceReceiveWriter != null) {
+	public void takeDown() {		
+		
+		if(traceReceiveWriter != null) {
 			try {
-				this.traceReceiveWriter.close();
+				traceReceiveWriter.close();
 			} catch (IOException e) {
 				throw new MUSCLERuntimeException(e);
 			}
 		}
-		if(this.traceSendWriter != null) {
+		if(traceSendWriter != null) {
 			try {
-				this.traceSendWriter.close();
+				traceSendWriter.close();
 			} catch (IOException e) {
 				throw new MUSCLERuntimeException(e);
 			}
 		}
-
-		if(this.getCurQueueSize() > 0) {
-			this.getLogger().config("there are <"+this.getCurQueueSize()+"> unprocessed messages");
-		}
-		this.getLogger().info("bye");
+		
+		if(getCurQueueSize() > 0)
+			getLogger().config("there are <"+getCurQueueSize()+"> unprocessed messages");
+		getLogger().info("bye");
 	}
 
 
 	//
 	public ArrayList<Object> getOptionalArgs() {
-
-		return this.optionalArgs;
+	
+		return optionalArgs;
 	}
-
-
+	
+	
 	//
 	public DataTemplate getEntranceDataTemplate() {
-
-		return this.entranceDataTemplate;
+	
+		return entranceDataTemplate;
 	}
 
 
 	//
 	public DataTemplate getExitDataTemplate() {
-
-		return this.exitDataTemplate;
+	
+		return exitDataTemplate;
 	}
 
 
 //	//
 //   @Override
 //	public void handleRemoteSignal(DataMessage<? extends Signal> dmsg) { // or better limit to java.rmi.RemoteException?
-//
+//		
 //		// here we forward any signal to our entrance agent
 //		dmsg.clearAllReceiver();
 //      dmsg.setSender(getAID());
 //      send(dmsg);
 //	}
-
-
+	
+	
 	//
    @Override
 	protected void setup() {
 		super.setup();
-		this.beforeMoveSetup();
+		beforeMoveSetup();
 	}
-
-
+	
+	
 	// read args
 	private void beforeMoveSetup() {
-System.out.println(this.getLocalName()+" beforeMoveSetup");
+System.out.println(getLocalName()+" beforeMoveSetup");
 		// configure conduit from given args
-		Object[] rawArgs = this.getArguments();
-
+		Object[] rawArgs = getArguments();
+		
 		if(rawArgs.length == 0) {
-			this.getLogger().severe("got no args to configure from -> terminating");
-			this.doDelete();
+			getLogger().severe("got no args to configure from -> terminating");
+			doDelete();
 			return;
 		}
 		else if(rawArgs.length > 1) {
-			this.getLogger().warning("skipping "+(rawArgs.length-1)+" unknown args -> terminating");
+			getLogger().warning("skipping "+(rawArgs.length-1)+" unknown args -> terminating");
 		}
-
+		
 		if(! (rawArgs[0] instanceof ConduitArgs)) {
-			this.getLogger().severe("got invalid args to configure from <"+rawArgs[0].getClass().getName()+"> -> terminating");
-			this.doDelete();
-			return;
+			getLogger().severe("got invalid args to configure from <"+rawArgs[0].getClass().getName()+"> -> terminating");
+			doDelete();		
+			return;		
 		}
 
 		// read args passed to the agent
 		ConduitArgs args = (ConduitArgs)rawArgs[0];
-		this.entranceAgent = args.getEntranceAgent();
-		this.entranceName = args.getEntranceName();
-		this.entranceDataTemplate = args.getEntranceDataTemplate();
-		this.exitAgent = args.getExitAgent();
-		this.exitName = args.getExitName();
-		this.exitDataTemplate = args.getExitDataTemplate();
+		entranceAgent = args.getEntranceAgent();
+		entranceName = args.getEntranceName();
+		entranceDataTemplate = args.getEntranceDataTemplate();
+		exitAgent = args.getExitAgent();
+		exitName = args.getExitName();
+		exitDataTemplate = args.getExitDataTemplate();
 		Location targetLocation = args.getTargetLocation();
 
 		Class<? extends ResourceStrategy> strategyClass = args.getStrategyClass();
@@ -187,7 +184,7 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 		// so only strategyClass.getConstructor(muscle.core.conduit.Conduit); would work here
 		// below is a workaround to this: we fetch the default constructor and test if our current instance (this) is an instance of the required type
 		if(strategyClass.isMemberClass()) {
-
+			
 			// get the default constructor for a member class of type ResourceStrategy
 			Constructor<? extends ResourceStrategy> constructor = null;
 			constructor = (Constructor<? extends ResourceStrategy>)strategyClass.getConstructors()[0];
@@ -196,63 +193,51 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 					throw new MUSCLERuntimeException("can not create ResourceStrategy instance for class <"+strategyClass.getName()+">");
 				}
 			}
-
+			
 			// instantiate member class of type ResourceStrategy
 			try {
-				this.resourceStrategy = constructor.newInstance(this);
+				resourceStrategy = constructor.newInstance(this);
 			} catch (InstantiationException e) {
 				throw new MUSCLERuntimeException(e);
 			} catch (IllegalAccessException e) {
 				throw new MUSCLERuntimeException(e);
 			} catch (java.lang.reflect.InvocationTargetException e) {
 				throw new MUSCLERuntimeException(e);
-			}
+			}		
 		}
 		else {
 			// instantiate non-member class of type ResourceStrategy
 			try {
-				this.resourceStrategy = strategyClass.newInstance();
+				resourceStrategy = strategyClass.newInstance();
 			} catch (InstantiationException e) {
 				throw new MUSCLERuntimeException(e);
 			} catch (IllegalAccessException e) {
 				throw new MUSCLERuntimeException(e);
-			}
+			}		
 		}
+				
+		if(targetLocation == null)
+			targetLocation = targetLocation();
 
-		if(targetLocation == null) {
-			targetLocation = this.targetLocation();
-		}
-
-		this.optionalArgs = args.getOptionalArgs();
-		if(this.optionalArgs == null) {
-			this.optionalArgs = new ArrayList<Object>();
-		}
-
+		optionalArgs = args.getOptionalArgs();
+		if(optionalArgs == null)
+			optionalArgs = new ArrayList<Object>();
+		
 		// sanity check: only proceed if mandatory args are successfully set
-		int index = MiscTool.indexOfNull(this.entranceAgent, this.entranceName, this.entranceDataTemplate, this.exitAgent, this.exitName, this.exitDataTemplate, this.resourceStrategy, targetLocation, this.optionalArgs);
-		if( index > -1 ) {
-			String raws = new String();
-			for (Object o : rawArgs) {
-				raws += o.toString() + ",";
-			}
-			this.getLogger().severe("can not configure conduit from given args, arg " + index + " is null -> terminating\nArguments were raws" + raws);
-			this.doDelete();
+		if( MiscTool.anyNull(entranceAgent, entranceName, entranceDataTemplate, exitAgent, exitName, exitDataTemplate, resourceStrategy, targetLocation, optionalArgs) ) {
+			getLogger().severe("can not configure conduit from given args -> terminating");
+			doDelete();
 			return;
 		}
-
+					
 		// prepare template for incomming data messages
-		this.receiveTemplate = MessageTemplate.MatchProtocol(this.entranceName+":"+Constant.Protocol.DATA_TRANSFER);
-
+		receiveTemplate = MessageTemplate.MatchProtocol(entranceName+":"+Constant.Protocol.DATA_TRANSFER);
+		
 		// move to target container
-		this.addBehaviour(new MoveBehaviour(targetLocation, this) {
-         /**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-		@Override
+		addBehaviour(new MoveBehaviour(targetLocation, this) {
+         @Override
 			public void callback(Agent ownerAgent) {
-				BasicConduit.this.afterMoveSetup();
+				afterMoveSetup();
 			}
 		});
 	}
@@ -262,14 +247,14 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 	private void afterMoveSetup() {
 
 		// connect to agent which hosts the entrance
-		this.attach();
-
-		this.constructMessagePassingMechanism();
-
+		attach();
+		
+		constructMessagePassingMechanism();
+				
 		DetachListener detachListener = new DetachListener(8000); // add listener with low priority
-		this.addBehaviour(detachListener);
+		addBehaviour(detachListener);	
 
-		this.getLogger().info("conduit <"+this.getClass()+"> is up -- entrance <" + this.entranceAgent.getName()+":"+this.entranceName + "> -> exit <" + this.exitAgent.getName()+":"+this.exitName+">");
+		getLogger().info("conduit <"+getClass()+"> is up -- entrance <" + entranceAgent.getName()+":"+entranceName + "> -> exit <" + exitAgent.getName()+":"+exitName+">");
 	}
 
 
@@ -279,8 +264,8 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 		// we do not use any manipulating filters here,
 		// so the out template must be identical with the in template
 		try {
-			if( !DataTemplate.match(this.getEntranceDataTemplate(), this.getExitDataTemplate()) ) {
-				throw new muscle.exception.DataTemplateMismatchException(this.getEntranceDataTemplate().toString()+" vs. "+this.getExitDataTemplate().toString());
+			if( !DataTemplate.match(getEntranceDataTemplate(), getExitDataTemplate()) ) {
+				throw new muscle.exception.DataTemplateMismatchException(getEntranceDataTemplate().toString()+" vs. "+getExitDataTemplate().toString());
 			}
 		}
 		catch (muscle.exception.DataTemplateMismatchException e) {
@@ -290,34 +275,34 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 		// init filter chain
 		FilterChain fc = new FilterChain();
       Filter filters = fc.buildFilterChain(new DataSenderFilter());
-
+		
 		MessageReceiverBehaviour receiver = new MessageReceiverBehaviour(filters);
-		this.addBehaviour(receiver);
+		addBehaviour(receiver);
 	}
-
+	
 
 	// determine (initial) host container
 	private Location targetLocation() {
 
 		final long t0 = System.currentTimeMillis();
-		this.getLogger().finer("looking for target location ...");
-
+		getLogger().finer("looking for target location ...");
+		
 		final Timer watcher = new Timer();
 		TimerTask watcherTask = new TimerTask() {
          @Override
 			public void run() {
 				long t1 = System.currentTimeMillis();
-				BasicConduit.this.getLogger().warning("looking for target location already takes <"+(t1-t0)+"> ms, maybe there is an error with the WhereIsAgentHelper agent?");
+				getLogger().warning("looking for target location already takes <"+(t1-t0)+"> ms, maybe there is an error with the WhereIsAgentHelper agent?");
 				watcher.cancel();
 			}
 		};
 		long timeout = 1000;
 		watcher.schedule(watcherTask, timeout);
-
-		Location location = muscle.utilities.agent.WhereIsAgentHelper.whereIsAgent(this.resourceStrategy.adjacentAgent(), this);
+		
+		Location location = muscle.utilities.agent.WhereIsAgentHelper.whereIsAgent(resourceStrategy.adjacentAgent(), this);
 		watcher.cancel();
 		long t1 = System.currentTimeMillis();
-		this.getLogger().finer("looking for target location took <"+(t1-t0)+"> ms");
+		getLogger().finer("looking for target location took <"+(t1-t0)+"> ms");
 
 		return location;
 	}
@@ -327,14 +312,14 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 //	private AID targetAgent() {
 //
 //		assert resourceStrategy != null;
-//
+//		
 //		if(resourceStrategy == ResourceStrategy.STATIC_LOW_NETWORK) {
 //			// determine prefered host container (usually where the entrance or exit lives)
 //			if(exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
 //				// move to the container which hosts the exit
 //				return exitAgent;
 //			}
-//			else {
+//			else {		
 //				// move to the container which hosts the entrance
 //				return entranceAgent;
 //			}
@@ -345,6 +330,20 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 //	}
 
 
+	//
+	private RemoteOutputStream newTraceReceiveStream() {
+		
+		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName()+"_Entrance_"+entranceName+"--f"+entranceDataTemplate.getScale().getDt()+".txt", 1024);
+	}
+
+
+	//
+	private RemoteOutputStream newTraceSendStream() {
+		
+		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName()+"_Exit_"+exitName+"--f"+exitDataTemplate.getScale().getDt()+".txt", 1024);
+	}
+	
+	
 	/**
 	connect so source kernel (e.g. a remote sender)
 	*/
@@ -352,34 +351,30 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 
 		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 		msg.setProtocol(Constant.Protocol.PORTAL_ATTACH);
-		msg.addUserDefinedParameter("entrance", this.entranceName);
-		msg.addUserDefinedParameter("exit", this.exitName);
-		msg.addReceiver(this.entranceAgent);
-		msg.setContent(this.exitName); // sink id
+		msg.addUserDefinedParameter("entrance", entranceName);
+		msg.addUserDefinedParameter("exit", exitName);
+		msg.addReceiver(entranceAgent);
+		msg.setContent(exitName); // sink id
 		msg.setSender(this.getAID());
-		this.send(msg);
+		send(msg);
 	}
-
-
+	
+	
 	/**
 	this behaviour is the connection to the (remote) ConduitEntrance and receives data messages from there
 	*/
 	class MessageReceiverBehaviour<T> extends CyclicBehaviour implements RemoteDataSinkTail<DataMessage<?>> {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
+	
 		private Filter headFilter;
 		private RemoteDataSinkTail<DataMessage<?>> receiver;
-
+		
 		public MessageReceiverBehaviour(Filter newHeadFilter) {
 			super(BasicConduit.this);
-
-			this.headFilter = newHeadFilter;
-			this.receiver = new BufferingRemoteDataSinkTail<DataMessage<?>>(BasicConduit.this.exitName);
-         this.receiver.addObserver(BasicConduit.this);
-			BasicConduit.this.addSource(this.receiver);
+			
+			headFilter = newHeadFilter;
+			receiver = new BufferingRemoteDataSinkTail<DataMessage<?>>(exitName);
+         receiver.addObserver(BasicConduit.this);
+			addSource(receiver);
 		}
 
 		// receive from entrance
@@ -387,7 +382,7 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 		public void action() {
 
          DataMessage<?> dmsg = null;
-         for(int i = 0; i < 1000 && ((dmsg = this.poll()) == null); i++) {
+         for(int i = 0; i < 1000 && ((dmsg = poll()) == null); i++) {
             try {
                Thread.sleep(1);
             } catch (InterruptedException e) {
@@ -398,54 +393,58 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 
 
 //			ACLMessage msg = receiveFromEntrance();
-
+			
 			if( dmsg == null )
 				{}//block();
 			else {
 				// feed the first headFilter
-				this.headFilter.put(dmsg);
+				headFilter.put(dmsg);
 			}
 		}
 
+      @Override
       public void put(DataMessage<?> d) {
-			this.receiver.put(d);
+			receiver.put(d);
       }
 
+      @Override
       public DataMessage<?> take() {
 			// we use a custom poll instead of take.
 			// super.take would call notifySinkWillYield AND also poll,
-			// leading in notifySinkWillYield being called twice
-			throw new java.lang.UnsupportedOperationException("can not take from "+this.getClass());
+			// leading in notifySinkWillYield being called twice 
+			throw new java.lang.UnsupportedOperationException("can not take from "+getClass());
       }
 
+      @Override
       public DataMessage<?> poll() {
-
+		
 //		synchronized(sinkObserver) {
-			DataMessage<?> val = this.receiver.poll();
-
-			if(val != null) {
-				BasicConduit.this.notifySinkWillYield(val);
-			}
-
+			DataMessage<?> val = receiver.poll();
+			
+			if(val != null)
+				BasicConduit.this.notifySinkWillYield((DataMessage<?>)val);
+		
 			return val;
 //		}
 	}
 
+      @Override
       public String id() {
-			return this.receiver.id();
+			return receiver.id();
       }
 
+      @Override
       public void addObserver(SinkObserver<DataMessage<?>> o) {
-			this.receiver.addObserver(o);
+			receiver.addObserver(o);
       }
 
 
-
+		
 		// receive data from entrance
 //		private ACLMessage receiveFromEntrance() {
 //
 //			getLogger().finest("waiting for a message ..." + " (current msg queue:" + getCurQueueSize() + ")");
-//
+//			
 //			//
 //			ACLMessage msg = blockingReceive(receiveTemplate, 1000);
 //			// if the conduit should also focus on other behaviours, use a non-blocking receive here:
@@ -459,9 +458,9 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 //				if( !sender.equals(entranceAgent) ) {
 //					getLogger().severe("wrong sender -- expected <"+entranceAgent.getName()+"> got <"+sender.getName()+">");
 //					throw new MUSCLERuntimeException("pipeline error in conduit <"+getName()+">");
-//				}
+//				}			
 //			}
-//
+//			
 //			return msg;
 //		}
 	}
@@ -471,55 +470,53 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 	this behaviour is the connection to the (remote) ConduitExit and sends data messages to it
 	*/
 	class DataSenderFilter implements Filter<DataMessage> {
-
+				
 		private RemoteDataSinkHead<DataMessage<?>> sink;
 		private boolean shouldPause = false;
 
 		//
 		public DataSenderFilter() {
 
-			this.sink = new BasicRemoteDataSinkHead<DataMessage<?>>(BasicConduit.this.exitName, BasicConduit.this.exitAgent) {
+			sink = new BasicRemoteDataSinkHead<DataMessage<?>>(exitName, exitAgent) {
 
             @Override
             public void put(DataMessage dmsg) {
 
-					while( DataSenderFilter.this.shouldPause ) {
+					while( shouldPause ) {
 						try {
 							Thread.sleep(1);
 						} catch (InterruptedException e) {
 							throw new RuntimeException(e);
-						}
+						}			
 					}
 
-					BasicConduit.this.sendDataMessage(dmsg);
+					sendDataMessage(dmsg);
 				}
 
-            public void pause() {
-					DataSenderFilter.this.shouldPause = true;
+            @Override
+            public void pause() {					
+					shouldPause = true;
 				}
 
+            @Override
             public void resume() {
-					DataSenderFilter.this.shouldPause = false;
+					shouldPause = false;
 				}
          };
-
-			BasicConduit.this.addSink(this.sink);
+			
+			addSink(sink);
 		}
-
+		
 		// handle result data, i.e. send data to exit
+      @Override
 		public void put(DataMessage dmsg) {
 
 			dmsg.clearAllReceiver();
-			dmsg.addReceiver(BasicConduit.this.exitAgent);
-			dmsg.setSender(BasicConduit.this.getAID());
-
-			this.sink.put(dmsg);
+			dmsg.addReceiver(exitAgent);
+			dmsg.setSender(getAID());
+			
+			sink.put(dmsg);
 		}
-
-	public DataTemplate getInTemplate() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	}
 
@@ -527,25 +524,21 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 	//
 	class DetachListener extends TickerBehaviour {
 
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
 		private MessageTemplate detachTemplate;
 		private boolean entranceAvailable = true;
-
+		
 		//
 		DetachListener(long timeout) {
 			super(BasicConduit.this, timeout);
-			this.detachTemplate = MessageTemplate.MatchProtocol(Constant.Protocol.PORTAL_DETACH);
+			detachTemplate = MessageTemplate.MatchProtocol(Constant.Protocol.PORTAL_DETACH);
 		}
-
-
+		
+		
 		//
       @Override
-		protected void onTick() {
-			BasicConduit.this.getLogger().fine("listening for detach");
-			ACLMessage msg = BasicConduit.this.receive(this.detachTemplate);
+		protected void onTick() {		
+			getLogger().fine("listening for detach");
+			ACLMessage msg = receive(detachTemplate);
 			if( msg != null ) {
 				Class<?> portalClass = null;
 				try {
@@ -553,60 +546,55 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 				} catch (jade.lang.acl.UnreadableException e) {
 					throw new MUSCLERuntimeException(e);
 				}
-
+						
 				if( ConduitEntrance.class.isAssignableFrom(portalClass) ) {
-					this.entranceAvailable = false;
-					BasicConduit.this.getLogger().info("entrance detached");
+					entranceAvailable = false;
+					getLogger().info("entrance detached");
 				}
 				else {
 					throw new MUSCLERuntimeException("can not detach unknown portal: <"+portalClass.getName()+">");
 				}
-
-				if( this.entranceAvailable == false /*&& exitAgent == null*/ ) {
+								
+				if( entranceAvailable == false /*&& exitAgent == null*/ ) {				
 					// process remaining messages and terminate
-					this.myAgent.addBehaviour(new TearDownBehaviour());
-					BasicConduit.this.removeBehaviour(this);
+					myAgent.addBehaviour(new TearDownBehaviour());
+					removeBehaviour(this);
 				}
 			}
 			else {
-				this.block();
+				block();
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	this behaviour will be activated as soon as our entrance has been detached
 	will watch the message queue and tear down the conduit after all remaining messages have been processed
 	*/
 	private class TearDownBehaviour extends SimpleBehaviour {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
-
+	
 		public TearDownBehaviour() {
 			super(BasicConduit.this);
 		}
-
+		
 
       @Override
 		public void action() {
-
-			if( this.myAgent.getCurQueueSize() == 0 ) {
+		
+			if( myAgent.getCurQueueSize() == 0 ) {
 //				if(receiver != null) {
 //					removeBehaviour(receiver);
 //					receiver = null;
 //				}
-				this.myAgent.doDelete();
+				myAgent.doDelete();	
 //				myAgent.removeBehaviour(this);
 			}
 		}
-
+		
       @Override
 		public boolean done() {
-
+		
 			return false;
 		}
 	}
@@ -614,7 +602,7 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 
 	//
 //	public enum ResourceStrategy {
-//
+//		
 //		STATIC_LOW_CPU // try to reduce CPU load but do not move between containers after initial setup
 //		, STATIC_LOW_NETWORK // try to reduce network traffic but do not move between containers after initial setup
 //		, DYNAMIC_LOW_CPU // try to reduce CPU load and may move to another container during runtime if this helps
@@ -625,24 +613,19 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 	// try to reduce network traffic
 	public class LowBandwidthStrategy implements ResourceStrategy, Serializable {
 
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
-
 		public AID adjacentAgent() {
-
+			
 //			if(resourceStrategy == ResourceStrategy.STATIC_LOW_NETWORK) {
 				// determine prefered host container (usually where the entrance or exit lives)
-				if( BasicConduit.this.exitDataTemplate.getQuantity() < 0 || BasicConduit.this.entranceDataTemplate.getQuantity() < 0 ) {
-					return BasicConduit.this.entranceAgent; // default to entranceAgent if quantity is not specified
-				} else if(BasicConduit.this.exitDataTemplate.getQuantity() < BasicConduit.this.entranceDataTemplate.getQuantity()) {
+				if( exitDataTemplate.getQuantity() < 0 || entranceDataTemplate.getQuantity() < 0 )
+					return entranceAgent; // default to entranceAgent if quantity is not specified
+				else if(exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
 					// move to the container which hosts the exit
-					return BasicConduit.this.exitAgent;
+					return exitAgent;
 				}
-				else {
+				else {		
 					// move to the container which hosts the entrance
-					return BasicConduit.this.entranceAgent;
+					return entranceAgent;
 				}
 //			}
 //			else {
@@ -656,14 +639,9 @@ System.out.println(this.getLocalName()+" beforeMoveSetup");
 	// do not move or try to be clever
 	public class DullStrategy implements ResourceStrategy, Serializable {
 
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
-
 		public AID adjacentAgent() {
-
-			return BasicConduit.this.getAID();
+			
+			return getAID();
 		}
 
 	}

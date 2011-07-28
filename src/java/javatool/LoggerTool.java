@@ -22,8 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package javatool;
 
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
 provides additional functionality to deal with Loggers
@@ -44,7 +44,7 @@ public class LoggerTool {
 				return l;
 			}
 		}
-
+		
 		return Level.OFF;
 	}
 }

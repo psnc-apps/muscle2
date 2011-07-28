@@ -27,24 +27,22 @@ description of a vertex
 @author Jan Hegewald
 */
 public class Vertex {
-
+	
 	private String vertexLabel;
-
+	
 	public Vertex(String label, Object portal) {
 		this.vertexLabel = label;
 	}
-
-	@Override
+	
 	public String toString() {
-		return this.vertexLabel;
+		return vertexLabel;
 	}
 
 	//
-	@Override
 	public boolean equals(Object obj) {
-
-		if( this.getClass().isInstance(obj) ) {
-			return ((Vertex)obj).vertexLabel.equals(this.vertexLabel);
+		
+		if( getClass().isInstance(obj) ) {
+			return ((Vertex)obj).vertexLabel.equals(vertexLabel);
 		}
 		return super.equals(obj);
 	}

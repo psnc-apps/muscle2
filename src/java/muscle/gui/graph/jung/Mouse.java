@@ -30,35 +30,34 @@ import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 
 /**
 load PickPlugin for our JUNG GraphMouse
-@author Christian Schï¿½ps
+@author Christian Schöps
 @author Jan Hegewald
 */
 class Mouse extends AbstractModalGraphMouse implements ModalGraphMouse, ItemSelectable {
 
 	private ConnectionSchemeJUNGPanel parent;
-
-
+	
+	
 	//
 	Mouse(ConnectionSchemeJUNGPanel parent) {
 
 		this(1.1f, 1/1.1f, parent);
 	}
-
-
+	
+	
 	//
 	protected Mouse(float in, float out, ConnectionSchemeJUNGPanel parent) {
 
 		super(in, out);
 		this.parent = parent;
-		this.loadPlugins();
+		loadPlugins();
 	}
 
 
 	//
-	@Override
 	protected void loadPlugins() {
 
-		this.add(new PickPlugin<Integer, String>(this.parent));
+		add(new PickPlugin<Integer, String>(parent));
 	}
 
 }

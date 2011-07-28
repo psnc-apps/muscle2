@@ -36,11 +36,11 @@ abstract public class WrapperFilterTail implements muscle.core.conduit.filter.Wr
 
 	//
 	public WrapperFilterTail(DataTemplate newTemplate) {
-
-		this.template = newTemplate;
+	
+		template = newTemplate;
 	}
-
-
+	
+	
 	/**
 	end of filter chain
 	overwrite this method to further process data
@@ -51,14 +51,14 @@ abstract public class WrapperFilterTail implements muscle.core.conduit.filter.Wr
 	//
 	public void put(DataWrapper inData) {
 
-		this.result(inData);
+		result(inData);
 	}
-
-
+	
+	
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.template;
+	
+		return template;
 	}
 }
 

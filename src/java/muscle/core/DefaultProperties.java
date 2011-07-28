@@ -28,4 +28,4 @@ public interface DefaultProperties {
 
 	public static final Level LOGLEVEL = Level.ALL;
 
-}
+}  

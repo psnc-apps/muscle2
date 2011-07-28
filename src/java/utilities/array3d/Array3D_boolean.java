@@ -22,8 +22,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array3d;	//edit Array3D_double.java:1 instead
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
+import java.lang.reflect.Array;	//edit Array3D_double.java:2 instead
+import java.lang.reflect.Constructor;	//edit Array3D_double.java:3 instead
+import java.util.Arrays;	//edit Array3D_double.java:4 instead
 
 // TODO: inherit functionality from cern.colt.matrix.BooleanMatrix3D?
 /**
@@ -38,40 +39,39 @@ public class Array3D_boolean {
 	private int zSize;	//edit Array3D_double.java:8 instead
 	private IndexStrategy indexStrategy;	//edit Array3D_double.java:9 instead
 
-
+	
 	//
 	public Array3D_boolean(int newXSize, int newYSize, int newZSize) {
-
+	
 		this(newXSize, newYSize, newZSize, new boolean[newXSize*newYSize*newZSize], IndexStrategy.FortranIndexStrategy.class);	//edit Array3D_double.java:10 instead
 	}
 
 	//
 	public Array3D_boolean(int newXSize, int newYSize, int newZSize, boolean[] newData) {
-
+	
 		this(newXSize, newYSize, newZSize, newData, IndexStrategy.FortranIndexStrategy.class);	//edit Array3D_double.java:11 instead
 	}
 
 	//
 	public Array3D_boolean(int newXSize, int newYSize, int newZSize, Class<? extends IndexStrategy> strategyClass) {
-
+	
 		this(newXSize, newYSize, newZSize, new boolean[newXSize*newYSize*newZSize], strategyClass);	//edit Array3D_double.java:12 instead
 	}
 
 
 	//
 	public Array3D_boolean(int newXSize, int newYSize, int newZSize, boolean[] newData, Class<? extends IndexStrategy> strategyClass) {
+	
+		xSize = newXSize;	//edit Array3D_double.java:13 instead
+		ySize = newYSize;	//edit Array3D_double.java:14 instead
+		zSize = newZSize;	//edit Array3D_double.java:15 instead
 
-		this.xSize = newXSize;	//edit Array3D_double.java:13 instead
-		this.ySize = newYSize;	//edit Array3D_double.java:14 instead
-		this.zSize = newZSize;	//edit Array3D_double.java:15 instead
-
-		this.data = newData;	//edit Array3D_double.java:16 instead
-
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) ) {
+		data = newData;	//edit Array3D_double.java:16 instead
+		
+		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
 			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));	//edit Array3D_double.java:17 instead
-		}
-
-
+			
+		
 		Constructor<? extends IndexStrategy> strategyConstructor = null;	//edit Array3D_double.java:18 instead
 		try {
 			strategyConstructor = strategyClass.getConstructor(int.class, int.class, int.class); // simply assume this constructor is indeed available
@@ -80,7 +80,7 @@ public class Array3D_boolean {
 			throw new RuntimeException(e);	//edit Array3D_double.java:19 instead
 		}
 		try {
-			this.indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);	//edit Array3D_double.java:20 instead
+			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);	//edit Array3D_double.java:20 instead
 		}
 		catch(java.lang.InstantiationException e) {
 			throw new RuntimeException(e);	//edit Array3D_double.java:21 instead
@@ -92,57 +92,57 @@ public class Array3D_boolean {
 			throw new RuntimeException(e);	//edit Array3D_double.java:23 instead
 		}
 	}
-
-
+	
+	
 	//
 	public void fill(boolean value) {
-
-		Arrays.fill(this.data, value);	//edit Array3D_double.java:24 instead
+		
+		Arrays.fill(data, value);	//edit Array3D_double.java:24 instead
 	}
 
 
 	//
 	public boolean get(int x1, int x2, int x3) {
 
-		return this.data[this.indexStrategy.index(x1, x2, x3)];	//edit Array3D_double.java:25 instead
+		return data[indexStrategy.index(x1, x2, x3)];	//edit Array3D_double.java:25 instead
 	}
-
+	
 	//
 	public boolean[] getData() {
 
-		return this.data;	//edit Array3D_double.java:26 instead
+		return data;	//edit Array3D_double.java:26 instead
 	}
 
 
 	//
 	public void set(int x1, int x2, int x3, boolean value) {
 
-		this.data[this.indexStrategy.index(x1, x2, x3)] = value;	//edit Array3D_double.java:27 instead
+		data[indexStrategy.index(x1, x2, x3)] = value;	//edit Array3D_double.java:27 instead
 	}
 
-
+	
 	//
 	public int getSize() {
 
-		return this.data.length;	//edit Array3D_double.java:28 instead
+		return data.length;	//edit Array3D_double.java:28 instead
 	}
 
 	//
 	public int getX1Size() {
 
-		return this.xSize;	//edit Array3D_double.java:29 instead
+		return xSize;	//edit Array3D_double.java:29 instead
 	}
 
 	//
 	public int getX2Size() {
 
-		return this.ySize;	//edit Array3D_double.java:30 instead
+		return ySize;	//edit Array3D_double.java:30 instead
 	}
 
 	//
 	public int getX3Size() {
 
-		return this.zSize;	//edit Array3D_double.java:31 instead
+		return zSize;	//edit Array3D_double.java:31 instead
 	}
 }
 

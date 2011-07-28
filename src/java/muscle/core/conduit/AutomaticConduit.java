@@ -22,30 +22,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit;
 
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-
-import muscle.core.conduit.filter.AbstractFilter;
-import muscle.core.conduit.filter.BlockAfterTimeFilter;
-import muscle.core.conduit.filter.ConsoleWriterFilter;
-import muscle.core.conduit.filter.DropFilter;
-import muscle.core.conduit.filter.Filter;
-import muscle.core.conduit.filter.LinearInterpolationFilterDouble;
-import muscle.core.conduit.filter.LinearTimeInterpolationFilterDouble;
-import muscle.core.conduit.filter.MultiplyFilterDouble;
-import muscle.core.conduit.filter.NullFilter;
-import muscle.core.conduit.filter.PipeFilter;
-import muscle.core.conduit.filter.ReproduceFilterDouble;
-import muscle.core.conduit.filter.TimeFactorFilter;
-import muscle.core.conduit.filter.TimeOffsetFilter;
-import muscle.core.conduit.filter.WrapperFilter;
-import muscle.core.conduit.filter.WrapperFilterHead;
-import muscle.core.conduit.filter.WrapperFilterTail;
-import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.logging.AgentLogger;
 import utilities.MiscTool;
+import java.lang.reflect.Constructor;
+import muscle.core.conduit.filter.*;
+import muscle.core.messaging.jade.DataMessage;
 
 
 /**
@@ -57,42 +41,36 @@ to load the MultiplyFilterDouble_42 and pass a 42 to its constructor
 */
 public class AutomaticConduit extends BasicConduit {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
-//
+	//
    @Override
 	protected void constructMessagePassingMechanism() {
 
 		// init filter chain
-      Filter filters = this.initFilterChain(new DataSenderFilter());
-
+      Filter filters = initFilterChain(new DataSenderFilter());
+		
 		MessageReceiverBehaviour receiver = new MessageReceiverBehaviour(filters);
-		this.addBehaviour(receiver);
+		addBehaviour(receiver);
 
 	}
 
 
 	//
 	protected Filter initFilterChain(final Filter filterTail) {
-
+				
 		AgentLogger logger = AgentLogger.getLogger(this);
-		logger.fine("filter args: <"+MiscTool.joinItems(this.getOptionalArgs(), ", ")+">");
+		logger.fine("filter args: <"+MiscTool.joinItems(getOptionalArgs(), ", ")+">");
 
 		// assume our optional args are filter names
 		// cast our optional args to filter names
 		ArrayList<String> filterArgs = new ArrayList<String>();
-		for(Object o : this.getOptionalArgs()) {
+		for(Object o : getOptionalArgs()) {
 			filterArgs.add((String)o);
 		}
 
-      final DataMessage dataMessage = new DataMessage(this.exitName);
-		dataMessage.addReceiver(this.exitAgent);
+      final DataMessage dataMessage = new DataMessage(exitName);
+		dataMessage.addReceiver(exitAgent);
 
-
+		
 		final Filter<DataWrapper> wrapper2dmsg = new AbstractFilter<DataWrapper>() {
 
          @Override
@@ -102,7 +80,7 @@ public class AutomaticConduit extends BasicConduit {
          }
       };
 
-      WrapperFilter tail = new WrapperFilterTail(this.getExitDataTemplate()) {
+      WrapperFilter tail = new WrapperFilterTail(getExitDataTemplate()) {
 
          @Override
          public void result(DataWrapper resultData) {
@@ -110,11 +88,11 @@ public class AutomaticConduit extends BasicConduit {
          }
       };
 
-		WrapperFilter filters = this.automaticPipeline(filterArgs, tail);
-
+		WrapperFilter filters = automaticPipeline(filterArgs, tail);
+		
 		final WrapperFilter head;
 		try {
-			head = new WrapperFilterHead(filters, this.getEntranceDataTemplate());
+			head = new WrapperFilterHead(filters, getEntranceDataTemplate());
 		}
 		catch (muscle.exception.DataTemplateMismatchException e) {
 			throw new MUSCLERuntimeException(e);
@@ -136,43 +114,49 @@ public class AutomaticConduit extends BasicConduit {
 
 	//
 	private WrapperFilter automaticPipeline(ArrayList<String> filterNames, WrapperFilter tailFilter) {
-
+	
 		WrapperFilter filter = tailFilter;
 		for(int i = filterNames.size()-1; i > -1; i--) {
-			filter = this.filterForName(filterNames.get(i), filter);
+			filter = filterForName(filterNames.get(i), filter);
 		}
-
+	
 		return filter;
 	}
 
 
 	//
 	private WrapperFilter filterForName(String name, WrapperFilter tailFilter) {
-
+	
 		// split any args from the preceding filter name
 		String[] tmp = name.split("_", 2); // 2 means only split once
 		name = tmp[0];
 		String remainder = null;
-		if(tmp.length > 1) {
+		if(tmp.length > 1)
 			remainder = tmp[1];
-		}
 
 		//
 		// filters without args
 		//
-
-		if(name.equals("null")) {
+		
+		if(name.equals("null"))
 			return new NullFilter(tailFilter);
-		} else if(name.equals("pipe")) {
+			
+		else if(name.equals("pipe")) {
 			return new PipeFilter(tailFilter);
 		}
 
-		else if(name.equals("console")) {
+		else if(name.equals("console"))
 			return new ConsoleWriterFilter(tailFilter);
-		} else if(name.equals("linearinterpolation")) {
+			
+		else if(name.equals("linearinterpolation"))
 			return new LinearInterpolationFilterDouble(tailFilter);
-		} else if(name.equals("reproduce")) {
 
+		//
+		// filters with mandatory args
+		//
+
+		else if(name.equals("reproduce")) {
+			
 			return new ReproduceFilterDouble(tailFilter, Integer.valueOf(remainder));
 		}
 
@@ -209,35 +193,35 @@ public class AutomaticConduit extends BasicConduit {
 			try {
 				filterClass = (Class<? extends WrapperFilter>)Class.forName(name);
 			} catch (ClassNotFoundException e) {
-				throw new MUSCLERuntimeException(e);
+				throw new MUSCLERuntimeException(e);		
 			}
-
+			
 			// try to find constructor with tailFilter
 			Constructor<? extends WrapperFilter> filterConstructor = null;
 			try {
 				filterConstructor = filterClass.getDeclaredConstructor(WrapperFilter.class);
 			}
 			catch (java.lang.NoSuchMethodException e) {
-				throw new MUSCLERuntimeException(e);
+				throw new MUSCLERuntimeException(e);		
 			}
 
 			try {
 				return filterConstructor.newInstance(tailFilter);
 			}
 			catch (java.lang.InstantiationException e) {
-				throw new MUSCLERuntimeException(e);
+				throw new MUSCLERuntimeException(e);		
 			}
 			catch (java.lang.IllegalAccessException e) {
-				throw new MUSCLERuntimeException(e);
+				throw new MUSCLERuntimeException(e);		
 			}
 			catch (java.lang.reflect.InvocationTargetException e) {
-				throw new MUSCLERuntimeException(e);
+				throw new MUSCLERuntimeException(e);		
 			}
-
+			
 		}
-
+	
 //		throw new MUSCLERuntimeException("unknown filter: <"+name+">");
 	}
-
+	
 }
 

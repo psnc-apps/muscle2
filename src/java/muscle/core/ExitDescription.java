@@ -21,14 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import jade.core.AID;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import muscle.exception.MUSCLERuntimeException;
+
+import jade.core.AID;
+
+import muscle.core.DataTemplate;
+import java.util.Arrays;
 
 
 // a leaf in our connection scheme tree
@@ -39,79 +41,72 @@ stores info necessary to setup an exit
 */
 public class ExitDescription implements Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private String id; // name of portal, as in connection scheme
 	private List<ConduitDescription> conduits = new ArrayList<ConduitDescription>();
 	private DataTemplate dataTemplate;
 	private AID controllerID;
-
+	
 	public ExitDescription(String newID, ConduitDescription ... newConduits) {
-
-		this.id = newID;
-		this.conduits.addAll(Arrays.asList(newConduits));
+	
+		id = newID;
+		conduits.addAll(Arrays.asList(newConduits));
 	}
-
-	@Override
+	
 	public boolean equals(Object b) {
-
-		return b != null && this.getClass().isInstance(b) && this.id.equals(this.getClass().cast(b).getID());
+		
+		return b != null && getClass().isInstance(b) && id.equals(getClass().cast(b).getID());
 	}
 
-
+	
 	public void addConduitDescription(ConduitDescription cd) {
-
+		
 		// assure this conduit is not added yet
-		for(int i = 0; i < this.conduits.size(); i++) {
-			if(this.conduits.get(i).getID().equals(cd.getID())) {
-				throw new MUSCLERuntimeException("Error: can not add conduit <"+cd.getID()+"> twice to exit <"+this.getID()+">");
-			}
+		for(int i = 0; i < conduits.size(); i++) {
+			if(conduits.get(i).getID().equals(cd.getID()))
+				throw new MUSCLERuntimeException("Error: can not add conduit <"+cd.getID()+"> twice to exit <"+getID()+">");
 		}
-
-		this.conduits.add(cd);
+		
+		conduits.add(cd);
 	}
-
+	
 	public String getID() {
-
-		return this.id;
+	
+		return id;
 	}
 
 	public ConduitDescription getConduitDescription(int index) {
-
-		if(index >= this.conduits.size()) {
+	
+		if(index >= conduits.size())
 			return null;
-		}
-
-		return this.conduits.get(index);
+		
+		return conduits.get(index);
 	}
-
+	
 	public void markAvailable(DataTemplate newDataTemplate, AID newControllerID) {
-
-		this.dataTemplate = newDataTemplate;
-		this.controllerID = newControllerID;
+	
+		dataTemplate = newDataTemplate;
+		controllerID = newControllerID;
 	}
 
 	public DataTemplate getDataTemplate() {
-
-		return this.dataTemplate;
+	
+		return dataTemplate;
 	}
 
 	public AID getControllerID() {
-
-		return this.controllerID;
+	
+		return controllerID;
 	}
-
+	
 	public boolean isAvailable() {
-
-		return this.controllerID != null;
+	
+		return controllerID != null;
 	}
 
 	public void markUnavailable() {
 
-		this.dataTemplate = null;
-		this.controllerID = null;
+		dataTemplate = null;
+		controllerID = null;
 	}
 }
 

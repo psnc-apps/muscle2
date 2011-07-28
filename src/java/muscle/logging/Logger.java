@@ -21,8 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 
-
+	
 /**
 utility class which helps to initialze loggers within the muscle
 @author Jan Hegewald
@@ -33,23 +35,23 @@ public class Logger {
 //	Logger(String name, String resourceBundleName) {
 //		super(name, resourceBundleName);
 //	}
-
+	
 //	//
 //	public static Logger getLogger(Object owner) {
-//
+//	
 //		return getLogger(owner.getClass());
 //	}
 
 	//
 	public static java.util.logging.Logger getLogger(Class cls) {
-
+			
 		return java.util.logging.Logger.getLogger(cls.getName());
 	}
 
 
 //	//
 //	private static muscle.logging.Logger getLogger(String name) {
-//
+//	
 //		return java.util.logging.Logger.getLogger(name);
 //	}
 }

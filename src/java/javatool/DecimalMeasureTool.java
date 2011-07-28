@@ -21,10 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package javatool;
 
-import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
+import javax.measure.unit.SI;
 import javax.measure.quantity.Quantity;
+import java.math.BigDecimal;
 
 
 /**
@@ -38,7 +38,7 @@ public class DecimalMeasureTool {
 	add two DecimalMeasure, result has the unit of the first passed argument
 	*/
 	public static <Q extends Quantity> DecimalMeasure<Q> add(DecimalMeasure<Q> a, DecimalMeasure<Q> b) {
-
+		
 		return new DecimalMeasure<Q>(a.getValue().add(b.to(a.getUnit()).getValue()), a.getUnit());
 	}
 
@@ -47,7 +47,7 @@ public class DecimalMeasureTool {
 	multiply a DecimalMeasure with a factor
 	*/
 	public static <Q extends Quantity> DecimalMeasure<Q> multiply(DecimalMeasure<Q> val, BigDecimal factor) {
-
+		
 		return new DecimalMeasure<Q>(val.getValue().multiply(factor), val.getUnit());
 	}
 

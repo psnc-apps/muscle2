@@ -21,16 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.math.BigDecimal;
-
-import javatool.DecimalMeasureTool;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-
+import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
 import muscle.core.Scale;
-import muscle.core.wrapper.DataWrapper;
+import javax.measure.DecimalMeasure;
+import javax.measure.unit.SI;
+import javax.measure.quantity.Duration;
+import java.math.BigDecimal;
+import javatool.DecimalMeasureTool;
 
 
 /**
@@ -47,52 +45,52 @@ public class ReproduceFilterDouble implements muscle.core.conduit.filter.Wrapper
 
 	//
 	public ReproduceFilterDouble(WrapperFilter newChildFilter, int newFactor/*factor for output frequency*/) {
+	
+		childFilter = newChildFilter;
 
-		this.childFilter = newChildFilter;
-
-		this.outTemplate = this.childFilter.getInTemplate();
-		Scale outScale = this.outTemplate.getScale();
+		outTemplate = childFilter.getInTemplate();
+		Scale outScale = outTemplate.getScale();
 		assert outScale != null;
-
+		
 		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(newFactor)), outScale.getDt().getUnit());
-
-		this.outCount = newFactor;
-
-		this.inTemplate = new DataTemplate(this.outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		
+		outCount = newFactor;
+		
+		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
 	// pass to next filter at a higher frequency
 	public void put(DataWrapper newInData) {
-
+		
 		DataWrapper inData = newInData;
 		// send clones from the unmodified inData
-		for(int i = 0; i < this.outCount-1; i++) {
+		for(int i = 0; i < outCount-1; i++) {		
 			double[] inArray = (double[])inData.getData();
 			double[] outArray = new double[inArray.length];
 			System.arraycopy(inArray, 0, outArray, 0, inArray.length);
-
-			DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(this.outTemplate.getScale().getDt(), new BigDecimal(i));
+			
+			DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outTemplate.getScale().getDt(), new BigDecimal(i));
 			DataWrapper outData = new DataWrapper(outArray, DecimalMeasureTool.add(inData.getSITime(), dt));
-			this.childFilter.put(outData);
+			childFilter.put(outData);
 		}
 
 		// send the inData itself as our last output instead of another copy
 		double[] inArray = (double[])inData.getData();
 		double[] outArray = new double[inArray.length];
 		System.arraycopy(inArray, 0, outArray, 0, inArray.length);
-
+		
 //DataWrapper outData = new DataWrapper(outArray, inData.getTimestep()+(outCount-1)*outDt);
-		DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(this.outTemplate.getScale().getDt(), new BigDecimal(this.outCount-1));
+		DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outTemplate.getScale().getDt(), new BigDecimal(outCount-1));
 		DataWrapper outData = new DataWrapper(outArray, DecimalMeasureTool.add(inData.getSITime(), dt));
-		this.childFilter.put(outData);
+		childFilter.put(outData);
 	}
 
 }

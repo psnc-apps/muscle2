@@ -22,7 +22,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.DataTemplate;
+import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
+import com.thoughtworks.xstream.XStream;
+import muscle.exception.MUSCLERuntimeException;
 
 
 /**
@@ -35,39 +39,39 @@ public class LinearInterpolationFilterDouble implements muscle.core.conduit.filt
 	private WrapperFilter childFilter;
 	private DataTemplate inTemplate;
 
-
+	
 	//
 	public LinearInterpolationFilterDouble(WrapperFilter newChildFilter) {
+		
+		childFilter = newChildFilter;
+		DataTemplate outTemplate = childFilter.getInTemplate();
 
-		this.childFilter = newChildFilter;
-		DataTemplate outTemplate = this.childFilter.getInTemplate();
-
-		this.inTemplate = new DataTemplate(outTemplate.getDataClass(), outTemplate.getScale());
+		inTemplate = new DataTemplate(outTemplate.getDataClass(), outTemplate.getScale());				
 	}
-
-
+	
+	
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper newInData) {
-
+		
 		double[] inData = (double[])newInData.getData();
 		double[] outData = new double[inData.length-1];
 
 
 // warning: as outWrapper is mutable, a successive filter might change its length
 
-		for (int i = 0; i < outData.length; i++) {
+		for (int i = 0; i < outData.length; i++) {			
 			outData[i] = ( inData[i] + inData[i+1]) / 2.0;
 		}
-
+		
 		DataWrapper outWrapper = new DataWrapper(outData, newInData.getSITime());
-		this.childFilter.put(outWrapper);
+		childFilter.put(outWrapper);
 	}
 
 }

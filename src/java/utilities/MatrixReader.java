@@ -22,8 +22,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 
-import java.io.FileInputStream;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.StreamTokenizer;
+import java.net.URL;
 import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Scanner;
 
@@ -38,16 +45,15 @@ public class MatrixReader {
 	// we assume that all cols have the same length
 	static public void parse(InputStream in, double[] ... cols) {
 
-		if(cols.length == 0) {
+		if(cols.length == 0)
 			return;
-		}
-
+		
 		Scanner scanner = new Scanner(new InputStreamReader(in));
 
 		int colCount = cols.length;
 		int rowCount = cols[0].length;
-		for(int i = 0; scanner.hasNextDouble() && i < rowCount*colCount; i++) {
-
+		for(int i = 0; scanner.hasNextDouble() && i < rowCount*colCount; i++) {				
+			
 			int c = i%colCount;
 			int r = (i-c)%rowCount;
 			cols[c][r] = scanner.nextDouble();
@@ -55,15 +61,15 @@ public class MatrixReader {
 		}
 	}
 
-
+	
 	// for testing
 	public static void main(String[] args) throws java.io.FileNotFoundException {
 
 		MatrixReader.parse(new FileInputStream(args[0]), new double[3], new double[3], new double[3], new double[3]);
-
+	
 //		Scanner scanner = new Scanner(new InputStreamReader(new FileInputStream(args[0])));
 //		int i = 0;
 //		while(scanner.hasNext())
-//			System.out.println((i++)+" "+scanner.next());
+//			System.out.println((i++)+" "+scanner.next());	
 	}
 }

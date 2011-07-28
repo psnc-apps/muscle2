@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
+import java.io.File;
 
 
 /**
@@ -29,36 +30,41 @@ this class should hold all info required to boot a kernel
 */
 public class KernelBootInfo {
 
-	private String name; // nickname of this kernel, also name of the kernel-agent
+	private String name; // nickname of this kernel, also name of the kernel-agent 
 	private Class<? extends RawKernel> cls;
+	
+	private Object[] args;
+	//private File[] libPath; // additional paths to search for native libraries
+	//private File[] classPath; // additional paths to search for java classes
+	
 
 	//
 	public KernelBootInfo(String newName, Class<? extends RawKernel> newClass, Object ... newArgs) {
-
-		this.name = newName;
-		this.cls = newClass;
+		
+		name = newName;
+		cls = newClass;
+		args = newArgs;
 	}
-
-
+	
+	
 	//
 	public String getName() {
-
-		return this.name;
+		
+		return name;
 	}
 
 
 	//
 	public Class<? extends RawKernel> getKernelClass() {
-
-		return this.cls;
+		
+		return cls;
 	}
-
-
+	
+	
 	//
-	@Override
 	public String toString() {
-
-		return this.name+":"+javatool.ClassTool.getName(this.cls);
+	
+		return name+":"+javatool.ClassTool.getName(cls);
 	}
 
 }

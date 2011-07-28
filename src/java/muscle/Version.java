@@ -35,12 +35,12 @@ public class Version {
 
 	//
 	private static native String nativeInfo();
-
+	
 	// info about the native library, if available
 	private static String nativeText() {
-
-		if(Version.nativeLibraryAvailable()) {
-			return "native library available ("+Version.nativeInfo()+")";
+	
+		if(nativeLibraryAvailable()) {
+			return "native library available ("+nativeInfo()+")";
 		}
 		else {
 			return "native library not available";
@@ -50,7 +50,7 @@ public class Version {
 
 	// info about the native library, if available
 	public static boolean nativeLibraryAvailable() {
-
+	
 		// see if we can load the native lib
 		try {
 			System.loadLibrary(NATIVE_LIB_BASENAME);
@@ -58,22 +58,22 @@ public class Version {
 		catch (java.lang.UnsatisfiedLinkError e) {
 			return false;
 		}
-
+	
 		return true;
 	}
 
 
 	//
 	public static String info() {
-
+	
 		return INFO_TEXT.replaceAll("@@", ""); // remove the @@ in case the version text has not been modified
 	}
-
-
+	
+	
 	//
 	public static void main(String[] args) {
 
       String mode = JVM.is64bitJVM() ? "64":"32";
-		System.out.println(Version.info()+" running in "+mode+"-bit mode, "+Version.nativeText());
+		System.out.println(info()+" running in "+mode+"-bit mode, "+nativeText());		
 	}
 }

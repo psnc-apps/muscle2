@@ -21,13 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit;
 
+import java.io.Serializable;
 import jade.core.AID;
 import jade.core.Location;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-
 import muscle.core.DataTemplate;
+
+import java.util.ArrayList;
 
 
 /**
@@ -36,10 +35,6 @@ helps with args for a conduit
 */
 public class ConduitArgs implements Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	// mandatory args
 	private AID entranceAgent;
 	private String entranceName;
@@ -50,7 +45,7 @@ public class ConduitArgs implements Serializable {
 	private DataTemplate exitDataTemplate;
 	private Class<? extends ResourceStrategy> strategyClass;
 	private Location targetLocation;
-
+	
 	// optional args
 	private ArrayList<Object> optionalArgs;
 
@@ -58,78 +53,78 @@ public class ConduitArgs implements Serializable {
 	//
 	public ConduitArgs(AID newEntranceAgent, String newEntranceName, DataTemplate newEntranceDataTemplate, AID newExitAgent, String newExitName, DataTemplate newExitDataTemplate, Class<? extends ResourceStrategy> newStrategyClass, Location newTargetLocation, ArrayList<Object> newOptionalArgs) {
 
-		this.entranceAgent = newEntranceAgent;
-		this.entranceName = newEntranceName;
-		this.entranceDataTemplate = newEntranceDataTemplate;
-		this.exitAgent = newExitAgent;
-		this.exitName = newExitName;
-		this.exitDataTemplate = newExitDataTemplate;
-		this.strategyClass = newStrategyClass;
-		this.targetLocation = newTargetLocation; // set to null if conduit should detect targetLocation automatically
-		this.optionalArgs = newOptionalArgs;
+		entranceAgent = newEntranceAgent;
+		entranceName = newEntranceName;
+		entranceDataTemplate = newEntranceDataTemplate;
+		exitAgent = newExitAgent;
+		exitName = newExitName;
+		exitDataTemplate = newExitDataTemplate;
+		strategyClass = newStrategyClass;
+		targetLocation = newTargetLocation; // set to null if conduit should detect targetLocation automatically
+		optionalArgs = newOptionalArgs;
 	}
 
 
 	//
 	public AID getEntranceAgent() {
-
-		return this.entranceAgent;
+	
+		return entranceAgent;
 	}
 
 
 	//
 	public DataTemplate getEntranceDataTemplate() {
-
-		return this.entranceDataTemplate;
+	
+		return entranceDataTemplate;
 	}
 
 
 	//
 	public String getEntranceName() {
-
-		return this.entranceName;
+	
+		return entranceName;
 	}
 
 
 	//
 	public AID getExitAgent() {
-
-		return this.exitAgent;
+	
+		return exitAgent;
 	}
 
 
 	//
 	public DataTemplate getExitDataTemplate() {
-
-		return this.exitDataTemplate;
+	
+		return exitDataTemplate;
 	}
 
 
 	//
 	public String getExitName() {
-
-		return this.exitName;
+	
+		return exitName;
 	}
 
 
 	//
 	public Class<? extends ResourceStrategy> getStrategyClass() {
-
-		return this.strategyClass;
+	
+		return strategyClass;
 	}
 
 
 	//
 	public Location getTargetLocation() {
-
-		return this.targetLocation;
+	
+		return targetLocation;
 	}
 
 
 	//
 	public ArrayList<Object> getOptionalArgs() {
-
-		return this.optionalArgs;
+	
+		return optionalArgs;
 	}
-
+	 
 }

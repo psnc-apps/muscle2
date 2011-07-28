@@ -28,14 +28,7 @@ kernel which does nothing, usefulf for testing purposes e.g. to use the QuitMoni
 public class VoidKernel extends muscle.core.kernel.RawKernel {
 
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
 	//
-	@Override
 	public muscle.core.Scale getScale() {
 		javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);
 		javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);
@@ -44,14 +37,12 @@ public class VoidKernel extends muscle.core.kernel.RawKernel {
 
 
 	//
-	@Override
 	protected void addPortals() {
 		// no portals
 	}
 
 
 	//
-	@Override
 	protected void execute() {
 		// do nothing
 	}

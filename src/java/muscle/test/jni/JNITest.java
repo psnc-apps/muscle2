@@ -21,6 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.test.jni;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import utilities.MiscTool;
+import utilities.jni.JNIMethod;
 
 
 /**
@@ -33,11 +37,11 @@ public class JNITest {
 
 	//
 	static {
-
+		
 		System.load("CppController"); // src/native/cpp/test/bin/libCppController.dylib
 	}
-
-
+	
+	
 	//
 	public static void main (String args[]) {
 
@@ -52,5 +56,5 @@ public class JNITest {
 		new DoubleArray();
 	}
 
-
+	
 }

@@ -21,13 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import utilities.MiscTool;
+import utilities.Invoker;
+import java.util.logging.Logger;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.ContainerController;
-import jade.wrapper.PlatformController;
-
 import java.util.LinkedList;
 import java.util.List;
+import jade.wrapper.PlatformController;
 
 
 /**
@@ -42,77 +44,74 @@ public class JADE {
 	private String containerName; // jadeContainer.getContainerName() not available in shutdownhook anymore, so er store it before
 	private String platformName; // jadeContainer.getPlatformName() not available in shutdownhook anymore, so er store it before
 	List<Thread> hooks = new LinkedList<Thread>();
-
+	
 	//
 	public JADE(String[] args) {
-
+								
 		// note: it seems like loggers can not be used within shutdown hooks
-		this.hooks.add( new JVMHook() );
-		Runtime.getRuntime().addShutdownHook( this.hooks.get(this.hooks.size()-1) );
+		hooks.add( new JVMHook() );
+		Runtime.getRuntime().addShutdownHook( hooks.get(hooks.size()-1) );
 
 		// boot jade without relying on jade.Boot.main
-		this.containerProfile = new ProfileImpl(jade.Boot.parseCmdLineArgs(args));
-		this.isMain = this.containerProfile.getBooleanProperty(Profile.MAIN, false);
+		containerProfile = new ProfileImpl(jade.Boot.parseCmdLineArgs(args));
+		isMain = containerProfile.getBooleanProperty(Profile.MAIN, false);
 		jade.core.Runtime jadeRuntime = jade.core.Runtime.instance();
 		jadeRuntime.setCloseVM(true);
 		jadeRuntime.invokeOnTermination(new Thread() {
-			@Override
 			public void run() {
-				System.out.println("container "+JADE.this.containerName+"@"+JADE.this.platformName+" has been terminated");
-				JADE.this.jadeContainer = null;
-			}
+				System.out.println("container "+containerName+"@"+platformName+" has been terminated");
+				jadeContainer = null;
+			}		
 		});
 
-		if(this.containerProfile.getBooleanProperty(Profile.MAIN, true)) {
-			this.jadeContainer = jadeRuntime.createMainContainer(this.containerProfile);
-		} else {
-			this.jadeContainer = jadeRuntime.createAgentContainer(this.containerProfile);
-		}
-
+		if(containerProfile.getBooleanProperty(Profile.MAIN, true))
+			jadeContainer = jadeRuntime.createMainContainer(containerProfile);
+		else
+			jadeContainer = jadeRuntime.createAgentContainer(containerProfile);
+		
 		try {
-			this.containerName = this.jadeContainer.getContainerName();
+			containerName = jadeContainer.getContainerName();
 		}
 		catch(jade.wrapper.ControllerException e) {
 			e.printStackTrace();
 		}
-		this.platformName = this.jadeContainer.getPlatformName();
+		platformName = jadeContainer.getPlatformName();
 	}
-
-
+	
+	
 	//
 	public ContainerController getContainerController() {
-
-		return this.jadeContainer;
+		
+		return jadeContainer;
 	}
-
-
+	
+	
 	//
 	public List<Thread> getShutdownHooks() {
-
-		return this.hooks;
+	
+		return hooks;
 	}
 
 
 	//
 	private class JVMHook extends Thread {
-
-		@Override
+			
 		public void run() {
 
-			if(JADE.this.jadeContainer != null) {
-
-				if(JADE.this.isMain) { // kill the platform
+			if(jadeContainer != null) {
+				
+				if(isMain) { // kill the platform
 
 					// quit whole platform via AMS/QuickQuitUtilityAgent
 					try {
-						muscle.utilities.agent.QuickQuitUtilityAgent.launch(JADE.this.jadeContainer);
+						muscle.utilities.agent.QuickQuitUtilityAgent.launch(jadeContainer);
 					}
 					catch (muscle.exception.SpawnAgentException e) {
 
 						// try to kill platform
 						PlatformController platformController = null;
 						try {
-							platformController = JADE.this.jadeContainer.getPlatformController();
+							platformController = jadeContainer.getPlatformController();
 						}
 						catch(jade.wrapper.ControllerException ee) {
 							throw new RuntimeException(ee);
@@ -127,7 +126,7 @@ public class JADE {
 				}
 				else { // kill this container
 					try {
-						JADE.this.jadeContainer.kill();
+						jadeContainer.kill();
 					}
 					catch(jade.wrapper.StaleProxyException e) {
 						e.printStackTrace();
@@ -135,32 +134,32 @@ public class JADE {
 				}
 //				long timeout = 8000;
 //				long startTime = System.currentTimeMillis();
-				System.out.println("waiting for container "+JADE.this.containerName+"@"+JADE.this.platformName+" to terminate");
-				while(JADE.this.jadeContainer != null) {
+				System.out.println("waiting for container "+containerName+"@"+platformName+" to terminate");
+				while(jadeContainer != null) {
 //					if( System.currentTimeMillis() -startTime >= timeout ) {
 //						break;
 //					}
 //					else {
 						try {
-							Thread.sleep(100);
+							sleep(100);
 						}
 						catch(java.lang.InterruptedException e) {
 							e.printStackTrace();
 						}
 //					}
 				}
-			}
-		}
+			}			
+		}		
 
 		// alternative method from jade/src/jade/tools/rma/rma.java
 //		private void shutDownPlatform() {
-//
+//				
 //			jade.domain.JADEAgentManagement.ShutdownPlatform sp = new jade.domain.JADEAgentManagement.ShutdownPlatform();
 //			try {
 //				jade.content.onto.basic.Action a = new jade.content.onto.basic.Action();
 //				a.setActor(getAMS());
 //				a.setAction(sp);
-//
+//				
 //				jade.lang.acl.ACLMessage requestMsg = getRequest();
 //				requestMsg.setOntology(JADEManagementOntology.NAME);
 //				getContentManager().fillContent(requestMsg, a);
@@ -168,7 +167,7 @@ public class JADE {
 //			}
 //			catch(Exception fe) {
 //				fe.printStackTrace();
-//			}
+//			}			
 //		}
 
 

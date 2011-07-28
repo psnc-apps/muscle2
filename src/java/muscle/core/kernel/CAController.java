@@ -34,18 +34,12 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 
 
 	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
-	/**
 	returns path to the directory which contains CxA specific files<br>
 	do not change signature! (used from native code)
 	*/
 	@Deprecated
 	static public String getCxAPath() {
-
+		
 		muscle.logging.Logger.getLogger(CAController.class).fine("using deprecated method muscle.core.kernel.CAController#getCxAPath()");
 
 		return CxADescription.ONLY.getPathProperty("cxa_path");
@@ -60,19 +54,18 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 	static public String getKernelPath(Class cls) {
 
 		java.net.URL rsrc = cls.getResource(""); // -> null if class is in jar bundle
-
+		
 		String path = "";
-		if(rsrc != null) {
+		if(rsrc != null)
 			path = rsrc.getPath();
-		} else {
+		else
 			muscle.logging.Logger.getLogger(cls).warning("no kernel path ("+path+") for class ("+cls+")");
-		}
-
+			
 		cls.getResource("").getPath();
 		if(cls.getPackage() == null) {
 			muscle.logging.Logger.getLogger(cls).warning("ambiguous kernel path ("+path+") for class ("+cls+")");
 		}
-
+		
 		return path;
 	}
 
@@ -84,7 +77,7 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 	*/
 	public String getKernelPath() {
 
-		return CAController.getKernelPath(this.getClass());
+		return getKernelPath(getClass());
 	}
 
 

@@ -28,15 +28,17 @@ import jade.content.onto.OntologyException;
 import jade.content.onto.basic.Action;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.Location;
 import jade.domain.FIPANames;
 import jade.domain.JADEAgentManagement.JADEManagementOntology;
-import jade.domain.JADEAgentManagement.QueryAgentsOnLocation;
-import jade.domain.JADEAgentManagement.QueryPlatformLocationsAction;
 import jade.domain.JADEAgentManagement.ShutdownPlatform;
 import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.domain.JADEAgentManagement.QueryPlatformLocationsAction;
+import jade.domain.JADEAgentManagement.QueryAgentsOnLocation;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
+import java.util.Date;
+import jade.core.Location;
 import muscle.exception.JADERuntimeException;
 
 
@@ -49,7 +51,7 @@ public class MessageTool {
 
 	//
 	public static ACLMessage createShutdownPlatformRequest(Agent ownerAgent) {
-
+	
 		ShutdownPlatform sdAction = new ShutdownPlatform();
 		Action actExpr = new Action(ownerAgent.getAMS(), sdAction);
 
@@ -75,14 +77,14 @@ public class MessageTool {
 		} catch (jade.content.lang.Codec.CodecException e) {
 			throw new JADERuntimeException(e);
 		}
-
+				
 		return request;
 	}
 
 
 	//
 	public static ACLMessage createQueryAgentsOnLocationRequest(Agent ownerAgent, Location location) {
-
+	
 		QueryAgentsOnLocation qaolAction = new QueryAgentsOnLocation();
 		qaolAction.setLocation(location);
 		Action actExpr = new Action(ownerAgent.getAMS(), qaolAction);
@@ -109,14 +111,14 @@ public class MessageTool {
 		} catch (jade.content.lang.Codec.CodecException e) {
 			throw new JADERuntimeException(e);
 		}
-
+				
 		return request;
 	}
 
 
 	//
 	public static ACLMessage createQueryPlatformLocationsRequest(Agent ownerAgent) {
-
+	
 		QueryPlatformLocationsAction qplAction = new QueryPlatformLocationsAction();
 		Action actExpr = new Action(ownerAgent.getAMS(), qplAction);
 
@@ -142,14 +144,14 @@ public class MessageTool {
 		} catch (jade.content.lang.Codec.CodecException e) {
 			throw new JADERuntimeException(e);
 		}
-
+				
 		return request;
 	}
 
 
 	//
 	public static ACLMessage createWhereIsAgentRequest(Agent ownerAgent, AID targetAID) {
-
+	
 		WhereIsAgentAction wiAction = new WhereIsAgentAction();
 		wiAction.setAgentIdentifier(targetAID);
 		Action actExpr = new Action(ownerAgent.getAMS(), wiAction);
@@ -176,7 +178,7 @@ public class MessageTool {
 		} catch (jade.content.lang.Codec.CodecException e) {
 			throw new JADERuntimeException(e);
 		}
-
+				
 		return request;
 	}
 
@@ -214,9 +216,9 @@ public class MessageTool {
 //		try {
 //			contentObject = message.getContentObject();
 //			if(contentObject != null) {
-//
+//			
 //				return true;
-//
+//				
 ////			Foo coData = (Foo)contentObject;
 ////			System.err.println("contentObject:"+coData.s);
 ////
@@ -232,36 +234,35 @@ public class MessageTool {
 ////			System.err.println("contentObject name:"+contentObject.getClass().getName());
 //
 //		}
-//
+//		
 //		} catch (UnreadableException e) {
-//
-//			if( !e.getMessage().equals("invalid stream header") ) {
+//		
+//			if( !e.getMessage().equals("invalid stream header") ) {		
 //				e.printStackTrace();
 //			}
 //		}
 //
 //		return false;
 //	}
-
-
+	
+	
 	public static MessageTemplate concatenate(MessageTemplate ... templates) {
-
-		if(templates.length == 0) {
+		
+		if(templates.length == 0)
 			return null;
-		} else if(templates.length == 1) {
+		else if(templates.length == 1)
 			return templates[0];
-		}
-
+		
 		MessageTemplate result = MessageTemplate.and(templates[0], templates[1]);
-
+		
 		if(templates.length > 2) {
-
+		
 			for(int i = 2; i < templates.length; i++) {
 				result = MessageTemplate.and(result, templates[i]);
 			}
-
+		
 		}
-
+		
 		return result;
 	}
 

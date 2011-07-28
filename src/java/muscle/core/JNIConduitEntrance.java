@@ -23,10 +23,10 @@ package muscle.core;
 
 
 
-import javatool.ArraysTool;
 import muscle.core.kernel.RawKernel;
-import utilities.Transmutable;
 import utilities.jni.JNIMethod;
+import javatool.ArraysTool;
+import utilities.Transmutable;
 
 
 /**
@@ -36,10 +36,6 @@ C for conduit type, R for raw jni type
 */
 public class JNIConduitEntrance<R,C extends java.io.Serializable> extends ConduitEntrance<C> {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private Class<R> jniClass;
 	private Transmutable<R,C> transmuter;
 
@@ -47,22 +43,22 @@ public class JNIConduitEntrance<R,C extends java.io.Serializable> extends Condui
 	//
 	public JNIConduitEntrance(Transmutable<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate, newDependencies);
-		this.transmuter = newTransmuter;
-		this.jniClass = newJNIClass;
+		transmuter = newTransmuter;
+		jniClass = newJNIClass;
 	}
 
 
 	//
 	public JNIMethod toJavaJNIMethod() {
-		return new JNIMethod(this, "toJava", ArraysTool.asArray(Object.class), ArraysTool.asArray(this.jniClass), null, null);
+		return new JNIMethod(this, "toJava", ArraysTool.asArray(Object.class), ArraysTool.asArray(jniClass), null, null);
 	}
 
 
 	//
 	public void toJava(R rawData) {
-
-		C data = this.transmuter.transmute(rawData);
-		this.send(data);
+		
+		C data = transmuter.transmute(rawData);
+		send(data);
 	}
 }
 

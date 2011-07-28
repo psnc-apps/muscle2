@@ -23,9 +23,11 @@ package muscle.logging;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
-
+	
 /**
 initializes our logging mechanism, load with<br>
 -Djava.util.logging.config.class=muscle.logging.LoggingConfiguration
@@ -36,7 +38,7 @@ public class LoggingConfiguration {
 
 	//
 	public LoggingConfiguration() throws java.io.IOException {
-
+			
 		InputStream loggingConfig = null;
 
 		String fileName = System.getProperty("java.util.logging.config.file");
@@ -47,7 +49,7 @@ public class LoggingConfiguration {
 				loggingConfig = null;
 			}
 		}
-
+		
 		if( loggingConfig != null ) {
 			// load our logging config into the LogManager
 			LogManager.getLogManager().readConfiguration(loggingConfig);
@@ -58,7 +60,7 @@ public class LoggingConfiguration {
 			// else the LogManager#readConfiguration() would initialize this class in an endless loop
 			System.setProperty("java.util.logging.config.class", null);
 
-			LogManager.getLogManager().readConfiguration();
+			LogManager.getLogManager().readConfiguration();		
 		}
 	}
 }

@@ -21,8 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.wrapper;
 
+import java.lang.reflect.Array;
+import muscle.exception.DataSizeMismatchException;
+import muscle.exception.DataTypeMismatchException;
+import muscle.exception.DataValueMismatchException;
+import utilities.MiscTool;
+import com.thoughtworks.xstream.XStream;
+import muscle.exception.MUSCLERuntimeException;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
+import java.math.BigDecimal;
 
 
 /**
@@ -31,41 +39,36 @@ container for a data message
 */
 public class DataWrapper<T> implements java.io.Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private DecimalMeasure<Duration> siTime; // global time where this data belongs to (may be null)
 	private T data; // our unwrapped data
 
-
+	
 	//
 	public DataWrapper(T newData, DecimalMeasure<Duration> newSITime) {
 
-		this.siTime = newSITime;
-		this.data = newData;
+		siTime = newSITime;
+		data = newData;
 	}
 
 
 	//
 	public T getData() {
 
-		return this.data;
+		return data;
 	}
 
 
 	//
 	public DecimalMeasure<Duration> getSITime() {
-
-		return this.siTime;
+	
+		return siTime;
 	}
 
-
+	
 	//
-	@Override
 	public String toString() {
-
-		return this.getClass().getName()+" time:"+this.siTime+" dataclass:"+this.data.getClass();
-	}
+	
+		return getClass().getName()+" time:"+siTime+" dataclass:"+data.getClass();
+	}	
 }
 

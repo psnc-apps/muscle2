@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.laplace;
 
+import java.awt.FlowLayout;
 import javax.swing.JFrame;
 
 /**
@@ -36,10 +37,10 @@ public class Main {
  		int nx = 200;
 		int ny = 50;
 		int steps = 10000;
-
+      
 		Temperature t = new Temperature(nx, ny, 2);
 		frame.add(t.getGUI());
-
+		
 		frame.pack();
       frame.setVisible(true);
 

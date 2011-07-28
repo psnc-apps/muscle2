@@ -56,28 +56,29 @@ public class Compressor<T extends java.io.Serializable> implements Serializer<T,
    //
    public Compressor() {
 
-      this.deflater = new Deflater();
-      this.inflater = new Inflater();
+      deflater = new Deflater();
+      inflater = new Inflater();
    }
-
+   
 
    //
    public Compressor(int level, int strategy, boolean gzipCompatible) {
 
-      this.deflater = new Deflater(level, gzipCompatible);
-      this.deflater.setStrategy(strategy);
-
-      this.inflater = new Inflater(gzipCompatible);
+      deflater = new Deflater(level, gzipCompatible);
+      deflater.setStrategy(strategy);
+      
+      inflater = new Inflater(gzipCompatible);
    }
 
 
    //
-   public byte[] dump(T object) {
+   @Override
+	public byte[] dump(T object) {
 
 		try {
 			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 			//GZIPOutputStream gzOut = new GZIPOutputStream(bOut); // this uses a DeflaterOutputStream with new Deflater(Deflater.DEFAULT_COMPRESSION, true)
-			DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, this.deflater);
+			DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
 			ObjectOutputStream objectOut = new ObjectOutputStream(deflaterStream);
 			objectOut.writeObject(object);
 			deflaterStream.finish();
@@ -92,10 +93,11 @@ public class Compressor<T extends java.io.Serializable> implements Serializer<T,
 
 
    //
+   @Override
 	public T load(byte[] bytes) {
 		try {
 			ByteArrayInputStream byteStream = new ByteArrayInputStream(bytes);
-			InflaterInputStream inflaterStream = new InflaterInputStream(byteStream, this.inflater);
+			InflaterInputStream inflaterStream = new InflaterInputStream(byteStream, inflater);
 			ObjectInputStream oIn = new ObjectInputStream(inflaterStream);
 			return (T)oIn.readObject();
 		} catch (Exception e) {

@@ -30,49 +30,49 @@ public interface Constant {
 
 	//
 	public interface Text {
-
+	
 		public static final String COMMENT_INDICATOR = "#";
-
+	
 	}
 
 
 	//
 	public interface Filename {
-
+	
 		public static final String CXA_PROPERTIES = "cxa.properties.config";
 		public static final String CXA_CONNECTION_SCHEME = "cxa.connection_scheme.config";
 		public static final String CXA_KERNEL_BOOT_INFOS = "cxa.kernel.config";
 		public static final String AGENT_INFO_PREFIX = "muscle.";
 		public static final String AGENT_INFO_SUFFIX = ".txt";
 		public static final String JVM_INFO = AGENT_INFO_PREFIX+"jvm"+AGENT_INFO_SUFFIX;
-
+	
 	}
 
 
 	//
 	public interface JADE {
-
+	
 		public static final String MAIN_CONTAINER = "Main-Container";
-		public static final String LOCAL_PORT = "1099";
-		public static final String RMA_AGENT = "rma";
-		public static final String RMA_CLASS = "jade.tools.rma.rma";
-
+		public static final String LOCAL_PORT = "1099";		
+		public static final String RMA_AGENT = "rma";		
+		public static final String RMA_CLASS = "jade.tools.rma.rma";		
+	
 	}
-
+	
 
 	//
 	public interface Key {
-
+	
 		public static final String CONNECTION_SCHEME_CLASS = "CONNECTION_SCHEME_CLASS";
 		public static final String ENTRANCE_INFO = "EntranceInfo";
 		public static final String EXIT_INFO = "ExitInfo";
-		public static final String TRACE_DATA_TRANSFER = "TRACE_DATA_TRANSFER";
+		public static final String TRACE_DATA_TRANSFER = "TRACE_DATA_TRANSFER";	
 	}
 
 
 	//
 	public interface Protocol {
-
+	
 		public static final String ANNOUNCE_ENTRANCE = "MUSCLE_ANNOUNCE_ENTRANCE";
 		public static final String ANNOUNCE_EXIT = "MUSCLE_ANNOUNCE_EXIT";
 		public static final String DATA_TRANSFER = "MUSCLE_DATA_TRANSFER";
@@ -80,16 +80,16 @@ public interface Constant {
 		public static final String PORTAL_ATTACH = "MUSCLE_PORTAL_ATTACH";
 		public static final String DOAGENT_RESULTS = "DOAGENT_RESULTS";
 		public static final String ADMINISTRATIVE_CALL = "ADMINISTRATIVE_CALL";
-
+	
 	}
 
 
 	//
 	public interface Service {
-
+	
 		public static final String ENTRANCE = "MUSCLE_ENTRANCE_SERVICE";
 		public static final String EXIT = "MUSCLE_EXIT_SERVICE";
-
+	
 	}
 
-}
+}  

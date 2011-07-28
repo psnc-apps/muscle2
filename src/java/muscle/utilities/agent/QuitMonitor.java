@@ -21,22 +21,46 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.utilities.agent;
 
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Result;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
-import jade.core.behaviours.SequentialBehaviour;
-import jade.wrapper.AgentController;
-import jadetool.ContainerControllerTool;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
+import jade.content.onto.UngroundedException;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.ShutdownPlatform;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLCodec.CodecException;
+import jade.proto.AchieveREInitiator;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.logging.Logger;
 
+import muscle.behaviour.WatchAgentBehaviour;
+
+import jade.core.behaviours.DataStore;
+import jade.core.behaviours.SimpleBehaviour;
+import jadetool.MessageTool;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.behaviour.KillPlatformBehaviour;
 import muscle.behaviour.PrintPlatformAgentsBehaviour;
-import muscle.behaviour.WatchAgentBehaviour;
-import muscle.exception.MUSCLERuntimeException;
+import muscle.behaviour.PrintLocationAgentsBehaviour;
+import java.util.logging.Logger;
 import muscle.logging.AgentLogger;
+import jade.wrapper.AgentController;
+import jadetool.ContainerControllerTool;
+import jade.core.behaviours.SequentialBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 
 
 /**
@@ -44,19 +68,13 @@ this agent monitors a given list of agents and kills the platform if all these a
 @author Jan Hegewald
 */
 public class QuitMonitor extends jade.core.Agent {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
+	
 	enum AgentState {UNAVAILABLE, ACTIVATED, DONE};
-
+	
 	private HashMap<AID, AgentState> agentContainerMap = new HashMap<AID, AgentState>();
 	private AgentLogger logger;
 
-
+	
 	/**
 	spawns a QuitMonitor agent
 	*/
@@ -64,10 +82,10 @@ public class QuitMonitor extends jade.core.Agent {
 
 		// do not create a simple logger with an agent class name because we might use the agent class name to create an AgentLogger
 		Logger simpleLogger = muscle.logging.Logger.getLogger(QuitMonitor.class);
-
+							
 		String agentName = javatool.ClassTool.getName(QuitMonitor.class);
 		simpleLogger.info("spawning agent: <"+agentName+">");
-
+			
 		AgentController controller = ContainerControllerTool.createUniqueNewAgent(ownerAgent.getContainerController(), agentName, javatool.ClassTool.getName(QuitMonitor.class), watchNames);
 
 		// get the AID of the spawned agent
@@ -86,103 +104,92 @@ public class QuitMonitor extends jade.core.Agent {
 
 		return spawnedAID;
 	}
-
+	
 	/**
 	observes state of other agents and kills platform if those agents have been terminated<br>
 	args must be an array of agent names which this agent should watch
 	*/
-	@Override
 	protected void setup() {
 
-		this.logger = AgentLogger.getLogger(this);
+		logger = AgentLogger.getLogger(this);
 		boolean parseError = false;
-		Object[] args = this.getArguments();
+		Object[] args = getArguments();
 
 		if( args != null ) {
-			for (Object arg : args) {
-				AID agentID = new AID((String)arg, AID.ISLOCALNAME);
-				this.agentContainerMap.put(agentID, AgentState.UNAVAILABLE);
+			for(int i = 0; i < args.length; i++) {
+				AID agentID = new AID((String)args[i], AID.ISLOCALNAME);
+				agentContainerMap.put(agentID, AgentState.UNAVAILABLE);
 			}
-		} else {
-			parseError = true;
 		}
-
+		else
+			parseError = true;
+		
 		if(parseError) {
 			throw new MUSCLERuntimeException("can not read arguments");
 		}
 
-
-		StringBuilder text = new StringBuilder(javatool.ClassTool.getName(this.getClass())+"@ container:"+this.here().getName()+" is up and watching for agents:");
-		for (AID aid : this.agentContainerMap.keySet()) {
-			text.append("\n\t"+aid.getName());
-		}
-
-		this.logger.info(text.toString());
-
+		
+		StringBuilder text = new StringBuilder(javatool.ClassTool.getName(getClass())+"@ container:"+here().getName()+" is up and watching for agents:");
+		for(Iterator<AID> iter = agentContainerMap.keySet().iterator(); iter.hasNext();)
+			text.append("\n\t"+iter.next().getName());
+			
+		logger.info(text.toString());
+		
 
 		// add AgentWatchers for all our agents
-		for (AID agentID : this.agentContainerMap.keySet()) {
-			this.addBehaviour(new WatchAgentBehaviour(this, agentID) {
-
-				/**
-				 *
-				 */
-				private static final long serialVersionUID = 1L;
-
-				@Override
+		for(Iterator<AID> iter = agentContainerMap.keySet().iterator(); iter.hasNext();) {
+			AID agentID = iter.next();
+			addBehaviour(new WatchAgentBehaviour(this, agentID) {
+			
 				protected void agentCreated(Location location) {
-
-					QuitMonitor.this.agentCreated(this.getTargetID());
+				
+					QuitMonitor.this.agentCreated(getTargetID());
 				}
 
-				@Override
 				protected void agentDeleted() {
-
-					QuitMonitor.this.agentDeleted(this.getTargetID());
+				
+					QuitMonitor.this.agentDeleted(getTargetID());
 				}
 			});
 		}
 	}
-
+	
 
 	// callback method for WatchAgentBehaviour
 	private void agentCreated(AID agentID) {
 
-		if(this.agentContainerMap.get(agentID) == AgentState.UNAVAILABLE) {
-			this.agentContainerMap.put(agentID, AgentState.ACTIVATED);
-		} else {
-			throw new MUSCLERuntimeException("Error: activated agent<"+agentID.getName()+"> twice");
+		if(agentContainerMap.get(agentID) == AgentState.UNAVAILABLE) {
+			agentContainerMap.put(agentID, AgentState.ACTIVATED);
 		}
+		else
+			throw new MUSCLERuntimeException("Error: activated agent<"+agentID.getName()+"> twice");
 	}
 
 
 	// callback method for WatchAgentBehaviour
 	private void agentDeleted(AID agentID) {
 
-		if(this.agentContainerMap.containsValue(AgentState.UNAVAILABLE)) {
-			this.logger.warning("Error: agent<"+agentID.getName()+"> already deleted but other agents are still missing");
+		if(agentContainerMap.containsValue(AgentState.UNAVAILABLE))
+			logger.warning("Error: agent<"+agentID.getName()+"> already deleted but other agents are still missing");
+		
+		if(agentContainerMap.get(agentID) == AgentState.ACTIVATED) {
+			agentContainerMap.put(agentID, AgentState.DONE);
 		}
+		else
+			logger.severe("Error: agent<"+agentID.getName()+"> deleted but previous state was <"+agentContainerMap.get(agentID)+">");
 
-		if(this.agentContainerMap.get(agentID) == AgentState.ACTIVATED) {
-			this.agentContainerMap.put(agentID, AgentState.DONE);
-		} else {
-			this.logger.severe("Error: agent<"+agentID.getName()+"> deleted but previous state was <"+this.agentContainerMap.get(agentID)+">");
-		}
-
-		for(Iterator<AgentState> iter = this.agentContainerMap.values().iterator(); iter.hasNext();) {
+		for(Iterator<AgentState> iter = agentContainerMap.values().iterator(); iter.hasNext();) {
 			AgentState state = iter.next();
 
-			if(state != AgentState.DONE) {
+			if(state != AgentState.DONE)
 				break;
-			}
-
-			if(!iter.hasNext()) {
-				this.tearDown();
-			}
+			
+			if(!iter.hasNext())
+				tearDown();
 		}
 	}
-
-
+	
+	
 	//
 	private void tearDown() {
 
@@ -196,13 +203,13 @@ public class QuitMonitor extends jade.core.Agent {
 //					Thread.sleep(5000);
 //				} catch (InterruptedException e) {
 //					e.printStackTrace();
-//				}
+//				}				
 //			}
 //		});
+		
+		tearDownBehaviour.addSubBehaviour(new KillPlatformBehaviour(this));	
 
-		tearDownBehaviour.addSubBehaviour(new KillPlatformBehaviour(this));
-
-		this.addBehaviour(tearDownBehaviour);
+		addBehaviour(tearDownBehaviour);
 	}
 
 }

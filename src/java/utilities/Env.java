@@ -21,57 +21,51 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities;
 
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.HashMap;
-import java.util.Map;
-
-import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
+import java.io.File;
+import java.net.URI;
+import java.io.Reader;
+import java.util.Map;
+import java.io.StringReader;
 
 /**
 loads environment for multiple classes from a json file
 @author Jan Hegewald
 */
-public class Env extends HashMap<Object, Object> {
+public class Env extends HashMap {
 
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 
 	public Env() {
 		super();
-	}
+	}	
 
 	public Env(Reader in) {
 
 		super();
 		// treat input as a org.json.simple.JSONObject and put in our env
-		@SuppressWarnings("unchecked")
-		Map<Object, Object> jsonHash = (JSONObject)JSONValue.parse(in);
-		this.putAll(jsonHash);
+		JSONObject jsonHash = (JSONObject)JSONValue.parse(in);
+		putAll(jsonHash);
 	}
 
 	public Env(String input) {
 		this(new StringReader(input));
-	}
+	}	
 
-	public Env(Map<Object, Object> map) {
+	public Env(Map map) {
 		super();
-		this.putAll(map);
+		putAll(map);
 	}
-
+	
 	//
-	public Env subenv(Class<?> cls) {
+	public Env subenv(Class cls) {
 
-		@SuppressWarnings("unchecked")
-		Map<Object, Object> jsonHash = (JSONObject)this.get(javatool.ClassTool.getName(cls));
+		JSONObject jsonHash = (JSONObject)get(javatool.ClassTool.getName(cls));
 		if(jsonHash != null) {
 			return new Env(jsonHash);
 		}
-
+				
 		return new Env();
 	}
 
@@ -81,11 +75,11 @@ public class Env extends HashMap<Object, Object> {
 	*/
 	public Object getEnvAndAssert(Object key) {
 
-		if(!this.containsKey(key)) {
-			throw new RuntimeException("no env for key <"+key+">");
+		if(!containsKey(key)) {
+			throw new RuntimeException("no env for key <"+key+">");			
 		}
-
-		return this.get(key);
+		
+		return get(key);
 	}
 
 	/**
@@ -93,11 +87,10 @@ public class Env extends HashMap<Object, Object> {
 	*/
 	public Object get(Object key, Object defaultVal) {
 
-		if(this.containsKey(key)) {
-			return this.get(key);
-		}
-
-		return defaultVal;
+		if(containsKey(key))
+			return get(key);
+		
+		return defaultVal;			
 	}
 
 }

@@ -21,16 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.math.BigDecimal;
-
-import javatool.DecimalMeasureTool;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-
+import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
 import muscle.core.Scale;
-import muscle.core.wrapper.DataWrapper;
+import javax.measure.DecimalMeasure;
+import javax.measure.unit.SI;
+import javax.measure.quantity.Duration;
+import java.math.BigDecimal;
+import javatool.DecimalMeasureTool;
 
 
 /**
@@ -45,32 +43,32 @@ public class TimeFactorFilter implements muscle.core.conduit.filter.WrapperFilte
 
 	//
 	public TimeFactorFilter(WrapperFilter newChildFilter, int newFactor) {
+	
+		childFilter = newChildFilter;
+		
+		factor = newFactor;
 
-		this.childFilter = newChildFilter;
-
-		this.factor = newFactor;
-
-		DataTemplate outTemplate = this.childFilter.getInTemplate();
+		DataTemplate outTemplate = childFilter.getInTemplate();
 		Scale outScale = outTemplate.getScale();
 		assert outScale != null;
-		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(this.factor)), outScale.getDt().getUnit());
+		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(factor)), outScale.getDt().getUnit());
 
-		this.inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper newInData) {
-
+		
 		DataWrapper inData = newInData;
-		this.childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.multiply(inData.getSITime(), new BigDecimal(this.factor))));
+		childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.multiply(inData.getSITime(), new BigDecimal(factor))));
 	}
 
 }

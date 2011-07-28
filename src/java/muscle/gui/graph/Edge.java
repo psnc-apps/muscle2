@@ -28,18 +28,20 @@ description of an edge
 @author Jan Hegewald
 */
 public class Edge {
-
+	
 	private String labelText;
+	private ConduitDescription conduit;
 	private Vertex source = null;
-	private Vertex dest = null;
-
-
+	private Vertex dest = null; 
+	
+	
 	//
 	public Edge(String newLabelText, ConduitDescription newConduit) {
 
-		this.labelText = newLabelText;
+		labelText = newLabelText;
+		conduit = newConduit;
 	}
-
+	
 	public void setSource(Vertex source) {
 		this.source = source;
 	}
@@ -49,24 +51,22 @@ public class Edge {
 	}
 
 	public Vertex getSource() {
-		return this.source;
+		return source;
 	}
 
 	public Vertex getDest() {
-		return this.dest;
-	}
+		return dest;
+	} 
 	//
-	@Override
 	public String toString() {
-		return this.labelText;
+		return labelText;
 	}
 
 	//
-	@Override
 	public boolean equals(Object obj) {
-
-		if( this.getClass().isInstance(obj) ) {
-			return ((Edge)obj).labelText.equals(this.labelText);
+		
+		if( getClass().isInstance(obj) ) {
+			return ((Edge)obj).labelText.equals(labelText);
 		}
 		return super.equals(obj);
 	}

@@ -21,43 +21,49 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import muscle.logging.AgentLogger;
+
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+import java.util.logging.LogRecord;
+import java.util.Date;
+import java.util.Locale;
 
-
+	
 /**
 formats log messages
 @author Jan Hegewald
 */
 public class AgentFormatter extends SimpleFormatter {
-
+	
 	Date dat = new Date();
 	private final static String format = "{0,date} {0,time}";
 	private MessageFormat formatter;
 
 	private Object args[] = new Object[1];
-
+	
 	private String lineSeparator = "\n";
-
-	@Override
+	
 	public synchronized String format(LogRecord record) {
-
+	
 		StringBuffer sb = new StringBuffer();
 		// Minimize memory allocations here.
-		this.dat.setTime(record.getMillis());
-		this.args[0] = this.dat;
+		dat.setTime(record.getMillis());
+		args[0] = dat;
 		StringBuffer text = new StringBuffer();
-		if (this.formatter == null) {
-			 this.formatter = new MessageFormat(format);
+		if (formatter == null) {
+			 formatter = new MessageFormat(format);
 		}
-		this.formatter.format(this.args, text, null);
+		formatter.format(args, text, null);
 		sb.append(text);
 		sb.append(" ");
-//		if (record.getSourceClassName() != null) {
+//		if (record.getSourceClassName() != null) {	
 //			 sb.append(record.getSourceClassName());
 //		} else {
 //			 sb.append(record.getLoggerName());
@@ -66,18 +72,18 @@ public class AgentFormatter extends SimpleFormatter {
 		sb.append("(");
 		sb.append(record.getSourceClassName());
 		sb.append(")");
+		
 
-
-		if (record.getSourceMethodName() != null) {
+		if (record.getSourceMethodName() != null) {	
 			sb.append(" ");
 			sb.append(record.getSourceMethodName());
 		}
-		sb.append(this.lineSeparator);
-		String message = this.formatMessage(record);
+		sb.append(lineSeparator);
+		String message = formatMessage(record);
 		sb.append(record.getLevel().getLocalizedName());
 		sb.append(": ");
 		sb.append(message);
-		sb.append(this.lineSeparator);
+		sb.append(lineSeparator);
 		if(record.getThrown() != null) {
 			try {
 				StringWriter sw = new StringWriter();

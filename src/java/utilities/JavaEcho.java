@@ -32,13 +32,13 @@ public class JavaEcho {
    public static void main(String args[]) {
 
 		for(String key : args) {
-
+		
 			System.out.println(System.getProperty(key));
 		}
 
 		if(args.length == 0) {
 			System.out.println("provide system proberty key(s) as args, e.g. <user.home>");
 		}
-	}
+	}	
 
 }

@@ -21,6 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import com.thoughtworks.xstream.XStream;
+import muscle.exception.MUSCLERuntimeException;
+import muscle.core.CxADescription;
 
 
 /**
@@ -30,14 +36,10 @@ for more functinality the javax.media.j3d.BoundingBox class may be more suitable
 */
 public class BBox implements java.io.Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private int[] origin;
 	private int[] bounds;
-
-
+	
+	
 	//
 	public BBox(int ... values) {  // i.e. x,y,z, w,h,d
 
@@ -49,19 +51,19 @@ public class BBox implements java.io.Serializable {
 			dims = 2;
 		}
 		else if(values.length == 6) { // 3D
-			dims = 3;
+			dims = 3;		
 		}
 		else {
 			throw new IllegalArgumentException("unknown number of dimensions: "+values.length+"/2");
 		}
-
-		this.origin = new int[dims];
-		System.arraycopy(values, 0, this.origin, 0, dims);
-		this.bounds = new int[dims];
-		System.arraycopy(values, dims, this.bounds, 0, dims);
+		
+		origin = new int[dims];
+		System.arraycopy(values, 0, origin, 0, dims);
+		bounds = new int[dims];
+		System.arraycopy(values, dims, bounds, 0, dims);
 
 	}
-
-
+	
+	
 }
 

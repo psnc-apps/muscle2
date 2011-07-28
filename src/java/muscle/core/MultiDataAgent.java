@@ -22,28 +22,28 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import jade.core.AID;
-import jade.core.Location;
 
+import muscle.logging.AgentLogger;
+
+import utilities.MiscTool;
+import java.util.logging.Logger;
+import jade.core.Location;
+import muscle.core.messaging.jade.IncomingMessageProcessor;
+import muscle.core.messaging.RemoteDataSinkHead;
+import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.signal.Signal;
+import muscle.core.messaging.signal.QueueLimitExceededSignal;
+import muscle.core.messaging.signal.QueueWithinLimitSignal;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Logger;
-
 import javatool.ClassTool;
-import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.messaging.jade.IncomingMessageProcessor;
 import muscle.core.messaging.jade.SortingMessageQueue;
-import muscle.core.messaging.signal.QueueLimitExceededSignal;
-import muscle.core.messaging.signal.QueueWithinLimitSignal;
-import muscle.core.messaging.signal.Signal;
-import muscle.logging.AgentLogger;
-import utilities.MiscTool;
 
 
 /**
@@ -51,11 +51,7 @@ JADE agent which filters incomming data messages and passes them to multiple mes
 @author Jan Hegewald
 */
 public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<DataMessage<?>> {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+		
 	private transient IncomingMessageProcessor messageProcessor;
 	private transient Logger logger;
 	private List<RemoteDataSinkTail<DataMessage<?>>> dataSources = new ArrayList<RemoteDataSinkTail<DataMessage<?>>>(); // these are the conduit exits
@@ -66,56 +62,55 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 
 	//
 	public void addSink(RemoteDataSinkHead<DataMessage<?>> s) {
-
-		this.dataSinks.add(s);
+		
+		dataSinks.add(s);
 	}
 
 
 	//
 	public void addSource(RemoteDataSinkTail<DataMessage<?>> s) {
-
-		this.dataSources.add(s);
+		
+		dataSources.add(s);
 	}
-
-
+	
+	
 	//
    @Override
 	public void takeDown() {
-
-		this.messageProcessor.pause();
-		this.logger.info("waiting for "+this.messageProcessor.getClass()+" to join");
+	
+		messageProcessor.pause();
+		logger.info("waiting for "+messageProcessor.getClass()+" to join");
 		try {
-			this.messageProcessor.join();
+			messageProcessor.join();
 		}
 		catch(java.lang.InterruptedException e) {
 			throw new muscle.exception.MUSCLERuntimeException(e);
 		}
-		this.messageProcessor = null;
+		messageProcessor = null;
 	}
 
-
+	
 	//
    @Override
 	protected void setup() {
-
-		this.initTransients();
+		
+		initTransients();
 	}
-
+	
 
 	//
-	@Override
 	protected void afterMove() {
 
-		this.initTransients();
+		initTransients();
 	}
-
-
+	
+	
 	//
 	protected void initTransients() {
 
-		this.logger = AgentLogger.getLogger(this);
-		this.messageProcessor = new IncomingMessageProcessor(this, this.nonACLQueue);
-		this.messageProcessor.start();
+		logger = AgentLogger.getLogger(this);
+		messageProcessor = new IncomingMessageProcessor(this, nonACLQueue);		
+		messageProcessor.start();
 	}
 
 
@@ -123,15 +118,15 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
    @Override
 	protected jade.core.MessageQueue createMessageQueue() {
 
-		return new SortingMessageQueue(this.nonACLQueue);
+		return new SortingMessageQueue(nonACLQueue);
 	}
-
-
+	
+	
 	/**
 	maximum buffer size in bytes
 	*/
 	protected long suggestedMaxBufferSize() {
-
+		
 		return 1042*1042 *800; // 800MB
 	}
 
@@ -140,24 +135,24 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	returns our logger
 	*/
 	public Logger getLogger() {
-
-		return this.logger;
+		
+		return logger;
 	}
-
+	
 
 	/**
 	custom implementation of Agent#doMove to deny moving this agent if inappropriate
 	*/
    @Override
 	public void doMove(Location destination) {
-
-		if( ClassTool.isNative(this.getClass(), jade.core.Agent.class) ) {
-System.out.println(this.getLocalName()+" is native");
-			this.logger.warning("not allowed to move to <"+destination+">");
+		
+		if( ClassTool.isNative(getClass(), jade.core.Agent.class) ) {
+System.out.println(getLocalName()+" is native");
+			logger.warning("not allowed to move to <"+destination+">");
 			return;
-		} else {
-			super.doMove(destination);
 		}
+		else
+			super.doMove(destination);
 	}
 
 
@@ -166,30 +161,30 @@ System.out.println(this.getLocalName()+" is native");
 	*/
    @Override
 	public void doClone(Location destination, String newName) {
-
-		if( ClassTool.isNative(this.getClass(), jade.core.Agent.class) ) {
-			this.logger.warning("not allowed to clone to <"+destination+">");
+		
+		if( ClassTool.isNative(getClass(), jade.core.Agent.class) ) {
+			logger.warning("not allowed to clone to <"+destination+">");
 			return;
-		} else {
-			super.doClone(destination, newName);
 		}
+		else
+			super.doClone(destination, newName);
 	}
-
-
+	
+	
 	// todo: data serialization in separate thread
 	public void sendDataMessage(DataMessage<? extends java.io.Serializable> dmsg) {
 
 		assert !dmsg.hasByteSequenceContent();
-
+ 		
 		byte[] rawData = null;
  		rawData = MiscTool.serialize(dmsg.getStored());
 // 		rawData = MiscTool.gzip(dmsg.getStored());
-
+ 	
  		dmsg.setByteSequenceContent(rawData);
  		dmsg.store(null, null);
 
-		// send data to target agent
-		this.send(dmsg);
+		// send data to target agent	
+		send(dmsg);
  		dmsg.setByteSequenceContent(null);
 	}
 
@@ -200,51 +195,52 @@ System.out.println(this.getLocalName()+" is native");
 		// deserialize message content and store it in the message object
 		long byteCount = 0;
 		if(dmsg.hasByteSequenceContent()) {
-
-			Object data = null;
+			
+			Object data = null;		
 			// deserialize message content
 			byte[] rawData = dmsg.getByteSequenceContent();
 			dmsg.setByteSequenceContent(null);
 			byteCount = rawData.length;
-
+			
 			data = MiscTool.deserialize(rawData);
 //			data = MiscTool.gunzip(rawData);
 			rawData = null;
-
+			
 			dmsg.store(data, byteCount);
-		} else {
-			throw new muscle.exception.MUSCLERuntimeException("["+this.getLocalName()+"] can not handle empty DataMessage");
 		}
-
+		else
+			throw new muscle.exception.MUSCLERuntimeException("["+getLocalName()+"] can not handle empty DataMessage");
+		
 		// sort the message to its internal receiver
 		if( dmsg.getSinkID().equals(Signal.class.toString()) ) {
-			this.handleRemoteSignal(dmsg);
+			handleRemoteSignal(dmsg);
 		}
 		else {
 			// put message to its sink
 			// there we process all generic data messages
 			// see if this message is intended for one of our other sinks
-			for (RemoteDataSinkTail<DataMessage<?>> source : this.dataSources) {
+			for(Iterator<RemoteDataSinkTail<DataMessage<?>>> sourceIterator = dataSources.iterator(); sourceIterator.hasNext();) {
+				RemoteDataSinkTail<DataMessage<?>> source = sourceIterator.next();
+							
 				if( source.id().equals(dmsg.getSinkID()) ) {
 
 					// only add to buffer counter for generic data messages
 					// administrative messages like SignalMessage or ACLMessage are not added
-					synchronized(this.toldToPauseList) {
-						this.bufferSizeCount += byteCount;
+					synchronized(toldToPauseList) {
+						bufferSizeCount += byteCount;
 					}
-
-					if(this.bufferSizeCount >= this.suggestedMaxBufferSize()) {
-
-						if( (this.bufferSizeCount-byteCount) <= 0 ) {
-							throw new muscle.exception.MUSCLERuntimeException("configuration error: ["+this.getLocalName()+"] does not accept a data message because its buffer size is too limited");
-						}
-
+					
+					if(bufferSizeCount >= suggestedMaxBufferSize()) {
+					
+						if( (bufferSizeCount-byteCount) <= 0 )
+							throw new muscle.exception.MUSCLERuntimeException("configuration error: ["+getLocalName()+"] does not accept a data message because its buffer size is too limited");
+						
 						// send pause signal to source kernel
-						synchronized(this.toldToPauseList) {
-							if(!this.toldToPauseList.contains(dmsg.getSender())) {
+						synchronized(toldToPauseList) {
+							if(!toldToPauseList.contains(dmsg.getSender())) {
 								QueueLimitExceededSignal s = new QueueLimitExceededSignal();
-								this.sendRemoteSignal(s, dmsg.getSender());
-								this.toldToPauseList.add(dmsg.getSender());
+								sendRemoteSignal(s, dmsg.getSender());
+								toldToPauseList.add(dmsg.getSender());
 							}
 						}
 					}
@@ -253,8 +249,8 @@ System.out.println(this.getLocalName()+" is native");
 					return; // it is not possible for a message to feed multiple sources
 				}
 			}
-
-			this.logger.severe("no source for <"+dmsg.getSinkID()+"> found, dropping data message");
+			
+			logger.severe("no source for <"+dmsg.getSinkID()+"> found, dropping data message");
 		}
 	}
 
@@ -263,7 +259,7 @@ System.out.println(this.getLocalName()+" is native");
 //	public void receiveMessage(ACLMessage msg) {
 //
 //		if(msg instanceof DataMessage) {
-//
+//		
 //			handleDataMessage((DataMessage)msg);
 //		}
 //		else if(msg instanceof ACLMessage) {
@@ -276,8 +272,8 @@ System.out.println(this.getLocalName()+" is native");
 //		}
 //
 //	}
-
-
+	
+	
 	/**
 	wrap a Signal and send it to another agent
 	*/
@@ -290,58 +286,61 @@ System.out.println(this.getLocalName()+" is native");
 			throw new muscle.exception.MUSCLERuntimeException(e);
 		}
 		dmsg.addReceiver(dst);
-		this.send(dmsg);
+		send(dmsg);
 	}
-
-
+	
+	
 	//
 	public void handleRemoteSignal(DataMessage<? extends Signal> dmsg) { // or better limit to java.rmi.RemoteException?
-
+		
 		Signal s = dmsg.getStored();
 
 		if(s instanceof QueueLimitExceededSignal) {
 			// tell all our senders which send to the agent who issued the exception to pause
-			this.pauseSendersForDst(dmsg.getSender());
+			pauseSendersForDst(dmsg.getSender());
 		}
 		else if(s instanceof QueueWithinLimitSignal) {
 			// tell all our senders which send to the agent who issued the exception to continute
-			this.resumeSendersForDst(dmsg.getSender());
-		} else {
+			resumeSendersForDst(dmsg.getSender());
+		}
+		else
 			throw new muscle.exception.MUSCLERuntimeException("unknown signal <"+s.getClass()+">");
-		}
 	}
-
-
+	
+	
 	//
-   public void notifySinkWillYield(DataMessage dmsg) {
+   @Override
+	public void notifySinkWillYield(DataMessage dmsg) {
 
-		assert dmsg.getByteCount() != null : "["+this.getLocalName()+"] DataMessage#getByteCount must not be <null> here";
+		assert dmsg.getByteCount() != null : "["+getLocalName()+"] DataMessage#getByteCount must not be <null> here";
 
-      synchronized(this.toldToPauseList) {
-			this.bufferSizeCount -= dmsg.getByteCount();
+      synchronized(toldToPauseList) {
+			bufferSizeCount -= dmsg.getByteCount();
 		}
-		assert this.bufferSizeCount >= 0 : "["+this.getLocalName()+"] bufferSizeCount "+this.bufferSizeCount;
-
+		assert bufferSizeCount >= 0 : "["+getLocalName()+"] bufferSizeCount "+bufferSizeCount;
+		
 		// se if we have to tell any source kernels to resume sending data to us
-		synchronized(this.toldToPauseList) {
-			if(!this.toldToPauseList.isEmpty() && this.bufferSizeCount < this.suggestedMaxBufferSize()) {
-				for(Iterator<AID> iter = this.toldToPauseList.iterator(); iter.hasNext();) {
-
+		synchronized(toldToPauseList) {
+			if(!toldToPauseList.isEmpty() && bufferSizeCount < suggestedMaxBufferSize()) {
+				for(Iterator<AID> iter = toldToPauseList.iterator(); iter.hasNext();) {
+					
 					AID sender = iter.next();
-					this.sendRemoteSignal(new QueueWithinLimitSignal(), sender);
+					sendRemoteSignal(new QueueWithinLimitSignal(), sender);
 					iter.remove();
 				}
 			}
 		}
 	}
 
-
+	
 	//
 	private void pauseSendersForDst(AID dst) {
 
-		this.logger.warning("pausing senders for "+dst.getLocalName());
+		logger.warning("pausing senders for "+dst.getLocalName());
 		// pause all senders which send to agent dst
-		for (RemoteDataSinkHead<DataMessage<?>> head : this.dataSinks) {
+		for(Iterator<RemoteDataSinkHead<DataMessage<?>>> iter = dataSinks.iterator(); iter.hasNext();) {
+			RemoteDataSinkHead<DataMessage<?>> head = iter.next();
+
 			if( head.dstAgent().equals(dst) ) {
 				head.pause();
 			}
@@ -352,9 +351,9 @@ System.out.println(this.getLocalName()+" is native");
 	//
 	private void resumeSendersForDst(AID dst) {
 
-		this.logger.info("resuming senders for "+dst.getLocalName());
+		logger.info("resuming senders for "+dst.getLocalName());
 		// resume all senders which send to agent dst
-		for(Iterator<RemoteDataSinkHead<DataMessage<?>>> iter = this.dataSinks.iterator(); iter.hasNext();) {
+		for(Iterator<RemoteDataSinkHead<DataMessage<?>>> iter = dataSinks.iterator(); iter.hasNext();) {
 			RemoteDataSinkHead<?> head = iter.next();
 			if( head.dstAgent().equals(dst) ) {
 				head.resume();
@@ -365,10 +364,10 @@ System.out.println(this.getLocalName()+" is native");
 
 //	//
 //	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-//
+//		
 //		// do default deserialization
 //		in.defaultReadObject();
-//
+//		
 //		// init transient fields
 //		logger = AgentLogger.getLogger(this);
 //		messageProcessor = new IncomingMessageProcessor(this, nonACLQueue);

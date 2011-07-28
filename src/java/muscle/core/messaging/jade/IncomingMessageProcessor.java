@@ -22,7 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.messaging.jade;
 
 import java.util.Queue;
-
 import muscle.core.MultiDataAgent;
 
 
@@ -33,24 +32,24 @@ this allows us to actively push messages to their individual sinks
 */
 public class IncomingMessageProcessor extends java.lang.Thread {
 
-
+	
 	private MultiDataAgent owner;
 	private boolean shouldRun = true;
 	private Queue<DataMessage> queue;
-
-
+	
+	
 	//
 	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<DataMessage> newQueue) {
 
-		this.owner = newOwner;
-		this.queue = newQueue;
+		owner = newOwner;
+		queue = newQueue;
 	}
 
-
+	
 	//
 	public synchronized void pause() {
 
-		this.shouldRun = false;
+		shouldRun = false;
 	}
 
 
@@ -59,35 +58,34 @@ public class IncomingMessageProcessor extends java.lang.Thread {
 //		shouldRun = true;
 //		run();
 //	}
-
-
+	
+	
 	//
    @Override
    public void run() {
-
-		this.owner.getLogger().info("starting "+this.getClass());
+		
+		owner.getLogger().info("starting "+getClass()); 	
 
 		long milliDelay = 1;
 		int nanoDelay = 0;
-
-		while(this.shouldRun) {
+		
+		while(shouldRun) {			
 			// blocking poll for next message
-
+			
 
 			// todo: use Object#wait and Object#notify instead of Thread#sleep
 			DataMessage dmsg = null;
-			while( this.shouldRun && ((dmsg = this.queue.poll()) == null) ) {
+			while( shouldRun && ((dmsg = queue.poll()) == null) ) {
 				try {
 					Thread.sleep(milliDelay, nanoDelay);
 				}
 				catch (InterruptedException e) {
 					throw new RuntimeException(e);
-				}
+				}			
 			}
 
-			if(dmsg != null) {
-				this.owner.handleDataMessage(dmsg);
-			}
+			if(dmsg != null)
+				owner.handleDataMessage(dmsg);
 		}
 	}
 

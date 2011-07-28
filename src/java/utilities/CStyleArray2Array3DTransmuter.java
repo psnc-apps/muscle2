@@ -36,18 +36,18 @@ public class CStyleArray2Array3DTransmuter implements Transmutable<double[],Arra
 	//
 	public CStyleArray2Array3DTransmuter(int newXSize, int newYSize, int newZSize) {
 
-		this.xSize = newXSize;
-		this.ySize = newYSize;
-		this.zSize = newZSize;
+		xSize = newXSize;
+		ySize = newYSize;
+		zSize = newZSize;
 	}
-
-
+	
+	
 	//
 	public Array3D_double transmute(double[] in) {
-
+		
 		// get a 3d view of the incomming data
-		Array3D_double out = new Array3D_double(this.xSize, this.ySize, this.zSize, in);
-
+		Array3D_double out = new Array3D_double(xSize, ySize, zSize, in);
+		
 		return out;
 	}
 

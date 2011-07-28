@@ -21,10 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package jadetool;
 
+import jade.core.AID;
+import jade.core.Agent;
+import jade.core.Location;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
-
-import java.util.UUID;
+import java.util.UUID;		
 
 
 /**
@@ -54,7 +56,7 @@ uniqueName = baseName+UUID.randomUUID().toString();
 				System.out.println("ContainerControllerTool can not create agent: <"+oldName+">, trying with other name: <"+uniqueName+">");
 			}
 		}
-
+ 		
 // 		// double check if this agent could be created
 // 		try {
 // 			jade.core.AID spawnedAID = new jade.core.AID(agentController.getName(), jade.core.AID.ISGUID);
@@ -62,7 +64,7 @@ uniqueName = baseName+UUID.randomUUID().toString();
 // 			System.out.println("ContainerControllerTool can not create agent: <"+uniqueName+">");
 // 			throw new RuntimeException(e);
 // 		}
-
+		
 		return agentController;
 	}
 

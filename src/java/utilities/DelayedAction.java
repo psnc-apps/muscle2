@@ -30,38 +30,37 @@ performs a delayed task after action has been called, specify delay in ms
 @author Jan Hegewald
 */
 abstract public class DelayedAction {
-
+	
 	private final long DELAY;
 	Timer timer;
-
+	
 	public DelayedAction(long newDelay) {
 
-		this.DELAY = newDelay;
+		DELAY = newDelay;
 	}
-
+	
 	abstract public void doAction();
-
+	
 	public void clear() {
-
-		if( this.timer != null ) {
-			this.timer.cancel();
-			this.timer = null;
+		
+		if( timer != null ) {
+			timer.cancel();
+			timer = null;
 		}
 	}
-
+	
 	public void action() {
-
-		if( this.timer == null ) {
-			this.timer = new Timer();
+		
+		if( timer == null ) {
+			timer = new Timer();
 			TimerTask timerTask = new TimerTask() {
-				@Override
 				public void run() {
 					// now we should do the real flush
 					DelayedAction.this.doAction();
 					DelayedAction.this.clear();
 				}
 			};
-			this.timer.schedule(timerTask, this.DELAY);
+			timer.schedule(timerTask, DELAY);
 		}
 	}
 }

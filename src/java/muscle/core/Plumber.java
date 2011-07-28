@@ -21,39 +21,39 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import jade.core.AID;
-import jade.core.Agent;
-import jade.core.Location;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.Property;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.lang.acl.ACLMessage;
-import jade.proto.SubscriptionInitiator;
-import jade.wrapper.AgentController;
-import jadetool.DFServiceTool;
-import jadetool.DFServiceTool.RegisterSingletonAgentException;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 import muscle.Constant;
-import muscle.core.ConnectionScheme.Pipeline;
 import muscle.core.conduit.BasicConduit;
 import muscle.core.conduit.ConduitArgs;
+import muscle.core.ConnectionScheme.Pipeline;
+import muscle.core.DataTemplate;
+import muscle.core.EntranceDependency;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.exception.SpawnAgentException;
 import muscle.logging.AgentLogger;
 
 import com.thoughtworks.xstream.XStream;
+
+import jade.core.AID;
+import jade.core.Agent;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.Property;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
+import jade.lang.acl.ACLMessage;
+import jade.proto.SubscriptionInitiator;
+import jade.wrapper.AgentController;
+
+import jadetool.DFServiceTool;
+import jadetool.DFServiceTool.RegisterSingletonAgentException;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import jade.core.Location;
 
 
 /**
@@ -62,53 +62,47 @@ listens for kernel announcements and spawns conduits according to the connection
 */
 public class Plumber extends Agent {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	public static final int MANDATORY_CONDUIT_ARG_COUNT = 7;
 
 	private LinkedList<EntranceDescription> postponedEntrances = new LinkedList<EntranceDescription>();
 	private LinkedList<ExitDescription> postponedExits = new LinkedList<ExitDescription>();
-
+	
 	private static int conduitCounter = 0;
 	private transient AgentLogger logger;
 
 	private transient XStream xstream = new XStream();
 
 	private ConnectionScheme cs;
-
+	
 	//
-	@Override
 	protected void setup() {
 
-		this.logger = AgentLogger.getLogger(this);
+		logger = AgentLogger.getLogger(this);
 
 		if( DFServiceTool.hasSingletonAgent(this, Plumber.class.getName()) ) {
-			this.logger.severe("can not start because there are already other Plumber(s) available for this platform");
-			this.doDelete();
+			logger.severe("can not start because there are already other Plumber(s) available for this platform");
+			doDelete();
 			return; // otherwise the setup would continue
 		}
-
+				
 		// register self as singleton
 		try {
 			DFServiceTool.registerSingletonAgent(this, Plumber.class.getName());
 		}
 		catch(RegisterSingletonAgentException e) {
-			this.logger.severe("can not start because there are already other Plumber(s) available for this platform");
+			logger.severe("can not start because there are already other Plumber(s) available for this platform");
 			// bail out here
 			throw new MUSCLERuntimeException(e);
 		}
 
-		this.cs = this.initConnectionScheme();
-		this.logger.info(this.cs.toString());
+		cs = initConnectionScheme();
+		logger.info(cs.toString());
 
-		this.logger.info("Plumber of kind <"+this.getClass()+"> is up");
+		logger.info("Plumber of kind <"+getClass()+"> is up");
 
-		this.addEntranceListener();
-		this.addExitListener();
-
+		addEntranceListener();
+		addExitListener();
+		
 
 // experimental support for remote gui
 //if( CxADescription.ONLY.getBooleanProperty(CxADescription.Key.GUI) ) {
@@ -121,14 +115,14 @@ public class Plumber extends Agent {
 
 	//
 	public ConnectionScheme getConnectionScheme() {
-
-		return this.cs;
+	
+		return cs;
 	}
 
 
 	//
 //	private void initRemoteComponentHead()	{
-//
+//		
 //		AID guiID = null;
 //		logger.info("searching for a remote GUI gateway ...");
 //		try {
@@ -151,58 +145,58 @@ public class Plumber extends Agent {
 
 		assert entrance.hasConduit(conduit);
 		assert conduit.hasExit(exit);
-
+		
 		AID entranceAgent = entrance.getControllerID();
 
 		AID exitAgent = exit.getControllerID();
-
+		
 
 		ArrayList<Object> optionalArgs = new ArrayList<Object>(conduit.getArgs().length);
 		// fill optional args
 		for(int i = 0; i < conduit.getArgs().length; i++) {
 			optionalArgs.add(conduit.getArgs()[i]);
 		}
-
-		Location targetLocation = this.locationForConduit(entrance, conduit, exit);
-
+		
+		Location targetLocation = locationForConduit(entrance, conduit, exit);
+		
 		ConduitArgs conduitArgs = new ConduitArgs(
 												entranceAgent, entrance.getID(), entrance.getDataTemplate()
 												, exitAgent, exit.getID(), exit.getDataTemplate()
 												, BasicConduit.LowBandwidthStrategy.class, targetLocation
 												, optionalArgs);
 		Object[] args = new Object[1];
-		args[0] = conduitArgs;
-
+		args[0] = conduitArgs;										
+		
 
 		conduitCounter ++;
 		AgentController conduitController;
 		String agentName = "conduit#"+conduitCounter+"["+entranceAgent.getLocalName()+":"+entrance.getID()+">-"+conduit.getClassName()+"("+conduit.getID()+")->"+exitAgent.getLocalName()+":"+exit.getID()+"]";
-		this.logger.info("spawning conduit:"+agentName);
+		logger.info("spawning conduit:"+agentName);
 		try {
-			conduitController = this.getContainerController().createNewAgent(agentName, conduit.getClassName(), args);
+			conduitController = getContainerController().createNewAgent(agentName, conduit.getClassName(), args);
 		} catch (jade.wrapper.StaleProxyException e) {
-			this.logger.severe("can not createNewAgent agent: "+agentName);
+			logger.severe("can not createNewAgent agent: "+agentName);
 			throw new SpawnAgentException("getContainerController().createNewAgent failed -- "+e.getMessage(), e.getCause());
 		}
 		try {
 			AID conduitAID = new AID(conduitController.getName(), AID.ISGUID);
-			conduit.markAvailable(conduitAID);
+			conduit.markAvailable(conduitAID);				
 		} catch (jade.wrapper.StaleProxyException e) {
-			this.logger.severe("can not get name of agent: "+agentName);
+			logger.severe("can not get name of agent: "+agentName);
 			throw new SpawnAgentException("getName() failed -- "+e.getMessage(), e.getCause());
 		}
 		try {
 			conduitController.start();
 		} catch (jade.wrapper.StaleProxyException e) {
-			this.logger.severe("can not start agent: "+agentName);
+			logger.severe("can not start agent: "+agentName);
 			throw new SpawnAgentException("start() failed -- "+e.getMessage(), e.getCause());
 		}
 	}
-
-
+	
+	
 	//
 	protected Location locationForConduit(EntranceDescription entrance, ConduitDescription conduit, ExitDescription exit) {
-
+	
 //		AID adjacentAgent = entrance.getControllerID();
 //System.out.println("location for "+adjacentAgent);
 //		Location location = null;
@@ -212,14 +206,14 @@ public class Plumber extends Agent {
 //			logger.severe("can not determine target location for "+adjacentAgent);
 //			throw new MUSCLERuntimeException(e.getMessage(), e.getCause());
 //		}
-//
+//		
 //System.out.println("location is "+location);
 //
 //		return location;
 //return here();
 		return null;
 	}
-
+	
 
 	/**
 	called after new portals heve been registered, see if we can spawn new conduits
@@ -227,7 +221,7 @@ public class Plumber extends Agent {
 	void portalsChanged() {
 
 		// see if we can feed one of our unconnected exits
-		for(Iterator<ExitDescription> exitIterator = this.cs.unconnectedExits().iterator(); exitIterator.hasNext();) {
+		for(Iterator<ExitDescription> exitIterator = cs.unconnectedExits().iterator(); exitIterator.hasNext();) {
 			ExitDescription exit = exitIterator.next();
 			// we can only create this entrance->conduit->exit chain if the exit is
 			if( exit.isAvailable() ) {
@@ -237,23 +231,21 @@ public class Plumber extends Agent {
 
 				for(int i = 0; ; i++) {
 					ConduitDescription conduit = exit.getConduitDescription(i);
-					if( conduit == null) {
+					if( conduit == null)
 						break;
-					}
-					if( conduit.isAvailable() ) {
+					if( conduit.isAvailable() )
 						continue; // already spawned
-					}
-
+					
 					EntranceDescription entrance = conduit.getEntranceDescription();
-
+					
 					// we can only create this entrance->conduit->exit chain if the entrance is also available
 					if( entrance.isAvailable() ) {
 						try {
-							this.spawnConduit(entrance, conduit, exit);
+							spawnConduit(entrance, conduit, exit);
 						} catch (SpawnAgentException e) {
 							throw new MUSCLERuntimeException(e);
 						}
-
+						
 						exitIterator.remove();
 						break;
 					}
@@ -261,100 +253,100 @@ public class Plumber extends Agent {
 			}
 		}
 	}
-
-
+	
+	
 	/**
 	registers a newly activated entrance at the plumber
 	*/
 	public void addEntrance(String entranceID, DataTemplate dataTemplate, AID controllerID, EntranceDependency[] dependencies) {
 
-		EntranceDescription entrance = this.cs.entranceDescriptionForID(entranceID);
-		if(entrance != null) {
+		EntranceDescription entrance = cs.entranceDescriptionForID(entranceID);
+		if(entrance != null) {			
 			if( entrance.isAvailable() ) {
-				this.logger.severe("can not add entrance <"+entranceID+">, an entrance with the same id is already registered");
+				logger.severe("can not add entrance <"+entranceID+">, an entrance with the same id is already registered");
 				return;
 			}
-
+			
 			entrance.markAvailable(dataTemplate, controllerID, dependencies);
-
+			
 			try {
-				this.testDeadlock(entrance, 0, new LinkedList<EntranceDescription>(), new ArrayList<Integer>());
+				testDeadlock(entrance, 0, new LinkedList<EntranceDescription>(), new ArrayList<Integer>());
 			} catch (DeadlockException e) {
 				throw new MUSCLERuntimeException(e);
 			}
-			this.logger.fine("no deadlock found for entrance:"+entrance.getID());
+			logger.fine("no deadlock found for entrance:"+entrance.getID());
 
-			this.portalsChanged();
+			portalsChanged();
 		}
 		// entrance does not exist in connection scheme
-		else if( !this.cs.isComplete() ) {
-			this.logger.info("postponing entrance <"+entranceID+"> -- it is not part of the current connection scheme");
+		else if( !cs.isComplete() ) {
+			logger.info("postponing entrance <"+entranceID+"> -- it is not part of the current connection scheme");
 			entrance = new EntranceDescription(entranceID);
 			entrance.markAvailable(dataTemplate, controllerID, dependencies);
-			if(this.postponedEntrances.contains(entrance)) {
-				this.logger.severe("entrance <"+entranceID+"> -- already exists");
-			} else {
-				this.postponedEntrances.add(entrance);
-			}
+			if(postponedEntrances.contains(entrance))
+				logger.severe("entrance <"+entranceID+"> -- already exists");
+			else
+				postponedEntrances.add(entrance);
 		}
 		else {
-			this.logger.severe("ignoring entrance <"+entranceID+"> -- it is not part of the final connection scheme");
+			logger.severe("ignoring entrance <"+entranceID+"> -- it is not part of the final connection scheme");
 		}
 	}
 
-
+	
 	/**
 	registers a newly activated exit at the plumber
 	*/
 	public void addExit(String exitID, DataTemplate dataTemplate, AID controllerID) {
 
-		ExitDescription exit = this.cs.exitDescriptionForID(exitID);
+		ExitDescription exit = cs.exitDescriptionForID(exitID);
 		if(exit != null) {
 			if( exit.isAvailable() ) {
-				this.logger.severe("can not add exit <"+exitID+">, an exit with the same id is already registered");
+				logger.severe("can not add exit <"+exitID+">, an exit with the same id is already registered");
 				return;
 			}
 
 			exit.markAvailable(dataTemplate, controllerID);
 
-			this.portalsChanged();
+			portalsChanged();
 		}
 		// exit does not exist in connection scheme
-		else if( !this.cs.isComplete() ) {
-			this.logger.info("postponing exit <"+exitID+"> -- it is not part of the current connection scheme");
+		else if( !cs.isComplete() ) {
+			logger.info("postponing exit <"+exitID+"> -- it is not part of the current connection scheme");
 			exit = new ExitDescription(exitID);
 			exit.markAvailable(dataTemplate, controllerID);
-			if(this.postponedExits.contains(exit)) {
-				this.logger.severe("exit <"+exitID+"> -- already exists");
-			} else {
-				this.postponedExits.add(exit);
-			}
+			if(postponedExits.contains(exit))
+				logger.severe("exit <"+exitID+"> -- already exists");
+			else
+				postponedExits.add(exit);
 		}
 		else {
-			this.logger.severe("ignoring exit <"+exitID+"> -- it is not part of the final connection scheme");
+			logger.severe("ignoring exit <"+exitID+"> -- it is not part of the final connection scheme");
 		}
 	}
-
-
+	
+	
 	/**
 	unregister all portals associated with this controller agent
 	*/
 	private void removePortalsForControllerID(AID controllerID) {
 
 		// unset from entrance descriptions
-		List<EntranceDescription> entranceDescriptions = this.cs.entranceDescriptionsForControllerID(controllerID);
-		for (EntranceDescription entrance : entranceDescriptions) {
+		List<EntranceDescription> entranceDescriptions = cs.entranceDescriptionsForControllerID(controllerID);
+		for(Iterator<EntranceDescription> iter = entranceDescriptions.iterator(); iter.hasNext();) {
+			EntranceDescription entrance = iter.next();
 			entrance.markUnavailable();
 		}
-
+		
 		// unset from exit descriptions
-		List<ExitDescription> exitDescriptions = this.cs.exitDescriptionsForControllerID(controllerID);
-		for (ExitDescription exit : exitDescriptions) {
+		List<ExitDescription> exitDescriptions = cs.exitDescriptionsForControllerID(controllerID);
+		for(Iterator<ExitDescription> iter = exitDescriptions.iterator(); iter.hasNext();) {
+			ExitDescription exit = iter.next();
 			exit.markUnavailable();
 		}
 	}
-
-
+	
+	
 // TODO modify deadlock test to take different conduit I/O frequencies into account ?
 	/**
 		unroll communication chain until we reach<br>
@@ -378,20 +370,20 @@ public class Plumber extends Agent {
 //			// no deadlock
 //			return;
 //		}
-//
+//			
 //		for(EntranceDependency d : dependencies) {
-//
+//			
 //			logger.fine("testing dependency for "+d.toString()+" @entrance <"+entrance.getID()+">");
-//
+//			
 //			// modify time dependency
 //			time += d.getDtOffset();
 //			assert(d.getDtOffset() <= 0) : "entrance can not depend on an exit which will be fed in the future";
-//
+//			
 //			// get the exit which belongs to this dependency
 //			String exitID = d.getExit().getLocalName();
 //			ExitDescription exit = cs.exitDescriptionForID(exitID);
-//
-//			if(exit == null) {
+//			
+//			if(exit == null) {			
 //				throw new DeadlockException("deadlock for entrance <"+passedEntrances.getFirst().getID()+"> reason: exit <"+exitID+"> does not exist");
 //			}
 //
@@ -400,15 +392,15 @@ public class Plumber extends Agent {
 //				ConduitDescription conduit =  exit.getConduitDescription(i);
 //				if( conduit == null)
 //					break;
-//
+//							
 //				// get the entrance which feeds the conduit
 //				EntranceDescription remoteEntrance = conduit.getEntranceDescription();
-//
+//				
 //				int index = passedEntrances.indexOf(remoteEntrance);
-//
+//				
 //				if(index > -1) {
 //					// posible deadlock here, the communication chain links back to an entrance we already passed in this search
-//
+//			
 //					if(time < passedTimes.get(index)) {
 //						// no deadlock
 //						return;
@@ -417,14 +409,14 @@ public class Plumber extends Agent {
 //						throw new DeadlockException("deadlock for entrance:<"+passedEntrances.getFirst().getID()+">");
 //					}
 //				}
-//
+//				
 //				// recursion with the remote entrance
 //				testDeadlock(remoteEntrance, time, passedEntrances, passedTimes);
 //			}
-//		}
+//		}	
 	}
-
-
+	
+	
 	public ConnectionScheme initConnectionScheme() {
 
 		// instantiate our connection scheme class
@@ -446,21 +438,21 @@ public class Plumber extends Agent {
 	*/
 	public void addConnection(String entranceID, String conduitClassName, String conduitID, String[] conduitArgs, String exitID) {
 
-		Pipeline pipeline = this.cs.addConnection(entranceID, conduitClassName, conduitID, conduitArgs, exitID);
-
+		Pipeline pipeline = cs.addConnection(entranceID, conduitClassName, conduitID, conduitArgs, exitID);
+		
 		// release entrance/exit if they have been postponed
-		int index = this.postponedExits.indexOf(pipeline.exit);
+		int index = postponedExits.indexOf(pipeline.exit);
 		if(index != -1) {
-			ExitDescription e = this.postponedExits.remove(index);
-			this.addExit(e.getID(), e.getDataTemplate(), e.getControllerID());
+			ExitDescription e = postponedExits.remove(index);
+			addExit(e.getID(), e.getDataTemplate(), e.getControllerID());
 		}
-		index = this.postponedEntrances.indexOf(pipeline.entrance);
+		index = postponedEntrances.indexOf(pipeline.entrance);
 		if(index != -1) {
-			EntranceDescription e = this.postponedEntrances.remove(index);
-			this.addEntrance(e.getID(), e.getDataTemplate(), e.getControllerID(), e.getDependencies());
+			EntranceDescription e = postponedEntrances.remove(index);
+			addEntrance(e.getID(), e.getDataTemplate(), e.getControllerID(), e.getDependencies());
 		}
 	}
-
+		
 
 	/**
 	create custom SubscriptionInitiator to listen and react to conduit-entrance announcements
@@ -468,23 +460,17 @@ public class Plumber extends Agent {
 	private void addEntranceListener() {
 
 		SubscriptionInitiator subscriber;
-
+		
 		DFAgentDescription agentDescription = new DFAgentDescription();
-
+		
 		ServiceDescription entranceDescription = new ServiceDescription();
 //		entranceDescription.addLanguages("serialized ConduitEntrance");
 		entranceDescription.addProtocols(Constant.Protocol.ANNOUNCE_ENTRANCE);
 //		entranceDescription.setType("ConduitEntrance");
 		agentDescription.addServices(entranceDescription);
-
-		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, this.getDefaultDF(), agentDescription, new SearchConstraints())) {
-
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
+		
+		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, getDefaultDF(), agentDescription, new SearchConstraints())) {
+		
 			protected void handleInform(ACLMessage inform) {
 		//System.out.println("Agent "+getLocalName()+": Notification received from DF: msg:\n"+inform.toString()+"\n\n");
 		//System.out.println("performative:"+ACLMessage.getPerformative(inform.getPerformative()));
@@ -500,13 +486,13 @@ public class Plumber extends Agent {
 		//System.out.println("provider:"+provider.getLocalName());
 						// The same agent may provide several services
 						Iterator serviceIter = dfd.getAllServices(); // does not contain deregistered services of the service provider
-
+						
 						// something deregistered
 						if(!serviceIter.hasNext()) {
 							//throw new MUSCLERuntimeException("\n--- deregister of portals not supported ---\n");
-							Plumber.this.removePortalsForControllerID(dfd.getName());
+							removePortalsForControllerID(dfd.getName());
 						}
-
+						
 						while(serviceIter.hasNext()) {
 							ServiceDescription sd = (ServiceDescription)serviceIter.next();
 							if( sd.getType().equals(Constant.Service.ENTRANCE) ) { // there might be other services as well
@@ -514,31 +500,14 @@ public class Plumber extends Agent {
 								while(entranceIter.hasNext()) {
 									Property content = (Property)entranceIter.next();
 									assert content.getName().equals(Constant.Key.ENTRANCE_INFO);
-									HashMap<String, String> entranceProperties = (HashMap<String, String>)Plumber.this.xstream.fromXML((String)content.getValue());
-
+									HashMap<String, String> entranceProperties = (HashMap<String, String>)xstream.fromXML((String)content.getValue());
+								
 									String entranceID = entranceProperties.get("Name");
-									DataTemplate dataTemplate = (DataTemplate)Plumber.this.xstream.fromXML(entranceProperties.get("DataTemplate"));
-									EntranceDependency[] dependencies = null;
-									try {
-									 dependencies = (EntranceDependency[])Plumber.this.xstream.fromXML(entranceProperties.get("Dependencies"));
-									}
-									catch (com.thoughtworks.xstream.converters.ConversionException e) {
-										dependencies = new EntranceDependency[0];
-										System.err.println("!!!!!!!!!!!!!!! Dependencies xstream failed !!!!!!!!!!!!!!!");
-										e.printStackTrace();
-//										try {
-//											BufferedWriter bw = new BufferedWriter(new FileWriter("/home/joris/Desktop/Dependencies.xml"));
-//											bw.write(entranceProperties.get("Dependencies"));
-//											bw.close();
-//											//e.printStackTrace();
-//										}
-//										catch (IOException ioe) {
-//											ioe.printStackTrace();
-//										}
-										
-									}
-									Plumber.this.logger.info("found an entrance: <"+dfd.getName().getLocalName()+":"+entranceID+">");
-									Plumber.this.addEntrance(entranceID, dataTemplate, dfd.getName(), dependencies);
+									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(entranceProperties.get("DataTemplate"));
+									EntranceDependency[] dependencies = (EntranceDependency[])xstream.fromXML(entranceProperties.get("Dependencies"));
+
+									logger.info("found an entrance: <"+dfd.getName().getLocalName()+":"+entranceID+">");
+									addEntrance(entranceID, dataTemplate, dfd.getName(), dependencies);																		
 								}
 							}
 						}
@@ -549,8 +518,8 @@ public class Plumber extends Agent {
 				}
 			}
 		};
-
-		this.addBehaviour(subscriber);
+		
+		addBehaviour(subscriber);		
 	}
 
 
@@ -560,23 +529,17 @@ public class Plumber extends Agent {
 	private void addExitListener() {
 
 		SubscriptionInitiator subscriber;
-
+		
 		DFAgentDescription agentDescription = new DFAgentDescription();
-
+		
 		ServiceDescription exitDescription = new ServiceDescription();
 //		exitDescription.addLanguages("serialized ConduitExit");
 		exitDescription.addProtocols(Constant.Protocol.ANNOUNCE_EXIT);
 		exitDescription.setType(Constant.Service.EXIT);
 		agentDescription.addServices(exitDescription);
-
-		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, this.getDefaultDF(), agentDescription, new SearchConstraints())) {
-
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
+		
+		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, getDefaultDF(), agentDescription, new SearchConstraints())) {
+		
 			protected void handleInform(ACLMessage inform) {
 		//System.out.println("Agent "+getLocalName()+": Notification received from DF: msg:\n"+inform.toString()+"\n\n");
 		//System.out.println("performative:"+ACLMessage.getPerformative(inform.getPerformative()));
@@ -591,13 +554,13 @@ public class Plumber extends Agent {
 		//System.out.println("provider:"+provider.getLocalName());
 						// The same agent may provide several services
 						Iterator serviceIter = dfd.getAllServices(); // does not contain deregistered services of the service provider
-
+						
 						// something deregistered
 						if(!serviceIter.hasNext()) {
 							//throw new MUSCLERuntimeException("\n--- deregister of portals not supported ---\n");
-							Plumber.this.removePortalsForControllerID(dfd.getName());
+							removePortalsForControllerID(dfd.getName());
 						}
-
+						
 						while(serviceIter.hasNext()) {
 							ServiceDescription sd = (ServiceDescription)serviceIter.next();
 							if( sd.getType().equals(Constant.Service.EXIT) ) {  // there might be other services as well
@@ -605,13 +568,13 @@ public class Plumber extends Agent {
 								while(exitIter.hasNext()) {
 									Property content = (Property)exitIter.next();
 									assert content.getName().equals(Constant.Key.EXIT_INFO);
-									HashMap<String, String> exitProperties = (HashMap<String, String>)Plumber.this.xstream.fromXML((String)content.getValue());
-
+									HashMap<String, String> exitProperties = (HashMap<String, String>)xstream.fromXML((String)content.getValue());
+								
 									String exitID = exitProperties.get("Name");
-									DataTemplate dataTemplate = (DataTemplate)Plumber.this.xstream.fromXML(exitProperties.get("DataTemplate"));
+									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(exitProperties.get("DataTemplate"));
 
-									Plumber.this.logger.info("found an exit: <"+dfd.getName().getLocalName()+":"+exitID+">");
-									Plumber.this.addExit(exitID, dataTemplate, dfd.getName());
+									logger.info("found an exit: <"+dfd.getName().getLocalName()+":"+exitID+">");
+									addExit(exitID, dataTemplate, dfd.getName());																	
 								}
 							}
 						}
@@ -622,18 +585,13 @@ public class Plumber extends Agent {
 				}
 			}
 		};
-
-		this.addBehaviour(subscriber);
+		
+		addBehaviour(subscriber);		
 	}
 
-
+		
 	//
 	public static class DeadlockException extends Exception {
-
-			/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
 
 			public DeadlockException(String message) {
 				super(message);

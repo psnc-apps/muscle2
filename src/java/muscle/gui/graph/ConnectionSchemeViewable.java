@@ -26,7 +26,7 @@ allows generic access for to connection scheme view
 @author Jan Hegewald
 */
 public interface ConnectionSchemeViewable {
-
+	
 	public Vertex addVertex(Vertex vertex);
 	public void addEdge(Edge edge, Vertex source, Vertex dest);
 

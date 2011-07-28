@@ -29,11 +29,6 @@ custom exception
 public class DataTypeMismatchException extends Exception {
 
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	//
 	public DataTypeMismatchException(String message) {
 		super(message);

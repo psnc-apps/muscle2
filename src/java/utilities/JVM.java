@@ -23,6 +23,8 @@ package utilities;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import utilities.OSTool;
+import utilities.MiscTool;
 
 
 /**
@@ -31,39 +33,33 @@ singleton class which provides access to global (JVM wide) settings
 */
 public class JVM implements java.io.Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-
 	// be careful to init all other static fields we may use here before our singleton
 	public static JVM ONLY = new JVM(); // handle for the singleton
 
-
+	
 	//
 	private File tmpDir;
 
 
 	//
 	public static boolean is64bitJVM() {
-
+	
 		return System.getProperty("sun.arch.data.model").indexOf("64") != -1;
 	}
-
+	
 	//
 	public JVM() {
-
-		this.tmpDir = JVM.mkTmpDir();
+		
+		tmpDir = mkTmpDir();		
 	}
-
-
+	
+	
 	/**
 	tmp dir for this JVM (e.g. /tmp/<JVMNAME>)
 	*/
 	public File tmpDir() {
-
-		return this.tmpDir;
+	
+		return tmpDir;
 	}
 
 
@@ -71,24 +67,23 @@ public class JVM implements java.io.Serializable {
 	name of this JVM
 	*/
 	public String name() {
-
+	
 		return ManagementFactory.getRuntimeMXBean().getName();
 	}
 
 
 	//
 	private static File mkTmpDir() {
-
+		
 		// use name of this JVM as name for tmp dir
 		String tmpDirName = OSTool.portableFileName(ManagementFactory.getRuntimeMXBean().getName(), "");
 		File td = new File( MiscTool.resolveTilde(MiscTool.joinPaths(System.getProperty("java.io.tmpdir"), tmpDirName)) );
 		// create our JVM tmp dir if not already there
 		td.mkdir();
-		if(!td.isDirectory()) {
+		if(!td.isDirectory())
 			throw new RuntimeException("invalid tmp path <"+td+"> for JVM");
-		}
-
+		
 		return td;
-	}
+	}	
 
 }

@@ -35,30 +35,28 @@ public class CArrayList<E> extends AbstractList<E> {
 
 	private E[] data;
 
-
+	
 	//
 	public CArrayList(E[] newData) {
 
-		this.data = newData;
-		assert this.data != null;
+		data = newData;
+		assert data != null;
 	}
 
 
 	//
-	@Override
 	public E get(int index) {
 
-		assert this.data != null;
-		return this.data[index];
+		assert data != null;
+		return data[index];
 	}
 
-
+	
 	//
-	@Override
 	public int size() {
 
-		assert this.data != null;
-		return this.data.length;
+		assert data != null;
+		return data.length;
 	}
 
 }

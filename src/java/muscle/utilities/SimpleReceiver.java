@@ -23,6 +23,8 @@ package muscle.utilities;
 
 import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
+import java.io.IOException;
 
 
 /**
@@ -31,25 +33,18 @@ utility agent which will accept every message sent to it
 */
 public class SimpleReceiver extends Agent {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
 	//
-	@Override
 	protected void setup() {
-
+	
 		while(true) {
-			ACLMessage msg = this.blockingReceive(5000);
-			if(msg == null) {
+			ACLMessage msg = blockingReceive(5000);
+			if(msg == null)
 				continue;
-			}
-
+			
 			System.out.println("content <"+msg.getContent()+">");
 		}
 	}
-
-
+	
+	
 }
 

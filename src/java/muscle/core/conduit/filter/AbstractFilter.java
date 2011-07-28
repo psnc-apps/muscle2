@@ -21,21 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
-
 
 /**
 @author Jan Hegewald
 */
 public abstract class AbstractFilter<E> implements muscle.core.conduit.filter.Filter<E> {
+	
+	
+	//	
+   @Override
+	public abstract void put(E in);
 
-
-	//
-   public abstract void put(E in);
-
-//   @Override
-//   public DataTemplate getInTemplate() {
-//	return null;   
-//   }
 }
 

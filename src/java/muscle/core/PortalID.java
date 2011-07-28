@@ -33,38 +33,34 @@ portal identifier
 public class PortalID implements Serializable {
 
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private String name; // unique per agent
 	private AID agentID;
 
 
 	//
 	public PortalID(String newName, AID newAgentID) {
-
-		this.name =  newName;
-		this.agentID = newAgentID;
+	
+		name =  newName;
+		agentID = newAgentID;
 	}
-
-
+	
+	
 	//
 	public AID getOwnerAID() {
-		return this.agentID;
+		return agentID;
 	}
 
 
 	//
 	public String getName() {
-
-		return this.name+"@"+this.agentID.getLocalName();
+	
+		return name+"@"+agentID.getLocalName();
 	}
-
+	
 //	//
 //	public String getStrippedName() {
-//
+//	
 //		return name;
 //	}
-
+	
 }

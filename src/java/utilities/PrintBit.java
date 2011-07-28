@@ -29,7 +29,7 @@ prints the operation mode: 32, 64 or unknown
 public class PrintBit {
 
 	 public static void main (String args[]) {
-
+        
         System.out.println(System.getProperty("sun.arch.data.model"));
     }
 }

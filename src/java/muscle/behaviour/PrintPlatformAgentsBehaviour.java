@@ -21,10 +21,36 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
+import java.util.logging.Logger;
+
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Result;
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ContainerID;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
+import jade.content.onto.UngroundedException;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLCodec.CodecException;
+import jade.proto.AchieveREInitiator;
 
+import java.util.HashMap;
 import java.util.Iterator;
+
+import jade.core.behaviours.DataStore;
+import jade.core.behaviours.SimpleBehaviour;
+import jadetool.MessageTool;
+import java.util.List;
 
 
 /**
@@ -32,49 +58,37 @@ prints AIDs available in the platform to System.out
 @author Jan Hegewald
 */
 public class PrintPlatformAgentsBehaviour extends jade.core.behaviours.SequentialBehaviour {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	private jade.util.leap.List containerIDs;
-
+	
 	public PrintPlatformAgentsBehaviour(Agent a) {
 		super(a);
 	}
-
-	@Override
+	
 	public void onStart() {
-
+		
 		// add a requester to look for our containers
-		PlatformLocationsBehaviour containerRequester = new PlatformLocationsBehaviour(this.myAgent)
+		PlatformLocationsBehaviour containerRequester = new PlatformLocationsBehaviour(myAgent)
 		 {
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
 			public void callback(jade.util.leap.List newContainerIDs) {
-				PrintPlatformAgentsBehaviour.this.containerIDs = newContainerIDs;
+				containerIDs = newContainerIDs;
 			}
 		};
-		this.addSubBehaviour(containerRequester);
+		addSubBehaviour(containerRequester);
 	}
 
-	@Override
 	public int onEnd() {
-
+	
 		// print results
-		for(Iterator<?> iter = this.containerIDs.iterator(); iter.hasNext();) {
+		for(Iterator iter = containerIDs.iterator(); iter.hasNext();) {
 			ContainerID cid = (ContainerID)iter.next();
 
-			this.myAgent.addBehaviour(new PrintLocationAgentsBehaviour(this.myAgent, cid));
+			myAgent.addBehaviour(new PrintLocationAgentsBehaviour(myAgent, cid));
 		}
-
+	
 		// reset so onStart will be called again
-		this.reset();
+		reset();
 		return super.onEnd();
 	}
 
-}
+}	

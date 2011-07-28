@@ -22,10 +22,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.test.jni;
 
 import java.lang.reflect.Array;
-
-import javatool.ArraysTool;
+import java.util.Arrays;
 import utilities.MiscTool;
 import utilities.jni.JNIMethod;
+import javatool.ArraysTool;
 
 
 /**
@@ -37,32 +37,37 @@ class DoubleArray {
 
 	//
 	public DoubleArray() {
-		System.out.println(this.getClass().getName()+" begin test ...");
+		System.out.println(getClass().getName()+" begin test ...");
 		int[] modes = {0,1,2,3};
-		for (int mode : modes) {
-			System.out.println(this.getClass().getName()+" mode: "+mode);
-			this.callNative(mode, new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", double[].class));
-			this.confirm();
+		for(int i = 0; i < modes.length; i++) {
+			System.out.println(getClass().getName()+" mode: "+modes[i]);
+			callNative(modes[i], new JNIMethod(this, "fromJava"), new JNIMethod(this, "toJava", double[].class));
+			confirm();
 		}
-		System.out.println(this.getClass().getName()+" end test\n");
+		System.out.println(getClass().getName()+" end test\n");
 	}
-
+	
 	private native void callNative(int mode, JNIMethod fromJava, JNIMethod toJava);
-
+	
 	//
 	private double[] fromJava() {
 		double[] origData = {1.2, 1.3, -42.0, 1234.56789};
 		return origData;
 	}
-
+	
+	//
+	private void toJava(double[] data) {
+		nativeData = data;
+	}
+	
 	private void confirm() {
-		double[] expectedData = this.fromJava();
+		double[] expectedData = fromJava();
 		for(int i = 0; i < Array.getLength(expectedData); i++) {
 			expectedData[i] *= 10.0;
 		}
-
+		
 		try {
-			ArraysTool.assertEqualArrays(expectedData, this.nativeData, 1e-15);
+			ArraysTool.assertEqualArrays(expectedData, nativeData, 1e-15);
 		}
 		catch(MiscTool.NotEqualException e) {
 			throw new RuntimeException("test failed "+e.toString());

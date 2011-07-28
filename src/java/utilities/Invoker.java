@@ -37,31 +37,28 @@ public class Invoker {
 
 	// invokeMethod a static method
 	public static Object invokeMethod(Class cls, String methodName, Object ... args) throws NoSuchMethodException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-
-		if(cls == null) {
+		
+		if(cls == null)
 			throw new IllegalArgumentException("cls can not both be null");
-		}
-
-		return Invoker.invokeMethod(null, cls, methodName, args);
+			
+		return invokeMethod(null, cls, methodName, args);
 	}
 
 	// invokeMethod an instance method
 	public static Object invokeMethod(Object obj, String methodName, Object ... args) throws NoSuchMethodException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-
-		if(obj == null) {
+		
+		if(obj == null)
 			throw new IllegalArgumentException("obj can not both be null");
-		}
-
-		return Invoker.invokeMethod(obj, obj.getClass(), methodName, args);
+			
+		return invokeMethod(obj, obj.getClass(), methodName, args);
 	}
 
 	// obj may be null if a static method should be invoked
 	public static Object invokeMethod(Object obj, Class cls, String methodName, Object ... args) throws NoSuchMethodException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-
-		if(obj == null && cls == null) {
+	
+		if(obj == null && cls == null)
 			throw new IllegalArgumentException("obj and cls can not both be null");
-		}
-
+		
 		Class[] parameterTypes = null;
 		if( args.getClass().equals(Object[].class) ) { // we assume we got an varargs array from multiple individual args
 			parameterTypes = new Class[args.length];
@@ -90,7 +87,7 @@ public class Invoker {
 		catch (NoSuchMethodException e) {
 			Class[] objectTypes = new Class[parameterTypes.length];
 			Arrays.fill(objectTypes, Object.class);
-			method = cls.getMethod(methodName, objectTypes);
+			method = cls.getMethod(methodName, objectTypes);			
 		}
 		Object result = method.invoke(obj, args);
 		return result;
@@ -100,9 +97,8 @@ public class Invoker {
    //
 	public static Object invokeField(Class cls, String fieldName) throws NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
 
-		if(cls == null) {
+		if(cls == null)
 			throw new IllegalArgumentException("cls can not be null");
-		}
 
       Field field = cls.getField(fieldName);
       Object result;
@@ -143,7 +139,7 @@ public class Invoker {
 
          String fieldName = name;
          try {
-            System.out.println(""+Invoker.invokeField(cls, fieldName));
+            System.out.println(""+invokeField(cls, fieldName));
             return;
          }
          catch(NoSuchFieldException e) {
@@ -172,7 +168,7 @@ public class Invoker {
 				 }
 
 				try {
-					args[i] = Invoker.invokeMethod(argClass, "valueOf", argVal);
+					args[i] = invokeMethod(argClass, "valueOf", argVal);
 				}
 				catch (NoSuchMethodException e) {
 					throw new RuntimeException("can not determine how to convert <"+argVal+"> to a <"+argClass+">");
@@ -188,10 +184,10 @@ public class Invoker {
 
 		try {
 			// invokeMethod the specified method and print results
-			System.out.println(Invoker.invokeMethod(cls, methodName, args));
+			System.out.println(invokeMethod(cls, methodName, args));
 		}
 		catch(NoSuchMethodException e) {
-
+			
 			if(fieldException != null) {
 				throw new RuntimeException("can not find field or method <"+name+">\n"+fieldException+"\n"+e);
 			}

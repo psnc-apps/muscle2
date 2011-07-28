@@ -39,7 +39,7 @@ public class PingTool
 		long duration = System.nanoTime() - startTime;
 		socket.close();
 
-		return "time <" + duration +">ns port <" +port+ "> host_ip <"+host.getHostAddress()+"> host_name <"+host.getHostName()+">";
+		return "time <" + duration +">ns port <" +port+ "> host_ip <"+host.getHostAddress()+"> host_name <"+host.getHostName()+">";	
 	}
 
 

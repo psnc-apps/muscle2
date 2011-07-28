@@ -21,15 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.math.BigDecimal;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
-
+import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
 import muscle.core.Scale;
-import muscle.core.wrapper.DataWrapper;
+import javax.measure.DecimalMeasure;
+import javax.measure.unit.SI;
+import javax.measure.quantity.Duration;
+import java.math.BigDecimal;
 
 
 /**
@@ -47,36 +45,35 @@ public class DropFilter implements muscle.core.conduit.filter.WrapperFilter<Data
 
 	//
 	public DropFilter(WrapperFilter newChildFilter, int newInDtSec/*assume dt in seconds here*/) {
-
-		this.childFilter = newChildFilter;
-
-		this.outRate = newInDtSec;
+	
+		childFilter = newChildFilter;
+		
+		outRate = newInDtSec;
 		DecimalMeasure<Duration> inDt = DecimalMeasure.valueOf(new BigDecimal(newInDtSec), SI.SECOND);
-		DataTemplate outTemplate = this.childFilter.getInTemplate();
+		DataTemplate outTemplate = childFilter.getInTemplate();
 		Scale outScale = outTemplate.getScale();
 		assert outScale != null;
-		this.outDt = outTemplate.getScale().getDt();
+		outDt = outTemplate.getScale().getDt();
 
-		this.inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper newInData) {
-
+		
 		// only pass data to next filter on given interval
-		if(this.counter % this.outRate == 0) {
-			this.childFilter.put(newInData);
-		}
-
-		this.counter ++;
+		if(counter % outRate == 0)
+			childFilter.put(newInData);
+		
+		counter ++;
 	}
 
 }

@@ -21,7 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
 import utilities.MiscTool;
 
 
@@ -32,28 +31,22 @@ deserialize a byte array
 public class DeserializeFilter implements Filter<byte[]> {
 
 	private Filter childFilter;
-
+	
 
 	//
 	public DeserializeFilter(Filter newChildFilter) {
 
-		this.childFilter = newChildFilter;
+		childFilter = newChildFilter;
 	}
 
 
 	//
 	public void put(byte[] subject) {
-
+	
 		Object out = MiscTool.deserialize(subject);
 
-		this.childFilter.put(out);
+		childFilter.put(out);
 	}
-
-
-	public DataTemplate getInTemplate() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 }
 

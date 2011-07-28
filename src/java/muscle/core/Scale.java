@@ -21,14 +21,20 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import java.util.ArrayList;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import com.thoughtworks.xstream.XStream;
+import muscle.exception.MUSCLERuntimeException;
+import muscle.core.CxADescription;
 
 import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-
-import com.thoughtworks.xstream.XStream;
+import javax.measure.unit.Unit;
+import javax.measure.quantity.Length;
+import javax.measure.quantity.Duration;
+import javax.measure.Measure;
+import java.util.ArrayList;
 
 
 /**
@@ -37,22 +43,17 @@ represents time and spatial scale according to SSM in SI units
 */
 public class Scale implements java.io.Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private DecimalMeasure<Duration> dt; // time scale (must be seconds when used without quantity)
 	private ArrayList<DecimalMeasure<Length>> dx; // scale(s) in space (must be meter when used without quantity)
-
+	
 
 	//
 	public Scale(DecimalMeasure<Duration> newDt, DecimalMeasure ... newDx) {
 
 //		if(newDt <= 0)
 //			throw new IllegalArgumentException("dt must be positive <"+newDt+">");
-		if(newDx.length < 1) {
-			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.length+">");
-		}
+		if(newDx.length < 1)
+			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.length+">");		
 
 //		if( newDt < CxADescription.ONLY.getIntProperty(CxADescription.Key.FINEST_DT) ) {
 //			throw new MUSCLERuntimeException("dt <"+newDt+"> is below finest possible dt <"+CxADescription.ONLY.getIntProperty(CxADescription.Key.FINEST_DT)+">");
@@ -61,14 +62,14 @@ public class Scale implements java.io.Serializable {
 //			throw new MUSCLERuntimeException("dt <"+newDt+"> is greater coarsest possible dt <"+CxADescription.ONLY.getIntProperty(CxADescription.Key.COARSEST_DT)+">");
 //		}
 
-		this.dt = newDt;
+		dt = newDt;
 
 		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
 		// this is probably because there are no generic c-style arrays in java
 		// so we check the types for each vararr item to be a DecimalMeasure<Length>
-		this.dx = new ArrayList<DecimalMeasure<Length>>();
+		dx = new ArrayList<DecimalMeasure<Length>>();
 		for(DecimalMeasure m : newDx) {
-			this.dx.add(m);
+			dx.add((DecimalMeasure<Length>)m);
 		}
 	}
 
@@ -76,35 +77,34 @@ public class Scale implements java.io.Serializable {
 	//
 	public Scale(DecimalMeasure<Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
 
-		if(newDx.size() < 1) {
-			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.size()+">");
-		}
+		if(newDx.size() < 1)
+			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.size()+">");		
 
-		this.dt = newDt;
-		this.dx = newDx;
+		dt = newDt;
+		dx = newDx;
 	}
 
 
 	//
 	public DecimalMeasure<Duration> getDt() {
-
-		return this.dt;
+	
+		return dt;
 	}
-
+	
 
 	public DecimalMeasure<Length> getDx(int index) {
-
-		return this.dx.get(index);
+	
+		return dx.get(index);
 	}
 
 	public ArrayList<DecimalMeasure<Length>> getAllDx() {
-
-		return this.dx;
+	
+		return dx;
 	}
-
+	
 	public int getDimensions() {
-
-		return this.dx.size();
+	
+		return dx.size();
 	}
 
 
@@ -112,55 +112,49 @@ public class Scale implements java.io.Serializable {
 	compare two scales, returns true if spatial scale is identical
 	*/
 	public static boolean match(Scale a, Scale b) {
-
+	
 		// test number of dimensions in space
-		if(a.getDimensions() != b.getDimensions()) {
+		if(a.getDimensions() != b.getDimensions())
 			return false;
-		}
 
 		// test scale for every dimension in space
 		for(int i = 0; i < a.getDimensions(); i++) {
-			if( a.getDx(i).doubleValue(SI.METER) != b.getDx(i).doubleValue(SI.METER) ) {
+			if( a.getDx(i).doubleValue(SI.METER) != b.getDx(i).doubleValue(SI.METER) )
 				return false;
-			}
 		}
-
-		return true;
+		
+		return true;		
 	}
-
-
+	
+	
 	//
-	@Override
 	public boolean equals(Object obj) {
-
+	
 		if(obj instanceof Scale) {
 			Scale other = (Scale)obj;
 
-			if(!Scale.match(this, other)) {
+			if(!Scale.match(this, other))
 				return false;
-			}
-
+			
 			// test timescale
-			return this.dt.doubleValue(SI.SECOND) == other.getDt().doubleValue(SI.SECOND);
+			return dt.doubleValue(SI.SECOND) == other.getDt().doubleValue(SI.SECOND);
 		}
 		return super.equals(obj);
 	}
-
-
+	
+	
 	//
-	@Override
 	public String toString() {
 
 		StringBuilder text = new StringBuilder();
-		text.append("dt:"+this.dt);
-		for(int i = 0; i < this.dx.size(); i++) {
-			text.append("dx"+(i+1)+":"+this.dx.get(i));
-		}
-
+		text.append("dt:"+dt);
+		for(int i = 0; i < dx.size(); i++)
+			text.append("dx"+(i+1)+":"+dx.get(i));
+		
 		return text.toString();
 	}
-
-
+	
+	
 	//
 	public static void main (String args[]) {
 

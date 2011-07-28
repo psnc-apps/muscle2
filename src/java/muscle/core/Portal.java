@@ -26,134 +26,126 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.logging.Logger;
-
-import javatool.DecimalMeasureTool;
-
+import muscle.core.kernel.RawKernel;
+import muscle.utilities.NullOutputStream;
+import muscle.exception.MUSCLERuntimeException;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
-
-import muscle.core.kernel.RawKernel;
-import muscle.exception.MUSCLERuntimeException;
-import muscle.utilities.NullOutputStream;
+import java.math.BigDecimal;
+import javatool.DecimalMeasureTool;
 
 
 //
 public abstract class Portal<T> implements Serializable {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
+	
 	public static final int LOOSE = -1; // if there is no rate accociated with this portal
-
+	
 	transient RawKernel ownerAgent;
-
+	
 	private PortalID portalID;
 	private DataTemplate dataTemplate;
 	private int usedCount;
 	private int rate;
 	private DecimalMeasure<Duration> customSITime;
-
+	
 	transient private OutputStreamWriter traceWriter;
 
 
 	//
 	Portal(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
-
-		this.portalID = newPortalID;
-		this.ownerAgent = newOwnerAgent;
-		this.rate = newRate;
-		this.dataTemplate = newDataTemplate;
-
+		
+		portalID = newPortalID;
+		ownerAgent = newOwnerAgent;
+		rate = newRate;
+		dataTemplate = newDataTemplate;
+		
 		// set custom time to 0
-		this.customSITime = DecimalMeasure.valueOf(new BigDecimal(0), this.dataTemplate.getScale().getDt().getUnit());
-
+		customSITime = DecimalMeasure.valueOf(new BigDecimal(0), dataTemplate.getScale().getDt().getUnit());
+		
 		// we do not send message trace output by default
-		this.setTraceOutputStream(new NullOutputStream());
+		setTraceOutputStream(new NullOutputStream());
 	}
 
 
 //	//
 //	Portal(PortalID newPortalID, DataTemplate newDataTemplate) {
-//
+//		
 //		// we do not send message trace output by default
 //		this(newPortalID, null, newDataTemplate, new NullOutputStream());
 //	}
 //	//
 //	Portal(PortalID newPortalID, AID newControllerID, DataTemplate newDataTemplate) {
-//
+//		
 //		// we do not send message trace output by default
 //		this(newPortalID, newControllerID, newDataTemplate, new NullOutputStream());
 //	}
 //	//
 //	Portal(PortalID newPortalID, AID newControllerID, DataTemplate newDataTemplate, OutputStream newTraceOutput) {
-//
+//		
 //		portalID = newPortalID;
 //		dataTemplate = newDataTemplate;
-//
+//		
 //		dt = newDataTemplate.getScale().getDt();
-//
+//		
 //		setTraceOutputStream(newTraceOutput);
 //	}
-
+	
 
 	/**
 	if a portal is deserialized, we need to attach it to the current owner agent
 	*/
 	public void setOwner(RawKernel newOwnerAgent) {
-
-		this.ownerAgent = newOwnerAgent;
+		
+		ownerAgent = newOwnerAgent;
 	}
 
 
-
+	
 	//
 	public void setTraceOutputStream(OutputStream traceOutput) {
-
-		assert traceOutput != null;
-		if(this.traceWriter != null) {
+		
+		assert traceOutput != null;		
+		if(traceWriter != null) {
 			try {
-				this.traceWriter.close();
+				traceWriter.close();
 			} catch (IOException e) {
 				throw new MUSCLERuntimeException(e);
 			}
 		}
 
-		this.traceWriter = utilities.OutputStreamWriterTool.create(traceOutput);
+		traceWriter = utilities.OutputStreamWriterTool.create(traceOutput);
 	}
 
 
 	// write a trace message
 	public void trace(String text) {
-
+	
 		try {
-			this.traceWriter.write(text);
-			this.traceWriter.flush();
+			traceWriter.write(text);
+			traceWriter.flush();
 		} catch (IOException e) {
 			throw new MUSCLERuntimeException(e);
 		}
 	}
-
-
+	
+	
 	// remove this in favor of the close method?
-	public void detachOwnerAgent() {
+	public void detachOwnerAgent() {	
 
-		if(this.traceWriter != null) {
+		if(traceWriter != null) {
 			try {
-				this.traceWriter.close();
+				traceWriter.close();
 			} catch (IOException e) {
 				throw new MUSCLERuntimeException(e);
 			}
-		}
+		}		
 	}
-
+	
 
 	//
 //	public void assertTimestep(int t) {
-//
+//	
 ////		if(timestep != t)
 ////			throw new MUSCLERuntimeException("timestep mismatch: <"+timestep+"> vs <"+t+">");
 //	}
@@ -162,48 +154,48 @@ public abstract class Portal<T> implements Serializable {
 	//
 	public String getLocalName() {
 
-		return this.portalID.getName();
+		return portalID.getName();
 	}
 
 
 //	//
 //	public String getStrippedName() {
-//
+//	
 //		return portalID.getStrippedName();
 //	}
 
 
 	//
 	public PortalID getPortalID() {
-		return this.portalID;
+		return portalID;
 	}
 
 
 	//
 	public DataTemplate getDataTemplate() {
-		return this.dataTemplate;
+		return dataTemplate;
 	}
-
-
+	
+	
 	/**
-	true if this portal does not pass data at a predefined rate (e.g. every iteration of the kernel)
+	true if this portal does not pass data at a predefined rate (e.g. every iteration of the kernel) 
 	*/
 	public boolean isLoose() {
-		return this.rate == LOOSE;
+		return rate == LOOSE;
 	}
-
-
+	
+	
 // temporary workaround to be able to use portals only once (their time will increment only once which makes it hard for the RawKernel to tell if it is still in use)
 private boolean oneShot = false;
 public void oneShot() {
-	this.oneShot = true;
+	oneShot = true;
 }
 
 	// free our resources and disallow passing of messages
 // TODO: switch to a NULL implementation after close (put current impl in a strategy and duplicate public interface of that strategy in the portal)
 	private void close() {
 
-		this.usedCount = Integer.MAX_VALUE;
+		usedCount = Integer.MAX_VALUE;
 	}
 
 
@@ -211,57 +203,54 @@ public void oneShot() {
 	current time of this portal in SI units
 	*/
 	public DecimalMeasure<Duration> getSITime() {
-
-		if(this.rate == LOOSE) {
+	
+		if(rate == LOOSE) {
 			// return dt*usedCount*rate
-			return this.customSITime;
+			return customSITime;
 		}
 		else {
 			// return dt*usedCount*rate
-			return DecimalMeasureTool.multiply(this.dataTemplate.getScale().getDt(), new BigDecimal(this.usedCount*this.rate));
+			return DecimalMeasureTool.multiply(dataTemplate.getScale().getDt(), new BigDecimal(usedCount*rate));
 		}
 	}
 
 
 	//
-	@Override
 	public boolean equals(Object obj) {
-
-		if( this.getClass().isInstance(obj) ) {
-			return ((Portal)obj).getLocalName().equals(this.getLocalName());
+		
+		if( getClass().isInstance(obj) ) {
+			return ((Portal)obj).getLocalName().equals(getLocalName());
 		}
 		return super.equals(obj);
 	}
-
-
+	
+	
 	//
-	@Override
 	public String toString() {
 
-		return this.getLocalName()+" used: "+this.usedCount+" scale: "+this.dataTemplate.getScale()+" SI time: "+this.getSITime();
+		return getLocalName()+" used: "+usedCount+" scale: "+dataTemplate.getScale()+" SI time: "+getSITime();
 	}
 
 
 	//
 	void increment() {
-
-		this.usedCount ++;
-		if(this.oneShot) {
-			this.close();
-		}
+		
+		usedCount ++;
+		if(oneShot)
+			close();
 	}
 
 
 	// deserialize
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-
+		
 		// do default deserialization
 		in.defaultReadObject();
-
-		Logger logger = muscle.logging.Logger.getLogger(this.getClass());
+		
+		Logger logger = muscle.logging.Logger.getLogger(getClass());
 		// init transient fields
-		this.traceWriter = utilities.OutputStreamWriterTool.create(new NullOutputStream());
-		logger.finest(this.getClass().getName()+" initialized OutputStream <traceWriter> with a NullOutputStream after deserialization");
+		traceWriter = utilities.OutputStreamWriterTool.create(new NullOutputStream());
+		logger.finest(getClass().getName()+" initialized OutputStream <traceWriter> with a NullOutputStream after deserialization");
 	}
-
+	
 }

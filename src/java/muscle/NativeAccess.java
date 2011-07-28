@@ -35,7 +35,7 @@ public class NativeAccess {
 	private static final String nl = System.getProperty("line.separator");
 	//
 	public static void main (String args[])  {
-
+						
 		String def = "NativeAccess"+"_DAABC73E_18CF_4601_BBA5_C7CF536C34FF";
 
 		System.out.println(

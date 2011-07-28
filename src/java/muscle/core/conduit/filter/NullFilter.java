@@ -21,8 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
+import muscle.core.Scale;
 
 
 /**
@@ -30,29 +31,29 @@ this filter does nothing, data passed to this filter is lost
 @author Jan Hegewald
 */
 public class NullFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
+	
 	private DataTemplate inTemplate;
 
 
 	//
 	public NullFilter(WrapperFilter newChildFilter) {
-
+	
 		WrapperFilter childFilter = newChildFilter;
 		DataTemplate outTemplate = childFilter.getInTemplate();
-		this.inTemplate = outTemplate;
+		inTemplate = outTemplate;
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
-
-
-	//
+	
+	
+	//	
 	public void put(DataWrapper newInData) {
-
+	
 		// do nothing
 	}
 

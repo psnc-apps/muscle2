@@ -34,54 +34,54 @@ helper class to build source code strings/streams
 @author Jan Hegewald
 */
 public class CodeWriter extends PrintWriter {
-
+	
 	private int indentLevel = 0;
 	private static final String nl = System.getProperty("line.separator");
 
 	private CppStrategy strategy = new CppStrategy();
-
+	
 	//
 	public CodeWriter(Writer out) {
 		super(out);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(Writer out, boolean autoFlush) {
 		super(out, autoFlush);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(OutputStream out) {
 		super(out);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(OutputStream out, boolean autoFlush) {
 		super(out, autoFlush);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(String fileName) throws FileNotFoundException {
 		super(fileName);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(String fileName, String csn) throws FileNotFoundException, UnsupportedEncodingException {
 		super(fileName, csn);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(File file) throws FileNotFoundException {
 		super(file);
 	}
-
-
+	
+	
 	//
 	public CodeWriter(File file, String csn) throws FileNotFoundException, UnsupportedEncodingException {
 		super(file, csn);
@@ -90,129 +90,126 @@ public class CodeWriter extends PrintWriter {
 
 	//
 	public void iadd(int il, String text) {
-
-		this.print(this.indentPrefix(il)+text);
+		
+		print(indentPrefix(il)+text);
 	}
 
 
 	//
 	public void add(String text) {
-
-		this.iadd(this.indentLevel, text);
+		
+		iadd(indentLevel, text);
 	}
 
 
 	//
 	public void addln(String ... lines) {
-
-		for(String l : lines) {
-			this.addln(l);
-		}
+		
+		for(String l : lines)
+			addln(l);
 	}
 
 
 	//
 	public void addln(String text) {
-
-		this.println(this.indentPrefix(this.indentLevel)+text);
+		
+		println(indentPrefix(indentLevel)+text);
 	}
-
+	
 
 	//
 	public void icomment(int il, String text) {
-
-		this.strategy.comment(this.indentPrefix(il)+text);
+		
+		strategy.comment(indentPrefix(il)+text);
 	}
 
 	//
 	public void comment(String text) {
-
-		this.strategy.comment(this.indentPrefix(this.indentLevel)+text);
+		
+		strategy.comment(indentPrefix(indentLevel)+text);
 	}
 
 
 	//
 	public void doc(String ... lines) {
-
-		this.strategy.doc(lines);
+		
+		strategy.doc(lines);
 	}
-
-
+	
+	
 	//
 	public void begin() {
-
-		this.addln("{");
-		this.indentLevel ++;
+		
+		addln("{");
+		indentLevel ++;
 	}
 
 	//
 	public void end() {
-
-		this.end("}"+nl);
+		
+		end("}"+nl);
 	}
-
+	
 
 	//
 	public void end(String text) {
-
-		this.indentLevel --;
-		this.add(text);
+		
+		indentLevel --;
+		add(text);
 	}
 
-
-
-
+	
+	
+	
 	//
 	public void setStrategy(CppStrategy s) {
-
-		this.strategy = s;
+	
+		strategy = s;
 	}
 
 
 	//
 	private String indentPrefix(int indent) {
-
+		
 		String indentText = "";
-		for(int i = 0; i < indent; i++) {
+		for(int i = 0; i < indent; i++)
 			indentText += "\t";
-		}
-
+		
 		return indentText;
 	}
 
 
 	//
 	public class CppStrategy {
-
+	
 		CodeWriter writer = CodeWriter.this;
-
+		
 		void comment(String raw) {
-
-			this.writer.println("// "+raw);
+		
+			writer.println("// "+raw);
 		}
 
 		void doc(String ... lines) {
-
-			this.writer.println("/**");
-			for(String l : lines) {
-				this.writer.println(l);
-			}
-			this.writer.println("*/");
+		
+			writer.println("/**");
+			for(String l : lines)
+				writer.println(l);
+			writer.println("*/");
 		}
 	}
 
 
 	// for testing purposes
 	public static void main(String[] args) {
-
+	
 //		CodeWriter w = new CodeWriter(System.out);
 		java.io.StringWriter out = new java.io.StringWriter();
 		CodeWriter w = new CodeWriter(out);
 		w.addln("foo");
 		w.doc("bla", "\\author Jan Hegewald");
-
+		
 		w.close();
-
+	
 		System.out.print(out);
 	}
 }

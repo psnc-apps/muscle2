@@ -22,6 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.gui;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 
@@ -41,12 +43,12 @@ public class ProgressMeter {
 
 		JFrame f = new JFrame(title);
 		f.setSize(300, 200);
-		this.gui = new ProgressPanel();
-		this.gui.stepSpinner.setModel(new SpinnerModel());
+		gui = new ProgressPanel();
+		gui.stepSpinner.setModel(new SpinnerModel());
 //		gui.progressBar.setIndeterminate(true); // we do not know the length of our task
 // indeterminate does not work paint strings, which would make setStringPainted useless
-		this.gui.progressBar.setStringPainted(true);
-		f.getContentPane().add(this.gui);
+		gui.progressBar.setStringPainted(true);
+		f.getContentPane().add(gui);
 		f.pack();
 		// disable closing the window
 		f.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -57,13 +59,13 @@ public class ProgressMeter {
 
 	//
 	public void increment() {
+	
+		stepCount ++;
+		gui.progressBar.setString(Integer.toString(stepCount));
 
-		this.stepCount ++;
-		this.gui.progressBar.setString(Integer.toString(this.stepCount));
-
-		if(this.shouldPause(this.stepCount)) {
-			this.gui.pauseButton.setSelected(true);
-			while(this.gui.pauseButton.isSelected()) {
+		if(shouldPause(stepCount)) {
+			gui.pauseButton.setSelected(true);
+			while(gui.pauseButton.isSelected()) {
 				try {
 					Thread.sleep(300);
 				} catch (InterruptedException e) {
@@ -76,34 +78,26 @@ public class ProgressMeter {
 
 	//
 	public boolean shouldPause(int increment) {
-
-		if(this.gui.pauseButton.isSelected()) {
+		
+		if(gui.pauseButton.isSelected())
 			return true;
-		}
-
-		int stepRate = (Integer)this.gui.stepSpinner.getValue();
-		if(stepRate == 0) {
+		
+		int stepRate = (Integer)gui.stepSpinner.getValue();
+		if(stepRate == 0) // do not stop automatically
 			return false;
-		}
-		if(increment % stepRate == 0) {
+		if(increment % stepRate == 0)
 			return true;
-		}
-
+			
 		return false;
 	}
 
 
 	static private class SpinnerModel extends SpinnerNumberModel {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
-
+		
 		public SpinnerModel() {
-
-			this.setMinimum(0);
-			this.setValue(1);
+		
+			setMinimum(0);
+			setValue(1);
 		}
 	}
 }

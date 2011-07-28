@@ -22,19 +22,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.utilities.agent;
 
 
-import jade.core.AID;
 import jade.core.Agent;
+import jade.core.AID;
 import jade.core.Location;
-import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.DataStore;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-
 import java.util.ArrayList;
-
+import jade.core.behaviours.Behaviour;
+import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.ACLMessage;
+import jade.core.behaviours.DataStore;
 import muscle.behaviour.WhereIsAgentBehaviour;
-import muscle.exception.MUSCLERuntimeException;
 import muscle.logging.AgentLogger;
+import muscle.exception.MUSCLERuntimeException;
 
 
 /**
@@ -43,18 +41,14 @@ helper agent to retrieve the location of an agent
 */
 public class WhereIsAgentHelper extends DoAgent {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private AID targetAgent;
 	private AgentLogger logger;
-
+	
 	//
 	public static Location whereIsAgent(AID targetAgent, Agent callerAgent) {
 
 		Location location = null;
-
+		
 		MessageTemplate template = DoAgent.spawn(WhereIsAgentHelper.class, callerAgent, targetAgent);
 		ACLMessage msg = callerAgent.blockingReceive(template);
 		try {
@@ -70,35 +64,33 @@ public class WhereIsAgentHelper extends DoAgent {
 
 
 	//
-	@Override
 	protected void optionalSetup(Object[] args) {
-
-		this.logger = AgentLogger.getLogger(this);
+	
+		logger = AgentLogger.getLogger(this);
 
 		if(args.length == 0) {
-			this.logger.severe("got no args to configure from -> terminating");
-			this.doDelete();
+			logger.severe("got no args to configure from -> terminating");
+			doDelete();		
 			return;
 		}
 
 		if(! (args[0] instanceof AID)) {
-			this.logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(args[0].getClass())+"> -> terminating");
-			this.doDelete();
-			return;
+			logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(args[0].getClass())+"> -> terminating");
+			doDelete();
+			return;		
 		}
 
-		this.targetAgent = (AID)args[0];
+		targetAgent = (AID)args[0];
 	}
-
-
+	
+	
 	//
-	@Override
 	protected ArrayList<Behaviour> getSubBehaviours() {
-
+		
 		ArrayList<Behaviour> behaviours = new ArrayList<Behaviour>();
-		behaviours.add(new WhereIsAgentBehaviour(this, this.targetAgent));
-
+		behaviours.add(new WhereIsAgentBehaviour(this, targetAgent));
+		
 		return behaviours;
 	}
-
+	
 }

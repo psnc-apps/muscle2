@@ -39,10 +39,9 @@ public class ClassTool {
 	true if a declared method of baseClass or any superclass upto (and including) lastSuperclass has the native tag<br>
 	*/
 	static public boolean isNative(Class baseClass, Class lastSuperclass) {
-
-		if(!lastSuperclass.isAssignableFrom(baseClass)) {
+	
+		if(!lastSuperclass.isAssignableFrom(baseClass))
 			throw new java.lang.IllegalArgumentException("<"+lastSuperclass+"> is not a superclass of <"+baseClass+">");
-		}
 
 		Class cls = baseClass;
 		while(lastSuperclass.isAssignableFrom(cls)) {
@@ -64,19 +63,18 @@ public class ClassTool {
 	so if lastSuperclass is java.lang.Object.class, this method should return the same methods as Class#getMethods
 	*/
 	public static Method[] getMethodsUptoSuperclass(Class baseClass, Class lastSuperclass) {
-
-		if(!lastSuperclass.isAssignableFrom(baseClass)) {
+	
+		if(!lastSuperclass.isAssignableFrom(baseClass))
 			throw new java.lang.IllegalArgumentException("<"+lastSuperclass+"> is not a superclass of <"+baseClass+">");
-		}
-
+			
 		ArrayList<Method> methods = new ArrayList<Method>();
 		Class cls = baseClass;
-
+		
 		while(lastSuperclass.isAssignableFrom(cls)) {
 			methods.addAll(Arrays.asList(cls.getDeclaredMethods()));
 			cls = cls.getSuperclass();
 		}
-
+		
 		return (Method[])methods.toArray();
 	}
 
@@ -86,12 +84,12 @@ public class ClassTool {
 	*/
 	public static Class<?> forName(String name) throws ClassNotFoundException {
 
-
+		
 		Class<?> cls = null;
-
+		
 		// try to get a primitive class for this class-name
 		try {
-			cls = ClassTool.primitiveClassForName(name);
+			cls = primitiveClassForName(name);
 		}
 		catch (ClassNotFoundException e) {
 		}
@@ -99,7 +97,7 @@ public class ClassTool {
 		if(cls == null) {
 			// try to get a array class for this class-name
 			try {
-				cls = ClassTool.arrayClassForName(name);
+				cls = arrayClassForName(name);
 			}
 			catch (ClassNotFoundException e) {
 			}
@@ -110,27 +108,27 @@ public class ClassTool {
 			try {
 				cls = Class.forName(name);
 			} catch (ClassNotFoundException e) {
-				throw new IllegalArgumentException(e);
+				throw new IllegalArgumentException(e);		
 			}
 		}
-
+		
 		return cls;
 	}
-
-
+	
+	
 	/**
 	full name of a class, e.g. "java.lang.String"<br>
 	the method Class#getName often returns null, e.g. if a class has been instantiated via reflection
 	*/
-	public static String getName(Class<?> cls) {
+	public static String getName(Class cls) {
 
 		return cls.toString().replaceFirst("class ", "");
 	}
-
-
+	
+	
 	//
 	public static Class<?> arrayClassForName(String name) throws ClassNotFoundException {
-
+	
 		int index = name.indexOf("[]");
 		if(index > 0) {
 			String componentName = name.substring(0,index);
@@ -143,35 +141,33 @@ public class ClassTool {
 
 		throw new ClassNotFoundException("can not get array class for <"+name+">");
 	}
-
-
+	
+	
 	//
 	public static Class<?> wrapperClassForPrimitiveClass(Class<?> primitiveClass) throws ClassNotFoundException {
 
-		if(!primitiveClass.isPrimitive()) {
+		if(!primitiveClass.isPrimitive())
 			throw new IllegalArgumentException("no a primitive class <"+primitiveClass+">");
-		}
-
-		if(primitiveClass.equals(boolean.class)) {
+		
+		if(primitiveClass.equals(boolean.class))
 			return Boolean.class;
-		} else if(primitiveClass.equals(byte.class)) {
+		else if(primitiveClass.equals(byte.class))
 			return Byte.class;
-		} else if(primitiveClass.equals(char.class)) {
+		else if(primitiveClass.equals(char.class))
 			return Character.class;
-		} else if(primitiveClass.equals(short.class)) {
+		else if(primitiveClass.equals(short.class))
 			return Short.class;
-		} else if(primitiveClass.equals(int.class)) {
+		else if(primitiveClass.equals(int.class))
 			return Integer.class;
-		} else if(primitiveClass.equals(long.class)) {
+		else if(primitiveClass.equals(long.class))
 			return Long.class;
-		} else if(primitiveClass.equals(float.class)) {
+		else if(primitiveClass.equals(float.class))
 			return Float.class;
-		} else if(primitiveClass.equals(double.class)) {
+		else if(primitiveClass.equals(double.class))
 			return Double.class;
-		} else if(primitiveClass.equals(void.class)) {
+		else if(primitiveClass.equals(void.class))
 			return Void.class;
-		}
-
+			
 		throw new ClassNotFoundException("can not get wrapper class for <"+primitiveClass.getName()+">");
 	}
 
@@ -179,26 +175,25 @@ public class ClassTool {
 	//
 	public static Class<?> primitiveClassForWrapperClass(Class<?> wrapperClass) throws ClassNotFoundException {
 
-		if(wrapperClass.equals(Boolean.class)) {
+		if(wrapperClass.equals(Boolean.class))
 			return boolean.class;
-		} else if(wrapperClass.equals(Byte.class)) {
+		else if(wrapperClass.equals(Byte.class))
 			return byte.class;
-		} else if(wrapperClass.equals(Character.class)) {
+		else if(wrapperClass.equals(Character.class))
 			return char.class;
-		} else if(wrapperClass.equals(Short.class)) {
+		else if(wrapperClass.equals(Short.class))
 			return short.class;
-		} else if(wrapperClass.equals(Integer.class)) {
+		else if(wrapperClass.equals(Integer.class))
 			return int.class;
-		} else if(wrapperClass.equals(Long.class)) {
+		else if(wrapperClass.equals(Long.class))
 			return long.class;
-		} else if(wrapperClass.equals(Float.class)) {
+		else if(wrapperClass.equals(Float.class))
 			return float.class;
-		} else if(wrapperClass.equals(Double.class)) {
+		else if(wrapperClass.equals(Double.class))
 			return double.class;
-		} else if(wrapperClass.equals(Void.class)) {
+		else if(wrapperClass.equals(Void.class))
 			return void.class;
-		}
-
+			
 		throw new ClassNotFoundException("can not get primitive class for <"+wrapperClass.getName()+">");
 	}
 
@@ -206,111 +201,103 @@ public class ClassTool {
 	//
 	public static Class<?> primitiveClassForName(String name) throws ClassNotFoundException {
 
-		if(name.equals("boolean")) {
+		if(name.equals("boolean"))
 			return boolean.class;
-		} else if(name.equals("byte")) {
+		else if(name.equals("byte"))
 			return byte.class;
-		} else if(name.equals("char")) {
+		else if(name.equals("char"))
 			return char.class;
-		} else if(name.equals("short")) {
+		else if(name.equals("short"))
 			return short.class;
-		} else if(name.equals("int")) {
+		else if(name.equals("int"))
 			return int.class;
-		} else if(name.equals("long")) {
+		else if(name.equals("long"))
 			return long.class;
-		} else if(name.equals("float")) {
+		else if(name.equals("float"))
 			return float.class;
-		} else if(name.equals("double")) {
+		else if(name.equals("double"))
 			return double.class;
-		} else if(name.equals("void")) {
+		else if(name.equals("void"))
 			return void.class;
-		}
-
+			
 		throw new ClassNotFoundException("can not get primitive class for <"+name+">");
 	}
 
 
 	//
 	public static Class<?> arrayClassForPrimitive(Class<?> primitiveClass) {
+	
+		if( !primitiveClass.isPrimitive() )
+			throw new IllegalArgumentException("unable to create primitive array class for non primitive type <"+primitiveClass.getName()+">");		
 
-		if( !primitiveClass.isPrimitive() ) {
-			throw new IllegalArgumentException("unable to create primitive array class for non primitive type <"+primitiveClass.getName()+">");
-		}
+		if( primitiveClass.equals(void.class) )
+			throw new IllegalArgumentException("unable to create array class for primitive type <"+primitiveClass.getName()+">");		
 
-		if( primitiveClass.equals(void.class) ) {
-			throw new IllegalArgumentException("unable to create array class for primitive type <"+primitiveClass.getName()+">");
-		}
-
-		if(primitiveClass.equals(boolean.class)) {
+		if(primitiveClass.equals(boolean.class))
 			return boolean[].class;
-		} else if(primitiveClass.equals(byte.class)) {
+		else if(primitiveClass.equals(byte.class))
 			return byte[].class;
-		} else if(primitiveClass.equals(char.class)) {
+		else if(primitiveClass.equals(char.class))
 			return char[].class;
-		} else if(primitiveClass.equals(short.class)) {
+		else if(primitiveClass.equals(short.class))
 			return short[].class;
-		} else if(primitiveClass.equals(int.class)) {
+		else if(primitiveClass.equals(int.class))
 			return int[].class;
-		} else if(primitiveClass.equals(long.class)) {
+		else if(primitiveClass.equals(long.class))
 			return long[].class;
-		} else if(primitiveClass.equals(float.class)) {
+		else if(primitiveClass.equals(float.class))
 			return float[].class;
-		} else if(primitiveClass.equals(double.class)) {
+		else if(primitiveClass.equals(double.class))
 			return double[].class;
-		}
-
-		throw new IllegalArgumentException("unable to create array class for primitive type <"+primitiveClass.getName()+">");
+				
+		throw new IllegalArgumentException("unable to create array class for primitive type <"+primitiveClass.getName()+">");		
 	}
 
-
+	
 	// helper class to recursively construct multi dimensional array classes
 	private static class ArrayClassBuilder<T> {
 
 		//
 		public static Class<?> build(Class<?> componentClass, int dims) {
-
-			if(dims == 0) {
+			
+			if(dims == 0)
 				return componentClass;
-			}
-			if(dims < 0) {
-				throw new IllegalArgumentException("array dimensions can not be negative <"+dims+">");
-			}
+			if(dims < 0)
+			throw new IllegalArgumentException("array dimensions can not be negative <"+dims+">");		
 
 			if( componentClass.isPrimitive() ) {
-				componentClass = ClassTool.arrayClassForPrimitive(componentClass);
+				componentClass = arrayClassForPrimitive(componentClass);
 				dims --;
-				if(dims == 0) {
+				if(dims == 0)
 					return componentClass;
-				}
 			}
-
+			
 			ArrayClassBuilder builder = null;
 			Class<?> tmpClass = componentClass;
 			for(int i = 0; i < dims; i++) {
 				builder = new ArrayClassBuilder(tmpClass);
 				tmpClass = builder.getArrayClass();
 			}
-
+			
 			return builder.getArrayClass();
 		}
 
 		//
 		private T[] arr;
-
+		
 		//
 		private ArrayClassBuilder(Class<T> cls) {
-			if( cls.isPrimitive() ) {
-				throw new IllegalArgumentException("class can not be a primitive type <"+cls.getName()+">");
-			}
+			if( cls.isPrimitive() )
+				throw new IllegalArgumentException("class can not be a primitive type <"+cls.getName()+">");		
 
-			this.arr = (T[])Array.newInstance(cls,0);
+			arr = (T[])Array.newInstance(cls,0);
 		}
-
+		
 		//
 		private Class getArrayClass() {
-			return this.arr.getClass();
+			return arr.getClass();
 		}
-
+		
 	}
 
 }

@@ -21,15 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplejava;
 
+import muscle.core.ConduitExit;
+import muscle.core.Scale;
+import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-
-import muscle.core.ConduitExit;
-import muscle.core.Scale;
 
 
 /**
@@ -37,11 +36,6 @@ a simple java example kernel which receives data and prints its content to stdou
 @author Jan Hegewald
 */
 public class ConsoleWriter extends muscle.core.kernel.CAController {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 
 	private static final int INTERNAL_DT = 1;
 
@@ -55,7 +49,6 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 
 
 	//
-	@Override
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
@@ -64,40 +57,40 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 
 
 	//
-	@Override
 	protected void addPortals() {
-
-		this.readerA = this.addExit("data", DT_READ_A, double[].class);
+	
+		readerA = addExit("data", DT_READ_A, double[].class);
 	}
-
+		
 
 	//
-	@Override
 	protected void execute() {
 
-		this.startAutomaton();
+		startAutomaton();
 	}
-
-
+	
+	
 	//
 	private void startAutomaton() {
-
+	
 		double[] dataA = null;
-
+		
 		// loop stepping with INTERNAL_DT
-		for(this.time = 0; !this.willStop(); this.time += INTERNAL_DT) {
-
+		for(time = 0; !willStop(); time += INTERNAL_DT) {
+		
 			// read from our portals at designated frequency
-			if(this.time % DT_READ_A == 0) {
-				dataA = this.readerA.receive();
+			if(time % DT_READ_A == 0)
+				dataA = readerA.receive();
+						
+			// process data
+			for(int i = 0; i < dataA.length; i++) {
 			}
-
+						
 			// dump to our portals at designated frequency
 			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			if(this.time % dtWriteA == 0) {
-				for (double element : dataA) {
-					System.out.println("got: "+element);
-				}
+			if(time % dtWriteA == 0) {
+				for(int i = 0; i < dataA.length; i++)
+					System.out.println("got: "+dataA[i]);
 				System.out.println();
 			}
 		}

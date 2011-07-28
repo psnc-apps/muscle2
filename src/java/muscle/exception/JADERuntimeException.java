@@ -27,12 +27,8 @@ custom exception
 @author Jan Hegewald
 */
 public class JADERuntimeException extends RuntimeException {
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	public JADERuntimeException() {
-
+		
 	}
 	public JADERuntimeException(String message) {
 		super(message);

@@ -21,12 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import jade.core.AID;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
 import muscle.exception.MUSCLERuntimeException;
+
+import jade.core.AID;
+
+import muscle.core.DataTemplate;
+import muscle.core.EntranceDependency;
 
 
 /**
@@ -35,82 +38,76 @@ stores info necessary to setup an entrance
 */
 public class EntranceDescription implements Serializable {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
 	private String id;
 	private ArrayList<ConduitDescription> targetConduits = new ArrayList<ConduitDescription>();
 	private DataTemplate dataTemplate;
 	private AID controllerID;
 	private EntranceDependency[] dependencies;
-
-	@Override
+	
 	public boolean equals(Object b) {
-
-		return b != null && this.getClass().isInstance(b) && this.id.equals(this.getClass().cast(b).getID());
+		
+		return b != null && getClass().isInstance(b) && id.equals(getClass().cast(b).getID());
 	}
 
 	public EntranceDescription(String newID) {
-
-		this.id = newID;
+	
+		id = newID;
 	}
-
+			
 	public void addConduitDescription(ConduitDescription description) {
-
-		for(int i = 0; i < this.targetConduits.size(); i++) {
-			if(this.targetConduits.get(i).getID().equals(description.getID())) {
-				throw new MUSCLERuntimeException("Error: can not add conduit <"+description.getID()+"> twice to entrance <"+this.getID()+">");
-			}
+	
+		for(int i = 0; i < targetConduits.size(); i++) {
+			if(targetConduits.get(i).getID().equals(description.getID()))
+				throw new MUSCLERuntimeException("Error: can not add conduit <"+description.getID()+"> twice to entrance <"+getID()+">");
 		}
-if(this.targetConduits.size() > 1) {
-java.util.logging.Logger l = muscle.logging.Logger.getLogger(this.getClass());
+if(targetConduits.size() > 1) {
+java.util.logging.Logger l = muscle.logging.Logger.getLogger(getClass());
 l.warning("Warning: multifeed entrances are not supported yet -- multiple conduits will be spawned instead");
 }
-		this.targetConduits.add(description);
+		targetConduits.add(description);
 	}
 
 	public String getID() {
-
-		return this.id;
+	
+		return id;
 	}
-
+	
 	public boolean hasConduit(ConduitDescription conduit) {
-		return this.targetConduits.contains(conduit);
+		return targetConduits.contains(conduit);
 	}
-
+	
 	public void markAvailable(DataTemplate newDataTemplate, AID newControllerID, EntranceDependency[] newDependencies) {
-
-		this.dataTemplate = newDataTemplate;
-		this.controllerID = newControllerID;
-		this.dependencies = newDependencies;
+	
+		dataTemplate = newDataTemplate;
+		controllerID = newControllerID;
+		dependencies = newDependencies;
 	}
-
+	
 	public DataTemplate getDataTemplate() {
-
-		return this.dataTemplate;
+	
+		return dataTemplate;
 	}
 
 	public AID getControllerID() {
-
-		return this.controllerID;
+	
+		return controllerID;
 	}
 
 	public EntranceDependency[] getDependencies() {
-
-		return this.dependencies;
+	
+		return dependencies;
 	}
 
 	public boolean isAvailable() {
-
-		return this.controllerID != null;
+	
+		return controllerID != null;
 	}
-
+	
 	public void markUnavailable() {
 
-		this.dataTemplate = null;
-		this.controllerID = null;
-		this.dependencies = null;
+		dataTemplate = null;
+		controllerID = null;
+		dependencies = null;			
 	}
 }
 

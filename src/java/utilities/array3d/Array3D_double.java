@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array3d;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
@@ -37,40 +38,39 @@ public class Array3D_double {
 	private int zSize;
 	private IndexStrategy indexStrategy;
 
-
+	
 	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize) {
-
+	
 		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], IndexStrategy.FortranIndexStrategy.class);
 	}
 
 	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize, double[] newData) {
-
+	
 		this(newXSize, newYSize, newZSize, newData, IndexStrategy.FortranIndexStrategy.class);
 	}
 
 	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize, Class<? extends IndexStrategy> strategyClass) {
-
+	
 		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], strategyClass);
 	}
 
 
 	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize, double[] newData, Class<? extends IndexStrategy> strategyClass) {
+	
+		xSize = newXSize;
+		ySize = newYSize;
+		zSize = newZSize;
 
-		this.xSize = newXSize;
-		this.ySize = newYSize;
-		this.zSize = newZSize;
-
-		this.data = newData;
-
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) ) {
+		data = newData;
+		
+		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
 			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));
-		}
-
-
+			
+		
 		Constructor<? extends IndexStrategy> strategyConstructor = null;
 		try {
 			strategyConstructor = strategyClass.getConstructor(int.class, int.class, int.class); // simply assume this constructor is indeed available
@@ -79,7 +79,7 @@ public class Array3D_double {
 			throw new RuntimeException(e);
 		}
 		try {
-			this.indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);
+			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);
 		}
 		catch(java.lang.InstantiationException e) {
 			throw new RuntimeException(e);
@@ -91,57 +91,57 @@ public class Array3D_double {
 			throw new RuntimeException(e);
 		}
 	}
-
-
+	
+	
 	//
 	public void fill(double value) {
-
-		Arrays.fill(this.data, value);
+		
+		Arrays.fill(data, value);
 	}
 
 
 	//
 	public double get(int x1, int x2, int x3) {
 
-		return this.data[this.indexStrategy.index(x1, x2, x3)];
+		return data[indexStrategy.index(x1, x2, x3)];
 	}
-
+	
 	//
 	public double[] getData() {
 
-		return this.data;
+		return data;
 	}
 
 
 	//
 	public void set(int x1, int x2, int x3, double value) {
 
-		this.data[this.indexStrategy.index(x1, x2, x3)] = value;
+		data[indexStrategy.index(x1, x2, x3)] = value;
 	}
 
-
+	
 	//
 	public int getSize() {
 
-		return this.data.length;
+		return data.length;
 	}
 
 	//
 	public int getX1Size() {
 
-		return this.xSize;
+		return xSize;
 	}
 
 	//
 	public int getX2Size() {
 
-		return this.ySize;
+		return ySize;
 	}
 
 	//
 	public int getX3Size() {
 
-		return this.zSize;
+		return zSize;
 	}
 }
 

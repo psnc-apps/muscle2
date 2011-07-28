@@ -22,7 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.messaging.jade;
 
 import jade.lang.acl.ACLMessage;
-
 import java.util.AbstractCollection;
 
 
@@ -32,40 +31,38 @@ custom message queue for a jade.core.Agent which sorts arriving messages to pure
 @author Jan Hegewald
 */
 public class SortingMessageQueue extends jade.core.PublicMessageQueue {
-
+	
 	private AbstractCollection<DataMessage> nonACLQueue;
 
-
+	
 	//
 	public SortingMessageQueue(AbstractCollection<DataMessage> newNonACLQueue) {
-
-		this.nonACLQueue = newNonACLQueue;
+	
+		nonACLQueue = newNonACLQueue;
 	}
 
 
 	//
    @Override
 	public void addFirst(ACLMessage msg) {
-
+	
 		DataMessage dmsg;
-		if( (dmsg=DataMessage.extractFromACLMessage(msg))!=null ) {
-			this.nonACLQueue.add(dmsg);
-		} else {
+		if( (dmsg=DataMessage.extractFromACLMessage(msg))!=null )
+			nonACLQueue.add(dmsg);
+		else
 			super.addFirst(msg);
-		}
 	}
 
 
 	//
    @Override
 	public void addLast(ACLMessage msg) {
-
+				
 		DataMessage dmsg;
-		if( (dmsg=DataMessage.extractFromACLMessage(msg))!=null ) {
-			this.nonACLQueue.add(dmsg);
-		} else {
+		if( (dmsg=DataMessage.extractFromACLMessage(msg))!=null )
+			nonACLQueue.add(dmsg);
+		else
 			super.addLast(msg);
-		}
 	}
 
 }

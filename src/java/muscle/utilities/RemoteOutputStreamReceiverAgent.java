@@ -30,13 +30,14 @@ import jade.lang.acl.MessageTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import muscle.behaviour.MoveBehaviour;
-import muscle.exception.MUSCLERuntimeException;
 import muscle.logging.AgentLogger;
 import utilities.MiscTool;
+import muscle.exception.MUSCLERuntimeException;
 
 
 /**
@@ -44,52 +45,42 @@ receives a RemoteOutputStream
 @author Jan Hegewald
 */
 class RemoteOutputStreamReceiverAgent extends Agent {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	transient private AgentLogger logger;
-
-
+		
+	
 	//
-	@Override
 	final protected void setup() {
 
-		this.logger = AgentLogger.getLogger(this);
+		logger = AgentLogger.getLogger(this);
 
-		Object[] rawArgs = this.getArguments();
-
+		Object[] rawArgs = getArguments();
+		
 		if(rawArgs.length != 1 ) {
-			this.logger.severe("got invalid args count to configure from -> terminating");
-			this.doDelete();
+			logger.severe("got invalid args count to configure from -> terminating");
+			doDelete();		
 			return;
-		}
-
+		}				
+		
 		if(! (rawArgs[0] instanceof RemoteOutputStreamReceiverAgentArgs)) {
-			this.logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(rawArgs[0].getClass())+"> -> terminating");
-			this.doDelete();
-			return;
+			logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(rawArgs[0].getClass())+"> -> terminating");
+			doDelete();
+			return;		
 		}
-
+		
 		final RemoteOutputStreamReceiverAgentArgs args = (RemoteOutputStreamReceiverAgentArgs)rawArgs[0];
-
-		this.addBehaviour(new MoveBehaviour(args.getTargetLocation(), this) {
-
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
+		
+		addBehaviour(new MoveBehaviour(args.getTargetLocation(), this) {
+			
 			public void callback(Agent ownerAgent) {
 
+				OutputStream outStream;
 				try {
-					new FileOutputStream("outtest.txt");
+					outStream = new FileOutputStream("outtest.txt");
 				} catch (FileNotFoundException e) {
 					throw new MUSCLERuntimeException(e);
 				}
-				ownerAgent.addBehaviour(new RemoteOutputStreamReceiverBehaviour(ownerAgent, args.getTemplate(), RemoteOutputStreamReceiverAgent.this.createOutputStream(args.getOutStreamName())));
+				ownerAgent.addBehaviour(new RemoteOutputStreamReceiverBehaviour(ownerAgent, args.getTemplate(), createOutputStream(args.getOutStreamName())));
 			}
 		});
 	}
@@ -97,12 +88,13 @@ class RemoteOutputStreamReceiverAgent extends Agent {
 
 	//
 	private OutputStream createOutputStream(String name) {
-
-		if(name.equals("System.out")) {
+	
+		if(name.equals("System.out"))
 			return System.out;
-		} else if(name.equals("System.err")) {
+		else if(name.equals("System.err"))
 			return System.err;
-		} else {
+		// else we assume <name> is a file name where we should write to
+		else {
 			try {
 System.out.println("creating file: <"+MiscTool.joinPaths(MiscTool.pwd(), name)+">");
 				return new FileOutputStream(name);
@@ -115,89 +107,80 @@ System.out.println("creating file: <"+MiscTool.joinPaths(MiscTool.pwd(), name)+"
 
 	//
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-
+		
 		// do default deserialization
 		in.defaultReadObject();
-
+		
 		// init transient fields
-		this.logger = AgentLogger.getLogger(this);
+		logger = AgentLogger.getLogger(this);
 	}
 
 
 	//
 	static public class RemoteOutputStreamReceiverAgentArgs implements java.io.Serializable {
 
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
 		private final Location targetLocation;
 		private final MessageTemplate template;
 		private final String outStreamName;
 
 		//
 		public RemoteOutputStreamReceiverAgentArgs(Location newTargetLocation, MessageTemplate newTemplate, String newOutStreamName) {
-
-			this.targetLocation = newTargetLocation;
-			this.template = newTemplate;
-			this.outStreamName = newOutStreamName;
+	
+			targetLocation = newTargetLocation;
+			template = newTemplate;
+			outStreamName = newOutStreamName;
 		}
 
 		//
 		public Location getTargetLocation() {
-
-			return this.targetLocation;
+		
+			return targetLocation;
 		}
 
 		//
 		public MessageTemplate getTemplate() {
-
-			return this.template;
+		
+			return template;
 		}
 
 		//
 		public String getOutStreamName() {
-
-			return this.outStreamName;
+		
+			return outStreamName;
 		}
 	}
-
+	
 
 	//
 	static public class RemoteOutputStreamReceiverBehaviour extends SimpleBehaviour {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1L;
+	
 		MessageTemplate template;
 		OutputStream outStream;
 
-
+		
 		//
 		public RemoteOutputStreamReceiverBehaviour(Agent ownerAgent, MessageTemplate newTemplate, OutputStream newOutStream) {
 			super(ownerAgent);
-
-			this.template = newTemplate;
-			this.outStream = newOutStream;
+			
+			template = newTemplate;
+			outStream = newOutStream;
 		}
 
-
+		
 		//
-		@Override
 		public void action() {
 
 			// try to read new fileinput
-			ACLMessage msg = this.myAgent.receive(this.template);
-			if(msg == null) {
-				this.block();
-			} else {
+			ACLMessage msg = myAgent.receive(template);
+			if(msg == null)
+				block();
+			else {
 				// read new input from message
 				byte[] byteContent = msg.getByteSequenceContent();
 				if(byteContent != null) {
 					// append input to our file
 					try {
-						this.outStream.write(byteContent);
+						outStream.write(byteContent);
 					} catch (IOException e) {
 						throw new MUSCLERuntimeException(e);
 					}
@@ -205,24 +188,23 @@ System.out.println("creating file: <"+MiscTool.joinPaths(MiscTool.pwd(), name)+"
 				else {
 					// close the stream
 					// do not close stream if it is System.out or System.err
-					if(!this.outStream.equals(System.out) || !this.outStream.equals(System.err)) {
+					if(!outStream.equals(System.out) || !outStream.equals(System.err)) {
 						try {
-							this.outStream.close();
+							outStream.close();
 						} catch (IOException e) {
 							throw new MUSCLERuntimeException(e);
 						}
 					}
-					this.outStream = null;
-
+					outStream = null;
+					
 //					myAgent.removeBehaviour(this);
-					this.myAgent.doDelete();
+					myAgent.doDelete();
 				}
 			}
 		}
 
-
+		
 		//
-		@Override
 		public boolean done() {
 
 			return false;

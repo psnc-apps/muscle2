@@ -21,16 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.math.BigDecimal;
-
+import muscle.core.wrapper.DataWrapper;
+import muscle.core.DataTemplate;
+import muscle.core.Scale;
 import javatool.DecimalMeasureTool;
-
-import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
-
-import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import javax.measure.DecimalMeasure;
+import java.math.BigDecimal;
 
 
 /**
@@ -47,27 +45,27 @@ public class TimeOffsetFilter implements muscle.core.conduit.filter.WrapperFilte
 	offset in seconds
 	*/
 	public TimeOffsetFilter(WrapperFilter newChildFilter, int newOffset) {
+	
+		childFilter = newChildFilter;
+		
+		offset = new DecimalMeasure<Duration>(new BigDecimal(newOffset), SI.SECOND);
 
-		this.childFilter = newChildFilter;
-
-		this.offset = new DecimalMeasure<Duration>(new BigDecimal(newOffset), SI.SECOND);
-
-		DataTemplate outTemplate = this.childFilter.getInTemplate();
-		this.inTemplate = outTemplate;
+		DataTemplate outTemplate = childFilter.getInTemplate();
+		inTemplate = outTemplate;
 	}
 
 
 	//
 	public DataTemplate getInTemplate() {
-
-		return this.inTemplate;
+	
+		return inTemplate;
 	}
 
 
-	//
+	//	
 	public void put(DataWrapper inData) {
-
-		this.childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.add(inData.getSITime(), this.offset)));
+		
+		childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.add(inData.getSITime(), offset)));
 	}
 
 }

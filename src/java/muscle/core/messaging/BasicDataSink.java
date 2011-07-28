@@ -29,59 +29,59 @@ public class BasicDataSink<E> implements DataSink<E> {
 
 	E data;
 	String id;
-
-
+	
+	
 	//
 	public BasicDataSink(String newID) {
-		this.id = newID;
+		id = newID;
 	}
 
 
 	// returns first element or null
 	public E poll() {
-
-		E d = this.data;
-		this.data = null;
+		
+		E d = data;
+		data = null;
 		return d;
 	}
-
-
+	
+	
 	// blocking put
 	public void put(E d) {
-
-		while( this.data != null ) {
+		
+		while( data != null ) {
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
-			}
+			}			
 		}
-
-		this.data = d;
+		
+		data = d;
 	}
-
+	
 
 	// blocking poll, returns first element or blocks
 	public E take() {
 
 		E d = null;
-		while( (d = this.poll()) == null ) {
+		while( (d = poll()) == null ) {
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
-			}
+			}			
 		}
-
-		this.data = null;
+		
+		data = null;
 		return d;
 	}
 
 
 	//
 	public String id() {
-
-		return this.id;
+		
+		return id;
 	}
 }
 

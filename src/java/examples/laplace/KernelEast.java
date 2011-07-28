@@ -21,18 +21,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.laplace;
 
+import muscle.core.Scale;
+import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 import javax.swing.JFrame;
-
-import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
+import muscle.core.ConduitEntrance;
 import muscle.core.CxADescription;
-import muscle.core.Scale;
 
 
 /**
@@ -41,14 +40,12 @@ heat flow calculation wrapped in a MUSCLE kernel for distributed computation
 */
 public class KernelEast extends muscle.core.kernel.CAController {
 
-	private static final long serialVersionUID = 1L;
 	private ConduitExit<double[]> readerWest;
 	private ConduitEntrance<double[]> writerWest;
 	private Temperature t;
-
-
+	
+	
 	//
-	@Override
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
@@ -59,7 +56,6 @@ public class KernelEast extends muscle.core.kernel.CAController {
 	/**
 	init the temperature calculator
 	*/
-	@Override
 	protected void beforeSetup() {
 
       JFrame frame = new JFrame("east");
@@ -68,37 +64,34 @@ public class KernelEast extends muscle.core.kernel.CAController {
 		final int nnx = CxADescription.ONLY.getIntProperty("nx");
 		final int nny = CxADescription.ONLY.getIntProperty("ny");
 		int dx = CxADescription.ONLY.getIntProperty("dx");
+		
+		t = new Temperature(nnx, nny, dx) {
 
-		this.t = new Temperature(nnx, nny, dx) {
-
-			@Override
 			protected void initBoundaryConditions() {
-
-				this.north = new BoundaryCondition.NorthBoundary(nnx, nny, this.data) {
-					@Override
+				
+				north = new BoundaryCondition.NorthBoundary(nnx, nny, data) {
 					public double get(int x, int y, int step) {
-						return Math.sin((x+this.nx) * 2 * Math.PI / (this.nx*2));
+						return Math.sin((x+nx) * 2 * Math.PI / (nx*2));
 					}
 				};
-
-				this.east = new BoundaryCondition.EastBoundary(nnx, nny, this.data);
-
-				this.south = new BoundaryCondition.SouthBoundary(nnx, nny, this.data) {
-					@Override
+				
+				east = new BoundaryCondition.EastBoundary(nnx, nny, data);
+				
+				south = new BoundaryCondition.SouthBoundary(nnx, nny, data) {
 					public double get(int x, int y, int step) {
-						return Math.cos((x+this.nx) * 2 * Math.PI / (this.nx*2) + Math.PI);
+						return Math.cos((x+nx) * 2 * Math.PI / (nx*2) + Math.PI);
 					}
 				};
+				
+				west = new GhostBoundaryWest(nnx, nny, data);
+				
+				initial = new BoundaryCondition.DefaultCondition(nnx, nny, data);
 
-				this.west = new GhostBoundaryWest(nnx, nny, this.data);
-
-				this.initial = new BoundaryCondition.DefaultCondition(nnx, nny, this.data);
-
-				this.area = new BoundaryCondition.AreaCondition(nnx, nny, this.data, this.north, this.east, this.south, this.west);
+				area = new BoundaryCondition.AreaCondition(nnx, nny, data, north, east, south, west);	
 			}
 		};
-		frame.add(this.t.getGUI());
-
+		frame.add(t.getGUI());
+		
 		frame.setLocation((int)frame.getLocation().getX()+nnx*dx, (int)frame.getLocation().getY());
 
 		frame.pack();
@@ -109,23 +102,21 @@ public class KernelEast extends muscle.core.kernel.CAController {
 	/**
 	announce our conduit connections
 	*/
-	@Override
 	protected void addPortals() {
-
-		this.writerWest = this.addEntrance("east", 1, double[].class);
-		this.readerWest = this.addExit("west", 1, double[].class);
+	
+		writerWest = addEntrance("east", 1, double[].class);
+		readerWest = addExit("west", 1, double[].class);
 	}
-
+		
 
 	/**
 	call run loop of the temperature calculator
 	*/
-	@Override
 	protected void execute() {
 
-      this.t.run(CxADescription.ONLY.getIntProperty("max_timesteps"));
+      t.run(CxADescription.ONLY.getIntProperty("max_timesteps"));
 	}
-
+	
 
 	/**
 	custom boundary condition which is using a ghostnode column to synchronize data with the other kernel
@@ -138,57 +129,55 @@ public class KernelEast extends muscle.core.kernel.CAController {
 		private double[][] data;
 		int nx;
 		int ny;
-
+		
 		public GhostBoundaryWest(int newNx, int newNy, double[][] newData) {
 
-			this.nx = newNx;
-			this.ny = newNy;
-			this.data = newData;
-
+			nx = newNx;
+			ny = newNy;
+			data = newData;
+			
 			// init local slice
-			this.localSlice = new double[this.ny];
-			for(int y = 0; y < this.ny; y++) {
-				for(int x = 0; x < this.nx; x++) {
-					if(this.applies(x, y)) {
-						this.localSlice[y] = this.data[x][y];
-					}
-				}
-			}
+			localSlice = new double[ny];
+			for(int y = 0; y < ny; y++)
+				for(int x = 0; x < nx; x++) {
+					if(applies(x, y))
+						localSlice[y] = data[x][y];
+				}				
 
 			// set remote slice to be the same as our local one, just for initialization
-			this.remoteSlice = this.localSlice;
+			remoteSlice = localSlice;
 		}
-
+						
 		public boolean applies(int x, int y) {
-
+		
 			return x == 0;
 		}
-
+		
       // synchronize ghostnode column with their corresponding original data
 		// calc new boundary value based on the neighbours
       public double get(int x, int y, int step) {
 
-         if(step > this.lastStep) { // update ghost nodes
-				this.lastStep = step;
-
-				KernelEast.this.writerWest.send(this.localSlice);
-				this.remoteSlice = KernelEast.this.readerWest.receive();
+         if(step > lastStep) { // update ghost nodes
+				lastStep = step;
+				
+				writerWest.send(localSlice);
+				remoteSlice = readerWest.receive();
 			}
 
 			double val;
-			if( (x == this.nx-1) || (y == 0) || (y == this.ny-1) ) {
-				val = this.data[x][y];
-			} else {
-				double n = this.data[x][y+1];
-				double e = this.data[x+1][y];
-				double s = this.data[x][y-1];
-				double w = this.remoteSlice[y];
+			if( (x == nx-1) || (y == 0) || (y == ny-1) )
+				val = data[x][y];
+			else {
+				double n = data[x][y+1];
+				double e = data[x+1][y];
+				double s = data[x][y-1];
+				double w = remoteSlice[y];
 
 				val = (n+e+s+w)/4.0;
 			}
-
-			this.localSlice[y] = val;
-			return val;
+			
+			localSlice[y] = val;
+			return val;			
       }
    }
 

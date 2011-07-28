@@ -21,14 +21,32 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
-import jade.content.onto.OntologyException;
-import jade.content.onto.UngroundedException;
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.basic.Action;
 import jade.content.onto.basic.Result;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
+import jade.content.onto.UngroundedException;
+import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.domain.JADEAgentManagement.WhereIsAgentAction;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLCodec.CodecException;
 import jade.proto.AchieveREInitiator;
+
+import java.util.HashMap;
+import java.util.Iterator;
+
+import jade.core.behaviours.DataStore;
+import jade.core.behaviours.SimpleBehaviour;
 import jadetool.MessageTool;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -39,44 +57,39 @@ requests Location for a given agent
 @author Jan Hegewald
 */
 public class WhereIsAgentBehaviour extends AchieveREInitiator {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	public static Class<?> DATASTORE_KEY = WhereIsAgentBehaviour.class;
 	private Location location;
 	private AID targetID;
-
-
+	
+	
 	//
 	public WhereIsAgentBehaviour(Agent ownerAgent, AID newTargetID) {
 		super(ownerAgent, MessageTool.createWhereIsAgentRequest(ownerAgent, newTargetID));
-		this.targetID = newTargetID;
+		targetID = newTargetID;
 	}
-
+	
 
 	//
 	public AID getTargetID() {
-
-		return this.targetID;
+	
+		return targetID;
 	}
-
+	
 
 	//
 	public Location getLocation() {
-
-		return this.location;
+	
+		return location;
 	}
 
-
+	
 	//
-	@Override
 	protected void handleInform(ACLMessage inform) {
 		Result result = null;
 		try {
 
-			result = (Result) this.myAgent.getContentManager().extractContent(inform);
+			result = (Result) myAgent.getContentManager().extractContent(inform);
 		} catch (UngroundedException e) {
 			throw new RuntimeException(e);
 		} catch (OntologyException e) {
@@ -85,15 +98,15 @@ public class WhereIsAgentBehaviour extends AchieveREInitiator {
 			throw new RuntimeException(e);
 		}
 
-		this.location = (Location)result.getValue();
+		location = (Location)result.getValue();
 		// also alow to share our results via a DataStore
-		if(!this.getDataStore().containsKey(WhereIsAgentBehaviour.DATASTORE_KEY)) {
-			this.getDataStore().put(WhereIsAgentBehaviour.DATASTORE_KEY, this.location);
+		if(!getDataStore().containsKey(WhereIsAgentBehaviour.DATASTORE_KEY)) {
+			getDataStore().put(WhereIsAgentBehaviour.DATASTORE_KEY, location);
 		}
 		else {
 			throw new MUSCLERuntimeException("can not insert results to datastore because the key <"+WhereIsAgentBehaviour.DATASTORE_KEY+"> already exists");
 		}
 	}
-
+	
 
 }

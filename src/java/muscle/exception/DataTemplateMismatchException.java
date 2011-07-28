@@ -21,6 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.exception;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
 
 
 /**
@@ -28,13 +31,8 @@ custom exception
 @author Jan Hegewald
 */
 public class DataTemplateMismatchException extends Exception {
-/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-		//		public DataTemplateMismatchException() {
-//
+//		public DataTemplateMismatchException() {
+//			
 //		}
 		public DataTemplateMismatchException(String message) {
 			super(message);
