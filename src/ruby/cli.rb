@@ -31,7 +31,7 @@ class MuscleCli
 	#
 	def initialize
 		require 'optparse'
-		RUBY_VERSION < "1.9" ? (require 'rdoc/usage') : (require 'rdoc')
+#		RUBY_VERSION < "1.9" ? (require 'rdoc/usage') : (require 'rdoc')
 		require 'memoryrange'
 
 		# build our cli-args parser
