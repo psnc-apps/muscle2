@@ -147,6 +147,11 @@ module Targets
 		Misc.run "make -w -j4 --directory=#{cmake_dst}"
 		Misc.run "make -w --directory=#{cmake_dst} install"
 	end
+	
+	# compile otf part
+	def Targets.otf                                                                                                                                                                          
+		Misc.run "make -w -j4 --directory=\"#{$env[:muscle_dir]}\""                                                                                                                      
+	end 
 
 	#
 	def Targets.clean
@@ -160,7 +165,6 @@ module Targets
 	end
 
 end
-
 
 #
 def main
@@ -194,7 +198,6 @@ def main
 	end
 	
 	puts "building [#{targets.join(', ')}] took "+sprintf("%.0f", benchmark)+" second(s)."
-	puts %x[ make ]
 end
 
 # 
