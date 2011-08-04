@@ -1,0 +1,15 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmuscle_1_1_j_n_i_counterpart.html" title="simplifies the setup of a complementary class for Java classes" alt="" coords="5,233,128,260"/>
+<area shape="rect" href="$classmuscle_1_1_array_from_java_tool.html" title="internal muscle class provides utility functions to retrieve arrays from java" alt="" coords="187,5,413,32"/>
+<area shape="rect" href="$classmuscle_1_1_array_to_java_tool.html" title="internal muscle class provides utility functions to pass arrays to java" alt="" coords="196,56,404,83"/>
+<area shape="rect" href="$classmuscle_1_1_conduit_entrance_array.html" title="complementary class for the Java muscle.core.JNIConduitEntrance using primitive type..." alt="" coords="179,107,421,133"/>
+<area shape="rect" href="$classmuscle_1_1_conduit_entrance_single.html" title="complementary class for the Java muscle.core.JNIConduitEntrance using single primitive..." alt="" coords="176,157,424,184"/>
+<area shape="rect" href="$classmuscle_1_1_conduit_exit_array.html" title="complementary class for the Java muscle.core.JNIConduitExit using primitive type..." alt="" coords="196,208,404,235"/>
+<area shape="rect" href="$classmuscle_1_1_conduit_exit_single.html" title="complementary class for the Java muscle.core.JNIConduitExit using single primitive..." alt="" coords="195,259,405,285"/>
+<area shape="rect" href="$classmuscle_1_1_java_log_handler.html" title="writes log messages via a Java logger" alt="" coords="239,461,361,488"/>
+<area shape="rect" href="$classmuscle_1_1_kernel_controller.html" title="complementary class for the Java class muscle.core.kernel.CAController" alt="" coords="235,309,365,336"/>
+<area shape="rect" href="$classmuscle_1_1_single_from_java_tool.html" title="internal muscle class provides utility functions to retrieve a single value from..." alt="" coords="209,360,391,387"/>
+<area shape="rect" href="$classmuscle_1_1_single_to_java_tool.html" title="internal muscle class provides utility functions to pass a single value to java" alt="" coords="219,411,381,437"/>
+<area shape="rect" href="$classmuscle_1_1_log_handler.html" title="performs the actual logging within a Logger" alt="" coords="19,487,115,513"/>
+<area shape="rect" href="$classmuscle_1_1_stream_log_handler.html" title="pure c++ logging without any java stuff writes log messages to a std::ostream" alt="" coords="227,512,373,539"/>
+</map>

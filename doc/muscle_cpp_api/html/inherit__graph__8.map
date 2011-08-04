@@ -1,0 +1,15 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmuscle_1_1_caller_attributes.html" title="CallerAttributes\&lt; jboolean \&gt;" alt="" coords="5,284,221,311"/>
+<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,5,468,32"/>
+<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__get_use_parent_handlers___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="269,56,496,83"/>
+<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__is_loggable___level___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="289,107,476,133"/>
+<area shape="rect" href="$classmuscle_1_1javatool___logger_tool_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,157,468,184"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core___j_n_i_conduit_entrance_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,208,468,235"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core___j_n_i_conduit_entrance_1_1__is_loose___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="321,259,444,285"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core___j_n_i_conduit_exit_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,309,468,336"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core___j_n_i_conduit_exit_1_1__is_loose___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="321,360,444,387"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,411,468,437"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__is_restarting___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="305,461,460,488"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__will_stop___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="321,512,444,539"/>
+<area shape="rect" href="$classmuscle_1_1utilities__jni___j_n_i_method_1_1__equals___object___caller.html" title="internal helper class to cache a jni method invocation procedure this caller can..." alt="" coords="297,563,468,589"/>
+</map>
