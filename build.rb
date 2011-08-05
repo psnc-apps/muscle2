@@ -85,8 +85,6 @@ module Misc
 		Misc.run "javac#{" "+flags.join(' ') unless flags.empty?}#{" -classpath "+classpaths.join(File::PATH_SEPARATOR) unless classpaths.empty?} -d #{dst_dir} #{sources.join(' ')}"
 	end
 
-
-
 	# jar
 	def Misc.jar(build_dir, output_name)
 
@@ -111,6 +109,7 @@ module Targets
 	def Targets.all
 		java
 		cpp
+		otf
 	end
 
 	# javac
@@ -125,9 +124,9 @@ module Targets
 		Misc.jar "build", "muscle"
 	end
 
-
 	# cmake, make
 	def Targets.cpp
+		java
 		flags = %w()
 		
 		# configure for 64bit build on a mac
@@ -150,7 +149,6 @@ module Targets
 	
 	# compile otf part
         def Targets.otf
-		java
 		cpp
 		Misc.run "which java"
 		ENV['OTF_HOME'] = $env[:options][:otf]
