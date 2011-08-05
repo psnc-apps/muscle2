@@ -152,9 +152,8 @@ module Targets
         def Targets.otf
 		java
 		cpp
-		if !ENV['OTF_HOME'] 
-			abort "can not run: please set OTF_HOME"
-		end
+		Misc.run "which java"
+		ENV['OTF_HOME'] = $env[:options][:otf]
 		ENV['MUSCLE_DIR'] = "#{$env[:muscle_dir]}"
 
                 make_dst = "#{$env[:muscle_dir]}/build/intermediate/otf"
@@ -164,12 +163,8 @@ module Targets
 		Misc.run "make -w --directory=#{make_dst} install"
         end
 
-	def Targets.install
-		if !ENV['MUSCLE_INSTALL_DIR']
-			prefix = "/opt/muscle"
-		else
-			prefix = ENV['MUSCLE_INSTALL_DIR']
-		end
+	def Targets.install 
+		prefix = $env[:options][:prefix]
 		puts "Installing MUSCLE to: #{prefix}"
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
@@ -199,42 +194,74 @@ module Targets
 
 end
 
+def get_opts
+	require 'optparse'
+
+	# Configure an OptionParser.
+	parser = OptionParser.new
+
+	parser.on('-h', '--help', 'displays usage information') do
+  		puts parser
+  		exit
+	end
+
+	parser.on('-t=TARGET', '--target=TARGET', %w(default all java cpp otf install clean clobber), 'name of the target to run: default, all, java, cpp, otf, install, clean, clobber') do |v|
+  		$env[:options][:target] = v
+	end
+
+	parser.on('-p=PREFIX', '--prefix=PREFIX', 'installation prefix') do |v|
+  		$env[:options][:prefix] = v
+	end
+
+	parser.on('-o=OTF', '--otf=OTF', 'OTF library location') do |v|
+  		$env[:options][:otf] = v
+	end
+
+	parser.on('-j=JAVA', '--java=JAVA', 'java location') do |v|
+  		$env[:options][:java] = v
+	end
+
+	# Parse command-line options.
+	begin
+  		parser.parse($*)
+		rescue OptionParser::ParseError
+  		puts $!
+  		exit
+	end
+end
 #
 def main
 	$env = {}
 	$env[:execute] = true
 	$env[:verbose] = true
 	$env[:muscle_dir] = File.dirname(File.expand_path(__FILE__))
-
-	if !ENV['JAVA_HOME'] 
-		abort "can not run: please set JAVA_HOME"
-	end
-
+	
 	# assert used dir is a muscle dir
 	if( (%w(doc src thirdparty)-Dir.entries($env[:muscle_dir])).size != 0 )
 		abort "can not run: used directory <#{$env[:muscle_dir]}> does not seem to be a muscle directory"
 	else
 		puts "executing in muscle directory <#{$env[:muscle_dir]}>"
 	end
+	
+	$env[:options] = {:target=>'default', :prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
+	get_opts 
+	target = $env[:options][:target]
 
+	ENV['JAVA_HOME'] = $env[:options][:java]
+	puts "Using Java from: #{ENV['JAVA_HOME']}"
+	ENV['PATH'] = "#{$env[:options][:java]}/bin:#{ENV['PATH']}"
 	Dir.mkdir("build") if !File.directory?("build")
-
-	targets = ARGV
-	targets = %w(default) if targets.empty?
 
 	require 'benchmark'
 	benchmark = Benchmark.realtime do
-		targets.each do |arg|
-			t = arg
-			if (Targets.methods-Targets.class.superclass.methods).include? t
-				Targets.method(t).call
-			else
-				abort "unknown target: #{t}\n\tknown targets are: #{(Targets.methods-Targets.class.superclass.methods).sort.join(' ')}"
-			end
+		if (Targets.methods-Targets.class.superclass.methods).include? target
+			Targets.method(target).call
+		else
+			abort "unknown target: #{target}}"
 		end
 	end
 	
-	puts "building [#{targets.join(', ')}] took "+sprintf("%.0f", benchmark)+" second(s)."
+	puts "building [#{target}] took "+sprintf("%.0f", benchmark)+" second(s)."
 end
 
 # 
