@@ -1,0 +1,5 @@
+#!/bin/sh
+[[ -n $MUSCLE_HOME ]] || ( echo "set MUSCLE_HOME" & exit 1 )
+
+$MUSCLE_HOME/share/ruby/muscle.rb $@
+

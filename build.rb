@@ -171,19 +171,19 @@ module Targets
 			prefix = ENV['MUSCLE_INSTALL_DIR']
 		end
 		puts "Installing MUSCLE to: #{prefix}"
+		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
-		mkdir_p "#{prefix}/java" # make sure dir exists
-		mkdir_p "#{prefix}/java/thirdparty" # make sure dir exists
+		mkdir_p "#{prefix}/share/java" # make sure dir exists
+		mkdir_p "#{prefix}/share/java/thirdparty" # make sure dir exists
+		cp Dir.glob("#{$env[:muscle_dir]}/scripts/muscle"), "#{prefix}/bin"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
-		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/java"
-		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/java/thirdparty"
-		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . \\( ! -wholename *.svn* \\) -print0 | cpio -0pdmu #{prefix}/doc"
-		Misc.run "cd #{$env[:muscle_dir]}/OTF ; find . \\( ! -wholename *.svn* \\) -print0 | cpio -0pdmu #{prefix}/OTF"
-		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . \\( ! -wholename *.svn* \\) -print0 | cpio -0pdmu #{prefix}/ruby"
-		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . \\( ! -wholename *.svn* \\) -print0 | cpio -0pdmu #{prefix}/resources"
-
-#{prefix}"
-#		cp_r Dir.glob("#{$env[:muscle_dir]}/src/ruby"), "#{prefix}"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/java"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/java/thirdparty"
+		Misc.run "cd #{$env[:muscle_dir]}/scripts/OTF ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/OTF"
+		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/doc"
+		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/ruby"
+		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/resources"
+		Misc.run "cd #{$env[:muscle_dir]}/src/cpp/muscle ; find . \\( -wholename '*.h' -o -wholename '*FindJNI*cmake' \\) -print0 | cpio -0pdmu #{prefix}/include"
 	end
 
 	def Targets.clean
