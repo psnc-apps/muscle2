@@ -169,19 +169,18 @@ module Targets
 
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
-		mkdir_p "#{prefix}/share/java" # make sure dir exists
-		mkdir_p "#{prefix}/share/java/thirdparty" # make sure dir exists
+		mkdir_p "#{prefix}/share/muscle/java/thirdparty" # make sure dir exists
 
 		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true
 
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
-		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/java"
-		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/java/thirdparty"
-		Misc.run "cd #{$env[:muscle_dir]}/scripts/OTF ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/OTF"
-		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/doc"
-		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/ruby"
-		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/resources"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/muscle/java"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/muscle/java/thirdparty"
 		Misc.run "cd #{$env[:muscle_dir]}/src/cpp/muscle ; find . \\( -wholename '*.h' -o -wholename '*FindJNI*cmake' \\) -print0 | cpio -0pdmu #{prefix}/include"
+		Misc.run "cd #{$env[:muscle_dir]}/scripts/OTF ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/OTF"
+		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/doc"
+		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/ruby"
+		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/resources"
 	end
 
 	def Targets.clean

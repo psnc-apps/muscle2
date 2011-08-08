@@ -54,8 +54,8 @@ module MuscleUtils
 		# be careful: ENV["CLASSPATH"] might be nil or an empty string
 		cp = []
 		cp += ENV["CLASSPATH"].split(File::PATH_SEPARATOR) if ENV["CLASSPATH"] != nil
-		cp += Dir.glob("#{base_dir}/share/java/*.jar")
-		cp += Dir.glob("#{base_dir}/share/java/thirdparty/*.jar")
+		cp += Dir.glob("#{base_dir}/share/muscle/java/*.jar")
+		cp += Dir.glob("#{base_dir}/share/muscle/java/thirdparty/*.jar")
 		#cp << File.expand_path(File.join(base_dir, "java", "muscle.jar"))
 		cp
 	end

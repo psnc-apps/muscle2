@@ -80,14 +80,14 @@ e = {
 'main_container_name' => "Main-Container", # default JADE name for Main-Container, beware if you change this: some JADE/thirdparty code relies on it
 'print_env' => false,
 # configure java logging
-'logging_config_path' => File.join(base_dir, "share/resources/logging/logging.properties"),
+'logging_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.properties"),
 'tmp_path' => mkJVMTmpPath,
 'muscle_src_root' => find_src_root,
 }
 #e['muscle.Env dump uri'] = URI.parse "file:#{File.join(e['tmp_path'], Muscle.jclass)}"
 e['muscle.Env dump uri'] = Proc.new {URI.parse "file:#{File.join(Muscle.LAST.env['tmp_path'], Muscle.jclass)}"}
 
-e['muscle.behaviour.KillPlatformBehaviour'] = {"logging_after_teardown_properties_path" => File.join(base_dir, "share/resources/logging/logging.after_teardown.properties")}
+e['muscle.behaviour.KillPlatformBehaviour'] = {"logging_after_teardown_properties_path" => File.join(base_dir, "share/muscle/resources/logging/logging.after_teardown.properties")}
 
 
 m.add_env(e)
