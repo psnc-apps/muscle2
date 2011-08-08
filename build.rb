@@ -164,11 +164,16 @@ module Targets
 	def Targets.install 
 		prefix = $env[:options][:prefix]
 		puts "Installing MUSCLE to: #{prefix}"
+
+		Misc.run "sed 's|_PREFIX_|#{prefix}|' #{$env[:muscle_dir]}/scripts/muscle.in > #{$env[:muscle_dir]}/build/muscle"
+
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
 		mkdir_p "#{prefix}/share/java" # make sure dir exists
 		mkdir_p "#{prefix}/share/java/thirdparty" # make sure dir exists
-		cp Dir.glob("#{$env[:muscle_dir]}/scripts/muscle"), "#{prefix}/bin"
+
+		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true
+
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/java"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/java/thirdparty"
@@ -207,7 +212,7 @@ def get_opts
   		$env[:options][:target] = v
 	end
 
-	parser.on('-p=PREFIX', '--prefix=PREFIX', 'installation prefix') do |v|
+	parser.on('-p=PREFIX', '--prefix=PREFIX', 'installation prefix, default is /opt/muscle') do |v|
   		$env[:options][:prefix] = v
 	end
 
@@ -215,7 +220,7 @@ def get_opts
   		$env[:options][:otf] = v
 	end
 
-	parser.on('-j=JAVA', '--java=JAVA', 'java location') do |v|
+	parser.on('-j=JAVA', '--java=JAVA', 'java location, default is $JAVA_HOME') do |v|
   		$env[:options][:java] = v
 	end
 

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+
+if [[ -n $MUSCLE_HOME ]] ; then
+	MUSCLE_HOME=_PREFIX_
+fi
+
+$MUSCLE_HOME/share/ruby/muscle.rb $@
+
