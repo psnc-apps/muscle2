@@ -205,7 +205,7 @@ def get_opts
   		exit
 	end
 
-	parser.on('-t=TARGET', '--target=TARGET', %w(default all java cpp otf install clean clobber), 'name of the target to run: default, all, java, cpp, otf, install, clean, clobber') do |v|
+	parser.on('-t=TARGET', '--target=TARGET', Array, 'name(s) of the target to run: default, all, java, cpp, otf, install, clean, clobber') do |v|
   		$env[:options][:target] = v
 	end
 
@@ -243,7 +243,7 @@ def main
 		puts "executing in muscle directory <#{$env[:muscle_dir]}>"
 	end
 	
-	$env[:options] = {:target=>'default', :prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
+	$env[:options] = {:target=>[], :prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
 	get_opts 
 	target = $env[:options][:target]
 
@@ -254,10 +254,14 @@ def main
 
 	require 'benchmark'
 	benchmark = Benchmark.realtime do
-		if (Targets.methods-Targets.class.superclass.methods).include? target
-			Targets.method(target).call
-		else
-			abort "unknown target: #{target}}"
+                target.each do |arg|
+                	t = arg
+                        if (Targets.methods-Targets.class.superclass.methods).include? t
+				puts "executing target #{t}"
+                        	Targets.method(t).call
+			else
+				abort "unknown target: #{t}"
+			end
 		end
 	end
 	
