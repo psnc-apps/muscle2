@@ -257,10 +257,10 @@ def main
                 target.each do |arg|
                 	t = arg
                         if (Targets.methods-Targets.class.superclass.methods).include? t
-				puts "executing target #{t}"
+				puts "executing target '#{t}'"
                         	Targets.method(t).call
 			else
-				abort "unknown target: #{t}"
+				abort "unknown target: '#{t}'"
 			end
 		end
 	end
