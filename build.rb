@@ -102,7 +102,8 @@ end
 module Targets
 	# default action
 	def Targets.default
-		cpp # the java stuff usually does not need to be compiled
+		java 
+		cpp 
 	end
 
 	# build all
@@ -126,7 +127,6 @@ module Targets
 
 	# cmake, make
 	def Targets.cpp
-		java
 		flags = %w()
 		
 		# configure for 64bit build on a mac
@@ -149,8 +149,6 @@ module Targets
 	
 	# compile otf part
         def Targets.otf
-		cpp
-		Misc.run "which java"
 		ENV['OTF_HOME'] = $env[:options][:otf]
 		ENV['MUSCLE_DIR'] = "#{$env[:muscle_dir]}"
 
