@@ -103,7 +103,12 @@ class Muscle
 	
 	#
 	def add_env(e)
-		@env.merge!(e)
+		@env.merge!(e){|key, oldval, newval| 
+				if(key == "CLASSPATH" && oldval != nil)
+					oldval=newval+File::PATH_SEPARATOR+oldval
+				else
+					oldval=newval
+				end}
 	end
 
 	# helper method to add path variables
