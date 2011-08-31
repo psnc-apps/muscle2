@@ -55,6 +55,7 @@ class MuscleCli
 		@parser.on("--tmp_path ARG", "set root of the tmp path where kernel output will go in dedicated subdirectories") {|arg| @env['tmp_path'] = File.expand_path(arg) }
 		@parser.on("--allkernels", "automatically launches all kernels") { @env["allkernels"] = true }
 		@parser.on("--autoquit", "automatically quits platform using the muscle.utilities.agent.QuitMonitor agent") { @env["autoquit"] = true }
+		@parser.on("--mpi", "checks the MPI rank, and runs MUSCLE on rank 0, and calls the kernel 'execute()' on others") { @env['use_mpi'] = true }
 		@parser.on("--version", "shows info about this MUSCLE version") do
 
 			puts java("muscle.Version")

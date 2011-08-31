@@ -180,12 +180,16 @@ args, cli_env = cli.parse ARGV
 # add cli muscle env
 m.add_env cli_env
 
+
 # load (machine specific) user specific muscle env (~ BASENAME MACHINE?)
 begin
 	load_env(File.expand_path("~/#{m.env_basename}"))
 rescue ArgumentError # File.expand_path("~") usually leads to an error on Windows machines if the HOME environment is not set
 	puts "#{__FILE__}:#{__LINE__} warning: can not load <\"~/#{m.env_basename}\">"
 end
+
+
+
 
 # if we manually assign a port to a container, the container gets this port as its name
 unless m.env['container_name'].nil?
@@ -286,6 +290,56 @@ end
 if m.env['test']
 	doTests(m.env['testinputs'])
 	exit
+end
+
+# if using MPI, check rank
+
+if m.env['use_mpi']
+	possible_mpi_rank_vars=["OMPI_MCA_orte_ess_vpid",
+	                        "OMPI_MCA_ns_nds_vpid",
+	                        "PMI_RANK",
+	                        "MP_CHILD",
+	                        "SLURM_PROCID",
+	                        "X10_PLACE"]
+	rank = nil
+	
+	possible_mpi_rank_vars.each do |var|
+		value = ENV[var]
+		if value
+			rank = value
+		end
+	end
+	
+	if rank and rank.to_i > 0
+		puts "SLAVE"
+		
+		unless cxa
+			puts "No --cxa_file Aborting."
+			exit 1
+		end
+		
+		if args.size > 1
+			puts "Multiple agents provided for MPI. Aborting."
+			exit 1
+		end
+		
+		runner = "java.utilities.MpiSlaveKernelExecutor"
+		kernel = args[0]
+		className = nil
+		
+		cxa.known_agents.each do |agent|
+			if agent.name == kernel
+				className = agent.cls
+			end
+		end
+		
+		command = JVM.build_command([runner, className], m.env).first
+		
+		exit_value = run_command(command, m.env)
+		
+		exit exit_value if exit_value != nil
+		exit
+	end
 end
 
 # !!!: switch to jade mode

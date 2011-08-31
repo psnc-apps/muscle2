@@ -284,6 +284,17 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 	
 	
 	/**
+	 * Just executes the kernel.
+	 * 
+	 * This method is used by running MPI tasks for all nodes with non-zero rank.
+	 *  
+	 * Override this method to provide own method of starting a slave kernel. 
+	 */
+	public void executeDirectly(){
+		execute();
+	}
+	
+	/**
 	return the SI scale of a kernel<br>
 	for a 1D kernel with dx=1meter and dt=1second this would e.g. be<br>
 	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
