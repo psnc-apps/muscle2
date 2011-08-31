@@ -323,7 +323,7 @@ if m.env['use_mpi']
 			exit 1
 		end
 		
-		runner = "java.utilities.MpiSlaveKernelExecutor"
+		runner = "utilities.MpiSlaveKernelExecutor"
 		kernel = args[0]
 		className = nil
 		
