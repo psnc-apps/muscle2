@@ -1,0 +1,87 @@
+Requirements:
+
+  CMAKE
+  Boost >= 1.35
+
+Build - typical cmake build:
+
+  mkdir build
+  cd build
+  cmake ..
+  make
+
+Config:
+
+  In file config.cfg (file name can be changed in options.h) or via args.
+  Example file dumped below:
+
+    localPortLow   = 10002
+    localPortHigh  = 19999
+    remotePortLow  = 20002
+    remotePortHigh = 29999
+    myAddress      = localhost
+    myPort         = 10000
+    indoorPort     = 10001
+    indoorAddress  = 0.0.0.0
+    peerAddress    = localhost
+    peerPort       = 20000
+    
+Client communication:
+
+  For details, see messages.(h|cpp)
+
+  REQUEST:
+
+    T|S S S S|s s|D D D D|d d|I I I I
+
+    T type (1b)
+      S source address (4b)
+              s source port (2b)
+                  D destination address (4b)
+                          d desination port (2b)
+                              IIII some session id (unused)
+  
+  RESPONSE:
+
+    REQUEST | R R R R
+  
+    REQUEST as above
+              R response
+
+  Type:
+    
+    1 - register listening port
+    2 - connect
+    3 - response to connect
+
+  Source and dest adresses are written in network format (127.0.0.0 will be written as 0x01 0x00 0x00 0x7f)
+  Ports, tye and length are written in 'normal' big-endian (most significant byte first) notation (port 22 is 0x00 0x16) 
+
+
+  1) BIND
+  
+    Client sends a request with type 1 and src adress/port to the MTO and closes.
+
+  2) Connect
+
+    Client sends a request with type 2 and src/dest address/port to the MTO.
+    Client waits for the response. If response is 0, the connect succeeded.
+     ( If the response is non-zero (i.e. 1), the connection failed and MTO closes the connection )
+    Client exchanes data with peer normally.
+
+
+Building user space boost & building with boost
+
+  If no boost or only boost < 1.35 is available, one needs to:
+
+  Download boost (from http://www.boost.org/users/download/ )
+  Unpack and run:
+
+    ./bootstrap.sh --with-libraries=system,program_options   # this will set up only the required part
+    ./b2   # this will build boost
+
+  To use the boost with CMAKE, one has to run 
+
+    BOOST_ROOT=/path/to/unpacked/boost cmake ..
+
+  To run the app, copy the libs from  './stage/lib' to the folder with MTO executables.
