@@ -292,6 +292,47 @@ if m.env['test']
 	exit
 end
 
+PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min"
+PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max"
+PROP_MAIN_PORT = "pl.psnc.mapper.muscle.mainport"
+PROP_DEBUG = "pl.psnc.mapper.muscle.debug"
+PROP_TRACE = "pl.psnc.mapper.muscle.trace"
+PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address"
+PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port"
+
+if(m.env.has_key?('intercluster'))
+  port_min = m.env['port_min']
+  port_max = m.env['port_max']
+  if(port_min.nil? or port_max.nil?)
+	puts "Warning: intercluster specified, but no local port range given! Intercluster ignored."
+  else
+	mtoPort = m.env['mtoport']
+	mtoHost = m.env['mtohost']
+	if(mtoPort.nil? or mtoHost.nil?)
+	  puts "Warning: intercluster specified, but no MTO address/port given! Intercluster ignored."
+	else
+	  if(m.env.has_key?('qcg'))
+		m.env['localport'] = 22
+	  else
+		m.env['localport'] = 0
+	  end
+	  
+	  if(m.env["jvmflags"].nil?)
+		m.env["jvmflags"] = Array.new
+	  end
+	  
+	  m.env["jvmflags"] << "-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory"
+	  m.env["jvmflags"] << "-D" + PROP_PORT_RANGE_MIN + "=" + port_min
+	  m.env["jvmflags"] << "-D" + PROP_PORT_RANGE_MAX + "=" + port_max
+	  m.env["jvmflags"] << "-D" + PROP_MTO_ADDRESS    + "=" + mtoHost
+	  m.env["jvmflags"] << "-D" + PROP_MTO_PORT       + "=" + mtoPort.to_s
+	  
+	end
+  end
+end
+
+
+
 # if using MPI, check rank
 
 if m.env['use_mpi']
@@ -397,9 +438,14 @@ end
 #require 'csgraph'
 #system("open -a Preview #{cxa.cs.write_to_graphic_file}")
 
-
 # !!!: run command
+
+puts command
+
 exit_value = run_command(command, m.env)
+
+puts "command was #{$0} #{ARGV.join(' ')}"
+
 #puts "command was #{$0} #{ARGV.join(' ')}"
 exit exit_value if exit_value != nil
 

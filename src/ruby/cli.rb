@@ -76,7 +76,15 @@ class MuscleCli
 		@parser.on("--nojade", "launch a plain Java class without starting jade") { @env['jade'] = false }
 		@parser.on("--jadegui", "launch the Jade-RMA GUI agent") { @env['rmagui'] = true }
 		#@parser.on("--leap", "use JADE-LEAP") { @env['leap'] = true }
-
+		
+		@parser.separator "MTO flags:"
+		@parser.on("--intercluster", "uses Muscle Transport Overlay") { @env['intercluster'] = true }
+		@parser.on("--port_min ARG", "defines lower bound of the port range used (inclusive)") { |arg| @env['port_min'] = arg }
+		@parser.on("--port_max ARG", "defines higher bound of the port range used (inclusive)") { |arg| @env['port_max'] = arg }
+		@parser.on("--qcg", "enables cooperation with QosCosGrid services (forces local port)") { @env['qcg'] = true }
+		@parser.on("--mtohost HOST", "IP or hostname where MTO lives") {|arg| @env['mtohost'] = arg; }
+		@parser.on("--mtoport PORT", "port where MTO should be contacted") {|arg| @env['mtoport'] = arg.to_i; }
+		
 		# jvm flags
 		@parser.separator "JVM flags:"
 		@parser.on("--classpath ARG", "set classpath for the JVM") {|arg| @env["CLASSPATH"] = arg }

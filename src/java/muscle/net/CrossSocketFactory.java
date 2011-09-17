@@ -10,8 +10,11 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.BindException;
 import java.net.HttpURLConnection;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -20,6 +23,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -125,13 +129,20 @@ public class CrossSocketFactory implements SocketFactory {
 			}
 
 			if (ss != null) {
-				System.err.println("Bound to port:");
-				System.err.println(ss.getLocalPort());
+				System.err.println("Bound to port: " + ss.getLocalPort());
 
-				if (mtoAddr != null && mtoPort != -1)
-					mtoRegisterListening((InetSocketAddress) ss
-							.getLocalSocketAddress());
-				else
+				if (mtoAddr != null && mtoPort != -1) {
+					try {
+						mtoRegisterListening((InetSocketAddress) ss
+								.getLocalSocketAddress());
+					} catch (IOException ex) {
+						throw new IOException(
+								"Could not register a server socket at the MTO",
+								ex);
+					}
+
+					logDebug("Registered to MTO");
+				} else
 					logDebug("Missing MTO address / port. MTO will not be used.");
 
 				if (port == mainPort) {
@@ -412,10 +423,26 @@ public class CrossSocketFactory implements SocketFactory {
 	}
 
 	private void mtoRegisterListening(InetSocketAddress isa) throws IOException {
+		// If one tries to register a wildcard, register all known addresses
+		if(isa.getAddress().isAnyLocalAddress())
+		{
+			for( NetworkInterface interf : Collections.list(NetworkInterface.getNetworkInterfaces()))
+				for(InetAddress addr : Collections.list(interf.getInetAddresses()))
+					mtoRegisterListening(new InetSocketAddress(addr, isa.getPort()));
+			return;
+		}
+		
+		// If one registers loopback, do it only if the MTO is on loopback as well
+		if(isa.getAddress().isLoopbackAddress() && ! mtoAddr.isLoopbackAddress())
+			return;
+		
+		if( ! (isa.getAddress() instanceof Inet4Address ) )
+			return;
+		
+		
 		MtoRequest r = new MtoRequest();
 		r.type = MtoRequest.TYPE_REGISTER;
 		r.setSource(isa);
-
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
 		s.getOutputStream().write(r.write().array());
@@ -452,16 +479,27 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 
 		public ByteBuffer write() {
-			ByteBuffer buffer = ByteBuffer.allocate(17);
-			buffer.order(ByteOrder.BIG_ENDIAN);
-			buffer.put(type);
-			buffer.put(srcA.getAddress(), buffer.position(), 4);
-			buffer.putShort(srcP);
-			buffer.put(dstA.getAddress(), buffer.position(), 4);
-			buffer.putShort(dstP);
-			buffer.putInt(sessionId);
-			assert (buffer.remaining() == 0);
-			return buffer;
+			try {
+				ByteBuffer buffer = ByteBuffer.allocate(17);
+				buffer.order(ByteOrder.LITTLE_ENDIAN);
+				buffer.put(type);
+				buffer.put(srcA.getAddress()[3]);
+				buffer.put(srcA.getAddress()[2]);
+				buffer.put(srcA.getAddress()[1]);
+				buffer.put(srcA.getAddress()[0]);
+				buffer.putShort(srcP);
+				buffer.put(dstA.getAddress()[3]);
+				buffer.put(dstA.getAddress()[2]);
+				buffer.put(dstA.getAddress()[1]);
+				buffer.put(dstA.getAddress()[0]);
+				buffer.putShort(dstP);
+				buffer.putInt(sessionId);
+				assert (buffer.remaining() == 0);
+				return buffer;
+			} catch (Throwable t) {
+				throw new IllegalArgumentException(
+						"Could not serialise the request", t);
+			}
 		}
 
 		public static int byteSize() {
@@ -470,21 +508,31 @@ public class CrossSocketFactory implements SocketFactory {
 
 		public static MtoRequest read(ByteBuffer buffer) {
 			try {
-				buffer.order(ByteOrder.BIG_ENDIAN);
+				buffer.order(ByteOrder.LITTLE_ENDIAN);
 				MtoRequest r = new MtoRequest();
 				r.type = buffer.get();
 				byte[] addr = new byte[4];
-				buffer.get(addr);
+				addr[3] = buffer.get();
+				addr[2] = buffer.get();
+				addr[1] = buffer.get();
+				addr[0] = buffer.get();
 				r.srcA = InetAddress.getByAddress(addr);
 				r.srcP = buffer.getShort();
-				buffer.get(addr);
+				addr[3] = buffer.get();
+				addr[2] = buffer.get();
+				addr[1] = buffer.get();
+				addr[0] = buffer.get();
 				r.dstA = InetAddress.getByAddress(addr);
 				r.dstP = buffer.getShort();
 				r.sessionId = buffer.getInt();
 				return r;
 			} catch (UnknownHostException e) {
 				throw new RuntimeException("This is why we don't like Java", e);
+			} catch (Throwable t) {
+				throw new IllegalArgumentException(
+						"Could not deserialise the request", t);
 			}
+
 		}
 	}
 }
