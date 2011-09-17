@@ -77,10 +77,6 @@ public:
 	{
 		env->SetBooleanArrayRegion(jdata, start, len, cdata);
 	}
-	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, const PTYPE* & cdata)
-	{
-		env->SetBooleanArrayRegion(jdata, start, len, cdata);
-	}
 };
 
 
@@ -109,10 +105,6 @@ public:
 	}
 
 	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, PTYPE* & cdata)
-	{
-		env->SetIntArrayRegion(jdata, start, len, cdata);
-	}
-	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, const PTYPE* & cdata)
 	{
 		env->SetIntArrayRegion(jdata, start, len, cdata);
 	}
@@ -147,10 +139,6 @@ public:
 	{
 		env->SetFloatArrayRegion(jdata, start, len, cdata);
 	}
-	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, const PTYPE* & cdata)
-	{
-		env->SetFloatArrayRegion(jdata, start, len, cdata);
-	}
 };
 
 
@@ -179,10 +167,6 @@ public:
 	}
 
 	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, PTYPE* & cdata)
-	{
-		env->SetDoubleArrayRegion(jdata, start, len, cdata);
-	}
-	static void SetArrayRegion(JNIEnv* & env, ARRAYTYPE& jdata, jsize& start, jsize& len, const PTYPE* & cdata)
 	{
 		env->SetDoubleArrayRegion(jdata, start, len, cdata);
 	}

@@ -51,9 +51,6 @@ assert_LIBPATHENV(ENV)
 m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
 m.add_libpath "#{base_dir}/lib"
 
-# use 50% of available physical ram for jvm maximum
-max_ram_size_m = (ram_size*0.50).to_i/1024/1024 # if we specify a ram amount for java, it must be a multiple of 1024 bytes
-
 e = {
 "bootclass" => "muscle.core.Boot",
 'execute' => true,
@@ -61,8 +58,8 @@ e = {
 'quiet' => false,
 'java' => 'java', # java command
 'Xms' => '256m', # default JVM heap size minimum
-'Xmx' => "#{max_ram_size_m}m", # default JVM heap size maximum
-'Xss' => '16m', # default stack size for the JVM thread
+'Xmx' => "512m", # default JVM heap size maximum
+'Xss' => '1m', # default stack size for the JVM thread
 'rmagui' => false,
 'jade' => true,
 'test' => false,

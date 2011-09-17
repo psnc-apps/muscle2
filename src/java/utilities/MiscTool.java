@@ -58,16 +58,15 @@ public class MiscTool {
 
 
 	/**
-	amount of installed RAM on the host machine (physical memory) in bytes
+	total amount of memory for the Java Virtual machine in bytes
 	*/
 	static public long getRAMSize() {
-		
-		OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-		if ( !(osBean instanceof com.sun.management.OperatingSystemMXBean) ) {
-			throw new java.lang.UnsupportedOperationException("can not determine ram size because there is not a <com.sun.management.OperatingSystemMXBean>, but a <"+osBean.getClass()+">");
-		}
-		
-		return ((com.sun.management.OperatingSystemMXBean)osBean).getTotalPhysicalMemorySize();
+	  Runtime rt = Runtime.getRuntime();
+	  long memory = rt.maxMemory();
+	  if (memory == Long.MAX_VALUE) {
+	    memory = rt.freeMemory();
+	  }
+		return memory;
 	}
 
 

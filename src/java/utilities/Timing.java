@@ -67,12 +67,17 @@ public class Timing {
 	JVM CPU time in nanoseconds
 	*/
 	public static long getJVMCpuTime() {
-		OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-		if ( !(osBean instanceof com.sun.management.OperatingSystemMXBean) ) {
-			throw new java.lang.UnsupportedOperationException("can not determine cpu time because there is not a <com.sun.management.OperatingSystemMXBean>, but a <"+osBean.getClass()+">");
-		}
+		ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+    long cputime = 0L;
+
+	  if (threadBean.isThreadCpuTimeSupported()) {
+	    long[] ids = threadBean.getAllThreadIds();
+	    for (int i = 0; i < ids.length; i++) {
+	      cputime += threadBean.getThreadCpuTime(ids[i]);
+	    }
+    }
 		
-		return ((com.sun.management.OperatingSystemMXBean)osBean).getProcessCpuTime();
+		return cputime;
 	}	
 	
 	

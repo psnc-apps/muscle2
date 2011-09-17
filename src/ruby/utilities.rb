@@ -28,10 +28,6 @@ $LOAD_PATH << PARENT_DIR
 
 module MuscleUtils
 
-	# installed physical memory in bytes
-	def ram_size
-		(java "utilities.RAMInfo").to_i
-	end
 
 	# run plain java with muscle classpath applied
 	def java(args)

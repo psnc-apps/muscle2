@@ -19,6 +19,7 @@
 										  "[HKEY_LOCAL_MACHINE\\SOFTWARE\\JavaSoft\\Java Development Kit\\1.3;JavaHome]/lib"
 										  $ENV{JAVA_HOME}/jre/lib/i386
 										  $ENV{JAVA_HOME}/jre/lib/amd64
+										  $ENV{JAVA_HOME}/jre/lib/ppc64
 										  /usr/lib
 										  /usr/local/lib
 										  /usr/lib/java/jre/lib/i386
@@ -39,6 +40,7 @@
 										  SET(JAVA_JVM_LIBRARY_DIRECTORIES
 											 ${JAVA_JVM_LIBRARY_DIRECTORIES}
 											 "${dir}"
+											 "${dir}/default"
 											 "${dir}/client"
 											 "${dir}/server"
 											 )
@@ -76,9 +78,9 @@ SET(JAVA_AWT_INCLUDE_DIRECTORIES
 												 ENDIF(EXISTS ${jpath}/${JAVA_INC_PATH})
 											  ENDFOREACH(JAVA_INC_PATH)
 											  FOREACH(JAVA_LIB_PATH 
-												 ../lib ../jre/lib ../jre/lib/i386 
-												 ../java/lib ../java/jre/lib ../java/jre/lib/i386 
-												 ../share/java/lib ../share/java/jre/lib ../share/java/jre/lib/i386)
+												 ../lib ../jre/lib ../jre/lib/i386 ../jre/lib/ppc64
+												 ../java/lib ../java/jre/lib ../java/jre/lib/i386  ../java/jre/lib/ppc64
+												 ../share/java/lib ../share/java/jre/lib ../share/java/jre/lib/i386 ../share/java/jre/lib/ppc64)
 												 IF(EXISTS ${jpath}/${JAVA_LIB_PATH})
 													SET(JAVA_AWT_LIBRARY_DIRECTORIES ${JAVA_AWT_LIBRARY_DIRECTORIES} "${jpath}/${JAVA_LIB_PATH}")
 												 ENDIF(EXISTS ${jpath}/${JAVA_LIB_PATH})
@@ -130,6 +132,7 @@ FIND_PATH(JAVA_INCLUDE_PATH2 jni_md.h
 ${JAVA_AWT_INCLUDE_DIRECTORIES}
 ${JAVA_INCLUDE_PATH}/win32
 ${JAVA_INCLUDE_PATH}/linux
+/usr/lib64/gcc/powerpc64-suse-linux/4.3/include
 NO_DEFAULT_PATH
 )
 IF(NOT JAVA_INCLUDE_PATH2-NOTFOUND)
