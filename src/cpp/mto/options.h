@@ -16,8 +16,8 @@ using namespace boost::system;
 
 /* defined in options.cpp */
 
-extern short localPortLow, localPortHigh;     ///< Local port range
-extern short remotePortLow, remotePortHigh;   ///< Remote port range
+extern unsigned short localPortLow, localPortHigh;     ///< Local port range
+extern unsigned short remotePortLow, remotePortHigh;   ///< Remote port range
 extern tcp::endpoint my_address;              ///< External address for this proxy
 extern tcp::resolver::iterator peer_address;  ///< External address for peer proxy
 extern tcp::endpoint indoorEndpoint;          ///< Internal address for this proxy

@@ -1,7 +1,7 @@
 #include "options.h"
 
-short localPortLow, localPortHigh;
-short remotePortLow, remotePortHigh;
+unsigned short localPortLow, localPortHigh;
+unsigned short remotePortLow, remotePortHigh;
 tcp::endpoint my_address;
 tcp::endpoint indoorEndpoint;
 tcp::resolver::iterator peer_address;
