@@ -1,13 +1,50 @@
 #include "messages.h"
-#include <boost/detail/endian.hpp>
+#include <cstring>
 
-template <typename T> T swapBytes(T & value)
-{
-  unsigned char * ptr = (unsigned char *) &value;
-  unsigned char temp;
-  for(int i = 0; i < sizeof(T)/2; ++i)
-    temp = ptr[i], ptr[i] = ptr[sizeof(T)-i], ptr[sizeof(T)-i] = temp;
+// Helpers so that endianess will not affect serialisation
+
+/** false if 256 is 0x00 0x01, true if 256 is 0x01 0x00 */
+static bool getEndianess(){
+  static union {unsigned short t; char c[2]; } x;
+  x.t = 0xff00;
+  return x.c[0];
 }
+
+template <typename T> char *& writeToBuffer( char*& buffer,T value)
+{
+  unsigned char * ptr = (unsigned char*) &value;
+  for(int i = 0 ; i < sizeof(value) ; ++i)
+    *(buffer++) = getEndianess() ? *(ptr+sizeof(value)-i-1) : *(ptr+i);
+  return buffer;
+}
+
+template <typename T> T readFromBuffer( char*& buffer, /*out*/ T * valuePtr = 0)
+{
+  T value;
+  unsigned char * ptr = (unsigned char*) &value;
+  for(int i = 0 ; i < sizeof(value) ; ++i)
+    (getEndianess() ? *(ptr+sizeof(value)-i-1) : *(ptr+i)) = *(buffer++);
+  if(valuePtr) *valuePtr = value;
+  return value;
+}
+
+char *& writeAddressToBuffer(char *& buffer, unsigned int address)
+{
+  memcpy(buffer, (const unsigned char*) &address, 4);
+  buffer+=4;
+  return buffer;
+}
+
+unsigned int readAddressFromBuffer(char *& buffer, unsigned int * addressPtr = 0)
+{
+  unsigned int address;
+  memcpy((unsigned char*) &address, buffer, 4);
+  buffer+=4;
+  if(addressPtr) *addressPtr = address;
+  return address;
+}
+
+// The messages.cpp file
 
 unsigned Request::getSize()
 {
@@ -17,46 +54,23 @@ unsigned Request::getSize()
 Request Request::read(char * buf)
 {
   Request r;
-  r.type       =           *(char*)buf;      buf+=sizeof(r.type);
-  r.srcAddress =   *(unsigned int*)buf;      buf+=sizeof(r.srcAddress);
-  r.srcPort    = *(unsigned short*)buf;      buf+=sizeof(r.srcPort);
-  r.dstAddress =   *(unsigned int*)buf;      buf+=sizeof(r.dstAddress);
-  r.dstPort    = *(unsigned short*)buf;      buf+=sizeof(r.dstPort);
-  r.sessionId  =            *(int*)buf;      buf+=sizeof(r.sessionId);
-  
-#ifdef BOOST_BIG_ENDIAN
-  swapBytes<unsigned int>(r.srcAddress);
-  swapBytes<unsigned short>(r.srcPort);
-  swapBytes<unsigned int>(r.dstAddress);
-  swapBytes<unsigned short>(r.dstPort);
-  swapBytes<int>(r.sessionId);
-#endif
-  
+  readFromBuffer(buf, & r.type);
+  readAddressFromBuffer(buf, & r.srcAddress);
+  readFromBuffer(buf, & r.srcPort);
+  readAddressFromBuffer(buf, & r.dstAddress);
+  readFromBuffer(buf, & r.dstPort);
+  readFromBuffer(buf, & r.sessionId);
   return r;
 }
 
 void Request::write(char* buf)
 {
-  unsigned int _srcAddress = srcAddress;
-  unsigned short _srcPort = srcPort;
-  unsigned int _dstAddress = dstAddress;
-  unsigned short _dstPort = dstPort;
-  int _sessionId = sessionId;
-  
-#ifdef BOOST_BIG_ENDIAN
-  swapBytes<unsigned int>(_srcAddress);
-  swapBytes<unsigned short>(_srcPort);
-  swapBytes<unsigned int>(_dstAddress);
-  swapBytes<unsigned short>(_dstPort);
-  swapBytes<int>(_sessionId);
-#endif
-
-            *(char*)buf = type;          buf+=sizeof(char);
-    *(unsigned int*)buf = _srcAddress;   buf+=sizeof(unsigned int);
-  *(unsigned short*)buf = _srcPort;      buf+=sizeof(unsigned short);
-    *(unsigned int*)buf = _dstAddress;   buf+=sizeof(unsigned int);
-  *(unsigned short*)buf = _dstPort;      buf+=sizeof(unsigned short);
-             *(int*)buf = _sessionId;    buf+=sizeof(int);  
+  writeToBuffer(buf, type);
+  writeAddressToBuffer(buf, srcAddress);
+  writeToBuffer(buf, srcPort);
+  writeAddressToBuffer(buf, dstAddress);
+  writeToBuffer(buf, dstPort);
+  writeToBuffer(buf, sessionId);
 }
 
 
@@ -70,7 +84,7 @@ Header Header::read(char * buf)
   
   Header h(Request::read(buf));
   buf+=Request::getSize();
-  h.length     =   *(unsigned int*)buf;      buf+=sizeof(h.length);
+  readFromBuffer(buf, & h.length);
   return h;
 }
 
@@ -82,5 +96,5 @@ void Header::write(char* buf)
 {
   Request::write(buf);
   buf+=Request::getSize();
-  *(unsigned int*)buf = length;       buf+=sizeof(unsigned int);
+  writeToBuffer(buf, length);
 }
