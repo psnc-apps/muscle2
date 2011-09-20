@@ -12,7 +12,7 @@ using namespace boost::asio::ip;
 using namespace boost::system;
 
 /** Name for the file with options */
-#define CONFIG_FILE_NAMEPATH "config.cfg"
+#define CONFIG_FILE_NAMEPATH "mto.cfg"
 
 /* defined in options.cpp */
 

@@ -10,6 +10,7 @@ bool loadOptions(int argc, char **argv)
 {
   program_options::options_description opts("Options");
   opts.add_options()
+    ("config", program_options::value<string>(), "Location of the config file (default: mto.cfg)")
     ("localPortLow", program_options::value<unsigned short>(), "Low limit of the local port range")
     ("localPortHigh", program_options::value<unsigned short>(), "High limit of the local port range")
     ("remotePortLow", program_options::value<unsigned short>(), "Low limit of the remote port range")
@@ -28,7 +29,12 @@ bool loadOptions(int argc, char **argv)
   
   program_options::store(program_options::parse_command_line(argc, argv, opts), read_opts);
   
-  ifstream configFile(CONFIG_FILE_NAMEPATH);
+  string configFilePath;
+  if(read_opts.find("config")!=read_opts.end())
+    configFilePath = read_opts["config"].as<string>();
+  read_opts.erase("config");
+  
+  ifstream configFile(configFilePath.empty() ? CONFIG_FILE_NAMEPATH : configFilePath.c_str());
   if(configFile)
     program_options::store(program_options::parse_config_file(configFile, opts), read_opts);
   

@@ -170,7 +170,11 @@ module Targets
 		mkdir_p "#{prefix}/share/muscle/java/thirdparty" # make sure dir exists
 
 		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true
-
+        
+        if(File.exists?("#{$env[:muscle_dir]}/build/mto"))
+          FileUtils.install "#{$env[:muscle_dir]}/build/mto", "#{prefix}/bin", :mode => 0755, :verbose => true
+        end
+        
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/muscle/java"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/muscle/java/thirdparty"

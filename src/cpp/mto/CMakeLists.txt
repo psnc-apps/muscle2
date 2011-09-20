@@ -9,11 +9,23 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED system program_options )
 
 if(NOT Boost_FOUND)
-	message(FATAL_ERROR "Boost has not been found")
-endif(NOT Boost_FOUND)
+    message("Boost has not been found! MTO will not be built")
+else(NOT Boost_FOUND)
 
-include_directories(${Boost_INCLUDE_DIRS})
-add_executable(proxy connection.cpp options.cpp messages.cpp main.cpp)
-add_executable(tester messages.cpp tester.cpp)
-target_link_libraries(proxy ${Boost_LIBRARIES} )
-target_link_libraries(tester ${Boost_LIBRARIES} )
+    include_directories(${Boost_INCLUDE_DIRS})
+    add_executable(mto connection.cpp options.cpp messages.cpp main.cpp)
+    target_link_libraries(mto ${Boost_LIBRARIES} )
+
+    ## Tester for the MTO 
+    # add_executable(tester messages.cpp tester.cpp)
+    # target_link_libraries(tester ${Boost_LIBRARIES} )
+
+    SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
+    IF(INSTALL_DIR)
+        install(
+            TARGETS mto
+            DESTINATION ${INSTALL_DIR}
+        )
+    ENDIF()
+
+endif(NOT Boost_FOUND)
