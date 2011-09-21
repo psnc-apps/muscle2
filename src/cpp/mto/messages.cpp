@@ -55,9 +55,9 @@ Request Request::read(char * buf)
 {
   Request r;
   readFromBuffer(buf, & r.type);
-  readAddressFromBuffer(buf, & r.srcAddress);
+  readFromBuffer(buf, & r.srcAddress);
   readFromBuffer(buf, & r.srcPort);
-  readAddressFromBuffer(buf, & r.dstAddress);
+  readFromBuffer(buf, & r.dstAddress);
   readFromBuffer(buf, & r.dstPort);
   readFromBuffer(buf, & r.sessionId);
   return r;
@@ -66,9 +66,9 @@ Request Request::read(char * buf)
 void Request::write(char* buf)
 {
   writeToBuffer(buf, type);
-  writeAddressToBuffer(buf, srcAddress);
+  writeToBuffer(buf, srcAddress);
   writeToBuffer(buf, srcPort);
-  writeAddressToBuffer(buf, dstAddress);
+  writeToBuffer(buf, dstAddress);
   writeToBuffer(buf, dstPort);
   writeToBuffer(buf, sessionId);
 }
