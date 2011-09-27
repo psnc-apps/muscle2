@@ -22,51 +22,26 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
 import javatool.DecimalMeasureTool;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
 import javax.measure.DecimalMeasure;
 import java.math.BigDecimal;
 
-
 /**
 modifies timestep with a given offset
 @author Jan Hegewald
 */
-public class TimeOffsetFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
+public class TimeOffsetFilter extends AbstractWrapperFilter {
 	DecimalMeasure<Duration> offset;
 
-	/**
-	offset in seconds
-	*/
-	public TimeOffsetFilter(WrapperFilter newChildFilter, int newOffset) {
-	
-		childFilter = newChildFilter;
-		
+	/** @param newOffset offset in seconds */
+	public TimeOffsetFilter(int newOffset) {
+		super();
 		offset = new DecimalMeasure<Duration>(new BigDecimal(newOffset), SI.SECOND);
-
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		inTemplate = outTemplate;
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
+	protected void apply(DataWrapper subject) {
+		put(new DataWrapper(subject.getData(), DecimalMeasureTool.add(subject.getSITime(), offset)));
 	}
-
-
-	//	
-	public void put(DataWrapper inData) {
-		
-		childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.add(inData.getSITime(), offset)));
-	}
-
 }
-

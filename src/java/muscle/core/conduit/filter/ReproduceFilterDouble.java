@@ -25,7 +25,6 @@ import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
 import muscle.core.Scale;
 import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
@@ -35,51 +34,37 @@ import javatool.DecimalMeasureTool;
 duplicates input data of a coarse delta t and reproduces this data multiple times for a fine time scale
 @author Jan Hegewald
 */
-public class ReproduceFilterDouble implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class ReproduceFilterDouble extends AbstractWrapperFilter {
+	private DecimalMeasure<Duration> outDt;
+	private final int outCount;
 
-	private DataTemplate inTemplate;
-	private DataTemplate outTemplate;
-	private WrapperFilter childFilter;
-	int outCount;
-
-
-	//
-	public ReproduceFilterDouble(WrapperFilter newChildFilter, int newFactor/*factor for output frequency*/) {
+	public ReproduceFilterDouble(int newFactor) {
+		super();
+		this.outCount = newFactor;
+	}
 	
-		childFilter = newChildFilter;
-
-		outTemplate = childFilter.getInTemplate();
-		Scale outScale = outTemplate.getScale();
+	protected void setInTemplate(DataTemplate consumerTemplate) {
+		Scale outScale = consumerTemplate.getScale();
 		assert outScale != null;
 		
-		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(newFactor)), outScale.getDt().getUnit());
+		this.outDt = outScale.getDt();
+		DecimalMeasure<Duration> inDt = new DecimalMeasure<Duration>(outDt.getValue().multiply(new BigDecimal(this.outCount)), this.outDt.getUnit());
 		
-		outCount = newFactor;
-		
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	// pass to next filter at a higher frequency
-	public void put(DataWrapper newInData) {
+	protected void apply(DataWrapper subject) {
 		
-		DataWrapper inData = newInData;
+		DataWrapper inData = subject;
 		// send clones from the unmodified inData
 		for(int i = 0; i < outCount-1; i++) {		
 			double[] inArray = (double[])inData.getData();
 			double[] outArray = new double[inArray.length];
 			System.arraycopy(inArray, 0, outArray, 0, inArray.length);
 			
-			DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outTemplate.getScale().getDt(), new BigDecimal(i));
+			DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outDt, new BigDecimal(i));
 			DataWrapper outData = new DataWrapper(outArray, DecimalMeasureTool.add(inData.getSITime(), dt));
-			childFilter.put(outData);
+			put(outData);
 		}
 
 		// send the inData itself as our last output instead of another copy
@@ -87,11 +72,10 @@ public class ReproduceFilterDouble implements muscle.core.conduit.filter.Wrapper
 		double[] outArray = new double[inArray.length];
 		System.arraycopy(inArray, 0, outArray, 0, inArray.length);
 		
-//DataWrapper outData = new DataWrapper(outArray, inData.getTimestep()+(outCount-1)*outDt);
-		DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outTemplate.getScale().getDt(), new BigDecimal(outCount-1));
+		//DataWrapper outData = new DataWrapper(outArray, inData.getTimestep()+(outCount-1)*outDt);
+		DecimalMeasure<Duration> dt = DecimalMeasureTool.multiply(outDt, new BigDecimal(outCount-1));
 		DataWrapper outData = new DataWrapper(outArray, DecimalMeasureTool.add(inData.getSITime(), dt));
-		childFilter.put(outData);
+		put(outData);
 	}
-
 }
 

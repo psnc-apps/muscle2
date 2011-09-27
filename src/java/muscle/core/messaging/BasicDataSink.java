@@ -21,69 +21,47 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.messaging;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import muscle.exception.MUSCLERuntimeException;
 
 /**
 @author Jan Hegewald
 */
 public class BasicDataSink<E> implements DataSink<E> {
-
-	E data;
-	String id;
+	protected BlockingQueue<E> data;
+	protected final String id;
 	
-	
-	//
 	public BasicDataSink(String newID) {
-		id = newID;
+		this(newID, new ArrayBlockingQueue<E>(1));
 	}
-
+	
+	protected BasicDataSink(String newID, BlockingQueue<E> queue) {
+		id = newID;
+		data = queue;
+	}
 
 	// returns first element or null
 	public E poll() {
-		
-		E d = data;
-		data = null;
-		return d;
+		return data.poll();
 	}
 	
+	public E poll(long time, TimeUnit unit) throws InterruptedException {
+		return data.poll(time, unit);
+	}
 	
 	// blocking put
 	public void put(E d) {
-		
-		while( data != null ) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}			
-		}
-		
-		data = d;
+		data.add(d);
 	}
 	
-
 	// blocking poll, returns first element or blocks
-	public E take() {
-
-		E d = null;
-		while( (d = poll()) == null ) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}			
-		}
-		
-		data = null;
-		return d;
+	public E take() throws InterruptedException {
+		return data.take();
 	}
 
-
-	//
-	public String id() {
-		
+	public final String id() {		
 		return id;
 	}
 }
-
-
-

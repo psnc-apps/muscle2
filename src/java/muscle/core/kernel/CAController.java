@@ -51,7 +51,7 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 	returns an empty string if the class is bundled in a jar file
 	*/
 	@Deprecated
-	static public String getKernelPath(Class cls) {
+	static public String getKernelPath(Class<?> cls) {
 
 		java.net.URL rsrc = cls.getResource(""); // -> null if class is in jar bundle
 		

@@ -21,29 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.messaging;
 
-import java.io.IOException;
-
-import jade.core.AID;
-import jade.core.Agent;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Logger;
-
-import utilities.MiscTool;
-import muscle.core.kernel.RawKernel;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-import muscle.Constant;
-import muscle.exception.MUSCLERuntimeException;
-import muscle.core.wrapper.DataWrapper;
-import utilities.jni.JNIMethod;
-
-
 /**
 @author Jan Hegewald
 */
 public interface SubAgentSrc<T extends java.io.Serializable> {
-
-	
-
 }

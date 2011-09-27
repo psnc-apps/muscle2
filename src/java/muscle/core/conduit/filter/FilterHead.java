@@ -21,46 +21,33 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
-
-import com.thoughtworks.xstream.XStream;
-
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
 entry point for a filter chain used within conduits
 @author Jan Hegewald
 */
-public class WrapperFilterHead implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class FilterHead<F> implements QueueProducer<F> {
 
-	WrapperFilter childFilter;
-	DataTemplate template;
+	private QueueConsumer<F> consumer;
+	private final Queue<F> outgoingQueue;
 	
-	
-	//
-	public WrapperFilterHead(WrapperFilter newChildFilter, DataTemplate newTemplate) throws muscle.exception.DataTemplateMismatchException {
-	
-		childFilter = newChildFilter;
-		template = newTemplate;
-		
-		if( !DataTemplate.match(template, childFilter.getInTemplate()) ) {			
-			throw new muscle.exception.DataTemplateMismatchException(template.toString()+" vs. "+childFilter.getInTemplate().toString());
-		}
+	public FilterHead(QueueConsumer<F> qc) {
+		 outgoingQueue = new LinkedBlockingQueue<F>();
+		 consumer = qc;
+		 consumer.setIncomingQueue(outgoingQueue);
 	}
-	
-	
+
 	// feed filter chain with data
-	public void put(DataWrapper inData) {
-
+	public void put(F inData) {
 		// feed filter chain
-		childFilter.put(inData);
+		outgoingQueue.add(inData);
+		consumer.apply();
 	}
 	
-	
-	//
-	public DataTemplate getInTemplate() {
-	
-		return template;
+	public void setQueueConsumer(QueueConsumer<F> qc) {
+		consumer = qc;
+		consumer.setIncomingQueue(outgoingQueue);
 	}
 }
-

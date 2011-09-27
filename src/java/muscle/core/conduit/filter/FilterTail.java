@@ -21,16 +21,28 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import utilities.MiscTool;
-
+import java.util.Queue;
 
 /**
-deserialize a byte array
+exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-public class DeserializeFilter extends AbstractFilter<byte[],Object> {
-	protected void apply(byte[] subject) {
-		put(MiscTool.deserialize(subject));
+public abstract class FilterTail<E> implements QueueConsumer<E> {
+	private Queue<E> incomingQueue;
+	
+	/**
+	end of filter chain
+	overwrite this method to further process data
+	*/
+	public abstract void result(E resultData);
+
+	public void setIncomingQueue(Queue<E> queue) {
+		this.incomingQueue = queue;
+	}
+
+	public void apply() {
+		while (!this.incomingQueue.isEmpty()) {
+			this.result(this.incomingQueue.remove());
+		}
 	}
 }
-

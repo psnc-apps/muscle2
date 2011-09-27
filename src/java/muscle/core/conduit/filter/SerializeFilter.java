@@ -21,31 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
 import utilities.MiscTool;
-
 
 /**
 serialize to a byte array
 @author Jan Hegewald
 */
-public class SerializeFilter<E extends java.io.Serializable> implements Filter<E> {
-
-	private Filter childFilter;
-	
-
-	//
-	public SerializeFilter(Filter newChildFilter) {
-
-		childFilter = newChildFilter;
+public class SerializeFilter<E extends Serializable> extends AbstractFilter<E,byte[]> {
+	protected void apply(E subject) {
+		put(MiscTool.serialize(subject));
 	}
-
-
-	//
-	public void put(E subject) {
-	
-		byte[] out = MiscTool.serialize(subject);
-		childFilter.put(out);
-	}
-	
 }
-

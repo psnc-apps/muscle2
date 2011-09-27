@@ -24,41 +24,17 @@ package muscle.core.conduit.filter;
 import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
 
-
 /**
 exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-abstract public class WrapperFilterTail implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public abstract class WrapperFilterTail extends FilterTail<DataWrapper> implements WrapperQueueConsumer {
+	private final DataTemplate template;
 
-	DataTemplate template;
-
-
-	//
-	public WrapperFilterTail(DataTemplate newTemplate) {
-	
-		template = newTemplate;
+	public WrapperFilterTail(DataTemplate inTemplate) {
+		this.template = inTemplate;
 	}
-	
-	
-	/**
-	end of filter chain
-	overwrite this method to further process data
-	*/
-	abstract public void result(DataWrapper resultData);
-
-
-	//
-	public void put(DataWrapper inData) {
-
-		result(inData);
-	}
-	
-	
-	//
-	public DataTemplate getInTemplate() {
-	
+	public final DataTemplate getInTemplate() {
 		return template;
 	}
 }
-

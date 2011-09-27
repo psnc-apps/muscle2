@@ -57,7 +57,7 @@ public class ConnectionScheme implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	private LinkedList<ExitDescription> targetExitDescriptions = new LinkedList<ExitDescription>(); // leafs of a connection chain entrance->conduit->exit
-	private transient Logger logger = muscle.logging.Logger.getLogger(ConnectionScheme.class);
+	private static final transient Logger logger = muscle.logging.Logger.getLogger(ConnectionScheme.class);
 	protected Env env;
 	private String cs_file_uri = "cs_file_uri";
 
@@ -107,7 +107,7 @@ public class ConnectionScheme implements Serializable {
 		for(String line : lines) {
 			String[] items = line.split("( +?)|(\t+?)");
 			if(items.length != 3) {
-				this.logger.severe("connection scheme has unknown format");
+				logger.severe("connection scheme has unknown format");
 				return;
 			}
 
@@ -388,9 +388,6 @@ public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 
 		// do default deserialization
 		in.defaultReadObject();
-
-		// init transient fields
-		this.logger = muscle.logging.Logger.getLogger(ConnectionScheme.class);
 	}
 
 

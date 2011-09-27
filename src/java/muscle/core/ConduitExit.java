@@ -22,6 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.BufferingRemoteDataSinkTail;
@@ -29,6 +31,7 @@ import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
+import muscle.exception.MUSCLERuntimeException;
 
 
 /**
@@ -70,7 +73,7 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
 
    //
    @Override
-   public DataMessage<DataWrapper<T>> take() {
+   public DataMessage<DataWrapper<T>> take() throws InterruptedException {
 		return sinkDelegate.take();
    }
 
@@ -94,7 +97,12 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
 	*/
 	public T receive() {
 	
-		DataMessage<DataWrapper<T>> dmsg = take();
+		DataMessage<DataWrapper<T>> dmsg = null;
+		try {
+			dmsg = take();
+		} catch (InterruptedException ex) {
+			throw new MUSCLERuntimeException(ex);
+		}
 		
 		DataWrapper<T> wrapper = dmsg.getStored();
 		T data = wrapper.getData();
@@ -122,5 +130,10 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
    public void addObserver(SinkObserver<DataMessage<?>> o) {
       sinkDelegate.addObserver(o);
    }
+
+	@Override
+	public DataMessage<DataWrapper<T>> poll(long time, TimeUnit unit) throws InterruptedException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
 	
 }

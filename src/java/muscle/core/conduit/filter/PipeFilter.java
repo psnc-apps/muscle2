@@ -22,39 +22,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-
 
 /**
 this filter simply forwards the data to the next filter without altering the data
 @author Jan Hegewald
 */
-public class PipeFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	
-
-	//
-	public PipeFilter(WrapperFilter newChildFilter) {
-
-		childFilter = newChildFilter;
-		inTemplate = childFilter.getInTemplate();
+public class PipeFilter extends AbstractWrapperFilter {
+	protected void apply(DataWrapper subject) {
+		put(subject);
 	}
-
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-	
-	//	
-	public void put(DataWrapper newInData) {
-		
-		childFilter.put(newInData);
-	}
-
 }
 

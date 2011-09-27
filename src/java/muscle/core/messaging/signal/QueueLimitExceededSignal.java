@@ -21,46 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.messaging.signal;
 
-import jade.core.AID;
-import jade.core.Agent;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.logging.Logger;
-
-import muscle.Constant;
-import muscle.core.kernel.RawKernel;
-import muscle.exception.MUSCLERuntimeException;
-import muscle.core.wrapper.DataWrapper;
-import utilities.jni.JNIMethod;
-import javatool.ArraysTool;
-import utilities.MiscTool;
-
-
-/**
-@author Jan Hegewald
-*/
 /**
 custom exception
 @author Jan Hegewald
 */
 public class QueueLimitExceededSignal implements Signal {
-
-	//String sinkID;
-
-
-	//
-//	public QueueLimitExceededSignal(String newSinkID) {
-//		super();
-//		sinkID = newSinkID;
-//	}
-
-
-//	//
-//	public String getSinkID() {
-//		return sinkID;
-//	}
 }
 

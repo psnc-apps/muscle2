@@ -21,13 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
 import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
-import com.thoughtworks.xstream.XStream;
 import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 
@@ -41,31 +38,26 @@ otherwise this filter can not provide data for the last timestep<br>
 dtCoarseCount = (globalStepCount%dt_coarse)-1<br>
 dtFineCount = (globalStepCount%dt_fine)-1<br>
 dtCoarseCount/2 == dtFineCount<br>
-<tt>0   1   2   3 t_coarse<br>
-    |  /|  /|  /|<br>
-    | | | | | | |<br>
-    0 1 2 3 4 5 6 t_fine</tt>
+<tt>0ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½3 t_coarse<br>
+    |ï¿½ï¿½/|ï¿½ï¿½/|ï¿½ï¿½/|<br>
+    |ï¿½|ï¿½|ï¿½|ï¿½|ï¿½|ï¿½|<br>
+    0ï¿½1ï¿½2ï¿½3ï¿½4ï¿½5ï¿½6 t_fine</tt>
 @author Jan Hegewald
 */
-public class LinearTimeInterpolationFilterDouble implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
+public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter {
 	private double[] lastCoarseData; // copy of the last used coarse timestep data (inData)
-
-	private WrapperFilter childFilter;
 	private DecimalMeasure<Duration> fineDt;	
-	private DataTemplate inTemplate;
-
+	private final int dtFactor;
+		
+	public LinearTimeInterpolationFilterDouble(int dtFactor) {
+		super();
+		// so far only tested with dt_coarse = 2*dt_fine
+		assert dtFactor == 2;
+		this.dtFactor = dtFactor;
+	}
 	
-	//
-	public LinearTimeInterpolationFilterDouble(WrapperFilter newChildFilter, int dtFactor) {
-
-// so far only tested with dt_coarse = 2*dt_fine
-assert dtFactor == 2;
-		
-		
-		childFilter = newChildFilter;
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		Scale outScale = outTemplate.getScale();
+	protected void setInTemplate(DataTemplate consumerTemplate) {
+		Scale outScale = consumerTemplate.getScale();
 		assert outScale != null;
 		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(dtFactor)), outScale.getDt().getUnit());
 
@@ -73,55 +65,40 @@ assert dtFactor == 2;
 		
 		assert inDt.compareTo(fineDt) > 0;
 		
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 	
-	
-	//
-	public DataTemplate getInTemplate() {
-		
-		return inTemplate;
-	}
-	
-	
-	//	
-	public void put(DataWrapper newInData) {
-				
-		DataWrapper inData = newInData;
-
+	public void apply(DataWrapper subject) {
 		// init lastCoarseData buffer
 		// create our buffer for out data only once
-		if(lastCoarseData == null) {		
-
-			lastCoarseData = ((double[])inData.getData()).clone();
+		if(lastCoarseData == null) {
+			lastCoarseData = ((double[])subject.getData()).clone();
 
 			// feed next filter with data for the current coarse timestep
-			childFilter.put(inData);
+			put(subject);
 
 			return;
 		}
 
-		DataWrapper currentCoarseData = inData;
-		
 		double[] lastCoarseArray = lastCoarseData;
-		double[] currentCoarseArray = (double[])currentCoarseData.getData();
+		double[] currentCoarseArray = (double[])subject.getData();
 		double[] interpolatedArray = new double[currentCoarseArray.length];
 		for(int i = 0; i < lastCoarseArray.length; i++) {
 			interpolatedArray[i] = (lastCoarseArray[i] + currentCoarseArray[i]) / 2.0;
 		}
 		
 		// retain the current coarse data to be able to calculate the next timestep
-		lastCoarseData = ((double[])currentCoarseData.getData()).clone();
+		lastCoarseData = ((double[])subject.getData()).clone();
 		
-		DecimalMeasure<Duration> t = new DecimalMeasure<Duration>(currentCoarseData.getSITime().getValue().subtract(fineDt.to(currentCoarseData.getSITime().getUnit()).getValue()), currentCoarseData.getSITime().getUnit());
+		DecimalMeasure<Duration> t = new DecimalMeasure<Duration>(subject.getSITime().getValue().subtract(fineDt.to(subject.getSITime().getUnit()).getValue()), subject.getSITime().getUnit());
 		DataWrapper interpolatedData = new DataWrapper(interpolatedArray, t);
-		assert interpolatedData.getSITime().compareTo(currentCoarseData.getSITime()) != 0;
+		assert interpolatedData.getSITime().compareTo(subject.getSITime()) != 0;
 		
 		// feed next filter with interpolated data for last fine timestep
-		childFilter.put(interpolatedData);
+		put(interpolatedData);
 
 		// feed next filter with data for the current coarse timestep
-		childFilter.put(currentCoarseData);
+		put(subject);
 	}
 
 }

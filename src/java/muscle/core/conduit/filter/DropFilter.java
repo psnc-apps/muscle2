@@ -35,46 +35,29 @@ drops data if incoming time scale is not a multiple of outgoing dt, newInDt is o
 use for testing, usually better try to not send the dropped data at all from within the CA
 @author Jan Hegewald
 */
-public class DropFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	DecimalMeasure<Duration> outDt;
-	int counter;
-	int outRate;
-
-	//
-	public DropFilter(WrapperFilter newChildFilter, int newInDtSec/*assume dt in seconds here*/) {
+public class DropFilter extends AbstractWrapperFilter {
+	private final int outRate;
+	private int counter;
 	
-		childFilter = newChildFilter;
-		
+	/** @param newInDtSec in seconds */
+	public DropFilter(int newInDtSec) {
+		super();
 		outRate = newInDtSec;
-		DecimalMeasure<Duration> inDt = DecimalMeasure.valueOf(new BigDecimal(newInDtSec), SI.SECOND);
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		Scale outScale = outTemplate.getScale();
-		assert outScale != null;
-		outDt = outTemplate.getScale().getDt();
-
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
-
-
-	//
-	public DataTemplate getInTemplate() {
 	
-		return inTemplate;
+	protected void setInTemplate(DataTemplate consumerTemplate) {
+		DecimalMeasure<Duration> inDt = DecimalMeasure.valueOf(new BigDecimal(outRate), SI.SECOND);
+		Scale outScale = consumerTemplate.getScale();
+		assert outScale != null;
+		
+		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
-
-	//	
-	public void put(DataWrapper newInData) {
-		
-		// only pass data to next filter on given interval
+	protected void apply(DataWrapper subject) {
 		if(counter % outRate == 0)
-			childFilter.put(newInData);
+			put(subject);
 		
-		counter ++;
+		counter++;
 	}
-
 }
 

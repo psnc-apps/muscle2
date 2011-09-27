@@ -25,7 +25,6 @@ import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
 import muscle.core.Scale;
 import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
@@ -35,41 +34,23 @@ import javatool.DecimalMeasureTool;
 modifies timestep with a given factor
 @author Jan Hegewald
 */
-public class TimeFactorFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class TimeFactorFilter extends AbstractWrapperFilter {
+	private final int factor;
 
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	int factor;
-
-	//
-	public TimeFactorFilter(WrapperFilter newChildFilter, int newFactor) {
-	
-		childFilter = newChildFilter;
-		
+	public TimeFactorFilter(int newFactor) {
+		super();
 		factor = newFactor;
-
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		Scale outScale = outTemplate.getScale();
+	}
+	
+	protected void setInTemplate(DataTemplate consumerTemplate) {
+		Scale outScale = consumerTemplate.getScale();
 		assert outScale != null;
 		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(factor)), outScale.getDt().getUnit());
 
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
+	protected void apply(DataWrapper subject) {		
+		put(new DataWrapper(subject.getData(), DecimalMeasureTool.multiply(subject.getSITime(), new BigDecimal(factor))));
 	}
-
-
-	//	
-	public void put(DataWrapper newInData) {
-		
-		DataWrapper inData = newInData;
-		childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.multiply(inData.getSITime(), new BigDecimal(factor))));
-	}
-
 }
-

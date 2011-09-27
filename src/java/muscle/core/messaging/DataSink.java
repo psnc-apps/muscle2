@@ -21,39 +21,20 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.messaging;
 
-import jade.core.AID;
-import jade.core.Agent;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.logging.Logger;
-
-import muscle.Constant;
-import muscle.core.kernel.RawKernel;
-import muscle.exception.MUSCLERuntimeException;
-import muscle.core.wrapper.DataWrapper;
-import utilities.jni.JNIMethod;
-import javatool.ArraysTool;
-import utilities.MiscTool;
-
+import java.util.concurrent.TimeUnit;
 
 /**
 @author Jan Hegewald
 */
 public interface DataSink<E> {// generic E will be the underlying unwrapped data, e.g. double[]
-
-		
-	//
 	public void put(E d);	
 
-	//
-	public E take();
-	//
-	public E poll();
+	public E take() throws InterruptedException;
 
-	//
+	public E poll();
+	
+	public E poll(long time, TimeUnit unit) throws InterruptedException;
+
 	public String id();
 }
 

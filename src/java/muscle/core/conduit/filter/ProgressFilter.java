@@ -22,42 +22,19 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
 import muscle.gui.ProgressMeter;
-
 
 /**
 forwards the data to the next filter without altering the data,
 but allows the user to pause the message passing via a GUI
 @author Jan Hegewald
 */
-public class ProgressFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class ProgressFilter extends AbstractWrapperFilter {
+	private final ProgressMeter progress = new ProgressMeter("ProgressFilter");
 
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	private ProgressMeter progress = new ProgressMeter("ProgressFilter");
-
-	//
-	public ProgressFilter(WrapperFilter newChildFilter) {
-
-		childFilter = newChildFilter;
-		inTemplate = childFilter.getInTemplate();
-	}
-
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-	
-	//	
-	public void put(DataWrapper newInData) {
-		
+	protected void apply(DataWrapper subject) {
 		progress.increment();
-		childFilter.put(newInData);
+		put(subject);
 	}
-
 }
 

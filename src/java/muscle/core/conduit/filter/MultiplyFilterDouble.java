@@ -21,51 +21,27 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import com.thoughtworks.xstream.XStream;
-
 
 /**
-multiplies every value of incomming data with a constant factor
+multiplies every value of incoming data with a constant factor
 @author Jan Hegewald
 */
-public class MultiplyFilterDouble implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private double factor;
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-
+public class MultiplyFilterDouble extends AbstractWrapperFilter {
+	private final double factor;
 	
-	//
-	public MultiplyFilterDouble(WrapperFilter newChildFilter, double newFactor) {
-
-		childFilter = newChildFilter;
-		inTemplate = childFilter.getInTemplate();
+	public MultiplyFilterDouble(double newFactor) {
+		super();
 		factor = newFactor;
 	}
-	
 
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-	
-	
-	//	
-	public void put(DataWrapper newInData) {
-		
-		double[] inData = (double[])newInData.getData();
+	protected void apply(DataWrapper subject) {
+		double[] inData = (double[])subject.getData();
 
 		for (int i = 0; i < inData.length; i++) {			
 			inData[i] *= factor;
 		}		
-
-		childFilter.put(newInData);
+		put(subject);
 	}
-	
 }
 

@@ -21,58 +21,26 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import com.thoughtworks.xstream.XStream;
-import muscle.exception.MUSCLERuntimeException;
-
 
 /**
 interpolates two adjacent values of the incoming data array
-for this filter to work, the incomming data must have one value more than the outgoing data
+for this filter to work, the incoming data must have one value more than the outgoing data
 @author Jan Hegewald
 */
-public class LinearInterpolationFilterDouble implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private WrapperFilter childFilter;
-	private DataTemplate inTemplate;
-
-	
-	//
-	public LinearInterpolationFilterDouble(WrapperFilter newChildFilter) {
-		
-		childFilter = newChildFilter;
-		DataTemplate outTemplate = childFilter.getInTemplate();
-
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), outTemplate.getScale());				
-	}
-	
-	
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	//	
-	public void put(DataWrapper newInData) {
-		
-		double[] inData = (double[])newInData.getData();
+public class LinearInterpolationFilterDouble extends AbstractWrapperFilter {
+	protected void apply(DataWrapper subject) {
+		double[] inData = (double[])subject.getData();
 		double[] outData = new double[inData.length-1];
 
-
-// warning: as outWrapper is mutable, a successive filter might change its length
+		// warning: as outWrapper is mutable, a successive filter might change its length
 
 		for (int i = 0; i < outData.length; i++) {			
 			outData[i] = ( inData[i] + inData[i+1]) / 2.0;
 		}
 		
-		DataWrapper outWrapper = new DataWrapper(outData, newInData.getSITime());
-		childFilter.put(outWrapper);
+		DataWrapper<double[]> outWrapper = new DataWrapper<double[]>(outData, subject.getSITime());
+		put(outWrapper);
 	}
-
 }
 

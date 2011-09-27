@@ -26,7 +26,6 @@ package muscle.core.messaging;
 @author Jan Hegewald
 */
 public interface SinkObservable<E> {
-
 	void addObserver(SinkObserver<E> o);
 }
 
