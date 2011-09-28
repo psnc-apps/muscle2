@@ -23,12 +23,9 @@ package muscle.behaviour;
 
 
 import jade.core.Agent;
-import jade.core.Location;
-import jade.core.behaviours.SimpleBehaviour;
 import jade.proto.AchieveREInitiator;
 import jadetool.MessageTool;
 import jade.lang.acl.ACLMessage;
-import java.util.Enumeration;
 import javatool.LoggerTool;
 import java.util.logging.Level;
 import utilities.Env;

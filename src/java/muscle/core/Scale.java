@@ -146,10 +146,10 @@ public class Scale implements java.io.Serializable {
 	//
 	public String toString() {
 
-		StringBuilder text = new StringBuilder();
-		text.append("dt:"+dt);
+		StringBuilder text = new StringBuilder(30);
+		text.append("dt:").append(dt);
 		for(int i = 0; i < dx.size(); i++)
-			text.append("dx"+(i+1)+":"+dx.get(i));
+			text.append("dx").append(i+1).append(':').append(dx.get(i));
 		
 		return text.toString();
 	}
