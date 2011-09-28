@@ -40,6 +40,7 @@ public class OutputStreamWriterTool {
 		if(out.equals(System.out) || out.equals(System.err)) {
 			return new OutputStreamWriter(out) {		
 				public void close() throws IOException {
+					flush();
 				}
 			};
 		}
