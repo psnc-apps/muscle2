@@ -21,8 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array2d;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
+import utilities.array2d.IndexStrategy.FortranIndexStrategy;
 
 
 // TODO: inherit functionality from cern.colt.matrix.DoubleMatrix2D?
@@ -32,88 +31,39 @@ import java.lang.reflect.Constructor;
 */
 public class Array2D_double {
 
-	private double[] data;
-	private int xSize;
-	private int ySize;
-	private IndexStrategy indexStrategy;
+	private final double[] data;
+	private final IndexStrategy indexStrategy;
 	
-	//
 	public Array2D_double(int newXSize, int newYSize) {
-	
-		this(newXSize, newYSize, new double[newXSize*newYSize], IndexStrategy.FortranIndexStrategy.class);
+		this(new double[newXSize*newYSize], new FortranIndexStrategy(newXSize, newYSize));
 	}
 
-	//
 	public Array2D_double(int newXSize, int newYSize, double[] newData) {
-	
-		this(newXSize, newYSize, newData, IndexStrategy.FortranIndexStrategy.class);
+		this(newData, new FortranIndexStrategy(newXSize, newYSize));
 	}
 
-	//
-	public Array2D_double(int newXSize, int newYSize, Class<? extends IndexStrategy> strategyClass) {
-	
-		this(newXSize, newYSize, new double[newXSize*newYSize], strategyClass);
+	public Array2D_double(int newXSize, int newYSize, IndexStrategy strategy) {
+		this(new double[newXSize*newYSize], strategy);
 	}
 
-
-	//
-	public Array2D_double(int newXSize, int newYSize, double[] newData, Class<? extends IndexStrategy> strategyClass) {
-	
-		xSize = newXSize;
-		ySize = newYSize;
-
-		data = newData;
-		
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
-			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));
-			
-		
-		Constructor<? extends IndexStrategy> strategyConstructor = null;
-		try {
-			strategyConstructor = strategyClass.getConstructor(int.class, int.class);
-		}
-		catch(java.lang.NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize);
-		}
-		catch(java.lang.InstantiationException e) {
-			throw new RuntimeException(e);
-		}
-		catch(java.lang.IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-		catch(java.lang.reflect.InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
+	public Array2D_double(double[] newData, IndexStrategy strategy) {
+		this.data = newData;
+		this.indexStrategy = strategy;
 	}
 
-
-	//
 	public double get(int x1, int x2) {
-
 		return data[indexStrategy.index(x1, x2)];
 	}
 	
-	//
 	public double[] getData() {
-
 		return data;
 	}
 
-
-	//
 	public void set(int x1, int x2, double value) {
-
 		data[indexStrategy.index(x1, x2)] = value;
 	}
 
-	
-	//
 	public int size() {
-
 		return data.length;
 	}
 }
-

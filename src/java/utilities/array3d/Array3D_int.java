@@ -1,4 +1,3 @@
-/* !!! this file was generated automatically from <Array3D_double.java> DO NOT EDIT */
 /*
 Copyright 2008,2009 Complex Automata Simulation Technique (COAST) consortium
 
@@ -20,130 +19,75 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package utilities.array3d;	//edit Array3D_double.java:1 instead
+package utilities.array3d;
 
-import java.lang.reflect.Array;	//edit Array3D_double.java:2 instead
-import java.lang.reflect.Constructor;	//edit Array3D_double.java:3 instead
-import java.util.Arrays;	//edit Array3D_double.java:4 instead
+import java.util.Arrays;
+import utilities.array3d.IndexStrategy.FortranIndexStrategy;
 
-// TODO: inherit functionality from cern.colt.matrix.IntegerMatrix3D?
+// TODO: inherit functionality from cern.colt.matrix.intMatrix3D?
 /**
 3D array backed by a 1D C-style array of primitive type
 @author Jan Hegewald
 */
 public class Array3D_int {
+	private int[] data;
+	private final int xSize;
+	private final int ySize;
+	private final int zSize;
+	private IndexStrategy indexStrategy;
 
-	private int[] data;	//edit Array3D_double.java:5 instead
-	private int xSize;	//edit Array3D_double.java:6 instead
-	private int ySize;	//edit Array3D_double.java:7 instead
-	private int zSize;	//edit Array3D_double.java:8 instead
-	private IndexStrategy indexStrategy;	//edit Array3D_double.java:9 instead
-
-	
-	//
 	public Array3D_int(int newXSize, int newYSize, int newZSize) {
-	
-		this(newXSize, newYSize, newZSize, new int[newXSize*newYSize*newZSize], IndexStrategy.FortranIndexStrategy.class);	//edit Array3D_double.java:10 instead
+		this(newXSize, newYSize, newZSize, new int[newXSize*newYSize*newZSize], new FortranIndexStrategy(newXSize, newYSize, newZSize));
 	}
 
-	//
 	public Array3D_int(int newXSize, int newYSize, int newZSize, int[] newData) {
-	
-		this(newXSize, newYSize, newZSize, newData, IndexStrategy.FortranIndexStrategy.class);	//edit Array3D_double.java:11 instead
+		this(newXSize, newYSize, newZSize, newData, new FortranIndexStrategy(newXSize, newYSize, newZSize));
 	}
 
-	//
-	public Array3D_int(int newXSize, int newYSize, int newZSize, Class<? extends IndexStrategy> strategyClass) {
-	
-		this(newXSize, newYSize, newZSize, new int[newXSize*newYSize*newZSize], strategyClass);	//edit Array3D_double.java:12 instead
+	public Array3D_int(int newXSize, int newYSize, int newZSize, IndexStrategy strategy) {
+		this(newXSize, newYSize, newZSize, new int[newXSize*newYSize*newZSize], strategy);
 	}
 
+	public Array3D_int(int newXSize, int newYSize, int newZSize, int[] newData, IndexStrategy strategy) {
+		xSize = newXSize;
+		ySize = newYSize;
+		zSize = newZSize;
 
-	//
-	public Array3D_int(int newXSize, int newYSize, int newZSize, int[] newData, Class<? extends IndexStrategy> strategyClass) {
-	
-		xSize = newXSize;	//edit Array3D_double.java:13 instead
-		ySize = newYSize;	//edit Array3D_double.java:14 instead
-		zSize = newZSize;	//edit Array3D_double.java:15 instead
-
-		data = newData;	//edit Array3D_double.java:16 instead
+		data = newData;
 		
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
-			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));	//edit Array3D_double.java:17 instead
-			
-		
-		Constructor<? extends IndexStrategy> strategyConstructor = null;	//edit Array3D_double.java:18 instead
-		try {
-			strategyConstructor = strategyClass.getConstructor(int.class, int.class, int.class); // simply assume this constructor is indeed available
-		}
-		catch(java.lang.NoSuchMethodException e) {
-			throw new RuntimeException(e);	//edit Array3D_double.java:19 instead
-		}
-		try {
-			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);	//edit Array3D_double.java:20 instead
-		}
-		catch(java.lang.InstantiationException e) {
-			throw new RuntimeException(e);	//edit Array3D_double.java:21 instead
-		}
-		catch(java.lang.IllegalAccessException e) {
-			throw new RuntimeException(e);	//edit Array3D_double.java:22 instead
-		}
-		catch(java.lang.reflect.InvocationTargetException e) {
-			throw new RuntimeException(e);	//edit Array3D_double.java:23 instead
-		}
+		indexStrategy = strategy;
 	}
 	
-	
-	//
 	public void fill(int value) {
-		
-		Arrays.fill(data, value);	//edit Array3D_double.java:24 instead
+		Arrays.fill(data, value);
 	}
 
-
-	//
 	public int get(int x1, int x2, int x3) {
-
-		return data[indexStrategy.index(x1, x2, x3)];	//edit Array3D_double.java:25 instead
+		return data[indexStrategy.index(x1, x2, x3)];
 	}
 	
-	//
 	public int[] getData() {
-
-		return data;	//edit Array3D_double.java:26 instead
+		return data;
 	}
 
 
-	//
 	public void set(int x1, int x2, int x3, int value) {
-
-		data[indexStrategy.index(x1, x2, x3)] = value;	//edit Array3D_double.java:27 instead
+		data[indexStrategy.index(x1, x2, x3)] = value;
 	}
 
-	
-	//
 	public int getSize() {
-
-		return data.length;	//edit Array3D_double.java:28 instead
+		return data.length;
 	}
 
-	//
 	public int getX1Size() {
-
-		return xSize;	//edit Array3D_double.java:29 instead
+		return xSize;
 	}
 
-	//
 	public int getX2Size() {
-
-		return ySize;	//edit Array3D_double.java:30 instead
+		return ySize;
 	}
 
-	//
 	public int getX3Size() {
-
-		return zSize;	//edit Array3D_double.java:31 instead
+		return zSize;
 	}
 }
-
-/* !!! this file was generated automatically from <Array3D_double.java> DO NOT EDIT */
