@@ -1,0 +1,8 @@
+<map id="G" name="G">
+<area shape="rect" href="$classmuscle_1_1_caller_static_attributes.html" title="CallerStaticAttributes\&lt; jstring \&gt;" alt="" coords="5,107,248,133"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__get_cx_a_path___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="333,5,488,32"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__get_cx_a_property___string___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="296,56,525,83"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__get_kernel_path___class___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="304,107,517,133"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__get_legacy_properties___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="303,157,519,184"/>
+<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__info___class___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="341,208,480,235"/>
+</map>
