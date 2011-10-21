@@ -163,7 +163,11 @@ cli = MuscleCli.new
 
 # see if we should do anything at all
 if ARGV.size == 0
-	RDoc::usage_no_exit('Synopsis')
+#	RDoc::usage_no_exit('Synopsis')
+	puts "This is the bootstrap utility for MUSCLE (Multiscale Coupling Library and Environment)."
+    puts "[1] http://apps.man.poznan.pl/trac/muscle"
+    puts "[2] http://muscle.berlios.de"
+    puts "[3] http://www.complex-automata.org"
 	puts cli.help
 	exit
 end
