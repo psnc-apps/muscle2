@@ -43,7 +43,8 @@ class MuscleCli
 			MemoryRange.new(from, from_quantity, to, to_quantity)
 		end
 		
-		@parser.banner += "\nExample: ruby #{File.basename($0)} --main plumber --cxa_file path/to/cxa.rb"
+		#@parser.banner += "\nExample: ruby #{File.basename($0)} --main plumber --cxa_file path/to/cxa.rb"
+		@parser.banner += "\nExample: muscle --main plumber --cxa_file path/to/cxa.rb"
 
 		# MUSCLE flags
 		@parser.separator "MUSCLE flags:"
