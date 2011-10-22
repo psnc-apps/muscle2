@@ -44,14 +44,12 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	
 	public void apply() {
 		if (incomingQueue == null) return;
-		
 		while (!incomingQueue.isEmpty()) {
 			E message = incomingQueue.remove();
 			if (message != null) {
 				this.apply(message);
 			}
 		}
-		
 		consumer.apply();
 	}
 	
