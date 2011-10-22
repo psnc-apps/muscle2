@@ -105,7 +105,7 @@ public class Boot {
 						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
 				}
-				sb.deleteCharAt(sb.length() - 1);
+				sb.append("locator:muscle.core.JadeLocator");
 				args[i+1] = sb.toString();
 			}
 		}

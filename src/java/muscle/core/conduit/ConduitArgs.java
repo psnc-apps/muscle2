@@ -26,8 +26,8 @@ import jade.core.AID;
 import jade.core.Location;
 import muscle.core.DataTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
+import muscle.core.ident.JadeAgentID;
 
 /**
 helps with args for a conduit
@@ -39,7 +39,7 @@ public class ConduitArgs implements Serializable {
 	private String entranceName;
 	private DataTemplate entranceDataTemplate;
 
-	private AID exitAgent;
+	private JadeAgentID exitAgent;
 	private String exitName;
 	private DataTemplate exitDataTemplate;
 	private Location targetLocation;
@@ -47,7 +47,7 @@ public class ConduitArgs implements Serializable {
 	// optional args
 	private List<String> optionalArgs;
 
-	public ConduitArgs(AID newEntranceAgent, String newEntranceName, DataTemplate newEntranceDataTemplate, AID newExitAgent, String newExitName, DataTemplate newExitDataTemplate, Location newTargetLocation, List<String> newOptionalArgs) {
+	public ConduitArgs(AID newEntranceAgent, String newEntranceName, DataTemplate newEntranceDataTemplate, JadeAgentID newExitAgent, String newExitName, DataTemplate newExitDataTemplate, Location newTargetLocation, List<String> newOptionalArgs) {
 		entranceAgent = newEntranceAgent;
 		entranceName = newEntranceName;
 		entranceDataTemplate = newEntranceDataTemplate;
@@ -70,7 +70,7 @@ public class ConduitArgs implements Serializable {
 		return entranceName;
 	}
 
-	public AID getExitAgent() {
+	public JadeAgentID getExitAgent() {
 		return exitAgent;
 	}
 

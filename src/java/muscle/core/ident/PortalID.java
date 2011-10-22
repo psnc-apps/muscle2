@@ -21,39 +21,37 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.ident;
 
-import jade.core.AID;
-
 /**
 portal identifier
 @author Jan Hegewald
 */
-public class PortalID extends JadeAgentID implements Identifier {
-	private final JadeAgentID ownerID;
-	public PortalID(String newName, JadeAgentID newAgentID) {
-		super(newName, newAgentID.getAID());
+public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
+	protected final E ownerID;
+	
+	public PortalID(String newName, E newAgentID) {
+		super(newName);
 		this.ownerID = newAgentID;
 	}
 	
-	public PortalID(String newName, AID newAgentID) {
-		this(newName, new JadeAgentID(newAgentID));
+	public boolean isResolved() {
+		return ownerID.isResolved();
 	}
 	
 	@Override
 	public String getName() {
-		return name+"@"+id.getLocalName();
+		return name+"@"+ownerID.getName();
 	}
 	
-	public JadeAgentID getOwnerID() {
+	public String getPortName() {
+		return name;
+	}
+	
+	public E getOwnerID() {
 		return this.ownerID;
 	}
 	
 	@Override
 	public IDType getType() {
 		return IDType.port;
-	}
-	
-	@Override
-	public Location getLocation() {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

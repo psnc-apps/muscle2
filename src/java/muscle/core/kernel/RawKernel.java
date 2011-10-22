@@ -39,6 +39,7 @@ import muscle.core.JNIConduitExit;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.core.Scale;
+import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
@@ -94,7 +95,7 @@ public abstract class RawKernel {
 	do not change signature! (used from native code)
 	 */
 	public boolean willStop() {
-		int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS);
+		int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS.toString());
 		Timestamp maxTime = new Timestamp(maxSeconds);
 		Timestamp portalTime = maxTime;
 
@@ -214,7 +215,7 @@ public abstract class RawKernel {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
 		}
 
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		addExit(ec);
@@ -224,7 +225,7 @@ public abstract class RawKernel {
 
 	//
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
 		ec.setExit(e);
@@ -239,7 +240,7 @@ public abstract class RawKernel {
 
 	//
 	protected <T> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec);
 		ec.setEntrance(e);
@@ -250,7 +251,7 @@ public abstract class RawKernel {
 	//
 
 	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
 		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec);
 		ec.setEntrance(e);

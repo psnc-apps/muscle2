@@ -68,7 +68,7 @@ public class VoidConduit extends BasicConduit {
 		msg.setContent(exitName); // sink id
 
 		// overwrite us as sender with the exitAgent
-		msg.setSender(exitAgent);
+		msg.setSender(exitAgent.getAID());
 
 		send(msg);
 	}

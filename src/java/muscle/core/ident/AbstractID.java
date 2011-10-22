@@ -35,10 +35,10 @@ public abstract class AbstractID  implements Identifier {
 		if (other == null || !(other instanceof AbstractID)) return false;
 		
 		AbstractID aid = (AbstractID)other;
-		return this.name.equals(aid.name) && this.getType().equals(aid.getType());
+		return this.getName().equals(aid.getName()) && this.getType().equals(aid.getType());
 	}
 	
-	public final int hashCode() {
+	public int hashCode() {
 		int hash = 7;
 		hash = 47 * hash + (this.name != null ? this.name.hashCode() : 0);
 		hash = 47 * hash + (this.getType() != null ? this.getType().hashCode() : 0);

@@ -9,13 +9,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.ident.JadeIdentifier;
+import muscle.core.ident.JadePortalID;
 import muscle.core.messaging.jade.DataMessage;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeReceiver<T> extends AbstractCommunicatingPoint<DataMessage<T>, ACLMessage> implements Receiver<DataMessage<T>, ACLMessage> {
+public class JadeReceiver<T> extends AbstractCommunicatingPoint<DataMessage<T>, ACLMessage,JadeIdentifier,JadePortalID> implements Receiver<DataMessage<T>, ACLMessage,JadeIdentifier,JadePortalID> {
 	private BlockingQueue<DataMessage<T>> queue;
 	
 	public JadeReceiver() {

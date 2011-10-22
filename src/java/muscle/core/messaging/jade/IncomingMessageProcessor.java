@@ -51,7 +51,7 @@ public class IncomingMessageProcessor extends SafeQueueConsumerThread<DataMessag
 	@Override
 	protected void execute(DataMessage dmsg) {
 		if (dmsg != null) {
-			JadeAgentID id = dmsg.getRecipient();
+			Identifier id = dmsg.getRecipient();
 			JadeReceiver recv = receivers.get(id);
 			if (recv == null)
 				logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);

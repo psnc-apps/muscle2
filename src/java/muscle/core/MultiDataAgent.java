@@ -60,7 +60,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 
 	@Override
 	public JadeAgentID getIdentifier() {
-		return new JadeAgentID(this.getAID());
+		return new JadeAgentID(this.getLocalName(), this.getAID());
 	}
 	
 	@Override

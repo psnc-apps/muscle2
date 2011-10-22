@@ -4,6 +4,8 @@
 package muscle.core.conduit.communication;
 
 import jade.core.Agent;
+import muscle.core.ident.JadeIdentifier;
+import muscle.core.ident.JadePortalID;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
@@ -13,7 +15,7 @@ import muscle.core.messaging.signal.Signal;
  *
  * @author Joris Borgdorff
  */
-public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[]> implements Transmitter<T, byte[]> {
+public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[],JadeIdentifier,JadePortalID> implements Transmitter<T, byte[],JadeIdentifier,JadePortalID> {
 	private Agent senderAgent;
 	
 	public JadeTransmitter(Agent senderAgent) {

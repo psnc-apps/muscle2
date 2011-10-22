@@ -7,6 +7,8 @@ import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import muscle.core.ident.IDType;
 import muscle.core.ident.JadeAgentID;
+import muscle.core.ident.JadeIdentifier;
+import muscle.core.ident.JadePortalID;
 import muscle.core.ident.PortalID;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
@@ -52,9 +54,9 @@ public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage
 		// copy some relevant settings from the
 		String type = aclmsg.getUserDefinedParameter(ObservationMessage.TYPE_KEY);
 		
-		JadeAgentID recp = new JadeAgentID((AID)aclmsg.getAllReceiver().next());
+		JadeIdentifier recp = new JadeAgentID(sid, (AID)aclmsg.getAllReceiver().next());
 		if (type.equals(IDType.port.toString())) {
-			recp = new PortalID(sid, recp);
+			recp = new JadePortalID(sid, recp);
 		}
 
 		DataMessage<E> dmsg = obs ? new ObservationMessage() : new DataMessage<E>();

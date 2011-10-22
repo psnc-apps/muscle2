@@ -23,6 +23,8 @@ package muscle.core.messaging.jade;
 import jade.lang.acl.ACLMessage;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
+import muscle.core.ident.JadeIdentifier;
+import muscle.core.ident.PortalID;
 
 /**
 @author Jan Hegewald
@@ -32,27 +34,32 @@ public class DataMessage<E> extends ACLMessage implements Cloneable {
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
 	public final static String DATA_KEY = DataMessage.class.toString() + "#id";
+	public final static String PORT_KEY = DataMessage.class.toString() + "#portid";
 	public final static String TYPE_KEY = DataMessage.class.toString() + "#idtype";
 	private transient E storedItem;
-	private JadeAgentID sinkID;
+	private JadeIdentifier sinkID;
 	private Long byteCount;
 
 	public DataMessage() {
 		super(ACLMessage.INFORM);
 	}
 	
-	public void setRecipient(JadeAgentID id) {
+	public void setRecipient(JadeIdentifier id) {
 		this.sinkID = id;
 		this.addReceiver(id.getAID());
-		this.setIdentifierString(sinkID.getName(), sinkID.getType().name());
+		String portName = (id instanceof PortalID) ? ((PortalID)id).getPortName() : null;
+		this.setIdentifierString(sinkID.getName(), sinkID.getType().name(), portName);
 	}
 	
-	protected void setIdentifierString(String name, String type) {
-		this.setIdentifierString(DATA_KEY, name, type);
+	protected void setIdentifierString(String name, String type, String portName) {
+		this.setIdentifierString(DATA_KEY, name, type, portName);
 	}
-	protected void setIdentifierString(String key, String name, String type) {
+	protected void setIdentifierString(String key, String name, String type, String portName) {
 		addUserDefinedParameter(key, name);
 		addUserDefinedParameter(TYPE_KEY, type);
+		if (portName != null) {
+			addUserDefinedParameter(PORT_KEY, portName);
+		}
 	}
 	
 	public void store(E item, Long newByteCount) {
@@ -69,7 +76,7 @@ public class DataMessage<E> extends ACLMessage implements Cloneable {
 		return storedItem;
 	}
 
-	public JadeAgentID getRecipient() {
+	public JadeIdentifier getRecipient() {
 		return this.sinkID;
 	}
 }

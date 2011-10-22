@@ -42,6 +42,7 @@ import muscle.core.ConduitEntranceController;
 import muscle.core.DataTemplate;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.core.conduit.filter.FilterTail;
+import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.jade.ObservationMessage;
 import utilities.FastArrayList;
 
@@ -56,7 +57,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 	protected AID entranceAgent;
 	protected String entranceName;
 	private DataTemplate entranceDataTemplate;
-	protected AID exitAgent;
+	protected JadeAgentID exitAgent;
 	protected String exitName;
 	private DataTemplate exitDataTemplate;
 	private List<String> optionalArgs;
@@ -284,7 +285,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 			return entranceAgent; // default to entranceAgent if quantity is not specified
 		} else if (exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
 			// move to the container which hosts the exit
-			return exitAgent;
+			return exitAgent.getAID();
 		} else {
 			// move to the container which hosts the entrance
 			return entranceAgent;

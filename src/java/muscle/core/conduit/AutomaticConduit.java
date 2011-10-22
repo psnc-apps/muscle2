@@ -28,7 +28,7 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.logging.Logger;
 import muscle.core.conduit.filter.*;
-import muscle.core.ident.PortalID;
+import muscle.core.ident.JadePortalID;
 import muscle.core.messaging.jade.ObservationMessage;
 
 /**
@@ -58,7 +58,7 @@ public class AutomaticConduit extends BasicConduit {
 		// cast our optional args to filter names
 
 		final ObservationMessage dataMessage = new ObservationMessage();
-		dataMessage.setRecipient(new PortalID(exitName, exitAgent));
+		dataMessage.setRecipient(new JadePortalID(exitName, exitAgent));
 
 		// At the end, convert wrappers back to messages
 		final Filter<Observation, ObservationMessage> wrapper2dmsg = new AbstractFilter<Observation, ObservationMessage>(filterTail) {

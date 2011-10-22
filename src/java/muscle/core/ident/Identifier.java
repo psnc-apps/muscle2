@@ -11,5 +11,6 @@ import java.io.Serializable;
 public interface Identifier extends Comparable<Identifier>, Serializable {
 	public String getName();
 	public IDType getType();
+	public boolean isResolved();
 	public boolean identifies(Identifiable ident);
 }

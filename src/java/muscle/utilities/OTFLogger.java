@@ -3,17 +3,15 @@ package muscle.utilities;
 import java.io.*;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
 import java.util.Properties;
-import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 import muscle.core.ConnectionScheme;
-import muscle.core.CxADescription;
 
 public class OTFLogger {
 	// Begin the .otf file
@@ -85,7 +83,7 @@ public class OTFLogger {
 			if(kernelsRun++ == 0) {
 				log("init");			
 				try {				
-					d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
+					d = new ConnectionScheme();
 					d.generateLists();
 					if(! (new File(DIR)).exists())
 						if(!(new File(DIR)).mkdir())
@@ -100,9 +98,8 @@ public class OTFLogger {
 					if(define(kernelArray, conduitArray) != 0)
 						throw new Exception("could not allocate memory");						
 				} catch (Exception e) {
-					closeNow();		
-					logger.severe(OTFLogger.class.getName()+" "+ e.getMessage());
-					e.printStackTrace();
+					closeNow();
+					logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
 				}
 			}			
 		}
@@ -210,7 +207,7 @@ public class OTFLogger {
 	// Display all conduits and kernels
 	private void displayConduitsKernels() {
 		try {
-			ConnectionScheme d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
+			ConnectionScheme d = new ConnectionScheme();
 
 			Iterator i = d.conduitList.iterator();
 			while (i.hasNext()) {

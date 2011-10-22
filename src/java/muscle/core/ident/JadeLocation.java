@@ -29,4 +29,16 @@ public class JadeLocation implements jade.core.Location, Location {
 	public String getAddress() {
 		return jadeLocation.getAddress();
 	}
+	
+	public boolean equals(Object o) {
+		if (o == null || !o.getClass().equals(this.getClass())) return false;
+		return getID().equals(((JadeLocation)o).getID());
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 47 * hash + this.getID().hashCode();
+		return hash;
+	}
 }

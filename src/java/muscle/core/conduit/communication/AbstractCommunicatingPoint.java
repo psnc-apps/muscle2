@@ -4,6 +4,7 @@
  */
 package muscle.core.conduit.communication;
 
+import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
 import muscle.core.messaging.serialization.DataConverter;
 
@@ -11,11 +12,11 @@ import muscle.core.messaging.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractCommunicatingPoint<E,F> implements CommunicatingPoint<E,F> {
+public abstract class AbstractCommunicatingPoint<E,F, Q extends Identifier, P extends PortalID<Q>> implements CommunicatingPoint<E,F,Q,P> {
 	protected DataConverter<E, F> converter;
-	protected PortalID portalID;
+	protected P portalID;
 
-	public void setComplementaryPort(PortalID id) {
+	public void setComplementaryPort(P id) {
 		this.portalID = id;
 	}
 

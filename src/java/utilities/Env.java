@@ -34,15 +34,12 @@ import java.io.StringReader;
 loads environment for multiple classes from a json file
 @author Jan Hegewald
 */
-public class Env extends HashMap {
-
-
+public class Env extends HashMap<Object,Object> {
 	public Env() {
 		super();
 	}	
 
 	public Env(Reader in) {
-
 		super();
 		// treat input as a org.json.simple.JSONObject and put in our env
 		JSONObject jsonHash = (JSONObject)JSONValue.parse(in);
@@ -53,12 +50,11 @@ public class Env extends HashMap {
 		this(new StringReader(input));
 	}	
 
-	public Env(Map map) {
+	public Env(Map<?, ?> map) {
 		super();
 		putAll(map);
 	}
 	
-	//
 	public Env subenv(Class cls) {
 
 		JSONObject jsonHash = (JSONObject)get(javatool.ClassTool.getName(cls));
@@ -69,12 +65,10 @@ public class Env extends HashMap {
 		return new Env();
 	}
 
-
 	/**
 	throw exception if key does not exist
 	*/
 	public Object getEnvAndAssert(Object key) {
-
 		if(!containsKey(key)) {
 			throw new RuntimeException("no env for key <"+key+">");			
 		}
@@ -86,7 +80,6 @@ public class Env extends HashMap {
 	return given default value if key does not exist
 	*/
 	public Object get(Object key, Object defaultVal) {
-
 		if(containsKey(key))
 			return get(key);
 		

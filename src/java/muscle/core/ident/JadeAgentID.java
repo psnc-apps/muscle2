@@ -9,18 +9,22 @@ import jade.core.AID;
  *
  * @author Joris Borgdorff
  */
-public class JadeAgentID extends AbstractID implements Identifier {
+public class JadeAgentID extends AbstractID implements JadeIdentifier {
 	protected AID id;
 	
-	public JadeAgentID(AID id) {
-		this(id.getName(), id);
+	public JadeAgentID(String name) {
+		this(name, null);
 	}
 	
-	public JadeAgentID(String name, AID id) {
+	public JadeAgentID(String name, AID aid) {
 		super(name);
-		this.id = id;
+		this.id = aid;
 	}
 
+	public void setAID(AID aid) {
+		this.id = aid;
+	}
+	
 	public AID getAID() {
 		return id;
 	}
@@ -28,8 +32,8 @@ public class JadeAgentID extends AbstractID implements Identifier {
 	public IDType getType() {
 		return IDType.instance;
 	}
-
-	public Location getLocation() {
-		return null;
+	
+	public boolean isResolved() {
+		return this.id != null;
 	}
 }

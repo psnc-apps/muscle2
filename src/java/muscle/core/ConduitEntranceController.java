@@ -38,7 +38,7 @@ an entrance sends data to the conduit exit through a transmitter
 public class ConduitEntranceController<T> extends Portal<T> implements QueueConsumer<Message<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
 	private boolean shouldPause;
-	private Transmitter<T, ?> transmitter;
+	private Transmitter<T, ?,?,?> transmitter;
 	private Queue<Message<T>> queue;
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	
@@ -50,7 +50,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		this.conduitEntrance = null;
 	}
 
-	public synchronized void setTransmitter(Transmitter<T,?> trans) {
+	public synchronized void setTransmitter(Transmitter<T,?,?,?> trans) {
 		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
 		this.notifyAll();
@@ -84,7 +84,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns true if the thread is no longer paused and false if the thread should stop. */
-	private synchronized Transmitter<T, ?> waitForTransmitter() throws InterruptedException {
+	private synchronized Transmitter<T, ?,?,?> waitForTransmitter() throws InterruptedException {
 		while (!isDone && (shouldPause || transmitter == null)) {
 			if (logger.isLoggable(Level.FINE)) {
 				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
@@ -125,7 +125,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	pass raw unwrapped data to this entrance
 	 */
 	private void send(Message<T> msg) throws InterruptedException {
-		Transmitter<T, ?> trans = waitForTransmitter();
+		Transmitter<T, ?,?,?> trans = waitForTransmitter();
 		if (trans != null) {
 			this.customSITime = msg.getObservation().getTimestamp();
 			trans.transmit(msg);

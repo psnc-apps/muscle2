@@ -3,36 +3,26 @@
  */
 package muscle.core.kernel;
 
-import com.thoughtworks.xstream.XStream;
 import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.Property;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jadetool.DFServiceTool;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javatool.ArraysTool;
-import javatool.LoggerTool;
 import muscle.Constant;
 import muscle.core.Boot;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
+import muscle.core.Locator;
 import muscle.core.MultiDataAgent;
 import muscle.core.Plumber;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.ObservationMessage;
 import muscle.exception.MUSCLERuntimeException;
@@ -288,45 +278,11 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	
 	// TODO let every portal announce/attach itelf??
 	private void registerPortals() {
-		DFAgentDescription agentDescription = new DFAgentDescription();
-		agentDescription.setName(getAID());
-
-		ServiceDescription entranceDescription = new ServiceDescription();
-		entranceDescription.addProtocols(Constant.Protocol.ANNOUNCE_ENTRANCE);
-		entranceDescription.setType(Constant.Service.ENTRANCE); // this is mandatory
-		entranceDescription.setName("ConduitEntrance"); // this is mandatory
-
-		// add a property for every entrance
-		for (int i = 0; i < kernel.entrances.size(); i++) {
-			HashMap<String, String> entranceProperties = new HashMap<String, String>();
-
-			entranceProperties.put("Name", kernel.entrances.get(i).getLocalName());
-
-			XStream xstream = new XStream();
-			entranceDescription.addProperties(new Property(Constant.Key.ENTRANCE_INFO, xstream.toXML(entranceProperties)));
-		}
-		agentDescription.addServices(entranceDescription);
-
-		ServiceDescription exitDescription = new ServiceDescription();
-		exitDescription.addProtocols(Constant.Protocol.ANNOUNCE_EXIT);
-		exitDescription.setType(Constant.Service.EXIT); // this is mandatory
-		exitDescription.setName("ConduitExit"); // this is mandatory
-		
-		// add a property for every exit
-		for (int i = 0; i < kernel.exits.size(); i++) {
-			HashMap<String, String> exitProperties = new HashMap<String, String>();
-			exitProperties.put("Name", kernel.exits.get(i).getLocalName());
-
-			XStream xstream = new XStream();
-			exitDescription.addProperties(new Property(Constant.Key.EXIT_INFO, xstream.toXML(exitProperties)));
-		}
-		agentDescription.addServices(exitDescription);
-
-		// register
 		try {
-			DFService.register(this, agentDescription);
-		} catch (FIPAException e) {
-			throw new RuntimeException(e);
+			Locator locator = Boot.getInstance().getLocator();
+			locator.register(this);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
 

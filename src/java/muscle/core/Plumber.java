@@ -28,16 +28,12 @@ import muscle.core.ConnectionScheme.Pipeline;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.exception.SpawnAgentException;
 
-import com.thoughtworks.xstream.XStream;
-
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.Property;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.proto.SubscriptionInitiator;
 import jade.wrapper.AgentController;
@@ -45,12 +41,12 @@ import jade.wrapper.AgentController;
 import jadetool.DFServiceTool;
 import jadetool.DFServiceTool.RegisterSingletonAgentException;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import jade.core.Location;
 import java.util.logging.Logger;
+import muscle.core.ident.JadeAgentID;
 import utilities.FastArrayList;
 
 
@@ -67,8 +63,6 @@ public class Plumber extends Agent {
 	
 	private static int conduitCounter = 0;
 	private static final Logger logger = Logger.getLogger(Plumber.class.getName());
-
-	private transient XStream xstream = new XStream();
 
 	private ConnectionScheme cs;
 	
@@ -95,8 +89,11 @@ public class Plumber extends Agent {
 
 		logger.log(Level.INFO, "Plumber of kind <{0}> is up", getClass());
 
-		addEntranceListener();
-		addExitListener();
+		SubscriptionInitiator si;
+		si = ConduitSubscriptionInitiator.initConduitSubscription(this, ConduitSubscriptionInitiator.ENTRANCE);
+		this.addBehaviour(si);
+		si =  ConduitSubscriptionInitiator.initConduitSubscription(this, ConduitSubscriptionInitiator.EXIT);
+		this.addBehaviour(si);
 	}
 
 	public ConnectionScheme getConnectionScheme() {
@@ -122,7 +119,7 @@ public class Plumber extends Agent {
 		
 		ConduitArgs conduitArgs = new ConduitArgs(
 												entranceAgent, entrance.getID(), entrance.getDataTemplate()
-												, exitAgent, exit.getID(), exit.getDataTemplate()
+												, new JadeAgentID(exit.getID(), exitAgent), exit.getID(), exit.getDataTemplate()
 												, targetLocation, optionalArgs);
 		Object[] args = new Object[1];
 		args[0] = conduitArgs;										
@@ -169,9 +166,8 @@ public class Plumber extends Agent {
 			ExitDescription exit = exitIterator.next();
 			// we can only create this entrance->conduit->exit chain if the exit is
 			if( exit.isAvailable() ) {
-
-// TODO test if conduit already exists (if it can feed multiple exits)
-// currently only singlefeed is supported
+				// TODO test if conduit already exists (if it can feed multiple exits)
+				// currently only singlefeed is supported
 
 				for(int i = 0; ; i++) {
 					ConduitDescription conduit = exit.getConduitDescription(i);
@@ -235,7 +231,6 @@ public class Plumber extends Agent {
 	registers a newly activated exit at the plumber
 	*/
 	public void addExit(String exitID, DataTemplate dataTemplate, AID controllerID) {
-
 		ExitDescription exit = cs.exitDescriptionForID(exitID);
 		if(exit != null) {
 			if( exit.isAvailable() ) {
@@ -266,8 +261,7 @@ public class Plumber extends Agent {
 	/**
 	unregister all portals associated with this controller agent
 	*/
-	private void removePortalsForControllerID(AID controllerID) {
-
+	void removePortalsForControllerID(AID controllerID) {
 		// unset from entrance descriptions
 		List<EntranceDescription> entranceDescriptions = cs.entranceDescriptionsForControllerID(controllerID);
 		for(Iterator<EntranceDescription> iter = entranceDescriptions.iterator(); iter.hasNext();) {
@@ -284,20 +278,8 @@ public class Plumber extends Agent {
 	}
 	
 	public ConnectionScheme initConnectionScheme() {
-
-		// instantiate our connection scheme class
-		Class<? extends ConnectionScheme> csClass = CxADescription.ONLY.getConnectionSchemeClass();
-		try {
-			return csClass.newInstance();
-		}
-		catch(java.lang.InstantiationException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-		catch(java.lang.IllegalAccessException e) {
-			throw new MUSCLERuntimeException(e);
-		}
+		return new ConnectionScheme();
 	}
-
 
 	/**
 	declares a new edge (entrance->conduit->exit) of our graph
@@ -318,140 +300,18 @@ public class Plumber extends Agent {
 			addEntrance(e.getID(), e.getDataTemplate(), e.getControllerID(), e.getDependencies());
 		}
 	}
-		
 
 	/**
 	create custom SubscriptionInitiator to listen and react to conduit-entrance announcements
 	*/
 	private void addEntranceListener() {
-
-		SubscriptionInitiator subscriber;
-		
-		DFAgentDescription agentDescription = new DFAgentDescription();
-		
-		ServiceDescription entranceDescription = new ServiceDescription();
-//		entranceDescription.addLanguages("serialized ConduitEntrance");
-		entranceDescription.addProtocols(Constant.Protocol.ANNOUNCE_ENTRANCE);
-//		entranceDescription.setType("ConduitEntrance");
-		agentDescription.addServices(entranceDescription);
-		
-		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, getDefaultDF(), agentDescription, new SearchConstraints())) {
-		
-			protected void handleInform(ACLMessage inform) {
-		//System.out.println("Agent "+getLocalName()+": Notification received from DF: msg:\n"+inform.toString()+"\n\n");
-		//System.out.println("performative:"+ACLMessage.getPerformative(inform.getPerformative()));
-		//System.out.println("replyto:"+inform.getInReplyTo()); // matches the subscription message
-
-				try {
-
-					DFAgentDescription[] results = DFService.decodeNotification(inform.getContent());
-		//System.out.println("results:"+results.length);
-					for (int i = 0; i < results.length; ++i) {
-						DFAgentDescription dfd = results[i];
-		//AID provider = dfd.getName();
-		//System.out.println("provider:"+provider.getLocalName());
-						// The same agent may provide several services
-						Iterator serviceIter = dfd.getAllServices(); // does not contain deregistered services of the service provider
-						
-						// something deregistered
-						if(!serviceIter.hasNext()) {
-							//throw new MUSCLERuntimeException("\n--- deregister of portals not supported ---\n");
-							removePortalsForControllerID(dfd.getName());
-						}
-						
-						while(serviceIter.hasNext()) {
-							ServiceDescription sd = (ServiceDescription)serviceIter.next();
-							if( sd.getType().equals(Constant.Service.ENTRANCE) ) { // there might be other services as well
-								Iterator entranceIter = sd.getAllProperties();
-								while(entranceIter.hasNext()) {
-									Property content = (Property)entranceIter.next();
-									assert content.getName().equals(Constant.Key.ENTRANCE_INFO);
-									HashMap<String, String> entranceProperties = (HashMap<String, String>)xstream.fromXML((String)content.getValue());
-								
-									String entranceID = entranceProperties.get("Name");
-									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(entranceProperties.get("DataTemplate"));
-									EntranceDependency[] dependencies = (EntranceDependency[])xstream.fromXML(entranceProperties.get("Dependencies"));
-
-									logger.log(Level.INFO, "found an entrance: <{0}:{1}>", new Object[]{dfd.getName().getLocalName(), entranceID});
-									addEntrance(entranceID, dataTemplate, dfd.getName(), dependencies);																		
-								}
-							}
-						}
-					}
-				}
-				catch (FIPAException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		
-		addBehaviour(subscriber);		
 	}
-
 
 	/**
 	create custom SubscriptionInitiator to listen and react to conduit-exit announcements
 	*/
 	private void addExitListener() {
-
-		SubscriptionInitiator subscriber;
-		
-		DFAgentDescription agentDescription = new DFAgentDescription();
-		
-		ServiceDescription exitDescription = new ServiceDescription();
-//		exitDescription.addLanguages("serialized ConduitExit");
-		exitDescription.addProtocols(Constant.Protocol.ANNOUNCE_EXIT);
-		exitDescription.setType(Constant.Service.EXIT);
-		agentDescription.addServices(exitDescription);
-		
-		subscriber = new SubscriptionInitiator(this, DFService.createSubscriptionMessage(this, getDefaultDF(), agentDescription, new SearchConstraints())) {
-		
-			protected void handleInform(ACLMessage inform) {
-		//System.out.println("Agent "+getLocalName()+": Notification received from DF: msg:\n"+inform.toString()+"\n\n");
-		//System.out.println("performative:"+ACLMessage.getPerformative(inform.getPerformative()));
-		//System.out.println("replyto:"+inform.getInReplyTo()); // matches the subscription message
-
-				try {
-					DFAgentDescription[] results = DFService.decodeNotification(inform.getContent());
-		//System.out.println("results:"+results.length);
-					for (int i = 0; i < results.length; ++i) {
-						DFAgentDescription dfd = results[i];
-		//AID provider = dfd.getName();
-		//System.out.println("provider:"+provider.getLocalName());
-						// The same agent may provide several services
-						Iterator serviceIter = dfd.getAllServices(); // does not contain deregistered services of the service provider
-						
-						// something deregistered
-						if(!serviceIter.hasNext()) {
-							//throw new MUSCLERuntimeException("\n--- deregister of portals not supported ---\n");
-							removePortalsForControllerID(dfd.getName());
-						}
-						
-						while(serviceIter.hasNext()) {
-							ServiceDescription sd = (ServiceDescription)serviceIter.next();
-							if( sd.getType().equals(Constant.Service.EXIT) ) {  // there might be other services as well
-								Iterator exitIter = sd.getAllProperties();
-								while(exitIter.hasNext()) {
-									Property content = (Property)exitIter.next();
-									assert content.getName().equals(Constant.Key.EXIT_INFO);
-									HashMap<String, String> exitProperties = (HashMap<String, String>)xstream.fromXML((String)content.getValue());
-								
-									String exitID = exitProperties.get("Name");
-									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(exitProperties.get("DataTemplate"));
-
-									logger.log(Level.INFO, "found an exit: <{0}:{1}>", new Object[]{dfd.getName().getLocalName(), exitID});
-									addExit(exitID, dataTemplate, dfd.getName());																	
-								}
-							}
-						}
-					}
-				}
-				catch (FIPAException e) {
-					e.printStackTrace();
-				}
-			}
-		};
-		
-		addBehaviour(subscriber);		
+		SubscriptionInitiator si = ConduitSubscriptionInitiator.initConduitSubscription(this, ConduitSubscriptionInitiator.EXIT);
+		this.addBehaviour(si);
 	}
 }
