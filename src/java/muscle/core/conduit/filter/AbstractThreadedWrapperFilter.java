@@ -10,7 +10,7 @@ import muscle.core.wrapper.DataWrapper;
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractWrapperFilter extends AbstractFilter<DataWrapper,DataWrapper> implements WrapperFilter {
+public abstract class AbstractThreadedWrapperFilter extends AbstractThreadedFilter<DataWrapper,DataWrapper> implements WrapperFilter {
 	protected DataTemplate inTemplate;
 	
 	public void setQueueConsumer(WrapperQueueConsumer qc) {

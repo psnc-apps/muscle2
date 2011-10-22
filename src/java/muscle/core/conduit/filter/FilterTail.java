@@ -42,7 +42,10 @@ public abstract class FilterTail<E> implements QueueConsumer<E> {
 
 	public void apply() {
 		while (!this.incomingQueue.isEmpty()) {
-			this.result(this.incomingQueue.remove());
+			E message = this.incomingQueue.remove();
+			if (message != null) {
+				this.result(message);
+			}
 		}
 	}
 }

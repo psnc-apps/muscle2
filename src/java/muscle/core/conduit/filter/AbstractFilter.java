@@ -37,7 +37,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	}
 	
 	public AbstractFilter(QueueConsumer<F> qc) {
-		this.outgoingQueue = new LinkedBlockingQueue<F>();
+		this();
 		this.consumer = qc;
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
@@ -46,7 +46,10 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 		if (incomingQueue == null) return;
 		
 		while (!incomingQueue.isEmpty()) {
-			this.apply(incomingQueue.remove());
+			E message = incomingQueue.remove();
+			if (message != null) {
+				this.apply(message);
+			}
 		}
 		
 		consumer.apply();
@@ -56,6 +59,11 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 		this.outgoingQueue.add(message);
 	}
 	
+	/**
+	 * Apply the filter to a single message.
+	 *
+	 *  To pass the modified message on, call put(F message).
+	 */
 	protected abstract void apply(E subject);
 
 	public void setQueueConsumer(QueueConsumer<F> qc) {
