@@ -25,7 +25,6 @@ import jade.core.AID;
 import java.util.logging.Level;
 import muscle.logging.AgentLogger;
 
-import utilities.MiscTool;
 import java.util.logging.Logger;
 import jade.core.Location;
 import jade.core.MessageQueue;
@@ -57,7 +56,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	private List<RemoteDataSinkTail<DataMessage<?>>> dataSources = new ArrayList<RemoteDataSinkTail<DataMessage<?>>>(); // these are the conduit exits
 	private List<RemoteDataSinkHead<DataMessage<?>>> dataSinks = new ArrayList<RemoteDataSinkHead<DataMessage<?>>>(); // these are the conduit entrances
 	private volatile long bufferSizeCount = 0;
-	private ObservableLinkedBlockingQueue<DataMessage> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage>();
+	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
 	private final List<AID> toldToPauseList = Collections.synchronizedList(new LinkedList<AID>());
 
 	public void addSink(RemoteDataSinkHead<DataMessage<?>> s) {

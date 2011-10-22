@@ -27,22 +27,12 @@ receive events about kernel status
 @author Jan Hegewald
 */
 public class NullKernelListener implements KernelListener {
-
-	//
 	public void notifyKernelActivated(RawKernel kernel) {
-	
 	}
 
-
-	//
 	public void notifyEntranceAdded(muscle.core.ConduitEntrance entrance) {
-	
 	}
 	
-	
-	//
 	public void notifyExitAdded(muscle.core.ConduitExit exit) {
-	
 	}
-
 }

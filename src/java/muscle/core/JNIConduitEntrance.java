@@ -27,6 +27,7 @@ import muscle.core.ident.PortalID;
 import muscle.core.kernel.RawKernel;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
+import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.serialization.DataConverter;
 
 
@@ -36,30 +37,21 @@ C for conduit type, R for raw jni type
 @author Jan Hegewald
 */
 public class JNIConduitEntrance<R,C extends java.io.Serializable> extends ConduitEntrance<C> {
-
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 
-
-	//
-	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
+	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate, newDependencies);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
 	}
 
-
-	//
 	public JNIMethod toJavaJNIMethod() {
 		return new JNIMethod(this, "toJava", ArraysTool.asArray(Object.class), ArraysTool.asArray(jniClass), null, null);
 	}
 
-
-	//
 	public void toJava(R rawData) {
-		
 		C data = transmuter.serialize(rawData);
 		send(data);
 	}
 }
-

@@ -23,11 +23,6 @@ package muscle.core;
 
 import muscle.Constant;
 import utilities.MiscTool;
-import utilities.Invoker;
-import java.util.logging.Logger;
-import jade.core.Profile;
-import jade.core.ProfileImpl;
-import jade.wrapper.ContainerController;
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.management.ManagementFactory;
@@ -38,6 +33,9 @@ import muscle.Version;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.util.HashMap;
+import java.util.Map;
+import muscle.core.kernel.InstanceController;
 import utilities.JVM;
 
 
@@ -49,6 +47,8 @@ public class Boot {
 
 	private List<Thread> otherHooks = new LinkedList<Thread>();
 	private File infoFile;
+	private Map<String, String> agentNames;
+	private static Boot instance;
 	
 
 	//
@@ -59,33 +59,59 @@ public class Boot {
 		// n.b.: we still sometimes see the LogManager deadlock
 	}
 
+	public static Boot getInstance() {
+		return instance;
+	}
+	
+	public static Boot getInstance(String[] args) {
+		if (instance == null) {
+			instance = new Boot(args);
+		}
+		return instance;
+	}
 	
 	//
-	public Boot(String[] args) {
-		
+	private Boot(String[] args) {
 		System.out.println("booting muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 		// make sure the JVM singleton has been inited
 		JVM jvm = JVM.ONLY;
 		
-		infoFile = new File(MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.JVM_INFO));
+		infoFile = new File(MiscTool.joinPaths(jvm.tmpDir().toString(), Constant.Filename.JVM_INFO));
 		
-//		System.out.println("my args are <"+MiscTool.joinItems(args, ", ")+">");
-				
 		// note: it seems like loggers can not be used within shutdown hooks
 		Runtime.getRuntime().addShutdownHook(new JVMHook() );
 
 		writeInitialInfo();
-
-
+		
+		agentNames = new HashMap<String,String>();
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals("-agents")) {
+				String agentArg = args[i+1];
+				String[] agents = agentArg.split(";");
+				StringBuilder sb = new StringBuilder();
+				for (String agent : agents) {
+					String[] agentInfo = agent.split(":");
+					if (!agentInfo[0].equals("plumber")) {
+						agentNames.put(agentInfo[0], agentInfo[1]);
+						sb.append(agentInfo[0]).append(':').append(InstanceController.class.getCanonicalName()).append(';');
+					}
+				}
+				sb.deleteCharAt(sb.length() - 1);
+				args[i+1] = sb.toString();
+			}
+		}
+		
 		JADE jade = new JADE(args);
 		otherHooks.addAll(jade.getShutdownHooks());
 	}
 
-
+	public String getAgentClass(String agentName) {
+		return agentNames.get(agentName);
+	}
+	
 	//
 	public static void main(String args[]) {
-		
-		new Boot(args);
+		Boot.getInstance(args);
 //		jade.Boot.main(args); // forward booting to jade
 	}
 	
@@ -200,14 +226,10 @@ public class Boot {
 		}
 	}
 
-	
-	//
 	private class JVMHook extends Thread {
-			
 		// CTRL-C is signal 2 (SIGINT)
 		// see rubys Signal.list for a full list on your OS
-		public void run() {
-			
+		public void run() {		
 			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 			writeClosingInfo();
 
@@ -223,7 +245,7 @@ public class Boot {
 				if( !otherHooks.isEmpty() ) {
 					System.out.print(".");
 					try {
-						sleep(50);
+						sleep(500);
 					}
 					catch(java.lang.InterruptedException e) {
 						e.printStackTrace();

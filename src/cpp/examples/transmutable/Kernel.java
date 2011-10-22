@@ -21,30 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.transmutable;
 
-import muscle.core.DataTemplate;
 import muscle.core.Scale;
-import jade.core.AID;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-import muscle.core.ConduitEntrance;
-import muscle.core.ConduitExit;
 import muscle.core.JNIConduitEntrance;
 import muscle.core.JNIConduitExit;
-import muscle.core.EntranceDependency;
-import muscle.core.CxADescription;
-import muscle.core.PortalID;
-import muscle.exception.MUSCLERuntimeException;
-import utilities.jni.JNIMethod;
-import utilities.MiscTool;
-import javatool.ArraysTool;
-import utilities.Transmutable;
-import utilities.PipeTransmuter;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.messaging.serialization.DoubleStringConverter;
 
 
 /**
@@ -77,37 +63,16 @@ public class Kernel extends muscle.core.kernel.CAController {
 	
 	//
 	public void addPortals() {
+		DataConverter<double[], String> dc = new DoubleStringConverter();
+		entrance = addJNIEntrance("writer", 1, double[].class, String.class, dc);
 
-		entrance = addJNIEntrance("writer", 1, double[].class, String.class, new DA2S());
-
-		exit = addJNIExit("reader", 1, String.class, double[].class, new S2DA());
+		exit = addJNIExit("reader", 1, String.class, double[].class, dc);
 	}
-
-
-	class S2DA implements Transmutable<String,double[]> {
-		public double[] transmute(String in) {
-			double[] out = new double[Integer.valueOf(in)];
-			out[0] = Double.valueOf(in);
-			out[Integer.valueOf(in)-1] = -Double.valueOf(in);
-			return out;
-		}
-	}
-double[] gin;
-	class DA2S implements Transmutable<double[],String> {
-		public String transmute(double[] in) {
-gin = in;
-for(int i = 0; i < gin.length; i++)
-	System.out.println(i+": "+gin[i]);		
-
-			return new String(""+in.length);
-		}
-	}
-
 
 	//
 	protected void execute() {
 
-	Object[] args = getArguments();
+	Object[] args = controller.getArguments();
 	if(args.length > 0) {
 		System.out.println("first kernel arg: "+(String)args[0]);
 	}

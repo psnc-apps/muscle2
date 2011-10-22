@@ -25,20 +25,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
-import java.util.logging.Logger;
-import muscle.core.kernel.RawKernel;
 import muscle.utilities.NullOutputStream;
 import muscle.exception.MUSCLERuntimeException;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
+import muscle.core.kernel.InstanceController;
 
 //
 public abstract class Portal<T> implements Serializable {
 
 	public static final int LOOSE = -1; // if there is no rate accociated with this portal
-	transient RawKernel ownerAgent;
+	transient InstanceController ownerAgent;
 	private PortalID portalID;
 	private DataTemplate dataTemplate;
 	private int usedCount;
@@ -46,7 +45,7 @@ public abstract class Portal<T> implements Serializable {
 	private DecimalMeasure<Duration> customSITime;
 	transient private OutputStreamWriter traceWriter;
 
-	Portal(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
+	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
 		ownerAgent = newOwnerAgent;
 		rate = newRate;
@@ -62,7 +61,7 @@ public abstract class Portal<T> implements Serializable {
 	/**
 	if a portal is deserialized, we need to attach it to the current owner agent
 	 */
-	public void setOwner(RawKernel newOwnerAgent) {
+	public void setOwner(InstanceController newOwnerAgent) {
 
 		ownerAgent = newOwnerAgent;
 	}

@@ -21,6 +21,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import muscle.core.ident.PortalID;
+import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.serialization.DataConverter;
 import utilities.jni.JNIMethod;
@@ -31,11 +32,10 @@ C for conduit type, R for raw jni type
 @author Jan Hegewald
  */
 public class JNIConduitExit<C, R> extends ConduitExit<C> {
-
 	private Class<R> jniClass;
 	private DataConverter<R, C> transmuter;
 
-	public JNIConduitExit(DataConverter<R, C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
+	public JNIConduitExit(DataConverter<R, C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;

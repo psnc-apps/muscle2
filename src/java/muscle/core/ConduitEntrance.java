@@ -26,7 +26,7 @@ import jade.lang.acl.ACLMessage;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import muscle.Constant;
-import muscle.core.kernel.RawKernel;
+import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.wrapper.DataWrapper;
@@ -45,7 +45,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 	private DataMessage<DataWrapper<T>> dataMessage;
 	private boolean shouldPause = false;
 
-	public ConduitEntrance(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
+	public ConduitEntrance(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 
 		dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list		

@@ -33,12 +33,12 @@ process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends java.lang.Thread implements QueueConsumer<DataMessage> {
+public class IncomingMessageProcessor extends java.lang.Thread implements QueueConsumer<DataMessage<?>> {
 	private final MultiDataAgent owner;
 	private boolean shouldRun = true;
-	private final Queue<DataMessage> queue;
+	private final Queue<DataMessage<?>> queue;
 
-	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<DataMessage> newQueue) {
+	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<DataMessage<?>> newQueue) {
 		owner = newOwner;
 		queue = newQueue;
 	}
@@ -111,7 +111,7 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 	}
 	
 	@Override
-	public void setIncomingQueue(Queue<DataMessage> queue) {
+	public void setIncomingQueue(Queue<DataMessage<?>> queue) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

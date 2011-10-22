@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.BufferingRemoteDataSinkTail;
 import muscle.core.messaging.RemoteDataSinkTail;
@@ -46,7 +47,7 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
 	private RemoteDataSinkTail<DataMessage<DataWrapper<T>>> sinkDelegate;
 
 	//
-	public ConduitExit(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
+	public ConduitExit(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 				
 		if(newOwnerAgent != null)

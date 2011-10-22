@@ -21,8 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
-import jade.core.AID;
-
 import java.io.File;
 import java.util.ArrayList;
 
@@ -32,18 +30,12 @@ import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
-import muscle.exception.DataSizeMismatchException;
-import muscle.exception.DataTypeMismatchException;
-import muscle.exception.DataValueMismatchException;
 import muscle.utilities.RemoteOutputStream;
 
 import com.thoughtworks.xstream.XStream;
 import muscle.exception.MUSCLERuntimeException;
 import javatool.ArraysTool;
 import javax.measure.unit.SI;
-import javatool.DecimalMeasureTool;
-import java.math.BigDecimal;
-
 
 /**
 used for internal testing<br>
@@ -59,25 +51,14 @@ example for JADE LEAP:
 a:muscle.core.kernel.TestController(exit,AssertionExitA,~/path1,entrance,FileReaderEntranceA,~/path2)
 @author Jan Hegewald
 */
-public class TestController extends muscle.core.kernel.CAController {
+public class TestController extends CAController {
 
 	// intermix entrances and exits because we need their correct ordering
 	private ArrayList<Portal> portals = new ArrayList<Portal>();		
 
-
-	//
-	public muscle.core.Scale getScale() {
-		javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);
-		javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);
-		return new muscle.core.Scale(dt,dx);
-	}
-
-
-	//
 	protected void addPortals() {
-
 		boolean parseError = false;
-		Object[] args = getArguments();
+		Object[] args = controller.getArguments();
 		if( args != null && args.length %3 == 0 ) {
 			for(int i = 0; i < args.length; i+=6) {
 				String portalType = (String)args[i];
@@ -92,10 +73,10 @@ public class TestController extends muscle.core.kernel.CAController {
 				}
 
 				if(portalType.equals("entrance")) {
-					portals.add(createFileReaderEntrance(new PortalID(name, getAID()), resourceDir));
+					portals.add(createFileReaderEntrance(new PortalID(name, controller.getAID()), resourceDir));
 				}
 				else if(portalType.equals("exit")) {
-					portals.add(createAssertionExit(new PortalID(name, getAID()), resourceDir));
+					portals.add(createAssertionExit(new PortalID(name, controller.getAID()), resourceDir));
 				}
 				else {
 					parseError = true;
@@ -125,7 +106,6 @@ public class TestController extends muscle.core.kernel.CAController {
 
 	//
 	protected void execute() {
-
 		int globalStepCount = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS);
 		getLogger().info("globalStepCount:"+globalStepCount);
 		
@@ -148,7 +128,7 @@ public class TestController extends muscle.core.kernel.CAController {
 		}
 
 		getLogger().info(getClass().getName()+"\n finished ----------\n\n");
-		doDelete();
+		controller.doDelete();
 	}
 	
 	
@@ -169,9 +149,9 @@ public class TestController extends muscle.core.kernel.CAController {
 		assert dataPaths != null;
 		assert dataPaths.length > 0;
 
-		RemoteOutputStream traceOutput = new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
+		RemoteOutputStream traceOutput = new RemoteOutputStream(controller, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
 
-		FileReaderEntrance entrance = new FileReaderEntrance(portalID, this, dataTemplate, traceOutput, dataPaths);
+		FileReaderEntrance entrance = new FileReaderEntrance(portalID, controller, dataTemplate, traceOutput, dataPaths);
 		return entrance;
 	}
 
@@ -194,9 +174,9 @@ public class TestController extends muscle.core.kernel.CAController {
 		assert dataPaths != null;
 		assert dataPaths.length > 0;
 
-		RemoteOutputStream traceOutput = new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
+		RemoteOutputStream traceOutput = new RemoteOutputStream(controller, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
 
-		AssertionExit exit = new AssertionExit(portalID, this, dataTemplate, traceOutput, dataPaths);
+		AssertionExit exit = new AssertionExit(portalID, controller, dataTemplate, traceOutput, dataPaths);
 		return exit;
 	}
 
@@ -210,7 +190,7 @@ public class TestController extends muscle.core.kernel.CAController {
 		private int index;
 
 		//
-		public FileReaderEntrance(PortalID newPortalID, RawKernel newOwnerAgent, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
+		public FileReaderEntrance(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
 			super(newPortalID, newOwnerAgent, 1, newDataTemplate);
 			setTraceOutputStream(newTraceOutput);
 			
@@ -262,7 +242,7 @@ public class TestController extends muscle.core.kernel.CAController {
 		private int index;
 
 		//
-		public AssertionExit(PortalID newPortalID, RawKernel newOwner, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
+		public AssertionExit(PortalID newPortalID, InstanceController newOwner, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
 			super(newPortalID, newOwner, 1, newDataTemplate);
 			setTraceOutputStream(newTraceOutput);
 

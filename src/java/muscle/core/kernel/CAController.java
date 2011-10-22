@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
+import java.util.logging.Level;
 import muscle.core.CxADescription;
 
 
@@ -30,9 +31,7 @@ import muscle.core.CxADescription;
 JADE agent to wrap a kernel (e.g. CA or MABS)
 @author Jan Hegewald
 */
-public abstract class CAController extends muscle.core.kernel.RawKernel {
-
-
+public abstract class CAController extends RawKernel {
 	/**
 	returns path to the directory which contains CxA specific files<br>
 	do not change signature! (used from native code)
@@ -59,11 +58,11 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 		if(rsrc != null)
 			path = rsrc.getPath();
 		else
-			muscle.logging.Logger.getLogger(cls).warning("no kernel path ("+path+") for class ("+cls+")");
+			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
 			
 		cls.getResource("").getPath();
 		if(cls.getPackage() == null) {
-			muscle.logging.Logger.getLogger(cls).warning("ambiguous kernel path ("+path+") for class ("+cls+")");
+			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
 		}
 		
 		return path;
@@ -86,7 +85,6 @@ public abstract class CAController extends muscle.core.kernel.RawKernel {
 	do not change signature! (used from native code)
 	*/
 	static public String getLegacyProperties() {
-
 		return CxADescription.ONLY.getLegacyProperties();
 	}
 
