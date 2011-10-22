@@ -15,7 +15,6 @@ import utilities.SafeQueueConsumerThread;
 public abstract class AbstractThreadedFilter<E,F> extends SafeQueueConsumerThread<E> implements Filter<E,F> {
 	protected final Queue<F> outgoingQueue;
 	protected QueueConsumer<F> consumer;
-	private boolean processingMessage;
 	
 	protected AbstractThreadedFilter() {
 		this.outgoingQueue = new LinkedBlockingQueue<F>();
