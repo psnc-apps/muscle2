@@ -148,26 +148,6 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		}
 	}
 
-	// todo: data serialization in separate thread
-	public <E> void sendMessage(Message<E> msg) {
-		ObservationMessage<E> dmsg = null;
-		if (msg instanceof ObservationMessage) {
-			dmsg = (ObservationMessage<E>)msg;
-		}
-		assert !dmsg.hasByteSequenceContent();
-
-		byte[] rawData = null;
-		rawData = new ByteDataConverter<E>().serialize(dmsg.getData());
-// 		rawData = MiscTool.gzip(dmsg.getStored());
-
-		dmsg.setByteSequenceContent(rawData);
-		dmsg.store(null, null);
-
-		// send data to target agent	
-		send(dmsg);
-		dmsg.setByteSequenceContent(null);
-	}
-
 	// an incoming DataMessage has arrived at this agent
 	public void handleDataMessage(ObservationMessage dmsg, long byteCount) {
 
@@ -207,16 +187,6 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		}
 
 		logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", dmsg.getSinkID());
-	}
-
-	/**
-	wrap a Signal and send it to another agent
-	 */
-	public void sendRemoteSignal(Signal s, AID dst) {
-		DataMessage<Signal> dmsg = new DataMessage<Signal>(Signal.class.toString());
-		dmsg.store(s, null);
-		dmsg.addReceiver(dst);
-		send(dmsg);
 	}
 
 	public void handleRemoteSignal(DataMessage<? extends Signal> dmsg) { // or better limit to java.rmi.RemoteException?

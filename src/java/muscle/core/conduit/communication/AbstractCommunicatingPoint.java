@@ -21,5 +21,7 @@ public abstract class AbstractCommunicatingPoint<E,F> implements CommunicatingPo
 
 	public void setDataConverter(DataConverter<E, F> converter) {
 		this.converter = converter;
-	}	
+	}
+	
+	public void dispose() {}
 }

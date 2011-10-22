@@ -25,12 +25,13 @@ public class ACLConverter<E> implements DataConverter<Message<E>, ACLMessage> {
 	public Message<E> deserialize(ACLMessage aclmsg) {
 		String sid;
 		// This message was not sent to be converted to a datamessage
-		if ((sid = aclmsg.getUserDefinedParameter(ObservationMessage.MESSAGE_TYPE_KEY)) == null) {
+		if ((sid = aclmsg.getUserDefinedParameter(ObservationMessage.OBSERVATION_KEY)) == null) {
 			return null;
 		}
 
 		// copy some relevant settings from the 
-		ObservationMessage<E> dmsg = new ObservationMessage<E>(sid);
+		ObservationMessage<E> dmsg = new ObservationMessage<E>();
+		dmsg.setSinkId(sid);
 		dmsg.setSender(aclmsg.getSender());
 		dmsg.setLanguage(aclmsg.getLanguage());
 		dmsg.setProtocol(aclmsg.getProtocol());

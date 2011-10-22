@@ -49,17 +49,13 @@ public class ConduitExitController<T> extends Portal<T> {
 	}
 
 	@Override
-	protected void execute() {
-		try {
-			Receiver<T, ?> recv = waitForReceiver();
-			if (recv != null) {
-				Message<T> msg = this.receiver.receive();
-				if (msg != null) {
-					this.queue.add(msg.getRawData());
-				}
+	protected void execute() throws InterruptedException {
+		Receiver<T, ?> recv = waitForReceiver();
+		if (recv != null) {
+			Message<T> msg = this.receiver.receive();
+			if (msg != null) {
+				this.queue.add(msg.getRawData());
 			}
-		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
 		}
 	}
 	
@@ -75,5 +71,14 @@ public class ConduitExitController<T> extends Portal<T> {
 	public synchronized void dispose() {
 		receiver = null;
 		super.dispose();
+	}
+
+	@Override
+	protected void handleInterruption(InterruptedException ex) {
+		logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
+	}
+	
+	protected synchronized boolean continueComputation() {
+		return !isDone;
 	}
 }

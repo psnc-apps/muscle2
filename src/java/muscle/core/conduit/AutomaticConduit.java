@@ -59,7 +59,8 @@ public class AutomaticConduit extends BasicConduit {
 			filterArgs.add((String) o);
 		}
 
-		final ObservationMessage dataMessage = new ObservationMessage(exitName);
+		final ObservationMessage dataMessage = new ObservationMessage();
+		dataMessage.setSinkId(exitName);
 		dataMessage.addReceiver(this.exitAgent);
 
 		// At the end, convert wrappers back to messages

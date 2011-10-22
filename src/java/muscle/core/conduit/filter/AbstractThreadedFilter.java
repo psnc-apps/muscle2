@@ -7,21 +7,20 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import utilities.SafeThread;
+import utilities.SafeTriggeredThread;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractThreadedFilter<E,F> extends Thread implements Filter<E,F> {
+public abstract class AbstractThreadedFilter<E,F> extends SafeTriggeredThread implements Filter<E,F> {
 	protected Queue<E> incomingQueue;
 	protected final Queue<F> outgoingQueue;
 	protected QueueConsumer<F> consumer;
-	private boolean isDone;
-	private boolean apply;
 	
 	protected AbstractThreadedFilter() {
 		this.outgoingQueue = new LinkedBlockingQueue<F>();
-		this.isDone = false;
 	}
 	
 	public AbstractThreadedFilter(QueueConsumer<F> qc) {
@@ -30,32 +29,7 @@ public abstract class AbstractThreadedFilter<E,F> extends Thread implements Filt
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
 	
-	public synchronized void dispose() {
-		this.isDone = true;
-		this.notifyAll();
-	}
-	
-	public void run() {
-		while (!isDone) {
-			if (!apply) {
-				waitOnApply();
-			}
-			this.apply = false;
-			consumeQueue();
-		}
-	}
-	
-	private synchronized void waitOnApply() {
-		while (!apply && !isDone) {
-			try {
-				wait();
-			} catch (InterruptedException ex) {
-				Logger.getLogger(AbstractThreadedFilter.class.getName()).log(Level.SEVERE, "Filter was interrupted", ex);
-			}
-		}
-	}
-	
-	protected void consumeQueue() {
+	protected void execute() {
 		if (incomingQueue == null) return;
 
 		while (!incomingQueue.isEmpty()) {
@@ -68,9 +42,8 @@ public abstract class AbstractThreadedFilter<E,F> extends Thread implements Filt
 		consumer.apply();
 	}
 	
-	public synchronized void apply() {
-		this.apply = true;
-		this.notifyAll();
+	public void apply() {
+		this.trigger();
 	}
 	
 	protected void put(F message) {

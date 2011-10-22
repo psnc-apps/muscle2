@@ -21,13 +21,20 @@ public abstract class SafeThread extends Thread {
 	
 	/** The thread calls execute() until it is done. */
 	public void run() {
-		while(!isDone) {
-			execute();
+		try {
+			while(continueComputation()) {
+				execute();
+			}
+		} catch (InterruptedException ex) {
+			this.handleInterruption(ex);
 		}
 	}
 	
+	
+	protected abstract void handleInterruption(InterruptedException ex);
+	
 	/** The thread will keep executing the contents of this method until it isDone. */
-	protected abstract void execute();
+	protected abstract void execute() throws InterruptedException;
 	
 	/**
 	 * Signal the thread to stop its calculation. Can be overridden to clean up
@@ -36,5 +43,12 @@ public abstract class SafeThread extends Thread {
 	public synchronized void dispose() {
 		this.isDone = true;
 		this.notifyAll();
+	}
+	
+	/**
+	 * Whether computation can continue. May wait for some time.
+	 */
+	protected synchronized boolean continueComputation() throws InterruptedException {
+		return !isDone;
 	}
 }

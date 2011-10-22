@@ -4,14 +4,10 @@
 package muscle.core.conduit.communication;
 
 import jade.core.Agent;
-import jade.lang.acl.ACLMessage;
-import java.io.IOException;
-import muscle.Constant;
 import muscle.core.messaging.Message;
+import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
-import muscle.core.messaging.signal.DetachConduitSignal;
 import muscle.core.messaging.signal.Signal;
-import muscle.exception.MUSCLERuntimeException;
 
 /**
  *
@@ -32,41 +28,25 @@ public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[]> im
 			throw new IllegalArgumentException("Can only send data messages");
 		}
 		ObservationMessage<T> dmsg = (ObservationMessage<T>) msg;
-		assert !dmsg.hasByteSequenceContent();
-
+		
 		byte[] rawData = null;
 		rawData = converter.serialize(dmsg.getRawData());
-// 		rawData = MiscTool.gzip(dmsg.getStored());
-
 		dmsg.setByteSequenceContent(rawData);
 		dmsg.store(null, null);
-
+		dmsg.addReceiver(portalID.getAID());
+		
 		// send data to target agent
 		senderAgent.send(dmsg);
 		dmsg.setByteSequenceContent(null);
 	}
 
 	public void signal(Signal signal) {
-		if (signal instanceof DetachConduitSignal) {
-			this.senderAgent.send(getDetachDstMessage());
-		}
-		throw new UnsupportedOperationException("Not supported yet.");
+		DataMessage<Signal> dmsg = new DataMessage<Signal>();
+		dmsg.setSinkId(Signal.class.toString());
+		dmsg.store(signal, null);
+		dmsg.addReceiver(portalID.getAID());
+		senderAgent.send(dmsg);
 	}
-	
-	private ACLMessage getDetachDstMessage() {
-		// bulid message which tells the conduit to detach this portal
-		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.setProtocol(Constant.Protocol.PORTAL_DETACH);
-		try {
-			msg.setContentObject(this.getClass());
-		} catch (IOException e) {
-			throw new MUSCLERuntimeException();
-		}
-
-		msg.addReceiver(portalID.getAID());
-		return msg;
-	}
-	
 	
 //	public void setDestination(AID newDstAgent, String newDstSink) {
 //		// allow only once to connect this sender

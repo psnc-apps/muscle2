@@ -29,9 +29,10 @@ import javatool.DecimalMeasureTool;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
 import utilities.SafeThread;
+import utilities.SafeTriggeredThread;
 
 //
-public abstract class Portal<T> extends SafeThread implements Serializable {
+public abstract class Portal<T> extends SafeTriggeredThread implements Serializable {
 	protected final PortalID portalID;
 	private int usedCount;
 	protected Timestamp customSITime;
@@ -43,12 +44,6 @@ public abstract class Portal<T> extends SafeThread implements Serializable {
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
 		usedCount = 0;
-	}
-
-	// remove this in favor of the close method?
-	public synchronized void dispose() {
-		this.isDone = true;
-		this.notifyAll();
 	}
 
 	public String getLocalName() {

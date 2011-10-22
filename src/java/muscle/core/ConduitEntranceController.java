@@ -40,13 +40,11 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	private boolean shouldPause;
 	private Transmitter<T, ?> transmitter;
 	private Queue<Message<T>> queue;
-	private boolean apply;
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 		this.shouldPause = false;
-		this.apply = false;
 		this.transmitter = null;
 		this.queue = null;
 		this.conduitEntrance = null;
@@ -70,31 +68,19 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		this.queue = queue;
 	}
 
-	public synchronized void apply() {
-		this.apply = true;
-		this.notifyAll();
+	public void apply() {
+		this.trigger();
 	}
 	
-	protected void execute() {
-		try {
-			if (waitForApply()) {
-				while (!queue.isEmpty()) {
-					this.send(queue.remove());
-				}
-			}
-		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
+	protected void execute() throws InterruptedException {
+		while (!queue.isEmpty()) {
+			this.send(queue.remove());
 		}
 	}
 	
-	/** Waits for an apply call. Returns true if apply was called and false if the thread should stop. */
-	private synchronized boolean waitForApply() throws InterruptedException {
-		while (!isDone && !apply) {
-			this.wait();
-		}
-		boolean ret = apply;
-		apply = false;
-		return ret;
+	@Override
+	protected void handleInterruption(InterruptedException ex) {
+		logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns true if the thread is no longer paused and false if the thread should stop. */
@@ -128,8 +114,9 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		// if we are connected to a conduit, tell conduit to detach this exit
 		if (transmitter != null) {
 			transmitter.signal(new DetachConduitSignal());
+			transmitter.dispose();
+			transmitter = null;
 		}
-		transmitter = null;
 
 		super.dispose();
 	}

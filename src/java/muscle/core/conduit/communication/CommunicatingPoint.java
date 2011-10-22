@@ -15,4 +15,5 @@ import muscle.core.messaging.serialization.DataConverter;
 public interface CommunicatingPoint<E,F> {
 	public void setComplementaryPort(PortalID id);
 	public void setDataConverter(DataConverter<E,F> serializer);
+	public void dispose();
 }

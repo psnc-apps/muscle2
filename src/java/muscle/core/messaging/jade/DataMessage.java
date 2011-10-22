@@ -29,19 +29,23 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 	// note: JADE sends messages differently if they are passed to a remote container or locally within the same container
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
-	public final static String MESSAGE_TYPE_KEY = DataMessage.class.toString() + "#sinkId";
+	public final static String DATA_KEY = DataMessage.class.toString() + "#sinkId";
 	private transient E storedItem;
 	private String sinkID;
 	private Long byteCount;
 
-	public DataMessage(String sid) {
-		this(MESSAGE_TYPE_KEY, sid);
+	public DataMessage() {
+		super(ACLMessage.INFORM);
 	}
 	
-	protected DataMessage(String messageType, String sid) {
-		super(ACLMessage.INFORM);
-		sinkID = sid;
+	protected void setSinkId(String messageType, String sid) {
+		this.sinkID = sid;
 		addUserDefinedParameter(messageType, sinkID);
+	}
+
+	public void setSinkId(String sid) {
+		this.sinkID = sid;
+		addUserDefinedParameter(DATA_KEY, sinkID);
 	}
 
 	public void store(E item, Long newByteCount) {

@@ -8,22 +8,19 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import utilities.SafeTriggeredThread;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class ThreadedFilterHead<F> extends Thread implements QueueProducer<F> {
+public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueProducer<F> {
 	private QueueConsumer<F> consumer;
 	private final Queue<F> outgoingQueue;
-	private boolean apply;
-	private boolean isDone;
 	
 	public ThreadedFilterHead(QueueConsumer<F> consumer) {
 		this.outgoingQueue = new LinkedBlockingQueue<F>();
 		this.setQueueConsumer(consumer);
-		this.isDone = false;
-		this.apply = false;
 	}
 	
 	public void put(F data) {
@@ -31,30 +28,12 @@ public class ThreadedFilterHead<F> extends Thread implements QueueProducer<F> {
 		apply();
 	}
 	
-	public void run() {
-		while (!isDone) {
-			applyNext();
-		}
+	private void apply() {
+		this.trigger();
 	}
 	
-	private synchronized void apply() {
-		this.apply = true;
-		this.notify();
-	}
-	
-	private synchronized void applyNext() {
-		while (!apply && !isDone) {
-			try {
-				this.wait();
-			} catch (InterruptedException ex) {
-				Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, "Filter head interrupted", ex);
-			}
-		}
-
-		if (this.apply) {
-			this.consumer.apply();
-			this.apply = false;
-		}
+	protected void execute() {
+		this.consumer.apply();
 	}
 
 	public final void setQueueConsumer(QueueConsumer<F> qc) {
@@ -65,9 +44,8 @@ public class ThreadedFilterHead<F> extends Thread implements QueueProducer<F> {
 		qc.setIncomingQueue(outgoingQueue);
 		qc.apply();
 	}
-	
-	public synchronized void dispose() {
-		this.isDone = true;
-		this.notifyAll();
+
+	protected void handleInterruption(InterruptedException ex) {
+		Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, "Could not apply filter", ex);
 	}
 }

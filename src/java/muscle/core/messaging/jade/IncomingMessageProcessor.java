@@ -26,16 +26,15 @@ import muscle.core.MultiDataAgent;
 import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.core.messaging.signal.Signal;
-import utilities.MiscTool;
+import utilities.SafeThread;
 
 /**
 process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends java.lang.Thread implements QueueConsumer<ObservationMessage<?>> {
+public class IncomingMessageProcessor extends SafeThread implements QueueConsumer<ObservationMessage<?>> {
 	private final MultiDataAgent owner;
-	private boolean shouldRun = true;
 	private final Queue<ObservationMessage<?>> queue;
 
 	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<ObservationMessage<?>> newQueue) {
@@ -44,43 +43,32 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 	}
 
 	@Override
-	public void apply() {
-		if (shouldRun) {
-			synchronized(this) {
-				if (shouldRun) {
-					notifyAll();
-				}
-			}
+	public synchronized void apply() {
+		this.notifyAll();
+	}
+	
+	@Override
+	protected void execute() throws InterruptedException {
+		ObservationMessage dmsg = queue.remove();
+		
+		if (dmsg != null) {
+			put(dmsg);
 		}
 	}
 	
-	public synchronized void pause() {
-		shouldRun = false;
-		this.notifyAll();
+	/**
+	 * Wait until queue is non-empty. Returns false if the thread should halt.
+	 */
+	protected synchronized boolean continueComputation() throws InterruptedException {
+		while (!isDone && queue.isEmpty()) {
+			wait();
+		}
+		return !isDone;
 	}
 
-	@Override
-	public void run() {
+	public void start() {
 		owner.getLogger().log(Level.INFO, "starting {0}", getClass());
-
-		while (shouldRun) {
-			// blocking poll for next message
-
-			ObservationMessage dmsg = null;
-			synchronized (this) {
-				while (shouldRun && ((dmsg = queue.poll()) == null)) {
-					try {
-						this.wait();
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					}
-				}
-
-				if (dmsg != null) {
-					put(dmsg);
-				}
-			}
-		}
+		super.start();
 	}
 
 	private void put(ObservationMessage dmsg) {
@@ -113,5 +101,10 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 	@Override
 	public void setIncomingQueue(Queue<ObservationMessage<?>> queue) {
 		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	protected void handleInterruption(InterruptedException ex) {
+		throw new RuntimeException(ex);
 	}
 }
