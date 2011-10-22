@@ -22,14 +22,22 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
+<<<<<<< HEAD
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+=======
+import muscle.core.messaging.serialization.ByteDataConverter;
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 
 /**
 serialize to a byte array
 @author Jan Hegewald
 */
 public class SerializeFilter<E extends Serializable> extends AbstractFilter<E,byte[]> {
+<<<<<<< HEAD
 	private final ByteJavaObjectConverter<E> converter = new ByteJavaObjectConverter<E>();
+=======
+	private ByteDataConverter<E> converter = new ByteDataConverter<E>();
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	protected void apply(E subject) {
 		put(converter.serialize(subject));
 	}

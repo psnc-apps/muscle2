@@ -22,7 +22,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.kernel;
 
 import java.util.logging.Level;
+<<<<<<< HEAD
 import java.util.logging.Logger;
+=======
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 import muscle.core.CxADescription;
 
 
@@ -59,11 +62,19 @@ public abstract class CAController extends RawKernel {
 		if(rsrc != null)
 			path = rsrc.getPath();
 		else
+<<<<<<< HEAD
 			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
 			
 		cls.getResource("").getPath();
 		if(cls.getPackage() == null) {
 			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
+=======
+			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
+			
+		cls.getResource("").getPath();
+		if(cls.getPackage() == null) {
+			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		}
 		
 		return path;

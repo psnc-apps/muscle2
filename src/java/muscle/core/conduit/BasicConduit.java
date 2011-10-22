@@ -71,6 +71,7 @@
 //		}
 //		logger.info("bye");
 //	}
+<<<<<<< HEAD
 //
 //	public List<String> getOptionalArgs() {
 //		return optionalArgs;
@@ -310,3 +311,40 @@
 //		}
 //	}
 //}
+=======
+	// try to reduce network traffic
+	public class LowBandwidthStrategy implements ResourceStrategy, Serializable {
+
+		public AID adjacentAgent() {
+//			if(resourceStrategy == ResourceStrategy.STATIC_LOW_NETWORK) {
+			// determine prefered host container (usually where the entrance or exit lives)
+			if (exitDataTemplate.getQuantity() < 0 || entranceDataTemplate.getQuantity() < 0) {
+				return entranceAgent; // default to entranceAgent if quantity is not specified
+			} else if (exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
+				// move to the container which hosts the exit
+				return exitAgent;
+			} else {
+				// move to the container which hosts the entrance
+				return entranceAgent;
+			}
+		}
+	}
+
+	// do not move or try to be clever
+	public class DullStrategy implements ResourceStrategy, Serializable {
+
+		public AID adjacentAgent() {
+			return getAID();
+		}
+	}
+		
+	public <E extends Serializable> void sendData(E data) {
+		if (data instanceof ACLMessage) {
+			this.send((ACLMessage)data);
+		}
+		else {
+			throw new IllegalArgumentException("Basic Jade Conduit can only send ACLMessage directly.");
+		}
+	}
+}
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0

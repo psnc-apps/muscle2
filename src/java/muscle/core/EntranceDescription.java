@@ -20,14 +20,102 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+<<<<<<< HEAD
 import muscle.core.ident.PortalID;
+=======
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import muscle.exception.MUSCLERuntimeException;
+
+import jade.core.AID;
+
+import muscle.core.DataTemplate;
+import muscle.core.EntranceDependency;
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 
 /**
 stores info necessary to setup an entrance
 @author Jan Hegewald
  */
+<<<<<<< HEAD
 public class EntranceDescription extends PortDescription {
 	public EntranceDescription(PortalID newID) {
 		super(newID);
+=======
+public class EntranceDescription implements Serializable {
+
+	private String id;
+	private ArrayList<ConduitDescription> targetConduits = new ArrayList<ConduitDescription>();
+	private DataTemplate dataTemplate;
+	private AID controllerID;
+	private EntranceDependency[] dependencies;
+
+	public boolean equals(Object b) {
+
+		return b != null && getClass().isInstance(b) && id.equals(getClass().cast(b).getID());
+	}
+
+	public EntranceDescription(String newID) {
+
+		id = newID;
+	}
+
+	public void addConduitDescription(ConduitDescription description) {
+
+		for (int i = 0; i < targetConduits.size(); i++) {
+			if (targetConduits.get(i).getID().equals(description.getID())) {
+				throw new MUSCLERuntimeException("Error: can not add conduit <" + description.getID() + "> twice to entrance <" + getID() + ">");
+			}
+		}
+		if (targetConduits.size() > 1) {
+			java.util.logging.Logger l = muscle.logging.Logger.getLogger(getClass());
+			l.warning("Warning: multifeed entrances are not supported yet -- multiple conduits will be spawned instead");
+		}
+		targetConduits.add(description);
+	}
+
+	public String getID() {
+
+		return id;
+	}
+
+	public boolean hasConduit(ConduitDescription conduit) {
+		return targetConduits.contains(conduit);
+	}
+
+	public void markAvailable(DataTemplate newDataTemplate, AID newControllerID, EntranceDependency[] newDependencies) {
+
+		dataTemplate = newDataTemplate;
+		controllerID = newControllerID;
+		dependencies = newDependencies;
+	}
+
+	public DataTemplate getDataTemplate() {
+
+		return dataTemplate;
+	}
+
+	public AID getControllerID() {
+
+		return controllerID;
+	}
+
+	public EntranceDependency[] getDependencies() {
+
+		return dependencies;
+	}
+
+	public boolean isAvailable() {
+
+		return controllerID != null;
+	}
+
+	public void markUnavailable() {
+
+		dataTemplate = null;
+		controllerID = null;
+		dependencies = null;
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	}
 }

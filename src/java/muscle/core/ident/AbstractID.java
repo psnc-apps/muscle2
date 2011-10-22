@@ -18,13 +18,18 @@ public abstract class AbstractID  implements Identifier {
 		return name;
 	}
 
+<<<<<<< HEAD
 	public final int compareTo(Identifier t) {
+=======
+	public int compareTo(Identifier t) {
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		if (getType().equals(t.getType())) {
 			return this.getName().compareTo(t.getName());
 		}
 		else {
 			return this.getType().compareTo(t.getType());
 		}
+<<<<<<< HEAD
 	}
 	
 	public boolean identifies(Identifiable ident) {
@@ -48,4 +53,7 @@ public abstract class AbstractID  implements Identifier {
 		hash = 47 * hash + (this.getType() != null ? this.getType().hashCode() : 0);
 		return hash;
 	}
+=======
+	}	
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 }

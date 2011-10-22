@@ -44,6 +44,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	
 	public void apply() {
 		if (incomingQueue == null) return;
+<<<<<<< HEAD
 		if (!incomingQueue.isEmpty()) {
 			while (!incomingQueue.isEmpty()) {
 				E message = incomingQueue.remove();
@@ -53,6 +54,14 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 			}
 
 			consumer.apply();
+=======
+		
+		while (!incomingQueue.isEmpty()) {
+			E message = incomingQueue.remove();
+			if (message != null) {
+				this.apply(message);
+			}
+>>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		}
 	}
 	
