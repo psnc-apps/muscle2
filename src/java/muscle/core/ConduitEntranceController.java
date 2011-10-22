@@ -20,163 +20,117 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.ident.PortalID;
-import jade.core.AID;
-import jade.lang.acl.ACLMessage;
-import java.io.IOException;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
-import muscle.Constant;
 import muscle.core.conduit.communication.Transmitter;
+import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.kernel.InstanceController;
-import muscle.core.messaging.RemoteDataSinkHead;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.messaging.serialization.ACLConverter;
-import muscle.core.wrapper.DataWrapper;
-import muscle.exception.MUSCLERuntimeException;
+import muscle.core.messaging.Message;
+import muscle.core.messaging.signal.DetachConduitSignal;
 
 /**
 this is the (remote) head of a conduit,
-an entrance sends data to the conduit agent
+an entrance sends data to the conduit exit through a transmitter
 @author Jan Hegewald
  */
-public class ConduitEntranceController<T> extends Portal<T> implements RemoteDataSinkHead<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
-
-	private EntranceDependency[] dependencies;
-	private AID dstAgent;
-	private String dstSink;
-	private DataMessage<DataWrapper<T>> dataMessage;
-	private boolean shouldPause = false;
+public class ConduitEntranceController<T> extends Portal<T> implements QueueConsumer<Message<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
+	private ConduitEntrance<T> conduitEntrance;
+	private boolean shouldPause;
 	private Transmitter<T, ?> transmitter;
-
+	private Queue<Message<T>> queue;
+	private boolean apply;
+	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-
-		dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list		
+		this.shouldPause = false;
+		this.apply = false;
 	}
 
-	
 	public void setTransmitter(Transmitter<T,?> trans) {
 		this.transmitter = trans;
 	}
 	
-	public ConduitEntranceController<T> getEntrance(String newPortalName) {
-		return new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, 1, null);
+	public void setEntrance(ConduitEntrance<T> entrance) {		
+		this.conduitEntrance = entrance;
 	}
-
-	public void setIncomingQueue(Queue<T> queue) {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	public void apply() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
 	
-	@Override
-	public AID dstAgent() {
-		return dstAgent;
+	public ConduitEntrance<T> getEntrance() {
+		return this.conduitEntrance;
 	}
 
-	@Override
+	public void setIncomingQueue(Queue<Message<T>> queue) {
+		this.queue = queue;
+	}
+
+	public synchronized void apply() {
+		this.apply = true;
+		this.notifyAll();
+	}
+	
+	protected void execute() {
+		try {
+			if (waitForApply()) {
+				while (!queue.isEmpty()) {
+					this.send(queue.remove());
+				}
+			}
+		} catch (InterruptedException ex) {
+			Logger.getLogger(ConduitEntranceController.class.getName()).log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
+		}
+	}
+	
+	/** Waits for an apply call. Returns true if apply was called and false if the thread should stop. */
+	private synchronized boolean waitForApply() throws InterruptedException {
+		while (!isDone && !apply) {
+			this.wait();
+		}
+		boolean ret = apply;
+		apply = false;
+		return ret;
+	}
+	
+	/** Waits for a resume call if the thread was paused. Returns true if the thread is no longer paused and false if the thread should stop. */
+	private synchronized boolean waitForUnpause() throws InterruptedException {
+		while (!isDone && shouldPause) {
+			this.wait();
+		}
+		return !shouldPause;
+	}
+
 	public synchronized void pause() {
 		shouldPause = true;
 		this.notifyAll();
 	}
 
-	@Override
-	public synchronized void resume() {
+	public synchronized void unpause() {
 		shouldPause = false;
+		this.notifyAll();
 	}
-
-	@Override
-	public void put(DataMessage<DataWrapper<T>> dmsg) {
-		if (shouldPause) {
-			synchronized (this) {
-				while (shouldPause) {
-					try {
-						this.wait();
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			}
-		}
-
-		transmitter.send(dmsg);
+	
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
 	}
-
-	@Override
-	public DataMessage<DataWrapper<T>> take() {
-		throw new java.lang.UnsupportedOperationException("can not take from " + getClass());
-	}
-
-	@Override
-	public DataMessage<DataWrapper<T>> poll() {
-		throw new java.lang.UnsupportedOperationException("can not poll from " + getClass());
-	}
-
-	public DataMessage<DataWrapper<T>> poll(long time, TimeUnit unit) throws InterruptedException {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	@Override
-	public String id() {
-		return dstSink;
-	}
-
-	public void setDestination(AID newDstAgent, String newDstSink) {
-		// allow only once to connect this sender
-		if (dstAgent != null) {
-			throw new IllegalStateException("already connected to <" + dstAgent + ":" + dstSink + ">");
-		}
-
-		dstAgent = newDstAgent;
-		dstSink = newDstSink;
-
-		// set up message dummy for outgoing data messages
-		dataMessage = new DataMessage(id());
-		dataMessage.addReceiver(dstAgent());
-	}
-
+	
 	/**
 	pass raw unwrapped data to this entrance
 	 */
-	public void send(T data) {
-		DataWrapper wrapper = new DataWrapper<T>(data, getSITime());
-		dataMessage.store(wrapper, null);
+	private void send(Message<T> msg) throws InterruptedException {
+		if (waitForUnpause()) {
+			this.customSITime = msg.getObservation().getTimestamp();
+			transmitter.transmit(msg);
+		}
 
 		increment();
-
-		// send data to target kernel
-		put(dataMessage);
-	}
-
-	public EntranceDependency[] getDependencies() {
-		return dependencies;
 	}
 
 	public void detachDestination() {
-		assert ownerAgent != null;
-		// if we are connected to a conduit, tell conduit to detach this exit		
-		if (dstAgent != null) {
-			ownerAgent.sendData(getDetachDstMessage());
+		// if we are connected to a conduit, tell conduit to detach this exit
+		if (transmitter != null) {
+			transmitter.signal(new DetachConduitSignal());
 		}
-
-		dstAgent = null;
-	}
-
-	private ACLMessage getDetachDstMessage() {
-		// bulid message which tells the conduit to detach this portal
-		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.setProtocol(Constant.Protocol.PORTAL_DETACH);
-		try {
-			msg.setContentObject(this.getClass());
-		} catch (IOException e) {
-			throw new MUSCLERuntimeException();
-		}
-
-		msg.addReceiver(dstAgent);
-		return msg;
+		transmitter = null;
 	}
 }

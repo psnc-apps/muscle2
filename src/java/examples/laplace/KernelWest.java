@@ -29,8 +29,8 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 import javax.swing.JFrame;
+import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
-import muscle.core.ConduitEntranceController;
 import muscle.core.CxADescription;
 
 
@@ -41,7 +41,7 @@ heat flow calculation wrapped in a MUSCLE kernel for distributed computation
 public class KernelWest extends muscle.core.kernel.CAController {
 
 	private ConduitExit<double[]> readerEast;
-	private ConduitEntranceController<double[]> writerEast;
+	private ConduitEntrance<double[]> writerEast;
 	private Temperature t;
 	
 	

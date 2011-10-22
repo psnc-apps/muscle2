@@ -28,7 +28,7 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 
-import muscle.core.ConduitEntranceController;
+import muscle.core.ConduitEntrance;
 import muscle.core.Scale;
 
 
@@ -43,7 +43,7 @@ public class Ping extends muscle.core.kernel.CAController {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private ConduitEntranceController<double[]> entrance;
+	private ConduitEntrance<double[]> entrance;
 
 	private int time;
 

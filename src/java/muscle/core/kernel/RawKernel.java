@@ -32,8 +32,10 @@ import javatool.DecimalMeasureTool;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
+import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
+import muscle.core.ConduitExitController;
 import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
 import muscle.core.EntranceDependency;
@@ -42,6 +44,7 @@ import muscle.core.JNIConduitExit;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.core.Scale;
+import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.PipeConverter;
 import muscle.exception.IgnoredException;
@@ -62,7 +65,7 @@ public abstract class RawKernel {
 	
 	private Object[] arguments;
 	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
-	List<ConduitExit> exits = new ArrayList<ConduitExit>();
+	List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
 	private boolean acceptPortals;
 	protected KernelListener observer = new NullKernelListener();
 	protected InstanceController controller;
@@ -98,8 +101,8 @@ public abstract class RawKernel {
 	 */
 	public boolean willStop() {
 		int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS);
-		DecimalMeasure<Duration> maxTime = new DecimalMeasure<Duration>(new BigDecimal(maxSeconds), SI.SECOND);
-		DecimalMeasure<Duration> portalTime = maxTime;
+		Timestamp maxTime = new Timestamp(maxSeconds);
+		Timestamp portalTime = maxTime;
 
 		// search for the smallest "time" in our portals
 		for (Portal p : entrances) {
@@ -174,7 +177,7 @@ public abstract class RawKernel {
 	 */
 	@Deprecated
 	private Scale getPortalScale(int rate) {
-		return new Scale(getScale().getDt(), getScale().getAllDx());
+		return null;
 	}
 
 	//
@@ -197,14 +200,14 @@ public abstract class RawKernel {
 	}
 
 	//
-	protected void addExit(ConduitExit exit) {
+	protected void addExit(ConduitExitController exit) {
 
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of porals not allowed here");
 		}
 
 		// only add if not already added
-		for (ConduitExit e : exits) {
+		for (ConduitExitController e : exits) {
 			if (e.equals(exit)) {
 				throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
 			}
@@ -222,15 +225,21 @@ public abstract class RawKernel {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
 		}
 
-		ConduitExit<T> e = new ConduitExit<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
-		addExit(e);
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass));
+
+		ConduitExit<T> e = new ConduitExit<T>(ec);
+		addExit(ec);
+		
 		return e;
 	}
 
 	//
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
-		addExit(e);
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass));
+		
+		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
+		ec.setExit(e);
+		addExit(ec);
 		return e;
 	}
 
@@ -240,16 +249,24 @@ public abstract class RawKernel {
 	}
 
 	//
-	protected <T> ConduitEntranceController<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> e = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		addEntrance(e);
+	protected <T> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
+		
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec);
+		ec.setEntrance(e);
+		
+		addEntrance(ec);
 		return e;
 	}
 	//
 
 	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		addEntrance(e);
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
+		
+		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec);
+		ec.setEntrance(e);
+		
+		addEntrance(ec);
 		return e;
 	}
 	//
@@ -295,7 +312,7 @@ public abstract class RawKernel {
 		PrintWriter out = new PrintWriter(writer);
 
 		out.printf("\nExits (" + exits.size() + ")\n");
-		for (ConduitExit exit : exits) {
+		for (ConduitExitController exit : exits) {
 			out.printf(" %-20s\n", exit.getLocalName());
 		}
 		out.printf("\nEntrances (" + entrances.size() + ")\n");

@@ -20,10 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import muscle.core.ident.PortalID;
-import muscle.core.kernel.InstanceController;
-import muscle.core.kernel.JadeInstanceController;
-import muscle.core.kernel.RawKernel;
+import java.util.concurrent.BlockingQueue;
 import muscle.core.messaging.serialization.DataConverter;
 import utilities.jni.JNIMethod;
 
@@ -36,8 +33,8 @@ public class JNIConduitExit<C, R> extends ConduitExit<C> {
 	private Class<R> jniClass;
 	private DataConverter<R, C> transmuter;
 
-	public JNIConduitExit(DataConverter<R, C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
-		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
+	public JNIConduitExit(DataConverter<R, C> newTransmuter, Class<R> newJNIClass, ConduitExitController<C> control) {
+		super(control);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
 	}

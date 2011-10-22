@@ -28,9 +28,7 @@ import muscle.logging.AgentLogger;
 import java.util.logging.Logger;
 import jade.core.Location;
 import jade.core.MessageQueue;
-import jade.domain.introspection.ACLMessage;
 import muscle.core.messaging.jade.IncomingMessageProcessor;
-import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.signal.Signal;
 import muscle.core.messaging.signal.QueueLimitExceededSignal;
@@ -45,7 +43,6 @@ import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Message;
-import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.SortingMessageQueue;
 import muscle.core.messaging.serialization.ByteDataConverter;
@@ -62,14 +59,14 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
 	private final List<AID> toldToPauseList = Collections.synchronizedList(new LinkedList<AID>());
 
-	private List<RemoteDataSinkTail<DataMessage<?>>> dataSources = new ArrayList<RemoteDataSinkTail<DataMessage<?>>>(); // these are the conduit exits
-	private List<RemoteDataSinkHead<DataMessage<?>>> dataSinks = new ArrayList<RemoteDataSinkHead<DataMessage<?>>>(); // these are the conduit entrances
+	private List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
+	private List<ConduitEntranceController<?>> dataSinks = new ArrayList<ConduitEntranceController<?>>(); // these are the conduit entrances
 	
-	public void addSink(RemoteDataSinkHead<DataMessage<?>> s) {
+	public void addSink(ConduitEntranceController<?> s) {
 		dataSinks.add(s);
 	}
 
-	public void addSource(RemoteDataSinkTail<DataMessage<?>> s) {
+	public void addSource(ConduitExitController<?> s) {
 		dataSources.add(s);
 	}
 
@@ -176,8 +173,8 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		// put message to its sink
 		// there we process all generic data messages
 		// see if this message is intended for one of our other sinks
-		for (Iterator<RemoteDataSinkTail<DataMessage<?>>> sourceIterator = dataSources.iterator(); sourceIterator.hasNext();) {
-			RemoteDataSinkTail<DataMessage<?>> source = sourceIterator.next();
+		for (Iterator<ConduitExitController<?>> sourceIterator = dataSources.iterator(); sourceIterator.hasNext();) {
+			ConduitExitController<?> source = sourceIterator.next();
 
 			if (source.id().equals(dmsg.getSinkID())) {
 
@@ -216,11 +213,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	 */
 	public void sendRemoteSignal(Signal s, AID dst) {
 		DataMessage<Signal> dmsg = new DataMessage<Signal>(Signal.class.toString());
-		try {
-			dmsg.setContentObject(s);
-		} catch (java.io.IOException e) {
-			throw new muscle.exception.MUSCLERuntimeException(e);
-		}
+		dmsg.store(s, null);
 		dmsg.addReceiver(dst);
 		send(dmsg);
 	}
@@ -264,8 +257,8 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	private void pauseSendersForDst(AID dst) {
 		logger.log(Level.WARNING, "pausing senders for {0}", dst.getLocalName());
 		// pause all senders which send to agent dst
-		for (Iterator<RemoteDataSinkHead<DataMessage<?>>> iter = dataSinks.iterator(); iter.hasNext();) {
-			RemoteDataSinkHead<DataMessage<?>> head = iter.next();
+		for (Iterator<ConduitEntranceController<?>> iter = dataSinks.iterator(); iter.hasNext();) {
+			ConduitEntranceController<?> head = iter.next();
 
 			if (head.dstAgent().equals(dst)) {
 				head.pause();
@@ -276,10 +269,10 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	private void resumeSendersForDst(AID dst) {
 		logger.log(Level.INFO, "resuming senders for {0}", dst.getLocalName());
 		// resume all senders which send to agent dst
-		for (Iterator<RemoteDataSinkHead<DataMessage<?>>> iter = dataSinks.iterator(); iter.hasNext();) {
-			RemoteDataSinkHead<?> head = iter.next();
+		for (Iterator<ConduitEntranceController<?>> iter = dataSinks.iterator(); iter.hasNext();) {
+			ConduitEntranceController<?> head = iter.next();
 			if (head.dstAgent().equals(dst)) {
-				head.resume();
+				head.unpause();
 			}
 		}
 	}

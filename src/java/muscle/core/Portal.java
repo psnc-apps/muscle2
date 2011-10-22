@@ -28,18 +28,18 @@ import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
+import utilities.SafeThread;
 
 //
-public abstract class Portal<T> implements Serializable {
-	private PortalID portalID;
+public abstract class Portal<T> extends SafeThread implements Serializable {
+	protected final PortalID portalID;
 	private int usedCount;
-	private int rate;
-	private Timestamp customSITime;
+	protected Timestamp customSITime;
+	protected InstanceController controller;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
-		controller = newOwnerAgent;
-		
+		controller = newOwnerAgent;	
 	
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
@@ -49,7 +49,7 @@ public abstract class Portal<T> implements Serializable {
 	if a portal is deserialized, we need to attach it to the current owner agent
 	 */
 	public void setOwner(InstanceController newOwnerAgent) {
-		ownerAgent = newOwnerAgent;
+		controller = newOwnerAgent;
 	}
 
 	// remove this in favor of the close method?
@@ -64,27 +64,11 @@ public abstract class Portal<T> implements Serializable {
 		return portalID;
 	}
 
-	// free our resources and disallow passing of messages
-	// TODO: switch to a NULL implementation after close (put current impl in a strategy and duplicate public interface of that strategy in the portal)
-	private void close() {
-		usedCount = Integer.MAX_VALUE;
-	}
-
 	/**
 	current time of this portal in SI units
 	 */
 	public Timestamp getSITime() {
-		if (rate == LOOSE) {
-			// return dt*usedCount*rate
-			return customSITime;
-		} else {
-			// return dt*usedCount*rate
-			return DecimalMeasureTool.multiply(dataTemplate.getScale().getDt(), new BigDecimal(usedCount * rate));
-		}
-	}
-
-	public DataTemplate getDataTemplate() {
-		return this.dataTemplate;
+		return customSITime;
 	}
 	
 	@Override

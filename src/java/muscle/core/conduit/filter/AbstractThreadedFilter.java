@@ -30,8 +30,9 @@ public abstract class AbstractThreadedFilter<E,F> extends Thread implements Filt
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
 	
-	public void setDone() {
-		this.isDone = true; 
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
 	}
 	
 	public void run() {

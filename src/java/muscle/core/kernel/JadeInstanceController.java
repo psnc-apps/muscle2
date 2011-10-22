@@ -30,6 +30,7 @@ import muscle.Constant;
 import muscle.core.Boot;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
+import muscle.core.ConduitExitController;
 import muscle.core.MultiDataAgent;
 import muscle.core.Plumber;
 import muscle.core.ident.Identifier;
@@ -58,9 +59,6 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		for (ConduitEntranceController entrance : kernel.entrances) {
 			entrance.detachDestination();
 			entrance.detachOwnerAgent();
-		}
-		for (ConduitExit exit : kernel.exits) {
-			exit.detachOwnerAgent();
 		}
 
 		getLogger().log(Level.INFO, "kernel tmp dir: {0}", kernel.getTmpPath());
@@ -236,7 +234,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	private void attach() {
 		LinkedList<ConduitEntranceController> missingEntrances = new LinkedList<ConduitEntranceController>();
 		missingEntrances.addAll(kernel.entrances);
-		LinkedList<ConduitExit> missingExits = new LinkedList<ConduitExit>();
+		LinkedList<ConduitExitController> missingExits = new LinkedList<ConduitExitController>();
 
 		MessageTemplate msgTemplate = MessageTemplate.MatchProtocol(Constant.Protocol.PORTAL_ATTACH);
 

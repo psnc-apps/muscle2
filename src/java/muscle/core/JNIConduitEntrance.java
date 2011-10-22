@@ -23,26 +23,21 @@ package muscle.core;
 
 
 
-import muscle.core.ident.PortalID;
-import muscle.core.kernel.RawKernel;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
-import muscle.core.kernel.InstanceController;
-import muscle.core.kernel.JadeInstanceController;
 import muscle.core.messaging.serialization.DataConverter;
-
 
 /**
 entrance which can directly be called from native code<br>
 C for conduit type, R for raw jni type
 @author Jan Hegewald
 */
-public class JNIConduitEntrance<R,C> extends ConduitEntranceController<C> {
+public class JNIConduitEntrance<R,C> extends ConduitEntrance<C> {
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 
-	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
-		super(newPortalID, newOwnerAgent, newRate, newDataTemplate, newDependencies);
+	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, ConduitEntranceController<C> controller) {
+		super(controller);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
 	}

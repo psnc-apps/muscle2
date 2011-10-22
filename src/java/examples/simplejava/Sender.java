@@ -21,9 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplejava;
 
-import muscle.core.ConduitEntranceController;
+import muscle.core.ConduitEntrance;
 import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
@@ -37,7 +36,7 @@ a simple java example kernel which sends data
 */
 public class Sender extends muscle.core.kernel.CAController {
 
-	private ConduitEntranceController<double[]> entrance;
+	private ConduitEntrance<double[]> entrance;
 	
 	private int time;
 

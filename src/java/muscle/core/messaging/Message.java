@@ -3,6 +3,8 @@
  */
 package muscle.core.messaging;
 
+import muscle.core.messaging.signal.Signal;
+
 /**
  * @author Joris Borgdorff
  */

@@ -65,4 +65,9 @@ public class ThreadedFilterHead<F> extends Thread implements QueueProducer<F> {
 		qc.setIncomingQueue(outgoingQueue);
 		qc.apply();
 	}
+	
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
+	}
 }

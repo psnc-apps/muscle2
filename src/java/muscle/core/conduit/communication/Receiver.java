@@ -13,6 +13,7 @@ import muscle.core.messaging.serialization.DataConverter;
  */
 public interface Receiver<E, F> {
 	public void setTransmittingPort(PortalID id);
+	/** Receives a message. Will return null if no more messages can be received */
 	public Message<E> receive();
 	public void setDeserializer(DataConverter<Message<E>,F> deserializer);
 }

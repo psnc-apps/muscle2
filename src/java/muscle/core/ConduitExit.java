@@ -21,122 +21,24 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import muscle.core.ident.PortalID;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import muscle.core.kernel.InstanceController;
-import muscle.core.kernel.JadeInstanceController;
-import muscle.core.kernel.RawKernel;
-import muscle.core.messaging.BufferingRemoteDataSinkTail;
-import muscle.core.messaging.RemoteDataSinkTail;
-import muscle.core.messaging.SinkObserver;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.wrapper.DataWrapper;
-import muscle.exception.MUSCLERuntimeException;
-
+import java.util.concurrent.BlockingQueue;
 
 /**
 this is the (remote) tail of a conduit,
 an exit receives data from the conduit agent
 @author Jan Hegewald
 */
-public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
-	
-	private transient Logger logger;
-	private RemoteDataSinkTail<DataMessage<DataWrapper<T>>> sinkDelegate;
+public class ConduitExit<T> { // generic T will be the underlying unwrapped data, e.g. double[]
+	private final BlockingQueue<T> queue;
 
-	//
-	public ConduitExit(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
-		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-				
-		if(newOwnerAgent != null)
-			logger = newOwnerAgent.getLogger();
-		else
-			logger = muscle.logging.Logger.getLogger(getClass());
-			
-		sinkDelegate = new BufferingRemoteDataSinkTail<DataMessage<DataWrapper<T>>>(getLocalName());
-      
-      SinkObserver<DataMessage<?>> sinkObserver = (SinkObserver<DataMessage<?>>)newOwnerAgent;
-		sinkDelegate.addObserver(sinkObserver);
+	public ConduitExit(ConduitExitController<T> control) {
+		this.queue = control.getQueue();
 	}
 
-
-	//
-   @Override
-   public void put(DataMessage<DataWrapper<T>> d) {
-
-//		if( messageQueue.size() > QUEUE_WARNING_THRESHOLD )
-//			logger.info("["+getLocalName()+"] <"+messageQueue.size()+"> messages in exit queue");
-
-		sinkDelegate.put(d);
-	}
-
-
-   //
-   @Override
-   public DataMessage<DataWrapper<T>> take() throws InterruptedException {
-		return sinkDelegate.take();
-   }
-
-
-   //
-   @Override
-   public DataMessage<DataWrapper<T>> poll() {
-		return sinkDelegate.poll();
-   }
-
-
-   //
-   @Override
-   public String id() {
-		return sinkDelegate.id();
-   }
-
-	
 	/**
 	return our unwrapped data once
 	*/
 	public T receive() {
-	
-		DataMessage<DataWrapper<T>> dmsg = null;
-		try {
-			dmsg = take();
-		} catch (InterruptedException ex) {
-			throw new MUSCLERuntimeException(ex);
-		}
-		
-		DataWrapper<T> wrapper = dmsg.getData();
-		T data = wrapper.getData();
-		
-		assert getDataTemplate().getDataClass().isInstance(data);
-
-		increment();
-		
-		return data;
+		return this.queue.remove();
 	}
-	
-
-	// deserialize
-	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		
-		// do default deserialization
-		in.defaultReadObject();
-		
-		// init transient fields
-		// can not use agent logger here, because exit has no access to owner agent
-		logger = muscle.logging.Logger.getLogger(ConduitExit.class);
-	}
-
-   @Override
-   public void addObserver(SinkObserver<DataMessage<?>> o) {
-      sinkDelegate.addObserver(o);
-   }
-
-	@Override
-	public DataMessage<DataWrapper<T>> poll(long time, TimeUnit unit) throws InterruptedException {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-	
 }

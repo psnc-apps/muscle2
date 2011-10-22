@@ -24,6 +24,7 @@ import jade.lang.acl.ACLMessage;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
+import muscle.core.messaging.signal.Signal;
 
 /**
 @author Jan Hegewald
