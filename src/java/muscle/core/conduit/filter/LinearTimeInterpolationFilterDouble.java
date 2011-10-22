@@ -38,7 +38,7 @@ dtCoarseCount/2 == dtFineCount<br>
     0�1�2�3�4�5�6 t_fine</tt>
 @author Jan Hegewald
 */
-public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter<double[],double[]> {
+public class LinearTimeInterpolationFilterDouble extends AbstractObservationFilter<double[],double[]> {
 	private double[] lastCoarseData; // copy of the last used coarse timestep data (inData)
 	private final int dtFactor;
 		

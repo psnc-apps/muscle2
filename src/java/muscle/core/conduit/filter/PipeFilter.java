@@ -27,7 +27,7 @@ import muscle.core.wrapper.Observation;
 this filter simply forwards the data to the next filter without altering the data
 @author Jan Hegewald
 */
-public class PipeFilter<E> extends AbstractWrapperFilter<E,E> {
+public class PipeFilter<E> extends AbstractObservationFilter<E,E> {
 	protected void apply(Observation<E> subject) {
 		put(subject);
 	}

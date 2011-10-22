@@ -27,7 +27,7 @@ import muscle.core.wrapper.Observation;
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald
 */
-public class ConsoleWriterFilter<E> extends AbstractWrapperFilter<E,E> {
+public class ConsoleWriterFilter<E> extends AbstractObservationFilter<E,E> {
 	protected void apply(Observation<E> subject) {
 		System.out.println(subject.toString());
 		

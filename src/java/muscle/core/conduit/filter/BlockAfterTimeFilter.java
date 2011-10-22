@@ -28,7 +28,7 @@ import muscle.core.messaging.Timestamp;
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
-public class BlockAfterTimeFilter<E> extends AbstractWrapperFilter<E,E> {
+public class BlockAfterTimeFilter<E> extends AbstractObservationFilter<E,E> {
 	private final Timestamp maxTime;
 
 	/** @param newMaxTime seconds after which the filter blocks */

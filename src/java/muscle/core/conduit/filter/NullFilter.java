@@ -28,7 +28,7 @@ import muscle.core.wrapper.Observation;
 this filter does nothing, data passed to this filter is lost
 @author Jan Hegewald
 */
-public class NullFilter<E,F> extends AbstractWrapperFilter<E,F> {
+public class NullFilter<E,F> extends AbstractObservationFilter<E,F> {
 	
 	public void apply() {
 		if (incomingQueue == null) return;

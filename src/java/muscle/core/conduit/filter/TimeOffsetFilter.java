@@ -28,7 +28,7 @@ import muscle.core.wrapper.Observation;
 modifies timestep with a given offset
 @author Jan Hegewald
 */
-public class TimeOffsetFilter<E> extends AbstractWrapperFilter<E,E> {
+public class TimeOffsetFilter<E> extends AbstractObservationFilter<E,E> {
 	private final Duration offset;
 
 	/** @param newOffset offset in seconds */

@@ -30,7 +30,7 @@ import utilities.array2d.Array2D_double;
 maps 3d grid data to 2d data (calculates the average value for the third dimension)
 @author Jan Hegewald
 */
-public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter<Array3D_double, Array2D_double> {
+public class ThreeD2TwoDFilterDouble extends AbstractObservationFilter<Array3D_double, Array2D_double> {
 	
 	protected void setInTemplate(DataTemplate<Array2D_double> consumerTemplate) {
 		this.inTemplate = new DataTemplate<Array3D_double>(Array3D_double.class);

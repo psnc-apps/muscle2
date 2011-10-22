@@ -27,7 +27,7 @@ import muscle.core.wrapper.Observation;
 modifies timestep with a given factor
 @author Jan Hegewald
 */
-public class TimeFactorFilter<E> extends AbstractWrapperFilter<E,E> {
+public class TimeFactorFilter<E> extends AbstractObservationFilter<E,E> {
 	private final int factor;
 
 	public TimeFactorFilter(int newFactor) {

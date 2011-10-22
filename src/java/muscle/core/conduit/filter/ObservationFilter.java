@@ -26,7 +26,7 @@ import muscle.core.wrapper.Observation;
 /**
 interface for conduit filters which act on wrapped data
 */
-public interface WrapperFilter<E,F> extends WrapperQueueConsumer<E>, QueueProducer<Observation<F>> {
-	public void setQueueConsumer(WrapperQueueConsumer<F> qc);
+public interface ObservationFilter<E,F> extends ObservationQueueConsumer<E>, QueueProducer<Observation<F>> {
+	public void setQueueConsumer(ObservationQueueConsumer<F> qc);
 }
 

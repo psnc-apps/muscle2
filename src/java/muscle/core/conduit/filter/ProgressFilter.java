@@ -29,7 +29,7 @@ forwards the data to the next filter without altering the data,
 but allows the user to pause the message passing via a GUI
 @author Jan Hegewald
 */
-public class ProgressFilter<E> extends AbstractWrapperFilter<E,E> {
+public class ProgressFilter<E> extends AbstractObservationFilter<E,E> {
 	private final ProgressMeter progress = new ProgressMeter("ProgressFilter");
 
 	protected void apply(Observation<E> subject) {

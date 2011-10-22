@@ -10,10 +10,10 @@ import muscle.core.wrapper.Observation;
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractWrapperFilter<E,F> extends AbstractFilter<Observation<E>,Observation<F>> implements WrapperFilter<E,F> {
+public abstract class AbstractThreadedObservationFilter<E,F> extends AbstractThreadedFilter<Observation<E>,Observation<F>> implements ObservationFilter<E,F> {
 	protected DataTemplate<E> inTemplate;
 	
-	public void setQueueConsumer(WrapperQueueConsumer<F> qc) {
+	public void setQueueConsumer(ObservationQueueConsumer<F> qc) {
 		super.setQueueConsumer(qc);
 		this.setInTemplate(qc.getInTemplate());
 	}

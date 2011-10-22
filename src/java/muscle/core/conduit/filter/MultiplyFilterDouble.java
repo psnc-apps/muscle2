@@ -27,7 +27,7 @@ import muscle.core.wrapper.Observation;
 multiplies every value of incoming data with a constant factor
 @author Jan Hegewald
 */
-public class MultiplyFilterDouble extends AbstractWrapperFilter<double[],double[]> {
+public class MultiplyFilterDouble extends AbstractObservationFilter<double[],double[]> {
 	private final double factor;
 	
 	public MultiplyFilterDouble(double newFactor) {

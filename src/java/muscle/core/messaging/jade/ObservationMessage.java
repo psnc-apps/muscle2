@@ -20,8 +20,7 @@ public class ObservationMessage<E> extends DataMessage<Observation<E>> implement
 	}
 	
 	public E getRawData() {
-		Observation<E> obs = this.getObservation();
-		return obs.getData();
+		return getData().getData();
 	}
 
 	public Observation<E> getObservation() {

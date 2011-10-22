@@ -28,10 +28,10 @@ import muscle.core.wrapper.Observation;
 exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-public abstract class WrapperFilterTail<E> extends FilterTail<Observation<E>> implements WrapperQueueConsumer<E> {
+public abstract class ObservationFilterTail<E> extends FilterTail<Observation<E>> implements ObservationQueueConsumer<E> {
 	private final DataTemplate<E> template;
 
-	public WrapperFilterTail(DataTemplate<E> inTemplate) {
+	public ObservationFilterTail(DataTemplate<E> inTemplate) {
 		this.template = inTemplate;
 	}
 	public final DataTemplate<E> getInTemplate() {

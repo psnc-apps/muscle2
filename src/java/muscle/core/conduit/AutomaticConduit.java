@@ -94,7 +94,7 @@ public class AutomaticConduit extends BasicConduit {
 		return filter;
 	}
 
-	private WrapperFilter filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
+	private ObservationFilter filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once
 		String name = tmp[0];
@@ -103,7 +103,7 @@ public class AutomaticConduit extends BasicConduit {
 			remainder = tmp[1];
 		}
 
-		WrapperFilter filter = null;
+		ObservationFilter filter = null;
 
 		// filters without args
 		if (name.equals("null")) {
@@ -133,21 +133,21 @@ public class AutomaticConduit extends BasicConduit {
 		
 		// assume name refers to a class name
 		else {
-			Class<? extends WrapperFilter> filterClass = null;
+			Class<? extends ObservationFilter> filterClass = null;
 			double rem = 0d;
 			if (remainder != null) {
 				rem = Double.valueOf(remainder);
 			}
 			
 			try {
-				filterClass = (Class<? extends WrapperFilter>) Class.forName(name);
+				filterClass = (Class<? extends ObservationFilter>) Class.forName(name);
 			} catch (ClassNotFoundException e) {
 				throw new MUSCLERuntimeException(e);
 			}
 
 			
 			// try to find constructor with tailFilter
-			Constructor<? extends WrapperFilter> filterConstructor = null;
+			Constructor<? extends ObservationFilter> filterConstructor = null;
 			try {
 				if (remainder == null) {
 					filterConstructor = filterClass.getDeclaredConstructor((Class[])null);
