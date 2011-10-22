@@ -7,25 +7,25 @@ package muscle.core.messaging;
  *
  * @author Joris Borgdorff
  */
-public class Timestamp implements Comparable<Timestamp> {
-	private final double t;
-
+public class Timestamp extends AbstractTime {
 	public Timestamp(double t) {
-		this.t = t;
+		super(t);
 	}
 	
-	public int compareTo(Timestamp ts) {
-		return Double.compare(t, ts.t);
+	public String toString() {
+		return "t=" + this.t + " s";
 	}
 	
-	public boolean equals(Object o) {
-		if (o == null || !o.getClass().equals(this.getClass())) return false;
-		return ((Timestamp)o).t == this.t;
+	public Timestamp subtract(Duration other) {
+		return new Timestamp(t - other.t);
 	}
-
-	public int hashCode() {
-		int hash = 5;
-		hash = 67 * hash + (int) (Double.doubleToLongBits(this.t) ^ (Double.doubleToLongBits(this.t) >>> 32));
-		return hash;
+	public Timestamp multiply(Duration other) {
+		return new Timestamp(t * other.t);
+	}
+	public Timestamp divide(Duration other) {
+		return new Timestamp(t / other.t);
+	}
+	public Timestamp add(Duration other) {
+		return new Timestamp(t + other.t);
 	}
 }

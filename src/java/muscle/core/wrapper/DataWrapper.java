@@ -21,18 +21,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.wrapper;
 
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
+import muscle.core.messaging.Timestamp;
 
 /**
 container for a data message
 @author Jan Hegewald
 */
 public class DataWrapper<T> implements java.io.Serializable {
-	private DecimalMeasure<Duration> siTime; // global time where this data belongs to (may be null)
+	private Timestamp siTime; // global time where this data belongs to (may be null)
 	private T data; // our unwrapped data
 
-	public DataWrapper(T newData, DecimalMeasure<Duration> newSITime) {
+	public DataWrapper(T newData, Timestamp newSITime) {
 		siTime = newSITime;
 		data = newData;
 	}
@@ -41,7 +40,7 @@ public class DataWrapper<T> implements java.io.Serializable {
 		return data;
 	}
 
-	public DecimalMeasure<Duration> getSITime() {
+	public Timestamp getSITime() {
 		return siTime;
 	}
 

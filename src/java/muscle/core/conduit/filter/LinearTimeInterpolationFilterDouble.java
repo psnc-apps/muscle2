@@ -21,12 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
+import muscle.core.messaging.Duration;
+import muscle.core.messaging.Timestamp;
 
 
 /**
@@ -46,26 +44,13 @@ dtCoarseCount/2 == dtFineCount<br>
 */
 public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter {
 	private double[] lastCoarseData; // copy of the last used coarse timestep data (inData)
-	private DecimalMeasure<Duration> fineDt;	
-	private final int dtFactor;
+	private final Duration dtFactor;
 		
 	public LinearTimeInterpolationFilterDouble(int dtFactor) {
 		super();
 		// so far only tested with dt_coarse = 2*dt_fine
 		assert dtFactor == 2;
-		this.dtFactor = dtFactor;
-	}
-	
-	protected void setInTemplate(DataTemplate consumerTemplate) {
-		Scale outScale = consumerTemplate.getScale();
-		assert outScale != null;
-		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(dtFactor)), outScale.getDt().getUnit());
-
-		fineDt = outScale.getDt();
-		
-		assert inDt.compareTo(fineDt) > 0;
-		
-		inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		this.dtFactor = new Duration(dtFactor);
 	}
 	
 	public void apply(DataWrapper subject) {
@@ -90,8 +75,7 @@ public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter {
 		// retain the current coarse data to be able to calculate the next timestep
 		lastCoarseData = ((double[])subject.getData()).clone();
 		
-		DecimalMeasure<Duration> t = new DecimalMeasure<Duration>(subject.getSITime().getValue().subtract(fineDt.to(subject.getSITime().getUnit()).getValue()), subject.getSITime().getUnit());
-		DataWrapper interpolatedData = new DataWrapper(interpolatedArray, t);
+		DataWrapper interpolatedData = new DataWrapper(interpolatedArray, subject.getSITime().divide(dtFactor));
 		assert interpolatedData.getSITime().compareTo(subject.getSITime()) != 0;
 		
 		// feed next filter with interpolated data for last fine timestep

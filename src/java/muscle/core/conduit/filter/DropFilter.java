@@ -46,11 +46,7 @@ public class DropFilter extends AbstractWrapperFilter {
 	}
 	
 	protected void setInTemplate(DataTemplate consumerTemplate) {
-		DecimalMeasure<Duration> inDt = DecimalMeasure.valueOf(new BigDecimal(outRate), SI.SECOND);
-		Scale outScale = consumerTemplate.getScale();
-		assert outScale != null;
-		
-		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
+		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass());
 	}
 
 	protected void apply(DataWrapper subject) {

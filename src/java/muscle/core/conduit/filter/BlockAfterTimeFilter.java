@@ -22,10 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import javax.measure.unit.SI;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
+import muscle.core.messaging.Timestamp;
 
 
 /**
@@ -33,12 +30,12 @@ ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
 public class BlockAfterTimeFilter extends AbstractWrapperFilter {
-	private final DecimalMeasure<Duration> maxTime;
+	private final Timestamp maxTime;
 
 	/** @param newMaxTime seconds after which the filter blocks */
 	public BlockAfterTimeFilter(int newMaxTime) {
 		super();
-		maxTime = new DecimalMeasure<Duration>(new BigDecimal(newMaxTime), SI.SECOND);
+		maxTime = new Timestamp(newMaxTime);
 	}
 
 	protected void apply(DataWrapper subject) {

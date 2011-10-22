@@ -27,14 +27,14 @@ import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
 import muscle.core.kernel.InstanceController;
+import muscle.core.messaging.Timestamp;
 
 //
 public abstract class Portal<T> implements Serializable {
 	private PortalID portalID;
 	private int usedCount;
-	private final DecimalMeasure<Duration> customSITime;
-	private DataTemplate dataTemplate;
-	protected InstanceController controller;
+	private int rate;
+	private Timestamp customSITime;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
@@ -42,8 +42,14 @@ public abstract class Portal<T> implements Serializable {
 		
 	
 		// set custom time to 0
-		customSITime = DecimalMeasure.valueOf(new BigDecimal(0), newDataTemplate.getScale().getDt().getUnit());
-		dataTemplate = newDataTemplate;
+		customSITime = new Timestamp(0d);
+	}
+
+	/**
+	if a portal is deserialized, we need to attach it to the current owner agent
+	 */
+	public void setOwner(InstanceController newOwnerAgent) {
+		ownerAgent = newOwnerAgent;
 	}
 
 	// remove this in favor of the close method?
@@ -67,8 +73,14 @@ public abstract class Portal<T> implements Serializable {
 	/**
 	current time of this portal in SI units
 	 */
-	public DecimalMeasure<Duration> getSITime() {
-		return customSITime;
+	public Timestamp getSITime() {
+		if (rate == LOOSE) {
+			// return dt*usedCount*rate
+			return customSITime;
+		} else {
+			// return dt*usedCount*rate
+			return DecimalMeasureTool.multiply(dataTemplate.getScale().getDt(), new BigDecimal(usedCount * rate));
+		}
 	}
 
 	public DataTemplate getDataTemplate() {
