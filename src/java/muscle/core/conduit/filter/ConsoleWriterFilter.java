@@ -23,7 +23,6 @@ package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
 
-
 /**
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald

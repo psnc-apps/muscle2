@@ -22,13 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
-
 
 /**
 drops data if incoming time scale is not a multiple of outgoing dt, newInDt is only required to build the corresponding DataTemplate for incomming data

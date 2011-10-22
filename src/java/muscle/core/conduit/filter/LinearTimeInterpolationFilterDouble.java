@@ -22,10 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.messaging.Duration;
-import muscle.core.messaging.Timestamp;
-
 
 /**
 interpolates between current and last timestep<br>

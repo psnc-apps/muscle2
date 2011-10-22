@@ -22,13 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
-import javatool.DecimalMeasureTool;
-
 
 /**
 modifies timestep with a given factor

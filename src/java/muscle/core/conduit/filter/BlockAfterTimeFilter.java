@@ -24,7 +24,6 @@ package muscle.core.conduit.filter;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.messaging.Timestamp;
 
-
 /**
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald

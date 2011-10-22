@@ -21,8 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-//import muscle.core.DataTemplate;
-
 /**
 interface for conduit filters
 */
