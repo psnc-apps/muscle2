@@ -20,6 +20,7 @@ public interface InstanceController {
 	public void addSource(RemoteDataSinkTail<DataMessage<?>> s);
 	public Identifier getID();
 	public Logger getLogger();
-	public <E extends Serializable> void sendData(E data);
-	public <E extends Serializable> void sendMessage(Message<E> dmsg);
+	public <E> void sendData(E data);
+	public <E> void sendMessage(Message<E> dmsg);
+	//public <E> Message<E> receiveMessage();
 }

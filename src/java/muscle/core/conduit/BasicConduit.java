@@ -40,7 +40,7 @@ import java.util.TimerTask;
 import utilities.MiscTool;
 import muscle.Constant;
 import muscle.behaviour.MoveBehaviour;
-import muscle.core.ConduitEntrance;
+import muscle.core.ConduitEntranceController;
 import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
 import muscle.utilities.RemoteOutputStream;
@@ -309,7 +309,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 					throw new MUSCLERuntimeException(e);
 				}
 
-				if (ConduitEntrance.class.isAssignableFrom(portalClass)) {
+				if (ConduitEntranceController.class.isAssignableFrom(portalClass)) {
 					entranceAvailable = false;
 					getLogger().info("entrance detached");
 				} else {
@@ -384,7 +384,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 		}
 	}
 		
-	public <E extends Serializable> void sendData(E data) {
+	public <E> void sendData(E data) {
 		if (data instanceof ACLMessage) {
 			this.send((ACLMessage)data);
 		}

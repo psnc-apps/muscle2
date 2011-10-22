@@ -24,7 +24,7 @@ package muscle.core.messaging.signal;
 /**
 @author Jan Hegewald
 */
-public interface Signal extends java.io.Serializable {
+public interface Signal {
 }
 
 

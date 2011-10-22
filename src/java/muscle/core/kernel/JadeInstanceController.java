@@ -28,7 +28,7 @@ import javatool.ArraysTool;
 import javatool.LoggerTool;
 import muscle.Constant;
 import muscle.core.Boot;
-import muscle.core.ConduitEntrance;
+import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
 import muscle.core.MultiDataAgent;
 import muscle.core.Plumber;
@@ -55,7 +55,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	public void takeDown() {
 		super.takeDown();
 
-		for (ConduitEntrance entrance : kernel.entrances) {
+		for (ConduitEntranceController entrance : kernel.entrances) {
 			entrance.detachDestination();
 			entrance.detachOwnerAgent();
 		}
@@ -142,7 +142,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 	}
 	
-	public <E extends Serializable> void sendData(E data) {
+	public <E> void sendData(E data) {
 		if (data instanceof ACLMessage) {
 			this.send((ACLMessage)data);
 		}
@@ -234,7 +234,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	the conduit will initiate the communication 
 	 */
 	private void attach() {
-		LinkedList<ConduitEntrance> missingEntrances = new LinkedList<ConduitEntrance>();
+		LinkedList<ConduitEntranceController> missingEntrances = new LinkedList<ConduitEntranceController>();
 		missingEntrances.addAll(kernel.entrances);
 		LinkedList<ConduitExit> missingExits = new LinkedList<ConduitExit>();
 
@@ -272,8 +272,8 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			// see to which entrance this attach message belongs
 			if (missingEntrances.size() > 0) {
 				String conduitEntranceName = msg.getUserDefinedParameter("entrance");
-				for (Iterator<ConduitEntrance> iter = missingEntrances.iterator(); iter.hasNext();) {
-					ConduitEntrance entrance = iter.next();
+				for (Iterator<ConduitEntranceController> iter = missingEntrances.iterator(); iter.hasNext();) {
+					ConduitEntranceController entrance = iter.next();
 					if (entrance.getLocalName().equals(conduitEntranceName)) {
 						getLogger().log(Level.FINEST, "attaching entrance <{0}> to its destination <{1}>", new Object[]{entrance.getLocalName(), dstAgent.getLocalName()});
 						entrance.setDestination(dstAgent, dstSink);
@@ -432,6 +432,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		return rawArgs;
 	}
 	
+	@Override
 	public Identifier getID() {
 		return new JadeAgentID(this.getAID());
 	}

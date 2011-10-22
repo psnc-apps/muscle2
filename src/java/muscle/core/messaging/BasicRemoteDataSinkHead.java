@@ -25,7 +25,7 @@ import jade.core.AID;
 /**
 @author Jan Hegewald
  */
-abstract public class BasicRemoteDataSinkHead<E extends java.io.Serializable> extends BasicDataSink<E> implements RemoteDataSinkHead<E> {
+abstract public class BasicRemoteDataSinkHead<E> extends BasicDataSink<E> implements RemoteDataSinkHead<E> {
 	private AID dstAgent;
 
 	public BasicRemoteDataSinkHead(String newID, AID newDstAgent) {

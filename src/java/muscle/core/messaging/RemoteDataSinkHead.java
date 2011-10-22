@@ -22,7 +22,7 @@ package muscle.core.messaging;
 
 import jade.core.AID;
 
-public interface RemoteDataSinkHead<E extends java.io.Serializable> extends DataSink<E> {
+public interface RemoteDataSinkHead<E> extends DataSink<E> {
 
 	AID dstAgent();
 

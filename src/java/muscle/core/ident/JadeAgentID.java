@@ -37,6 +37,7 @@ public class JadeAgentID extends AbstractID implements Identifier {
 		return null;
 	}
 
+	@Override
 	public int compareTo(Identifier t) {
 		if (t instanceof JadeAgentID) {
 			return this.id.compareTo(((JadeAgentID)t).id);
@@ -44,5 +45,15 @@ public class JadeAgentID extends AbstractID implements Identifier {
 		else {
 			return super.compareTo(t);
 		}
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof JadeAgentID) {
+			return this.id.equals(((JadeAgentID)o).id);
+		}
+		else {
+			return super.equals(o);
+		}
+		
 	}
 }

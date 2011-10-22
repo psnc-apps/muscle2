@@ -32,7 +32,7 @@ import javatool.DecimalMeasureTool;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
-import muscle.core.ConduitEntrance;
+import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
@@ -61,7 +61,7 @@ public abstract class RawKernel {
 	private static final transient Logger logger = AgentLogger.getLogger(RawKernel.class.getName());
 	
 	private Object[] arguments;
-	List<ConduitEntrance> entrances = new ArrayList<ConduitEntrance>();
+	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
 	List<ConduitExit> exits = new ArrayList<ConduitExit>();
 	private boolean acceptPortals;
 	protected KernelListener observer = new NullKernelListener();
@@ -174,25 +174,18 @@ public abstract class RawKernel {
 	 */
 	@Deprecated
 	private Scale getPortalScale(int rate) {
-
-		if (rate == Portal.LOOSE) {
-			return new Scale(getScale().getDt(), getScale().getAllDx());
-		} else {
-			DecimalMeasure<Duration> originalDt = getScale().getDt();
-			DecimalMeasure<Duration> portalDt = DecimalMeasureTool.multiply(originalDt, new BigDecimal(rate));
-			return new Scale(portalDt, getScale().getAllDx());
-		}
+		return new Scale(getScale().getDt(), getScale().getAllDx());
 	}
 
 	//
-	protected void addEntrance(ConduitEntrance entrance) {
+	protected void addEntrance(ConduitEntranceController entrance) {
 
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of porals not allowed here");
 		}
 
 		// only add if not already added
-		for (ConduitEntrance e : entrances) {
+		for (ConduitEntranceController e : entrances) {
 			if (e.equals(entrance)) {
 				throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
 			}
@@ -247,21 +240,21 @@ public abstract class RawKernel {
 	}
 
 	//
-	protected <T extends java.io.Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntrance<T> e = new ConduitEntrance<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
+	protected <T> ConduitEntranceController<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
+		ConduitEntranceController<T> e = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
 		addEntrance(e);
 		return e;
 	}
 	//
 
-	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
+	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
 		addEntrance(e);
 		return e;
 	}
 	//
 
-	protected <T extends java.io.Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
+	protected <T> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
 		return addJNIEntrance(newPortalName, newRate, newDataClass, newDataClass, newTransmuter, newDependencies);
 	}
@@ -306,7 +299,7 @@ public abstract class RawKernel {
 			out.printf(" %-20s\n", exit.getLocalName());
 		}
 		out.printf("\nEntrances (" + entrances.size() + ")\n");
-		for (ConduitEntrance entrance : entrances) {
+		for (ConduitEntranceController entrance : entrances) {
 			out.printf(" %-5s%-20s\n", "", entrance.getLocalName());
 		}
 

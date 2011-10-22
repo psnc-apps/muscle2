@@ -24,5 +24,5 @@ package muscle.core.messaging;
 /**
 @author Jan Hegewald
 */
-public interface SubAgentSrc<T extends java.io.Serializable> {
+public interface SubAgentSrc<T> {
 }

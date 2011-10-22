@@ -24,8 +24,10 @@ import muscle.core.ident.PortalID;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import java.io.IOException;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import muscle.Constant;
+import muscle.core.conduit.communication.Transmitter;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
@@ -38,20 +40,39 @@ this is the (remote) head of a conduit,
 an entrance sends data to the conduit agent
 @author Jan Hegewald
  */
-public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> implements RemoteDataSinkHead<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
+public class ConduitEntranceController<T> extends Portal<T> implements RemoteDataSinkHead<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
 
 	private EntranceDependency[] dependencies;
 	private AID dstAgent;
 	private String dstSink;
 	private DataMessage<DataWrapper<T>> dataMessage;
 	private boolean shouldPause = false;
+	private Transmitter<T, ?> transmitter;
 
-	public ConduitEntrance(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
+	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 
 		dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list		
 	}
 
+	
+	public void setTransmitter(Transmitter<T,?> trans) {
+		this.transmitter = trans;
+	}
+	
+	public ConduitEntranceController<T> getEntrance(String newPortalName) {
+		return new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, 1, null);
+	}
+
+	public void setIncomingQueue(Queue<T> queue) {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	public void apply() {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	
 	@Override
 	public AID dstAgent() {
 		return dstAgent;

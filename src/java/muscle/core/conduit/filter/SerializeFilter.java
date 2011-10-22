@@ -29,7 +29,7 @@ serialize to a byte array
 @author Jan Hegewald
 */
 public class SerializeFilter<E extends Serializable> extends AbstractFilter<E,byte[]> {
-	private ByteDataConverter<E> converter = new ByteDataConverter<E>();
+	private final ByteDataConverter<E> converter = new ByteDataConverter<E>();
 	protected void apply(E subject) {
 		put(converter.serialize(subject));
 	}

@@ -32,7 +32,7 @@ java.util.zip.Deflater.HUFFMAN_ONLY (2)
 <br>note: java.util.zip.Deflater.DEFLATED (8) is not a strategy
 @author Jan Hegewald
  */
-public class GzipByteDataConverter<T extends java.io.Serializable> implements DataConverter<T, byte[]> {
+public class GzipByteDataConverter<T> implements DataConverter<T, byte[]> {
 
 	private Deflater deflater;
 	private Inflater inflater;

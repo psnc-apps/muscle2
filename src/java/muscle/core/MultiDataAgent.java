@@ -150,7 +150,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	// todo: data serialization in separate thread
-	public <E extends java.io.Serializable> void sendMessage(Message<E> msg) {
+	public <E> void sendMessage(Message<E> msg) {
 		DataMessage<E> dmsg = null;
 		if (msg instanceof DataMessage) {
 			dmsg = (DataMessage<E>)msg;

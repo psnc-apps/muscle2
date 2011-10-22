@@ -37,7 +37,7 @@ entrance which can directly be called from native code<br>
 C for conduit type, R for raw jni type
 @author Jan Hegewald
 */
-public class JNIConduitEntrance<R,C extends java.io.Serializable> extends ConduitEntrance<C> {
+public class JNIConduitEntrance<R,C> extends ConduitEntranceController<C> {
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 

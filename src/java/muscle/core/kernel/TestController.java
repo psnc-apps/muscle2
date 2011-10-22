@@ -178,7 +178,7 @@ public class TestController extends CAController {
 
 
 	//
-	private class FileReaderEntrance extends muscle.core.ConduitEntrance {
+	private class FileReaderEntrance extends muscle.core.ConduitEntranceController {
 
 		private int timestep;
 		private final int dt; // use seconds internally

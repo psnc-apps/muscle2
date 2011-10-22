@@ -29,6 +29,6 @@ receive events about kernel status
 public interface KernelListener {
 
 	public void notifyKernelActivated(RawKernel kernel);
-	public void notifyEntranceAdded(muscle.core.ConduitEntrance entrance);
+	public void notifyEntranceAdded(muscle.core.ConduitEntranceController entrance);
 	public void notifyExitAdded(muscle.core.ConduitExit exit);
 }

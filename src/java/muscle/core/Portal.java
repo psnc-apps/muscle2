@@ -30,29 +30,20 @@ import muscle.core.kernel.InstanceController;
 
 //
 public abstract class Portal<T> implements Serializable {
-	public static final int LOOSE = -1; // if there is no rate accociated with this portal
-	transient InstanceController ownerAgent;
 	private PortalID portalID;
-	private DataTemplate dataTemplate;
 	private int usedCount;
-	private int rate;
-	private DecimalMeasure<Duration> customSITime;
+	private final DecimalMeasure<Duration> customSITime;
+	private DataTemplate dataTemplate;
+	protected InstanceController controller;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
-		ownerAgent = newOwnerAgent;
-		rate = newRate;
-		dataTemplate = newDataTemplate;
-
+		controller = newOwnerAgent;
+		
+	
 		// set custom time to 0
-		customSITime = DecimalMeasure.valueOf(new BigDecimal(0), dataTemplate.getScale().getDt().getUnit());
-	}
-
-	/**
-	if a portal is deserialized, we need to attach it to the current owner agent
-	 */
-	public void setOwner(InstanceController newOwnerAgent) {
-		ownerAgent = newOwnerAgent;
+		customSITime = DecimalMeasure.valueOf(new BigDecimal(0), newDataTemplate.getScale().getDt().getUnit());
+		dataTemplate = newDataTemplate;
 	}
 
 	// remove this in favor of the close method?
@@ -67,23 +58,6 @@ public abstract class Portal<T> implements Serializable {
 		return portalID;
 	}
 
-	public DataTemplate getDataTemplate() {
-		return dataTemplate;
-	}
-
-	/**
-	true if this portal does not pass data at a predefined rate (e.g. every iteration of the kernel) 
-	 */
-	public boolean isLoose() {
-		return rate == LOOSE;
-	}
-	// temporary workaround to be able to use portals only once (their time will increment only once which makes it hard for the RawKernel to tell if it is still in use)
-	private boolean oneShot = false;
-
-	public void oneShot() {
-		oneShot = true;
-	}
-
 	// free our resources and disallow passing of messages
 	// TODO: switch to a NULL implementation after close (put current impl in a strategy and duplicate public interface of that strategy in the portal)
 	private void close() {
@@ -94,34 +68,31 @@ public abstract class Portal<T> implements Serializable {
 	current time of this portal in SI units
 	 */
 	public DecimalMeasure<Duration> getSITime() {
-		if (rate == LOOSE) {
-			// return dt*usedCount*rate
-			return customSITime;
-		} else {
-			// return dt*usedCount*rate
-			return DecimalMeasureTool.multiply(dataTemplate.getScale().getDt(), new BigDecimal(usedCount * rate));
-		}
+		return customSITime;
 	}
 
+	public DataTemplate getDataTemplate() {
+		return this.dataTemplate;
+	}
+	
+	@Override
 	public boolean equals(Object obj) {
 		if (obj == null || !obj.getClass().equals(this.getClass())) return false;
 		
-		return ((Portal) obj).getLocalName().equals(getLocalName());
+		return ((Portal) obj).portalID.equals(portalID);
 	}
 
 	@Override
 	public int hashCode() {
-		return getLocalName().hashCode();
+		return portalID.hashCode();
 	}
 
+	@Override
 	public String toString() {
-		return getLocalName() + " used: " + usedCount + " scale: " + dataTemplate.getScale() + " SI time: " + getSITime();
+		return getLocalName() + " used: " + usedCount + " SI time: " + getSITime();
 	}
 
 	void increment() {
 		usedCount++;
-		if (oneShot) {
-			close();
-		}
 	}
 }

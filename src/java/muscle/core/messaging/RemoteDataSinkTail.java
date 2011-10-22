@@ -27,6 +27,6 @@ import muscle.core.messaging.jade.DataMessage;
 /**
 @author Jan Hegewald
 */
-public interface RemoteDataSinkTail<E extends java.io.Serializable> extends DataSink<E>, SinkObservable<DataMessage<?>> {
+public interface RemoteDataSinkTail<E> extends DataSink<E>, SinkObservable<DataMessage<?>> {
 
 }

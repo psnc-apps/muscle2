@@ -25,7 +25,7 @@ import muscle.core.messaging.jade.DataMessage;
 /**
 @author Jan Hegewald
  */
-public class BasicRemoteDataSinkTail<E extends java.io.Serializable> extends muscle.core.messaging.BasicDataSink<E> implements muscle.core.messaging.RemoteDataSinkTail<E> {
+public class BasicRemoteDataSinkTail<E> extends muscle.core.messaging.BasicDataSink<E> implements muscle.core.messaging.RemoteDataSinkTail<E> {
 
 	// we may add the messages to this queue from different threads, so this queue must be thread safe (or we must handle the synchronization ourself)
 	private SinkObserver<DataMessage<?>> sinkObserver;

@@ -21,8 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.ident;
 
-import jade.core.AID;
-
 import java.io.Serializable;
 
 
@@ -35,15 +33,42 @@ public class PortalID extends JadeAgentID implements Serializable, Identifier {
 		super(newName, newAgentID);
 	}
 	
+	@Override
 	public String getName() {
 		return name+"@"+id.getLocalName();
 	}
 	
+	@Override
 	public IDType getType() {
 		return IDType.port;
 	}
 
+	@Override
 	public Location getLocation() {
 		throw new UnsupportedOperationException("Not supported yet.");
+	}
+	
+	@Override
+	public int compareTo(Identifier t) {
+		if (t instanceof PortalID && super.equals(t)) {
+			return this.name.compareTo(((PortalID)t).name);
+		}
+		else {
+			return super.compareTo(t);
+		}
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!super.equals(o)) return false;
+		return this.name.equals(((PortalID)o).name);
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 31 * hash + super.hashCode();
+		hash = 31 * hash + this.name.hashCode();
+		return hash;
 	}
 }
