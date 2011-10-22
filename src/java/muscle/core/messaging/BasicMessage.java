@@ -4,6 +4,7 @@
 package muscle.core.messaging;
 
 import java.io.Serializable;
+import muscle.core.wrapper.Observation;
 
 /**
  *
@@ -22,7 +23,7 @@ public class BasicMessage<E> implements Message<E>, Serializable {
 		this.nextTime = nextTime;
 	}
 
-	public E getData() {
+	public E getRawData() {
 		return obs.getData();
 	}
 

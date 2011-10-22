@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 multiplies every value of incoming data with a constant factor
@@ -35,7 +35,7 @@ public class MultiplyFilterDouble extends AbstractWrapperFilter<double[],double[
 		factor = newFactor;
 	}
 
-	protected void apply(DataWrapper<double[]> subject) {
+	protected void apply(Observation<double[]> subject) {
 		double[] inData = subject.getData();
 
 		for (int i = 0; i < inData.length; i++) {			

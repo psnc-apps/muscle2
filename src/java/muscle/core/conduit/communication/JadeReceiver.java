@@ -6,45 +6,30 @@ package muscle.core.conduit.communication;
 import jade.lang.acl.ACLMessage;
 import muscle.core.ident.PortalID;
 import muscle.core.messaging.Message;
+import muscle.core.messaging.jade.ObservationMessage;
 import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.wrapper.Observation;
+import muscle.exception.MUSCLERuntimeException;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeReceiver<T> implements Receiver<T, ACLMessage> {
-	private DataConverter<Message<T>, ACLMessage> deserializer;
-	private PortalID portalID;
-	
+public class JadeReceiver<T> extends AbstractCommunicatingPoint<Message<T>, ACLMessage> implements Receiver<T, ACLMessage> {
 	@Override
-	public void setDeserializer(DataConverter<Message<T>, ACLMessage> deserializer) {
-		this.deserializer = deserializer;
-	}
-
-	@Override
-	public void setTransmittingPort(PortalID id) {
-		this.portalID = id;
-	}
-
-	@Override
-	public Message<T> receive() {
-		
-		DataMessage<DataWrapper<T>> dmsg = null;
+	public Message<T> receive() {		
+		ObservationMessage<Observation<T>> dmsg = null;
 		try {
 			dmsg = sinkDelegate.take();
 		} catch (InterruptedException ex) {
 			throw new MUSCLERuntimeException(ex);
 		}
 				
-		DataWrapper<T> wrapper = dmsg.getData();
+		Observation<T> wrapper = dmsg.getData();
 		T data = wrapper.getData();
 		
-		assert getDataTemplate().getDataClass().isInstance(data);
-
-		increment();
-		
 		return data;
-		
+	}
 		
 	// deserialize
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

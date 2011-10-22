@@ -46,7 +46,7 @@ import muscle.core.DataTemplate;
 import muscle.utilities.RemoteOutputStream;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.core.conduit.filter.FilterTail;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 /**
 unidirectional pipe
@@ -232,7 +232,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 		}
 
 		// init filter chain
-		FilterTail<DataMessage> filters = new DataSenderFilterTail(this);
+		FilterTail<ObservationMessage> filters = new DataSenderFilterTail(this);
 
 		MessageReceiverBehaviour receiver = new MessageReceiverBehaviour(filters, this);
 		addBehaviour(receiver);
@@ -266,11 +266,11 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 	}
 
 	private RemoteOutputStream newTraceReceiveStream() {
-		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Entrance_" + entranceName + "--f" + entranceDataTemplate.getScale().getDt() + ".txt", 1024);
+		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Entrance_" + entranceName + "--f.txt", 1024);
 	}
 
 	private RemoteOutputStream newTraceSendStream() {
-		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Exit_" + exitName + "--f" + exitDataTemplate.getScale().getDt() + ".txt", 1024);
+		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Exit_" + exitName + "--f.txt", 1024);
 	}
 
 	/**

@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 drops data if incoming time scale is not a multiple of outgoing dt, newInDt is only required to build the corresponding DataTemplate for incomming data
@@ -38,7 +38,7 @@ public class DropFilter<E> extends AbstractWrapperFilter<E,E> {
 		outRate = newInDtSec;
 	}
 
-	protected void apply(DataWrapper<E> subject) {
+	protected void apply(Observation<E> subject) {
 		if(counter % outRate == 0)
 			put(subject);
 		

@@ -5,6 +5,8 @@ package muscle.core;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.conduit.communication.Receiver;
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
@@ -18,14 +20,20 @@ public class ConduitExitController<T> extends Portal<T> {
 	private Receiver<T, ?> receiver;
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<T> queue;
+	private static final Logger logger = Logger.getLogger(ConduitExitController.class.getName());
 
 	public ConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 		this.queue = new LinkedBlockingQueue<T>();
+		this.receiver = null;
+		this.conduitExit = null;
 	}
 	
-	public void setReceiver(Receiver<T, ?> recv) {
+	public synchronized void setReceiver(Receiver<T, ?> recv) {
 		this.receiver = recv;
+		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
+
+		this.notifyAll();
 	}
 	
 	BlockingQueue<T> getQueue() {
@@ -42,9 +50,30 @@ public class ConduitExitController<T> extends Portal<T> {
 
 	@Override
 	protected void execute() {
-		Message<T> msg = this.receiver.receive();
-		if (msg != null) {
-			this.queue.add(msg.getData());
+		try {
+			Receiver<T, ?> recv = waitForReceiver();
+			if (recv != null) {
+				Message<T> msg = this.receiver.receive();
+				if (msg != null) {
+					this.queue.add(msg.getRawData());
+				}
+			}
+		} catch (InterruptedException ex) {
+			logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
 		}
+	}
+	
+	private synchronized Receiver<T, ?> waitForReceiver() throws InterruptedException {
+		while (!isDone && this.receiver == null) {
+			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
+			wait(WAIT_FOR_ATTACHMENT_MILLIS);
+		}
+		return this.receiver;
+	}
+	
+	@Override
+	public synchronized void dispose() {
+		receiver = null;
+		super.dispose();
 	}
 }

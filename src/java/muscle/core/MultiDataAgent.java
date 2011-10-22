@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import jade.core.Location;
 import jade.core.MessageQueue;
 import muscle.core.messaging.jade.IncomingMessageProcessor;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 import muscle.core.messaging.signal.Signal;
 import muscle.core.messaging.signal.QueueLimitExceededSignal;
 import muscle.core.messaging.signal.QueueWithinLimitSignal;
@@ -44,6 +44,7 @@ import muscle.core.ident.JadeAgentID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.SinkObserver;
+import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.SortingMessageQueue;
 import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.utilities.ObservableLinkedBlockingQueue;
@@ -52,11 +53,11 @@ import muscle.utilities.ObservableLinkedBlockingQueue;
 JADE agent which filters incoming data messages and passes them to multiple message sinks
 @author Jan Hegewald
  */
-public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<DataMessage<?>>, InstanceController {
+public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<ObservationMessage<?>>, InstanceController {
 	private transient IncomingMessageProcessor messageProcessor;
 	private static final transient Logger logger = AgentLogger.getLogger(MultiDataAgent.class.getName());
 	private volatile long bufferSizeCount = 0;
-	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
+	private ObservableLinkedBlockingQueue<ObservationMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<ObservationMessage<?>>();
 	private final List<AID> toldToPauseList = Collections.synchronizedList(new LinkedList<AID>());
 
 	private List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
@@ -149,9 +150,9 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 
 	// todo: data serialization in separate thread
 	public <E> void sendMessage(Message<E> msg) {
-		DataMessage<E> dmsg = null;
-		if (msg instanceof DataMessage) {
-			dmsg = (DataMessage<E>)msg;
+		ObservationMessage<E> dmsg = null;
+		if (msg instanceof ObservationMessage) {
+			dmsg = (ObservationMessage<E>)msg;
 		}
 		assert !dmsg.hasByteSequenceContent();
 
@@ -168,7 +169,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	// an incoming DataMessage has arrived at this agent
-	public void handleDataMessage(DataMessage dmsg, long byteCount) {
+	public void handleDataMessage(ObservationMessage dmsg, long byteCount) {
 
 		// put message to its sink
 		// there we process all generic data messages
@@ -233,7 +234,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	@Override
-	public void notifySinkWillYield(DataMessage dmsg) {
+	public void notifySinkWillYield(ObservationMessage dmsg) {
 		assert dmsg.getByteCount() != null : "[" + getLocalName() + "] DataMessage#getByteCount must not be <null> here";
 
 		synchronized (toldToPauseList) {

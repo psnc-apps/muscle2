@@ -16,7 +16,6 @@ import jade.lang.acl.MessageTemplate;
 import jadetool.DFServiceTool;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,14 +28,13 @@ import javatool.LoggerTool;
 import muscle.Constant;
 import muscle.core.Boot;
 import muscle.core.ConduitEntranceController;
-import muscle.core.ConduitExit;
 import muscle.core.ConduitExitController;
 import muscle.core.MultiDataAgent;
 import muscle.core.Plumber;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.SinkObserver;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 import muscle.exception.MUSCLERuntimeException;
 import utilities.JVM;
 import utilities.MiscTool;
@@ -46,7 +44,7 @@ import utilities.Timing;
  *
  * @author Joris Borgdorff
  */
-public class JadeInstanceController extends MultiDataAgent implements SinkObserver<DataMessage<?>>, InstanceController {
+public class JadeInstanceController extends MultiDataAgent implements SinkObserver<ObservationMessage<?>>, InstanceController {
 	private Timing stopWatch;
 	private boolean execute = true;
 	private File infoFile;
@@ -57,8 +55,10 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		super.takeDown();
 
 		for (ConduitEntranceController entrance : kernel.entrances) {
-			entrance.detachDestination();
-			entrance.detachOwnerAgent();
+			entrance.dispose();
+		}
+		for (ConduitExitController exit : kernel.exits) {
+			exit.dispose();
 		}
 
 		getLogger().log(Level.INFO, "kernel tmp dir: {0}", kernel.getTmpPath());
@@ -292,69 +292,32 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		agentDescription.setName(getAID());
 
 		ServiceDescription entranceDescription = new ServiceDescription();
-//		entranceDescription.addLanguages("serialized ConduitEntrance");
 		entranceDescription.addProtocols(Constant.Protocol.ANNOUNCE_ENTRANCE);
 		entranceDescription.setType(Constant.Service.ENTRANCE); // this is mandatory
 		entranceDescription.setName("ConduitEntrance"); // this is mandatory
+
 		// add a property for every entrance
 		for (int i = 0; i < kernel.entrances.size(); i++) {
-
-//System.out.println("settin value:"+entrances.get(i).getClass().getName());
-
-//// quick workaround because the property value is always a String when received by other agents
-//LinkedList<String> propList = new LinkedList<String>();
-////propList.add(entrances.get(i).getConduitPackageName());
-//propList.add(entrances.get(i).getName());
-//propList.add(entrances.get(i).getDataTemplate().getDataType());
-//Property prop = new Property("ConduitEntrance", utilities.MiscTool.listToString(propList));
-			//Property prop = new Property("ConduitEntrance", entrances.get(i));
-
-//System.out.println("propname:"+prop.getName());
-//System.out.println("value:"+prop.getValue().getClass().getName());
-
-
 			HashMap<String, String> entranceProperties = new HashMap<String, String>();
 
-			//Property prop = new Property("ConduitEntrance.Name", entrances.get(i).getName());
-			//entranceDescription.addProperties(prop);
 			entranceProperties.put("Name", kernel.entrances.get(i).getLocalName());
 
 			XStream xstream = new XStream();
-			//prop = new Property("ConduitEntrance.DataTemplate", xstream.toXML(entrances.get(i).getDataTemplate()));
-			//entranceDescription.addProperties(prop);
-			entranceProperties.put("DataTemplate", xstream.toXML(kernel.entrances.get(i).getDataTemplate()));
-
-			//prop = new Property("ConduitEntrance.Dependencies", xstream.toXML(entrances.get(i).getDependencies()));
-			//entranceDescription.addProperties(prop);
-			entranceProperties.put("Dependencies", xstream.toXML(kernel.entrances.get(i).getDependencies()));
-
 			entranceDescription.addProperties(new Property(Constant.Key.ENTRANCE_INFO, xstream.toXML(entranceProperties)));
 		}
 		agentDescription.addServices(entranceDescription);
 
 		ServiceDescription exitDescription = new ServiceDescription();
-//		exitDescription.addLanguages("serialized ConduitExit");
 		exitDescription.addProtocols(Constant.Protocol.ANNOUNCE_EXIT);
 		exitDescription.setType(Constant.Service.EXIT); // this is mandatory
 		exitDescription.setName("ConduitExit"); // this is mandatory
+		
 		// add a property for every exit
 		for (int i = 0; i < kernel.exits.size(); i++) {
-//
-//// quick workaround because the property value is always a String when received by other agents
-//LinkedList<String> propList = new LinkedList<String>();
-////propList.add(exits.get(i).getConduitPackageName());
-//propList.add(exits.get(i).getName());
-//propList.add(exits.get(i).getDataTemplate().getDataType());
-//Property prop = new Property("ConduitExit", utilities.MiscTool.listToString(propList));
-			//Property prop = new Property("ConduitExit", exits.get(i));
-
-
 			HashMap<String, String> exitProperties = new HashMap<String, String>();
 			exitProperties.put("Name", kernel.exits.get(i).getLocalName());
 
 			XStream xstream = new XStream();
-			exitProperties.put("DataTemplate", xstream.toXML(kernel.exits.get(i).getDataTemplate()));
-
 			exitDescription.addProperties(new Property(Constant.Key.EXIT_INFO, xstream.toXML(exitProperties)));
 		}
 		agentDescription.addServices(exitDescription);
@@ -365,8 +328,6 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		} catch (FIPAException e) {
 			throw new RuntimeException(e);
 		}
-
-
 	}
 
 	private AID waitForPlumber() {

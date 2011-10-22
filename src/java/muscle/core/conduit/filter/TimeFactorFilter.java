@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 modifies timestep with a given factor
@@ -35,7 +35,7 @@ public class TimeFactorFilter<E> extends AbstractWrapperFilter<E,E> {
 		factor = newFactor;
 	}
 
-	protected void apply(DataWrapper<E> subject) {		
-		put(new DataWrapper<E>(subject.getData(), subject.getSITime().multiply(factor)));
+	protected void apply(Observation<E> subject) {		
+		put(new Observation<E>(subject.getData(), subject.getTimestamp().multiply(factor)));
 	}
 }

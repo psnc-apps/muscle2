@@ -7,10 +7,8 @@ import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import java.io.IOException;
 import muscle.Constant;
-import muscle.core.ident.PortalID;
 import muscle.core.messaging.Message;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.messaging.jade.ObservationMessage;
 import muscle.core.messaging.signal.DetachConduitSignal;
 import muscle.core.messaging.signal.Signal;
 import muscle.exception.MUSCLERuntimeException;
@@ -19,27 +17,25 @@ import muscle.exception.MUSCLERuntimeException;
  *
  * @author Joris Borgdorff
  */
-public class JadeTransmitter<T> implements Transmitter<T, byte[]> {
-	private DataConverter<T, byte[]> serializer;
+public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[]> implements Transmitter<T, byte[]> {
 	private Agent senderAgent;
-	private PortalID recvPortalID;
 	
 	public JadeTransmitter(Agent senderAgent) {
 		this.senderAgent = senderAgent;
 	}
 	
 	public void transmit(Message<T> msg) {
-		if (serializer == null) {
+		if (converter == null) {
 			throw new IllegalStateException("Can not send message without serialization");
 		}
-		if (!(msg instanceof DataMessage)) {
+		if (!(msg instanceof ObservationMessage)) {
 			throw new IllegalArgumentException("Can only send data messages");
 		}
-		DataMessage<T> dmsg = (DataMessage<T>) msg;
+		ObservationMessage<T> dmsg = (ObservationMessage<T>) msg;
 		assert !dmsg.hasByteSequenceContent();
 
 		byte[] rawData = null;
-		rawData = serializer.serialize(dmsg.getData());
+		rawData = converter.serialize(dmsg.getRawData());
 // 		rawData = MiscTool.gzip(dmsg.getStored());
 
 		dmsg.setByteSequenceContent(rawData);
@@ -48,14 +44,6 @@ public class JadeTransmitter<T> implements Transmitter<T, byte[]> {
 		// send data to target agent
 		senderAgent.send(dmsg);
 		dmsg.setByteSequenceContent(null);
-	}
-
-	public void setSerializer(DataConverter<T, byte[]> serializer) {
-		this.serializer = serializer;
-	}
-
-	public void setReceivingPort(PortalID id) {
-		this.recvPortalID = id;
 	}
 
 	public void signal(Signal signal) {
@@ -75,7 +63,7 @@ public class JadeTransmitter<T> implements Transmitter<T, byte[]> {
 			throw new MUSCLERuntimeException();
 		}
 
-		msg.addReceiver(recvPortalID.getAID());
+		msg.addReceiver(portalID.getAID());
 		return msg;
 	}
 	

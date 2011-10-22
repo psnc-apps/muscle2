@@ -4,13 +4,13 @@
 package muscle.core.conduit.filter;
 
 import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractThreadedWrapperFilter<E,F> extends AbstractThreadedFilter<DataWrapper<E>,DataWrapper<F>> implements WrapperFilter<E,F> {
+public abstract class AbstractThreadedWrapperFilter<E,F> extends AbstractThreadedFilter<Observation<E>,Observation<F>> implements WrapperFilter<E,F> {
 	protected DataTemplate<E> inTemplate;
 	
 	public void setQueueConsumer(WrapperQueueConsumer<F> qc) {

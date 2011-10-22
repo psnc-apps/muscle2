@@ -22,7 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.messaging.Duration;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 modifies timestep with a given offset
@@ -37,7 +37,7 @@ public class TimeOffsetFilter<E> extends AbstractWrapperFilter<E,E> {
 		offset = new Duration(newOffset);
 	}
 
-	protected void apply(DataWrapper<E> subject) {
-		put(new DataWrapper<E>(subject.getData(), subject.getSITime().add(offset)));
+	protected void apply(Observation<E> subject) {
+		put(new Observation<E>(subject.getData(), subject.getTimestamp().add(offset)));
 	}
 }

@@ -35,25 +35,20 @@ public abstract class Portal<T> extends SafeThread implements Serializable {
 	protected final PortalID portalID;
 	private int usedCount;
 	protected Timestamp customSITime;
-	protected InstanceController controller;
+	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
-		controller = newOwnerAgent;	
 	
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
-	}
-
-	/**
-	if a portal is deserialized, we need to attach it to the current owner agent
-	 */
-	public void setOwner(InstanceController newOwnerAgent) {
-		controller = newOwnerAgent;
+		usedCount = 0;
 	}
 
 	// remove this in favor of the close method?
-	public void detachOwnerAgent() {
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
 	}
 
 	public String getLocalName() {

@@ -21,14 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald
 */
 public class ConsoleWriterFilter<E> extends AbstractWrapperFilter<E,E> {
-	protected void apply(DataWrapper<E> subject) {
+	protected void apply(Observation<E> subject) {
 		System.out.println(subject.toString());
 		
 		put(subject);

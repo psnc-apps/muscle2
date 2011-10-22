@@ -21,12 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 interface for conduit filters which act on wrapped data
 */
-public interface WrapperFilter<E,F> extends WrapperQueueConsumer<E>, QueueProducer<DataWrapper<F>> {
+public interface WrapperFilter<E,F> extends WrapperQueueConsumer<E>, QueueProducer<Observation<F>> {
 	public void setQueueConsumer(WrapperQueueConsumer<F> qc);
 }
 

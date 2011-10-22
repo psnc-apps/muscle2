@@ -22,14 +22,13 @@ package muscle.core.conduit;
 
 import java.util.ArrayList;
 import java.util.logging.Level;
-import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.logging.AgentLogger;
 import utilities.MiscTool;
 import java.lang.reflect.Constructor;
 import muscle.core.conduit.filter.*;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 /**
 will automatically create a filter chain from a list of filter names<br>
@@ -43,13 +42,13 @@ public class AutomaticConduit extends BasicConduit {
 	@Override
 	protected void constructMessagePassingMechanism() {
 		// init filter chain
-		Filter<DataMessage,DataWrapper>  filters = initFilterChain(new DataSenderFilterTail(this));
+		Filter<ObservationMessage,Observation>  filters = initFilterChain(new DataSenderFilterTail(this));
 
 		MessageReceiverBehaviour receiver = new MessageReceiverBehaviour(filters, this);
 		addBehaviour(receiver);
 	}
 
-	protected Filter<DataMessage,DataWrapper> initFilterChain(final FilterTail<DataMessage> filterTail) {
+	protected Filter<ObservationMessage,Observation> initFilterChain(final FilterTail<ObservationMessage> filterTail) {
 		AgentLogger logger = AgentLogger.getLogger(this);
 		logger.log(Level.FINE, "filter args: <{0}>", MiscTool.joinItems(getOptionalArgs(), ", "));
 
@@ -60,25 +59,25 @@ public class AutomaticConduit extends BasicConduit {
 			filterArgs.add((String) o);
 		}
 
-		final DataMessage dataMessage = new DataMessage(exitName);
+		final ObservationMessage dataMessage = new ObservationMessage(exitName);
 		dataMessage.addReceiver(this.exitAgent);
 
 		// At the end, convert wrappers back to messages
-		final Filter<DataWrapper, DataMessage> wrapper2dmsg = new AbstractFilter<DataWrapper, DataMessage>(filterTail) {
+		final Filter<Observation, ObservationMessage> wrapper2dmsg = new AbstractFilter<Observation, ObservationMessage>(filterTail) {
 			@Override
-			protected void apply(DataWrapper in) {
+			protected void apply(Observation in) {
 				dataMessage.store(in, null);
 				put(dataMessage);
 			}
 		};
 
-		QueueConsumer<DataWrapper> filters = automaticPipeline(filterArgs, wrapper2dmsg);
+		QueueConsumer<Observation> filters = automaticPipeline(filterArgs, wrapper2dmsg);
 
 		// At the beginning, convert messages to wrappers
-		final Filter<DataMessage,DataWrapper> dmsg2wrapper = new AbstractFilter<DataMessage,DataWrapper>(filters) {
+		final Filter<ObservationMessage,Observation> dmsg2wrapper = new AbstractFilter<ObservationMessage,Observation>(filters) {
 			@Override
-			public void apply(DataMessage in) {
-				DataWrapper wrapper = (DataWrapper)in.getData();
+			public void apply(ObservationMessage in) {
+				Observation wrapper = (Observation)in.getData();
 				put(wrapper);
 			}
 		};
@@ -86,8 +85,8 @@ public class AutomaticConduit extends BasicConduit {
 		return dmsg2wrapper;
 	}
 
-	private QueueConsumer<DataWrapper> automaticPipeline(ArrayList<String> filterNames,  QueueConsumer<DataWrapper> tailFilter) {
-		QueueConsumer<DataWrapper> filter = tailFilter;
+	private QueueConsumer<Observation> automaticPipeline(ArrayList<String> filterNames,  QueueConsumer<Observation> tailFilter) {
+		QueueConsumer<Observation> filter = tailFilter;
 		for (int i = filterNames.size() - 1; i > -1; i--) {
 			filter = filterForName(filterNames.get(i), filter);
 		}
@@ -95,7 +94,7 @@ public class AutomaticConduit extends BasicConduit {
 		return filter;
 	}
 
-	private WrapperFilter filterForName(String fullName, QueueConsumer<DataWrapper> tailFilter) {
+	private WrapperFilter filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once
 		String name = tmp[0];
@@ -118,9 +117,7 @@ public class AutomaticConduit extends BasicConduit {
 		} 
 		
 		// filters with mandatory args
-		else if (name.equals("reproduce")) {
-			filter = new ReproduceFilterDouble(Integer.valueOf(remainder));
-		} else if (name.equals("multiply")) {
+		else if (name.equals("multiply")) {
 			filter = new MultiplyFilterDouble(Double.valueOf(remainder));
 		} else if (name.equals("drop")) {
 			filter = new DropFilter(Integer.valueOf(remainder));

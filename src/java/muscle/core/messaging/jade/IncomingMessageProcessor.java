@@ -33,12 +33,12 @@ process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends java.lang.Thread implements QueueConsumer<DataMessage<?>> {
+public class IncomingMessageProcessor extends java.lang.Thread implements QueueConsumer<ObservationMessage<?>> {
 	private final MultiDataAgent owner;
 	private boolean shouldRun = true;
-	private final Queue<DataMessage<?>> queue;
+	private final Queue<ObservationMessage<?>> queue;
 
-	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<DataMessage<?>> newQueue) {
+	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<ObservationMessage<?>> newQueue) {
 		owner = newOwner;
 		queue = newQueue;
 	}
@@ -66,7 +66,7 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 		while (shouldRun) {
 			// blocking poll for next message
 
-			DataMessage dmsg = null;
+			ObservationMessage dmsg = null;
 			synchronized (this) {
 				while (shouldRun && ((dmsg = queue.poll()) == null)) {
 					try {
@@ -83,7 +83,7 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 		}
 	}
 
-	private void put(DataMessage dmsg) {
+	private void put(ObservationMessage dmsg) {
 		// deserialize message content and store it in the message object
 		long byteCount = 0;
 		if (dmsg.hasByteSequenceContent()) {
@@ -111,7 +111,7 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 	}
 	
 	@Override
-	public void setIncomingQueue(Queue<DataMessage<?>> queue) {
+	public void setIncomingQueue(Queue<ObservationMessage<?>> queue) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

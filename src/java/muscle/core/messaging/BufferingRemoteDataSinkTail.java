@@ -21,14 +21,14 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core.messaging;
 
 import java.util.concurrent.LinkedBlockingQueue;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 /**
 @author Jan Hegewald
  */
 public class BufferingRemoteDataSinkTail<E> extends BasicDataSink<E> implements RemoteDataSinkTail<E> {
 	// we may add the messages to this queue from different threads, so this queue must be thread safe (or we must handle the synchronization ourself)
-	private SinkObserver<DataMessage<?>> sinkObserver;
+	private SinkObserver<ObservationMessage<?>> sinkObserver;
 
 	public BufferingRemoteDataSinkTail(String newID) {
 		super(newID, new LinkedBlockingQueue<E>());
@@ -37,12 +37,12 @@ public class BufferingRemoteDataSinkTail<E> extends BasicDataSink<E> implements 
 	@Override
 	public E take() throws InterruptedException {
 		E val = super.take();
-		sinkObserver.notifySinkWillYield((DataMessage<?>) val);
+		sinkObserver.notifySinkWillYield((ObservationMessage<?>) val);
 		return val;
 	}
 
 	@Override
-	public void addObserver(SinkObserver<DataMessage<?>> o) {
+	public void addObserver(SinkObserver<ObservationMessage<?>> o) {
 		sinkObserver = o;
 	}
 }

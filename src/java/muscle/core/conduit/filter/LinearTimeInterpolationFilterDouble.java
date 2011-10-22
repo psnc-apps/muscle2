@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 interpolates between current and last timestep<br>
@@ -49,7 +49,7 @@ public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter<d
 		this.dtFactor = dtFactor;
 	}
 	
-	public void apply(DataWrapper<double[]> subject) {
+	public void apply(Observation<double[]> subject) {
 		// init lastCoarseData buffer
 		// create our buffer for out data only once
 		if(lastCoarseData == null) {
@@ -71,8 +71,8 @@ public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter<d
 		// retain the current coarse data to be able to calculate the next timestep
 		lastCoarseData = (subject.getData()).clone();
 		
-		DataWrapper<double[]> interpolatedData = new DataWrapper<double[]>(interpolatedArray, subject.getSITime().divide(dtFactor));
-		assert interpolatedData.getSITime().compareTo(subject.getSITime()) != 0;
+		Observation<double[]> interpolatedData = new Observation<double[]>(interpolatedArray, subject.getTimestamp().divide(dtFactor));
+		assert interpolatedData.getTimestamp().compareTo(subject.getTimestamp()) != 0;
 		
 		// feed next filter with interpolated data for last fine timestep
 		put(interpolatedData);

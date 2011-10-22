@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 import muscle.core.DataTemplate;
 import utilities.array3d.Array3D_double;
 import utilities.array2d.Array2D_double;
@@ -36,7 +36,7 @@ public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter<Array3D_doubl
 		this.inTemplate = new DataTemplate<Array3D_double>(Array3D_double.class);
 	}
 	
-	protected void apply(DataWrapper<Array3D_double> subject) {
+	protected void apply(Observation<Array3D_double> subject) {
 		Array3D_double inData = subject.getData();
 		
 		int width = inData.getX1Size();
@@ -58,7 +58,7 @@ public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter<Array3D_doubl
 				outData.set(ix, iy, val);
 			}
 		}
-		put(new DataWrapper<Array2D_double>(outData, subject.getSITime()));
+		put(new Observation<Array2D_double>(outData, subject.getTimestamp()));
 	}
 }
 

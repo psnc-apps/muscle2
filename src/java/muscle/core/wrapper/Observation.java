@@ -27,11 +27,11 @@ import muscle.core.messaging.Timestamp;
 container for a data message
 @author Jan Hegewald
 */
-public class DataWrapper<T> implements java.io.Serializable {
+public class Observation<T> implements java.io.Serializable {
 	private Timestamp siTime; // global time where this data belongs to (may be null)
 	private T data; // our unwrapped data
 
-	public DataWrapper(T newData, Timestamp newSITime) {
+	public Observation(T newData, Timestamp newSITime) {
 		siTime = newSITime;
 		data = newData;
 	}
@@ -40,7 +40,7 @@ public class DataWrapper<T> implements java.io.Serializable {
 		return data;
 	}
 
-	public Timestamp getSITime() {
+	public Timestamp getTimestamp() {
 		return siTime;
 	}
 

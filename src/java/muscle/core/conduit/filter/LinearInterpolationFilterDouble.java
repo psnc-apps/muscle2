@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 interpolates two adjacent values of the incoming data array
@@ -29,7 +29,7 @@ for this filter to work, the incoming data must have one value more than the out
 @author Jan Hegewald
 */
 public class LinearInterpolationFilterDouble extends AbstractWrapperFilter<double[],double[]> {
-	protected void apply(DataWrapper<double[]> subject) {
+	protected void apply(Observation<double[]> subject) {
 		double[] inData = subject.getData();
 		double[] outData = new double[inData.length-1];
 
@@ -38,7 +38,7 @@ public class LinearInterpolationFilterDouble extends AbstractWrapperFilter<doubl
 			outData[i] = ( inData[i] + inData[i+1]) / 2.0;
 		}
 		
-		put(new DataWrapper<double[]>(outData, subject.getSITime()));
+		put(new Observation<double[]>(outData, subject.getTimestamp()));
 	}
 }
 

@@ -22,13 +22,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 /**
 exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-public abstract class WrapperFilterTail<E> extends FilterTail<DataWrapper<E>> implements WrapperQueueConsumer<E> {
+public abstract class WrapperFilterTail<E> extends FilterTail<Observation<E>> implements WrapperQueueConsumer<E> {
 	private final DataTemplate<E> template;
 
 	public WrapperFilterTail(DataTemplate<E> inTemplate) {

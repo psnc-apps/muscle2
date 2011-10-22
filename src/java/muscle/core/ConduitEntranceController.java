@@ -41,15 +41,21 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	private Transmitter<T, ?> transmitter;
 	private Queue<Message<T>> queue;
 	private boolean apply;
+	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 		this.shouldPause = false;
 		this.apply = false;
+		this.transmitter = null;
+		this.queue = null;
+		this.conduitEntrance = null;
 	}
 
-	public void setTransmitter(Transmitter<T,?> trans) {
+	public synchronized void setTransmitter(Transmitter<T,?> trans) {
+		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
+		this.notifyAll();
 	}
 	
 	public void setEntrance(ConduitEntrance<T> entrance) {		
@@ -77,7 +83,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 				}
 			}
 		} catch (InterruptedException ex) {
-			Logger.getLogger(ConduitEntranceController.class.getName()).log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
+			logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
 		}
 	}
 	
@@ -92,11 +98,19 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns true if the thread is no longer paused and false if the thread should stop. */
-	private synchronized boolean waitForUnpause() throws InterruptedException {
-		while (!isDone && shouldPause) {
-			this.wait();
+	private synchronized Transmitter<T, ?> waitForTransmitter() throws InterruptedException {
+		while (!isDone && (shouldPause || transmitter == null)) {
+			if (logger.isLoggable(Level.FINE)) {
+				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
+				if (queue != null) {
+					msg += queue.size() + " messages ";
+				}
+				msg += "over.";
+				logger.fine(msg);
+			}
+			this.wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
-		return !shouldPause;
+		return transmitter;
 	}
 
 	public synchronized void pause() {
@@ -109,28 +123,26 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		this.notifyAll();
 	}
 	
+	@Override
 	public synchronized void dispose() {
-		this.isDone = true;
-		this.notifyAll();
+		// if we are connected to a conduit, tell conduit to detach this exit
+		if (transmitter != null) {
+			transmitter.signal(new DetachConduitSignal());
+		}
+		transmitter = null;
+
+		super.dispose();
 	}
 	
 	/**
 	pass raw unwrapped data to this entrance
 	 */
 	private void send(Message<T> msg) throws InterruptedException {
-		if (waitForUnpause()) {
+		Transmitter<T, ?> trans = waitForTransmitter();
+		if (trans != null) {
 			this.customSITime = msg.getObservation().getTimestamp();
-			transmitter.transmit(msg);
+			trans.transmit(msg);
+			increment();
 		}
-
-		increment();
-	}
-
-	public void detachDestination() {
-		// if we are connected to a conduit, tell conduit to detach this exit
-		if (transmitter != null) {
-			transmitter.signal(new DetachConduitSignal());
-		}
-		transmitter = null;
 	}
 }

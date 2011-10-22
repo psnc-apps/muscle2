@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 
 
 /**
@@ -37,5 +37,5 @@ public class NullFilter<E,F> extends AbstractWrapperFilter<E,F> {
 		}
 	}
 	
-	protected void apply(DataWrapper<E> subject) {}
+	protected void apply(Observation<E> subject) {}
 }

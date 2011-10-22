@@ -21,12 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.messaging;
 
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 
 /**
 @author Jan Hegewald
 */
-public interface RemoteDataSinkTail<E> extends DataSink<E>, SinkObservable<DataMessage<?>> {
+public interface RemoteDataSinkTail<E> extends DataSink<E>, SinkObservable<ObservationMessage<?>> {
 
 }

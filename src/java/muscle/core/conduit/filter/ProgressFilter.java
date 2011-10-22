@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 import muscle.gui.ProgressMeter;
 
 /**
@@ -32,7 +32,7 @@ but allows the user to pause the message passing via a GUI
 public class ProgressFilter<E> extends AbstractWrapperFilter<E,E> {
 	private final ProgressMeter progress = new ProgressMeter("ProgressFilter");
 
-	protected void apply(DataWrapper<E> subject) {
+	protected void apply(Observation<E> subject) {
 		progress.increment();
 		put(subject);
 	}

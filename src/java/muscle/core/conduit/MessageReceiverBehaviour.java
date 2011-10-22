@@ -12,26 +12,26 @@ import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.messaging.BufferingRemoteDataSinkTail;
 import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteDataSinkTail<DataMessage<?>> {
-	private FilterHead<DataMessage> headFilter;
-	private RemoteDataSinkTail<DataMessage<?>> receiver;
+public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteDataSinkTail<ObservationMessage<?>> {
+	private FilterHead<ObservationMessage> headFilter;
+	private RemoteDataSinkTail<ObservationMessage<?>> receiver;
 	BasicConduit outer;
 
-	public MessageReceiverBehaviour(QueueConsumer<DataMessage> newFilter, BasicConduit outer) {
-		this(new FilterHead<DataMessage>(newFilter), outer);
+	public MessageReceiverBehaviour(QueueConsumer<ObservationMessage> newFilter, BasicConduit outer) {
+		this(new FilterHead<ObservationMessage>(newFilter), outer);
 		this.outer = outer;
 	}
 
-	public MessageReceiverBehaviour(FilterHead<DataMessage> newFilterHead, BasicConduit outer) {
+	public MessageReceiverBehaviour(FilterHead<ObservationMessage> newFilterHead, BasicConduit outer) {
 		this.outer = outer;
 		headFilter = newFilterHead;
-		receiver = new BufferingRemoteDataSinkTail<DataMessage<?>>(outer.exitName);
+		receiver = new BufferingRemoteDataSinkTail<ObservationMessage<?>>(outer.exitName);
 		receiver.addObserver(outer);
 		outer.addSource(receiver);
 	}
@@ -39,7 +39,7 @@ public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteD
 	// receive from entrance
 	@Override
 	public void action() {
-		DataMessage dmsg = null;
+		ObservationMessage dmsg = null;
 		try {
 			dmsg = poll(60, TimeUnit.SECONDS);
 		} catch (InterruptedException ex) {
@@ -52,12 +52,12 @@ public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteD
 	}
 
 	@Override
-	public void put(DataMessage<?> d) {
+	public void put(ObservationMessage<?> d) {
 		receiver.put(d);
 	}
 
 	@Override
-	public DataMessage<?> take() {
+	public ObservationMessage<?> take() {
 		// we use a custom poll instead of take.
 		// super.take would call notifySinkWillYield AND also poll,
 		// leading in notifySinkWillYield being called twice
@@ -65,8 +65,8 @@ public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteD
 	}
 
 	@Override
-	public DataMessage<?> poll() {
-		DataMessage<?> val = receiver.poll();
+	public ObservationMessage<?> poll() {
+		ObservationMessage<?> val = receiver.poll();
 		if (val != null) {
 			outer.notifySinkWillYield(val);
 		}
@@ -79,13 +79,13 @@ public class MessageReceiverBehaviour extends CyclicBehaviour implements RemoteD
 	}
 
 	@Override
-	public void addObserver(SinkObserver<DataMessage<?>> o) {
+	public void addObserver(SinkObserver<ObservationMessage<?>> o) {
 		receiver.addObserver(o);
 	}
 
 	@Override
-	public DataMessage<?> poll(long time, TimeUnit unit) throws InterruptedException {
-		DataMessage<?> val = receiver.poll(time, unit);
+	public ObservationMessage<?> poll(long time, TimeUnit unit) throws InterruptedException {
+		ObservationMessage<?> val = receiver.poll(time, unit);
 		if (val != null) {
 			outer.notifySinkWillYield(val);
 		}

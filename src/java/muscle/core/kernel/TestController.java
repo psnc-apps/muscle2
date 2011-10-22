@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import utilities.MiscTool;
 import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.utilities.RemoteOutputStream;
@@ -209,7 +209,7 @@ public class TestController extends CAController {
 
 				getLogger().finest("sending, local time:"+timestep);
 				
-				DataWrapper data;
+				Observation data;
 				if(getDataTemplate().getDataClass().equals(double[].class)) {
 					send(ArraysTool.getFromFile_double(file));//data = new DataWrapper(ArraysTool.getFromFile_double(file), DecimalMeasureTool.multiply(getScale().getDt(), new BigDecimal(timestep)));
 				}

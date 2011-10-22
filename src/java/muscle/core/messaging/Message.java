@@ -3,13 +3,13 @@
  */
 package muscle.core.messaging;
 
-import muscle.core.messaging.signal.Signal;
+import muscle.core.wrapper.Observation;
 
 /**
  * @author Joris Borgdorff
  */
 public interface Message<E> {
-	public E getData();
+	public E getRawData();
 	public Observation<E> getObservation();
 	public Timestamp getTimestampNextEvent();
 }

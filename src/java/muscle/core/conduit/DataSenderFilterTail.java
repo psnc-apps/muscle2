@@ -6,7 +6,7 @@ package muscle.core.conduit;
 import muscle.core.conduit.filter.FilterTail;
 import muscle.core.messaging.BasicRemoteDataSinkHead;
 import muscle.core.messaging.RemoteDataSinkHead;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
@@ -16,16 +16,16 @@ this behaviour is the connection to the (remote) ConduitExit and sends data mess
  *
  * @author Joris Borgdorff
  */
-public class DataSenderFilterTail extends FilterTail<DataMessage> {
-	private final RemoteDataSinkHead<DataMessage<?>> sink;
+public class DataSenderFilterTail extends FilterTail<ObservationMessage> {
+	private final RemoteDataSinkHead<ObservationMessage<?>> sink;
 	private final BasicConduit conduit;
 	private boolean shouldPause = false;
 
 	public DataSenderFilterTail(BasicConduit conduit) {
 		this.conduit = conduit;
-		sink = new BasicRemoteDataSinkHead<DataMessage<?>>(conduit.exitName, conduit.exitAgent) {
+		sink = new BasicRemoteDataSinkHead<ObservationMessage<?>>(conduit.exitName, conduit.exitAgent) {
 			@Override
-			public void put(DataMessage dmsg) {
+			public void put(ObservationMessage dmsg) {
 				if (shouldPause) {
 					this.waitForResume();
 				}
@@ -57,7 +57,7 @@ public class DataSenderFilterTail extends FilterTail<DataMessage> {
 	}
 
 	@Override
-	public void result(DataMessage dmsg) {
+	public void result(ObservationMessage dmsg) {
 		dmsg.clearAllReceiver();
 		dmsg.addReceiver(conduit.exitAgent);
 		dmsg.setSender(conduit.getAID());

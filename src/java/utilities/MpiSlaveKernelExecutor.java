@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 public class MpiSlaveKernelExecutor {
 

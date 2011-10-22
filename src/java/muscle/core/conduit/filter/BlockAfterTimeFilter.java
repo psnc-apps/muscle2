@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.wrapper.Observation;
 import muscle.core.messaging.Timestamp;
 
 /**
@@ -37,10 +37,10 @@ public class BlockAfterTimeFilter<E> extends AbstractWrapperFilter<E,E> {
 		maxTime = new Timestamp(newMaxTime);
 	}
 
-	protected void apply(DataWrapper<E> subject) {
-		if(subject.getSITime().compareTo(maxTime) < 1)
+	protected void apply(Observation<E> subject) {
+		if(subject.getTimestamp().compareTo(maxTime) < 1)
 			put(subject);
 		else
-			System.out.println("warning: blocking data for time <"+subject.getSITime()+">");
+			System.out.println("warning: blocking data for time <"+subject.getTimestamp()+">");
 	}
 }

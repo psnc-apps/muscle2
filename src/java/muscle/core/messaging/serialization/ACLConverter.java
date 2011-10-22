@@ -6,6 +6,7 @@ package muscle.core.messaging.serialization;
 import jade.lang.acl.ACLMessage;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.jade.ObservationMessage;
 
 /**
  *
@@ -24,12 +25,12 @@ public class ACLConverter<E> implements DataConverter<Message<E>, ACLMessage> {
 	public Message<E> deserialize(ACLMessage aclmsg) {
 		String sid;
 		// This message was not sent to be converted to a datamessage
-		if ((sid = aclmsg.getUserDefinedParameter(SINKID_KEY)) == null) {
+		if ((sid = aclmsg.getUserDefinedParameter(ObservationMessage.MESSAGE_TYPE_KEY)) == null) {
 			return null;
 		}
 
 		// copy some relevant settings from the 
-		DataMessage<E> dmsg = new DataMessage<E>(sid);
+		ObservationMessage<E> dmsg = new ObservationMessage<E>(sid);
 		dmsg.setSender(aclmsg.getSender());
 		dmsg.setLanguage(aclmsg.getLanguage());
 		dmsg.setProtocol(aclmsg.getProtocol());

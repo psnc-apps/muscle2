@@ -21,32 +21,27 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core.messaging.jade;
 
 import jade.lang.acl.ACLMessage;
-import muscle.core.messaging.Message;
-import muscle.core.messaging.Observation;
-import muscle.core.messaging.Timestamp;
-import muscle.core.messaging.signal.Signal;
 
 /**
 @author Jan Hegewald
  */
-public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneable, Message<E> {
+public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneable {
 	// note: JADE sends messages differently if they are passed to a remote container or locally within the same container
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
-	private final static String SINKID_KEY = DataMessage.class.toString() + "#sinkId";
+	public final static String MESSAGE_TYPE_KEY = DataMessage.class.toString() + "#sinkId";
 	private transient E storedItem;
 	private String sinkID;
 	private Long byteCount;
 
 	public DataMessage(String sid) {
+		this(MESSAGE_TYPE_KEY, sid);
+	}
+	
+	protected DataMessage(String messageType, String sid) {
 		super(ACLMessage.INFORM);
 		sinkID = sid;
-		addUserDefinedParameter(SINKID_KEY, sinkID);
-	}
-
-	@Override
-	public Object clone() {
-		return super.clone();
+		addUserDefinedParameter(messageType, sinkID);
 	}
 
 	public void store(E item, Long newByteCount) {
@@ -65,13 +60,5 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 
 	public String getSinkID() {
 		return sinkID;
-	}
-
-	public Observation<E> getObservation() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	public Timestamp getTimestampNextEvent() {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }
