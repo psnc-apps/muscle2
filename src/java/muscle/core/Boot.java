@@ -35,7 +35,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
-import muscle.core.kernel.InstanceController;
+import muscle.core.kernel.JadeInstanceController;
 import utilities.JVM;
 
 
@@ -49,11 +49,9 @@ public class Boot {
 	private File infoFile;
 	private Map<String, String> agentNames;
 	private static Boot instance;
+	private final String[] args;
 	
-
-	//
 	static {
-
 		// try to workaround LogManager deadlock http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6487638
 		java.util.logging.LogManager manager = java.util.logging.LogManager.getLogManager();
 		// n.b.: we still sometimes see the LogManager deadlock
@@ -66,6 +64,7 @@ public class Boot {
 	public static Boot getInstance(String[] args) {
 		if (instance == null) {
 			instance = new Boot(args);
+			instance.init();
 		}
 		return instance;
 	}
@@ -91,16 +90,22 @@ public class Boot {
 				StringBuilder sb = new StringBuilder();
 				for (String agent : agents) {
 					String[] agentInfo = agent.split(":");
-					if (!agentInfo[0].equals("plumber")) {
+					if (agentInfo[0].equals("plumber")) {
+						sb.append(agent).append(';');
+					}
+					else {
 						agentNames.put(agentInfo[0], agentInfo[1]);
-						sb.append(agentInfo[0]).append(':').append(InstanceController.class.getCanonicalName()).append(';');
+						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
 				}
 				sb.deleteCharAt(sb.length() - 1);
 				args[i+1] = sb.toString();
 			}
 		}
-		
+		this.args = args;
+	}
+	
+	public void init() {
 		JADE jade = new JADE(args);
 		otherHooks.addAll(jade.getShutdownHooks());
 	}

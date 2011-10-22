@@ -72,7 +72,7 @@ public class Kernel extends muscle.core.kernel.CAController {
 	//
 	protected void execute() {
 
-	Object[] args = controller.getArguments();
+	Object[] args = getArguments();
 	if(args.length > 0) {
 		System.out.println("first kernel arg: "+(String)args[0]);
 	}

@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
+import muscle.core.kernel.JadeInstanceController;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.BufferingRemoteDataSinkTail;
 import muscle.core.messaging.RemoteDataSinkTail;

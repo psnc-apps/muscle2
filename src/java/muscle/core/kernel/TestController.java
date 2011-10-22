@@ -58,7 +58,7 @@ public class TestController extends CAController {
 
 	protected void addPortals() {
 		boolean parseError = false;
-		Object[] args = controller.getArguments();
+		Object[] args = getArguments();
 		if( args != null && args.length %3 == 0 ) {
 			for(int i = 0; i < args.length; i+=6) {
 				String portalType = (String)args[i];
@@ -73,10 +73,10 @@ public class TestController extends CAController {
 				}
 
 				if(portalType.equals("entrance")) {
-					portals.add(createFileReaderEntrance(new PortalID(name, controller.getAID()), resourceDir));
+					portals.add(createFileReaderEntrance(new PortalID(name, controller.getID()), resourceDir));
 				}
 				else if(portalType.equals("exit")) {
-					portals.add(createAssertionExit(new PortalID(name, controller.getAID()), resourceDir));
+					portals.add(createAssertionExit(new PortalID(name, controller.getID()), resourceDir));
 				}
 				else {
 					parseError = true;
@@ -128,7 +128,7 @@ public class TestController extends CAController {
 		}
 
 		getLogger().info(getClass().getName()+"\n finished ----------\n\n");
-		controller.doDelete();
+//		controller.doDelete();
 	}
 	
 	
@@ -149,9 +149,7 @@ public class TestController extends CAController {
 		assert dataPaths != null;
 		assert dataPaths.length > 0;
 
-		RemoteOutputStream traceOutput = new RemoteOutputStream(controller, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
-
-		FileReaderEntrance entrance = new FileReaderEntrance(portalID, controller, dataTemplate, traceOutput, dataPaths);
+		FileReaderEntrance entrance = new FileReaderEntrance(portalID, controller, dataTemplate, null, dataPaths);
 		return entrance;
 	}
 
@@ -174,9 +172,7 @@ public class TestController extends CAController {
 		assert dataPaths != null;
 		assert dataPaths.length > 0;
 
-		RemoteOutputStream traceOutput = new RemoteOutputStream(controller, CxADescription.ONLY.getSharedLocation(), portalID.getName()+"--f"+dataTemplate.getScale().getDt()+".txt", 1024);
-
-		AssertionExit exit = new AssertionExit(portalID, controller, dataTemplate, traceOutput, dataPaths);
+		AssertionExit exit = new AssertionExit(portalID, controller, dataTemplate, null, dataPaths);
 		return exit;
 	}
 
@@ -192,7 +188,6 @@ public class TestController extends CAController {
 		//
 		public FileReaderEntrance(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
 			super(newPortalID, newOwnerAgent, 1, newDataTemplate);
-			setTraceOutputStream(newTraceOutput);
 			
 			dt = (int)(getDataTemplate().getScale().getDt().longValue(SI.SECOND));
 			filePaths = newFilePaths;
@@ -244,7 +239,6 @@ public class TestController extends CAController {
 		//
 		public AssertionExit(PortalID newPortalID, InstanceController newOwner, DataTemplate newDataTemplate, RemoteOutputStream newTraceOutput, String[] newFilePaths) {
 			super(newPortalID, newOwner, 1, newDataTemplate);
-			setTraceOutputStream(newTraceOutput);
 
 			dt = (int)(getDataTemplate().getScale().getDt().longValue(SI.SECOND));
 			filePaths = newFilePaths;

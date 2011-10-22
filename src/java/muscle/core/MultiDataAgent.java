@@ -40,6 +40,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import javatool.ClassTool;
+import muscle.core.ident.Identifier;
+import muscle.core.ident.JadeAgentID;
+import muscle.core.kernel.InstanceController;
+import muscle.core.messaging.Message;
 import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.SortingMessageQueue;
@@ -47,18 +51,19 @@ import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.utilities.ObservableLinkedBlockingQueue;
 
 /**
-JADE agent which filters incomming data messages and passes them to multiple message sinks
+JADE agent which filters incoming data messages and passes them to multiple message sinks
 @author Jan Hegewald
  */
-public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<DataMessage<?>> {
+public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<DataMessage<?>>, InstanceController {
 	private transient IncomingMessageProcessor messageProcessor;
 	private static final transient Logger logger = AgentLogger.getLogger(MultiDataAgent.class.getName());
-	private List<RemoteDataSinkTail<DataMessage<?>>> dataSources = new ArrayList<RemoteDataSinkTail<DataMessage<?>>>(); // these are the conduit exits
-	private List<RemoteDataSinkHead<DataMessage<?>>> dataSinks = new ArrayList<RemoteDataSinkHead<DataMessage<?>>>(); // these are the conduit entrances
 	private volatile long bufferSizeCount = 0;
 	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
 	private final List<AID> toldToPauseList = Collections.synchronizedList(new LinkedList<AID>());
 
+	private List<RemoteDataSinkTail<DataMessage<?>>> dataSources = new ArrayList<RemoteDataSinkTail<DataMessage<?>>>(); // these are the conduit exits
+	private List<RemoteDataSinkHead<DataMessage<?>>> dataSinks = new ArrayList<RemoteDataSinkHead<DataMessage<?>>>(); // these are the conduit entrances
+	
 	public void addSink(RemoteDataSinkHead<DataMessage<?>> s) {
 		dataSinks.add(s);
 	}
@@ -67,6 +72,10 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		dataSources.add(s);
 	}
 
+	public Identifier getID() {
+		return new JadeAgentID(this.getAID());
+	}
+	
 	@Override
 	public void takeDown() {
 		messageProcessor.pause();
@@ -141,7 +150,11 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	// todo: data serialization in separate thread
-	public <E extends java.io.Serializable> void sendDataMessage(DataMessage<E> dmsg) {
+	public <E extends java.io.Serializable> void sendMessage(Message<E> msg) {
+		DataMessage<E> dmsg = null;
+		if (msg instanceof DataMessage) {
+			dmsg = (DataMessage<E>)msg;
+		}
 		assert !dmsg.hasByteSequenceContent();
 
 		byte[] rawData = null;

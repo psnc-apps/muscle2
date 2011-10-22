@@ -102,43 +102,11 @@ public class Plumber extends Agent {
 
 		addEntranceListener();
 		addExitListener();
-		
-
-// experimental support for remote gui
-//if( CxADescription.ONLY.getBooleanProperty(CxADescription.Key.GUI) ) {
-//	addBehaviour(new PlumberVisualisationServerBehaviour(this, MessageTemplate.MatchProtocol("visualisation data"), this));
-////	initRemoteComponentHead();
-//	addBehaviour(new VisualisationServerBehaviour(this, muscle.gui.remote.SharedConnectionSchemePutter.class, getConnectionSchemeRoot()));
-//}
 	}
 
-
-	//
 	public ConnectionScheme getConnectionScheme() {
-	
 		return cs;
 	}
-
-
-	//
-//	private void initRemoteComponentHead()	{
-//		
-//		AID guiID = null;
-//		logger.info("searching for a remote GUI gateway ...");
-//		try {
-//			guiID = DFServiceTool.agentForService(this, true, RemoteComponentTailAgent.class.getName(), null);
-//		} catch (FIPAException e) {
-//			e.printStackTrace();
-//			logger.severe("search with DF is not succeeded because of " + e.getMessage());
-//			doDelete();
-//		}
-//		logger.info("found a remote GUI gateway at <"+guiID.getName()+">");
-//
-//
-//		Agent2RemoteComponentHead remoteConnectionSchemeJUNGPanel = new Agent2RemoteComponentHead(coast.gui.remote.SharedConnectionSchemePutter.class, guiID, this);
-//		remoteConnectionSchemeJUNGPanel.post( getConnectionSchemeRoot() );
-//	}
-
 
 	//
 	private void spawnConduit(EntranceDescription entrance, ConduitDescription conduit, ExitDescription exit) throws SpawnAgentException {
@@ -196,21 +164,6 @@ public class Plumber extends Agent {
 	
 	//
 	protected Location locationForConduit(EntranceDescription entrance, ConduitDescription conduit, ExitDescription exit) {
-	
-//		AID adjacentAgent = entrance.getControllerID();
-//System.out.println("location for "+adjacentAgent);
-//		Location location = null;
-//		try {
-//			location = muscle.utilities.agent.WhereIsAgentHelper.whereIsAgent(adjacentAgent, this);
-//		} catch (Exception e) {
-//			logger.severe("can not determine target location for "+adjacentAgent);
-//			throw new MUSCLERuntimeException(e.getMessage(), e.getCause());
-//		}
-//		
-//System.out.println("location is "+location);
-//
-//		return location;
-//return here();
 		return null;
 	}
 	
@@ -219,7 +172,6 @@ public class Plumber extends Agent {
 	called after new portals heve been registered, see if we can spawn new conduits
 	*/
 	void portalsChanged() {
-
 		// see if we can feed one of our unconnected exits
 		for(Iterator<ExitDescription> exitIterator = cs.unconnectedExits().iterator(); exitIterator.hasNext();) {
 			ExitDescription exit = exitIterator.next();
@@ -269,13 +221,6 @@ public class Plumber extends Agent {
 			
 			entrance.markAvailable(dataTemplate, controllerID, dependencies);
 			
-			try {
-				testDeadlock(entrance, 0, new LinkedList<EntranceDescription>(), new ArrayList<Integer>());
-			} catch (DeadlockException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-			logger.fine("no deadlock found for entrance:"+entrance.getID());
-
 			portalsChanged();
 		}
 		// entrance does not exist in connection scheme
@@ -345,77 +290,6 @@ public class Plumber extends Agent {
 			exit.markUnavailable();
 		}
 	}
-	
-	
-// TODO modify deadlock test to take different conduit I/O frequencies into account ?
-	/**
-		unroll communication chain until we reach<br>
-		a) an entrance without dependencies -> no deadlock,<br>
-		b) the entrance we started the search from if this produces output in the past -> no deadlock, else we have a deadlock
-	*/
-	private void testDeadlock(EntranceDescription entrance, int time, LinkedList<EntranceDescription> passedEntrances, ArrayList<Integer> passedTimes) throws DeadlockException {
-// disabled because we got an exception with the sandbox for the BF
-//		logger.fine("entering deadlock test for "+entrance.getID());
-//
-//		if(!entrance.isAvailable()) {
-//			logger.info("entrance not available:"+entrance.getID()+" skipping deadlock test");
-//			return;
-//		}
-//
-//		passedEntrances.add(entrance);
-//		passedTimes.add(new Integer(time));
-//
-//		EntranceDependency[] dependencies = entrance.getDependencies();
-//		if(dependencies.length == 0) {
-//			// no deadlock
-//			return;
-//		}
-//			
-//		for(EntranceDependency d : dependencies) {
-//			
-//			logger.fine("testing dependency for "+d.toString()+" @entrance <"+entrance.getID()+">");
-//			
-//			// modify time dependency
-//			time += d.getDtOffset();
-//			assert(d.getDtOffset() <= 0) : "entrance can not depend on an exit which will be fed in the future";
-//			
-//			// get the exit which belongs to this dependency
-//			String exitID = d.getExit().getLocalName();
-//			ExitDescription exit = cs.exitDescriptionForID(exitID);
-//			
-//			if(exit == null) {			
-//				throw new DeadlockException("deadlock for entrance <"+passedEntrances.getFirst().getID()+"> reason: exit <"+exitID+"> does not exist");
-//			}
-//
-//			for(int i = 0; ; i++) {
-//				// get the conduit which should feed the exit
-//				ConduitDescription conduit =  exit.getConduitDescription(i);
-//				if( conduit == null)
-//					break;
-//							
-//				// get the entrance which feeds the conduit
-//				EntranceDescription remoteEntrance = conduit.getEntranceDescription();
-//				
-//				int index = passedEntrances.indexOf(remoteEntrance);
-//				
-//				if(index > -1) {
-//					// posible deadlock here, the communication chain links back to an entrance we already passed in this search
-//			
-//					if(time < passedTimes.get(index)) {
-//						// no deadlock
-//						return;
-//					}
-//					else {
-//						throw new DeadlockException("deadlock for entrance:<"+passedEntrances.getFirst().getID()+">");
-//					}
-//				}
-//				
-//				// recursion with the remote entrance
-//				testDeadlock(remoteEntrance, time, passedEntrances, passedTimes);
-//			}
-//		}	
-	}
-	
 	
 	public ConnectionScheme initConnectionScheme() {
 
@@ -588,14 +462,4 @@ public class Plumber extends Agent {
 		
 		addBehaviour(subscriber);		
 	}
-
-		
-	//
-	public static class DeadlockException extends Exception {
-
-			public DeadlockException(String message) {
-				super(message);
-			}
-	}
-
 }

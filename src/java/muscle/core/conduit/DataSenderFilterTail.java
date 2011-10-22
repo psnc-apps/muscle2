@@ -29,7 +29,7 @@ public class DataSenderFilterTail extends FilterTail<DataMessage> {
 				if (shouldPause) {
 					this.waitForResume();
 				}
-				DataSenderFilterTail.this.conduit.sendDataMessage(dmsg);
+				DataSenderFilterTail.this.conduit.sendMessage(dmsg);
 			}
 			
 			private synchronized void waitForResume() {

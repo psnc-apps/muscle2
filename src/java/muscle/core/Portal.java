@@ -21,12 +21,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import muscle.core.ident.PortalID;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
-import muscle.utilities.NullOutputStream;
-import muscle.exception.MUSCLERuntimeException;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
@@ -35,7 +30,6 @@ import muscle.core.kernel.InstanceController;
 
 //
 public abstract class Portal<T> implements Serializable {
-
 	public static final int LOOSE = -1; // if there is no rate accociated with this portal
 	transient InstanceController ownerAgent;
 	private PortalID portalID;
@@ -43,8 +37,7 @@ public abstract class Portal<T> implements Serializable {
 	private int usedCount;
 	private int rate;
 	private DecimalMeasure<Duration> customSITime;
-	transient private OutputStreamWriter traceWriter;
-
+	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
 		ownerAgent = newOwnerAgent;
@@ -53,69 +46,27 @@ public abstract class Portal<T> implements Serializable {
 
 		// set custom time to 0
 		customSITime = DecimalMeasure.valueOf(new BigDecimal(0), dataTemplate.getScale().getDt().getUnit());
-
-		// we do not send message trace output by default
-		setTraceOutputStream(new NullOutputStream());
 	}
 
 	/**
 	if a portal is deserialized, we need to attach it to the current owner agent
 	 */
 	public void setOwner(InstanceController newOwnerAgent) {
-
 		ownerAgent = newOwnerAgent;
-	}
-
-	//
-	public void setTraceOutputStream(OutputStream traceOutput) {
-
-		assert traceOutput != null;
-		if (traceWriter != null) {
-			try {
-				traceWriter.close();
-			} catch (IOException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		}
-
-		traceWriter = utilities.OutputStreamWriterTool.create(traceOutput);
-	}
-
-	// write a trace message
-	public void trace(String text) {
-
-		try {
-			traceWriter.write(text);
-			traceWriter.flush();
-		} catch (IOException e) {
-			throw new MUSCLERuntimeException(e);
-		}
 	}
 
 	// remove this in favor of the close method?
 	public void detachOwnerAgent() {
-
-		if (traceWriter != null) {
-			try {
-				traceWriter.close();
-			} catch (IOException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		}
 	}
 
-	//
 	public String getLocalName() {
-
 		return portalID.getName();
 	}
 
-	//
 	public PortalID getPortalID() {
 		return portalID;
 	}
 
-	//
 	public DataTemplate getDataTemplate() {
 		return dataTemplate;
 	}

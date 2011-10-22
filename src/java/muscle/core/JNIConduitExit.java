@@ -22,6 +22,7 @@ package muscle.core;
 
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
+import muscle.core.kernel.JadeInstanceController;
 import muscle.core.kernel.RawKernel;
 import muscle.core.messaging.serialization.DataConverter;
 import utilities.jni.JNIMethod;

@@ -28,6 +28,7 @@ import muscle.core.kernel.RawKernel;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
 import muscle.core.kernel.InstanceController;
+import muscle.core.kernel.JadeInstanceController;
 import muscle.core.messaging.serialization.DataConverter;
 
 

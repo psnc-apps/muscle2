@@ -60,6 +60,7 @@ JADE agent to wrap a kernel (e.g. CA or MABS)
 public abstract class RawKernel {
 	private static final transient Logger logger = AgentLogger.getLogger(RawKernel.class.getName());
 	
+	private Object[] arguments;
 	List<ConduitEntrance> entrances = new ArrayList<ConduitEntrance>();
 	List<ConduitExit> exits = new ArrayList<ConduitExit>();
 	private boolean acceptPortals;
@@ -228,14 +229,14 @@ public abstract class RawKernel {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
 		}
 
-		ConduitExit<T> e = new ConduitExit<T>(new PortalID(newPortalName, controller.getAID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
+		ConduitExit<T> e = new ConduitExit<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
 		addExit(e);
 		return e;
 	}
 
 	//
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getAID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
+		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
 		addExit(e);
 		return e;
 	}
@@ -247,14 +248,14 @@ public abstract class RawKernel {
 
 	//
 	protected <T extends java.io.Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntrance<T> e = new ConduitEntrance<T>(new PortalID(newPortalName, controller.getAID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
+		ConduitEntrance<T> e = new ConduitEntrance<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
 		addEntrance(e);
 		return e;
 	}
 	//
 
 	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getAID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
+		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
 		addEntrance(e);
 		return e;
 	}
@@ -341,5 +342,17 @@ public abstract class RawKernel {
 	
 	protected Logger getLogger() {
 		return logger;
+	}
+	
+	void setArguments(Object[] args) {
+		this.arguments = args;
+	}
+	
+	public Object[] getArguments() {
+		if (arguments == null) {
+			return new Object[0];
+		}
+
+		return arguments;
 	}
 }

@@ -3,13 +3,11 @@
  */
 package muscle.core.ident;
 
-import jade.core.Location;
-
 /**
- *
  * @author jborgdo1
  */
-public interface Identifier {
-	public IdType getType();
+public interface Identifier extends Comparable<Identifier> {
+	public String getName();
+	public IDType getType();
 	public Location getLocation();
 }

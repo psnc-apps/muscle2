@@ -29,6 +29,7 @@ import muscle.Constant;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.serialization.ACLConverter;
 import muscle.core.wrapper.DataWrapper;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -81,7 +82,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 			}
 		}
 
-		ownerAgent.sendDataMessage(dmsg);
+		ownerAgent.sendMessage(dmsg);
 	}
 
 	@Override
@@ -138,7 +139,7 @@ public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> i
 		assert ownerAgent != null;
 		// if we are connected to a conduit, tell conduit to detach this exit		
 		if (dstAgent != null) {
-			ownerAgent.send(getDetachDstMessage());
+			ownerAgent.sendData(getDetachDstMessage());
 		}
 
 		dstAgent = null;

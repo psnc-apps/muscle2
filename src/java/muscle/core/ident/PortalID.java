@@ -23,7 +23,6 @@ package muscle.core.ident;
 
 import jade.core.AID;
 
-import jade.core.Location;
 import java.io.Serializable;
 
 
@@ -31,45 +30,20 @@ import java.io.Serializable;
 portal identifier
 @author Jan Hegewald
 */
-public class PortalID implements Serializable, Identifier {
-
-
-	private String name; // unique per agent
-	private AID agentID;
-
-
-	//
-	public PortalID(String newName, AID newAgentID) {
-	
-		name =  newName;
-		agentID = newAgentID;
+public class PortalID extends JadeAgentID implements Serializable, Identifier {
+	public PortalID(String newName, Identifier newAgentID) {
+		super(newName, newAgentID);
 	}
 	
-	
-	//
-	public AID getOwnerAID() {
-		return agentID;
-	}
-
-
-	//
 	public String getName() {
-	
-		return name+"@"+agentID.getLocalName();
+		return name+"@"+id.getLocalName();
 	}
 	
-//	//
-//	public String getStrippedName() {
-//	
-//		return name;
-//	}
-
-	public IdType getType() {
-		return IdType.port;
+	public IDType getType() {
+		return IDType.port;
 	}
 
 	public Location getLocation() {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
-	
 }

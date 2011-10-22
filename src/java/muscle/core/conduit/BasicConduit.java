@@ -383,4 +383,13 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 			return getAID();
 		}
 	}
+		
+	public <E extends Serializable> void sendData(E data) {
+		if (data instanceof ACLMessage) {
+			this.send((ACLMessage)data);
+		}
+		else {
+			throw new IllegalArgumentException("Basic Jade Conduit can only send ACLMessage directly.");
+		}
+	}
 }
