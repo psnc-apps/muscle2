@@ -3,21 +3,28 @@
  */
 package muscle.core.messaging.serialization;
 
+import cern.colt.Arrays;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.Boot;
+import muscle.core.Resolver;
 import muscle.core.ident.IDType;
-import muscle.core.ident.JadeAgentID;
 import muscle.core.ident.JadeIdentifier;
-import muscle.core.ident.JadePortalID;
-import muscle.core.ident.PortalID;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
 
-/**
- *
+/**å
  * @author Joris Borgdorff
  */
 public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage> {
+	private final DataConverter<E,byte[]> byteConverter;
+	
+	public ACLConverter(DataConverter<E,byte[]> byteConverter) {
+		this.byteConverter = byteConverter;
+	}
+	
 	public ACLMessage serialize(DataMessage<E> data) {
 		if (data instanceof ACLMessage) {
 			return (ACLMessage)data;
@@ -45,32 +52,39 @@ public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage
 			aclmsg.setByteSequenceContent(null);
 			byteCount = rawData.length;
 
-			data = new ByteDataConverter<E>().deserialize(rawData);
+			data = byteConverter.deserialize(rawData);
 		} else {
+			System.out.println(getClass() + ": can not handle empty DataMessage");
 			// can not handle empty DataMessage
 			return null;
 		}
 		
 		// copy some relevant settings from the
 		String type = aclmsg.getUserDefinedParameter(ObservationMessage.TYPE_KEY);
-		
-		JadeIdentifier recp = new JadeAgentID(sid, (AID)aclmsg.getAllReceiver().next());
-		if (type.equals(IDType.port.toString())) {
-			recp = new JadePortalID(sid, recp);
+		JadeIdentifier recp = null;
+		try {
+			Resolver r = Boot.getInstance().getResolver();
+			recp = (JadeIdentifier)r.getIdentifier(sid, IDType.valueOf(type));
+			if (!recp.isResolved()) {
+				recp.resolve((AID)aclmsg.getAllReceiver().next(), null);
+			}
+
+			DataMessage<E> dmsg = obs ? new ObservationMessage() : new DataMessage<E>();
+			dmsg.store(data, byteCount);
+			dmsg.setRecipient(recp);
+
+			dmsg.setSender(aclmsg.getSender());
+			dmsg.setLanguage(aclmsg.getLanguage());
+			dmsg.setProtocol(aclmsg.getProtocol());
+			dmsg.setPerformative(aclmsg.getPerformative());
+			dmsg.setEnvelope(aclmsg.getEnvelope());
+			dmsg.setConversationId(aclmsg.getConversationId());
+			dmsg.setByteSequenceContent(aclmsg.getByteSequenceContent());
+
+			return dmsg;
+		} catch (InterruptedException ex) {
+			Logger.getLogger(ACLConverter.class.getName()).log(Level.SEVERE, "ACLConverter interrupted in search for resolver.", ex);
+			return null;
 		}
-
-		DataMessage<E> dmsg = obs ? new ObservationMessage() : new DataMessage<E>();
-		dmsg.store(data, byteCount);
-		dmsg.setRecipient(recp);
-
-		dmsg.setSender(aclmsg.getSender());
-		dmsg.setLanguage(aclmsg.getLanguage());
-		dmsg.setProtocol(aclmsg.getProtocol());
-		dmsg.setPerformative(aclmsg.getPerformative());
-		dmsg.setEnvelope(aclmsg.getEnvelope());
-		dmsg.setConversationId(aclmsg.getConversationId());
-		dmsg.setByteSequenceContent(aclmsg.getByteSequenceContent());
-
-		return dmsg;
 	}
 }

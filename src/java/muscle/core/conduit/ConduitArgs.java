@@ -27,6 +27,8 @@ import jade.core.Location;
 import muscle.core.DataTemplate;
 
 import java.util.List;
+import muscle.core.EntranceDescription;
+import muscle.core.ExitDescription;
 import muscle.core.ident.JadeAgentID;
 
 /**
@@ -56,6 +58,10 @@ public class ConduitArgs implements Serializable {
 		exitDataTemplate = newExitDataTemplate;
 		targetLocation = newTargetLocation; // set to null if conduit should detect targetLocation automatically
 		optionalArgs = newOptionalArgs;
+	}
+
+	public ConduitArgs(EntranceDescription entrance, ExitDescription exit, List<String> optionalArgs) {
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 
 	public AID getEntranceAgent() {

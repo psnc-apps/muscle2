@@ -13,16 +13,14 @@ import muscle.core.wrapper.Observation;
  */
 public class BasicMessage<E> implements Message<E>, Serializable {
 	private final Observation<E> obs;
-	private final Timestamp nextTime;
 	private final Identifier recv;
 	
 	public BasicMessage(E data, Timestamp time, Timestamp nextTime, Identifier recipient) {
-		this (new Observation<E>(data, time), nextTime, recipient);
+		this (new Observation<E>(data, time, nextTime), recipient);
 	}
 	
-	public BasicMessage(Observation<E> obs, Timestamp nextTime, Identifier recipient) {
+	public BasicMessage(Observation<E> obs, Identifier recipient) {
 		this.obs = obs;
-		this.nextTime = nextTime;
 		this.recv = recipient;
 	}
 
@@ -32,10 +30,6 @@ public class BasicMessage<E> implements Message<E>, Serializable {
 
 	public Observation<E> getObservation() {
 		return obs;
-	}
-
-	public Timestamp getTimestampNextEvent() {
-		return nextTime;
 	}
 
 	public Identifier getRecipient() {

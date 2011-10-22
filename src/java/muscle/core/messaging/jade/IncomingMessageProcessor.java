@@ -20,54 +20,56 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.messaging.jade;
 
+import jade.core.Agent;
+import jade.core.behaviours.CyclicBehaviour;
+import jade.lang.acl.ACLMessage;
 import java.util.Map;
-import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.conduit.communication.JadeReceiver;
 import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
+import muscle.core.messaging.serialization.ACLConverter;
+import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 import utilities.ArrayMap;
-import utilities.SafeQueueConsumerThread;
 
 /**
 process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends SafeQueueConsumerThread<DataMessage<?>> {
+public class IncomingMessageProcessor extends CyclicBehaviour {
 	private final Map<Identifier, JadeReceiver> receivers;
 	private static final Logger logger = Logger.getLogger(IncomingMessageProcessor.class.getName());
+	private final Agent owner;
+	private final ACLConverter deserializer;
 
-	public IncomingMessageProcessor(Queue<DataMessage<?>> newQueue) {
-		receivers = new ArrayMap<Identifier, JadeReceiver>();
-		super.setIncomingQueue(newQueue);
+	public IncomingMessageProcessor(Agent owner) {
+		this.receivers = new ArrayMap<Identifier, JadeReceiver>();
+		this.owner = owner;
+		this.deserializer = new ACLConverter(new ByteJavaObjectConverter());
 	}
 	
 	public void addReceiver(Identifier id, JadeReceiver recv) {
 		this.receivers.put(id, recv);
 	}
 	
-	@Override
-	protected void execute(DataMessage dmsg) {
-		if (dmsg != null) {
-			Identifier id = dmsg.getRecipient();
-			JadeReceiver recv = receivers.get(id);
-			if (recv == null)
-				logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
-
-			recv.put(dmsg);
+	/** Deserialize, process, and send message to receiver*/
+	public void action() {
+		ACLMessage msg = owner.receive();
+		if (msg != null) {
+			DataMessage dmsg = deserializer.deserialize(msg);
+			if (dmsg != null) {
+				Identifier id = dmsg.getRecipient();
+				JadeReceiver recv = receivers.get(id);
+				if (recv == null) {
+					logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
+				}
+				else {
+					recv.put(dmsg);
+				}
+			}
 		}
-	}
-
-	public void start() {
-		Logger.getLogger(IncomingMessageProcessor.class.getName()).log(Level.INFO, "starting {0}", getClass());
-		super.start();
-	}
-
-	@Override
-	protected void handleInterruption(InterruptedException ex) {
-		throw new RuntimeException(ex);
+		block();
 	}
 	
 	/**

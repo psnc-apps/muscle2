@@ -10,4 +10,5 @@ import jade.core.AID;
  */
 public interface JadeIdentifier extends Identifier {
 	public AID getAID();
+	public void resolve(AID aid, Location loc);
 }

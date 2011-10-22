@@ -63,8 +63,9 @@ public class OTFLogger {
 		loadProperties();			
 	}
 	
-	protected void finalize()
+	protected void finalize() throws Throwable
 	{
+		super.finalize();
 		close();
 		instance = null;
 	}
@@ -83,7 +84,7 @@ public class OTFLogger {
 			if(kernelsRun++ == 0) {
 				log("init");			
 				try {				
-					d = new ConnectionScheme();
+					d = ConnectionScheme.getInstance();
 					d.generateLists();
 					if(! (new File(DIR)).exists())
 						if(!(new File(DIR)).mkdir())
@@ -128,7 +129,7 @@ public class OTFLogger {
 				if(enabled && libotf_not_found)
 				{
 					enabled = false;
-					logger.severe(OTFLogger.class.getName()+".loadProperties libotf not available!");
+					logger.log(Level.SEVERE, "{0}.loadProperties libotf not available!", OTFLogger.class.getName());
 				}			
 				
 				if(libotf_not_found)
@@ -186,7 +187,7 @@ public class OTFLogger {
 		closed = true;		
 		log("OTFLogger closeNow()");
 		if(end() != 0)
-			logger.severe(OTFLogger.class.getName()+" log path doeas not exists. Otf will not be saved.");
+			logger.log(Level.SEVERE, "{0} log path doeas not exists. Otf will not be saved.", OTFLogger.class.getName());
 	}
 	
 	public synchronized void conduitEnter(String sink) {
@@ -207,8 +208,6 @@ public class OTFLogger {
 	// Display all conduits and kernels
 	private void displayConduitsKernels() {
 		try {
-			ConnectionScheme d = new ConnectionScheme();
-
 			Iterator i = d.conduitList.iterator();
 			while (i.hasNext()) {
 				log("displayConduitsKernels Conduit:" + i.next());
@@ -220,7 +219,7 @@ public class OTFLogger {
 			}
 
 		} catch (Exception e) {
-			logger.severe(OTFLogger.class.getName()+" "+ e.getMessage());
+			logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
 		}
 	}
 	
@@ -253,7 +252,7 @@ public class OTFLogger {
 			stream.close();
 			size = bout.size();
 		} catch (IOException e) {
-			logger.severe(OTFLogger.class.getName()+" "+e.getMessage());
+			logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
 		}
 		return size;
 	}
@@ -262,7 +261,7 @@ public class OTFLogger {
 	private static void log(String text)
 	{		
 		if(enabled && debug)
-			logger.finest(OTFLogger.class.getName()+"."+text);
+			logger.log(Level.FINEST, "{0}.{1}", new Object[]{OTFLogger.class.getName(), text});
 	}
 
 	// Logs to otf sending data from sender to receiver

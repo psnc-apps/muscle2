@@ -23,9 +23,7 @@ package muscle.core;
 
 import java.util.logging.Level;
 
-
 public interface DefaultProperties {
-
 	public static final Level LOGLEVEL = Level.ALL;
 
 }  

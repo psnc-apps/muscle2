@@ -13,10 +13,11 @@ import muscle.core.wrapper.Observation;
  * @author Joris Borgdorff
  */
 public class ObservationMessage<E> extends DataMessage<Observation<E>> implements Message<E> {
-	public final static String OBSERVATION_KEY = ObservationMessage.class.toString() + "#id";
+	public final static String OBSERVATION_KEY = ObservationMessage.class.getName() + "#id";
 	
-	protected void setIdentifierString(String name, String type) {
-		this.setIdentifierString(OBSERVATION_KEY, name, type);
+	@Override
+	protected void setIdentifierString(String name, String type, String portname) {
+		this.setIdentifierString(OBSERVATION_KEY, name, type, portname);
 	}
 	
 	public E getRawData() {
@@ -25,9 +26,5 @@ public class ObservationMessage<E> extends DataMessage<Observation<E>> implement
 
 	public Observation<E> getObservation() {
 		return getData();
-	}
-
-	public Timestamp getTimestampNextEvent() {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

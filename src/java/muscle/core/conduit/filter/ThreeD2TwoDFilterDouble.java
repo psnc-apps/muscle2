@@ -58,7 +58,7 @@ public class ThreeD2TwoDFilterDouble extends AbstractObservationFilter<Array3D_d
 				outData.set(ix, iy, val);
 			}
 		}
-		put(new Observation<Array2D_double>(outData, subject.getTimestamp()));
+		put(subject.copyWithNewData(outData));
 	}
 }
 

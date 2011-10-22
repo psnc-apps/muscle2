@@ -25,59 +25,29 @@ import java.util.logging.Level;
 
 import java.util.logging.Logger;
 import jade.core.Location;
-import jade.core.MessageQueue;
 import muscle.core.messaging.jade.IncomingMessageProcessor;
 import muscle.core.messaging.jade.ObservationMessage;
-import java.util.List;
-import java.util.ArrayList;
 import javatool.ClassTool;
 import muscle.core.ident.JadeAgentID;
+import muscle.core.ident.JadeLocation;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.SinkObserver;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.messaging.jade.SortingMessageQueue;
-import muscle.utilities.ObservableLinkedBlockingQueue;
 
 /**
 JADE agent which filters incoming data messages and passes them to multiple message sinks
 @author Jan Hegewald
  */
 public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<ObservationMessage<?>>, InstanceController {
-	private transient IncomingMessageProcessor messageProcessor;
+	protected transient IncomingMessageProcessor messageProcessor;
 	private static final transient Logger logger = Logger.getLogger(MultiDataAgent.class.getName());
-	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
-	
-	private List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
-	private List<ConduitEntranceController<?>> dataSinks = new ArrayList<ConduitEntranceController<?>>(); // these are the conduit entrances
-	
-	public void addSink(ConduitEntranceController<?> s) {
-		dataSinks.add(s);
-	}
-
-	public void addSource(ConduitExitController<?> s) {
-		dataSources.add(s);
-	}
 
 	@Override
 	public JadeAgentID getIdentifier() {
-		return new JadeAgentID(this.getLocalName(), this.getAID());
+		return new JadeAgentID(this.getLocalName(), this.getAID(), new JadeLocation(here()));
 	}
 	
 	@Override
 	public void takeDown() {
-		messageProcessor.dispose();
-		for (ConduitExitController source : dataSources) {
-			source.dispose();
-		}
-		for (ConduitEntranceController sink : dataSinks) {
-			sink.dispose();
-		}
-		logger.log(Level.INFO, "waiting for {0} to join", messageProcessor.getClass());
-		try {
-			messageProcessor.join();
-		} catch (java.lang.InterruptedException e) {
-			throw new muscle.exception.MUSCLERuntimeException(e);
-		}
 		messageProcessor = null;
 	}
 
@@ -92,16 +62,10 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	protected void initTransients() {
-		messageProcessor = new IncomingMessageProcessor(nonACLQueue);
-		nonACLQueue.setQueueConsumer(messageProcessor);
-		messageProcessor.start();
+		messageProcessor = new IncomingMessageProcessor(this);
+		this.addBehaviour(messageProcessor);
 	}
 
-	@Override
-	protected MessageQueue createMessageQueue() {
-		return new SortingMessageQueue(nonACLQueue);
-	}
-	
 	@Override
 	public void notifySinkWillYield(ObservationMessage msg) {}
 

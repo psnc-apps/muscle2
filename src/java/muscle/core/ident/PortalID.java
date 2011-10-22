@@ -50,8 +50,16 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 		return this.ownerID;
 	}
 	
+	public void unResolve() {
+		ownerID.unResolve();
+	}
+	
 	@Override
 	public IDType getType() {
 		return IDType.port;
+	}
+
+	public Location getLocation() {
+		return ownerID.getLocation();
 	}
 }

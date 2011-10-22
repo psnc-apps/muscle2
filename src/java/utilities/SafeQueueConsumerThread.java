@@ -12,7 +12,7 @@ import muscle.core.conduit.filter.QueueConsumer;
  */
 public abstract class SafeQueueConsumerThread<T> extends SafeThread implements QueueConsumer<T> {
 	private Queue<T> queue;
-
+	
 	protected synchronized boolean continueComputation() throws InterruptedException {
 		while (!isDone && (queue == null || queue.isEmpty())) {
 			wait();
@@ -30,15 +30,14 @@ public abstract class SafeQueueConsumerThread<T> extends SafeThread implements Q
 	}
 
 	@Override
-	protected void execute() throws InterruptedException {
+	protected synchronized void execute() throws InterruptedException {
 		execute(queue.remove());
 	}
-	
+
 	protected abstract void execute(T element);
-	
+
 	public synchronized void dispose() {
 		this.queue.clear();
-		this.queue.offer(null);
 		super.dispose();
 	}
 }

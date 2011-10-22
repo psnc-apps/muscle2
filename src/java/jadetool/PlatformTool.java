@@ -25,8 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import muscle.utilities.NullOutputStream;
-import jade.core.IMTPException;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;

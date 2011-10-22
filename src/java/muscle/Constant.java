@@ -66,7 +66,8 @@ public interface Constant {
 		public static final String CONNECTION_SCHEME_CLASS = "CONNECTION_SCHEME_CLASS";
 		public static final String ENTRANCE_INFO = "EntranceInfo";
 		public static final String EXIT_INFO = "ExitInfo";
-		public static final String TRACE_DATA_TRANSFER = "TRACE_DATA_TRANSFER";	
+		public static final String TRACE_DATA_TRANSFER = "TRACE_DATA_TRANSFER";
+		public static final String LOCATION = "MUSCLE_LOCATION";
 	}
 
 
@@ -80,6 +81,7 @@ public interface Constant {
 		public static final String PORTAL_ATTACH = "MUSCLE_PORTAL_ATTACH";
 		public static final String DOAGENT_RESULTS = "DOAGENT_RESULTS";
 		public static final String ADMINISTRATIVE_CALL = "ADMINISTRATIVE_CALL";
+		public static final String ANNOUNCE_AGENT = "MUSCLE_ANNOUNCE_AGENT";
 	
 	}
 
@@ -89,6 +91,7 @@ public interface Constant {
 	
 		public static final String ENTRANCE = "MUSCLE_ENTRANCE_SERVICE";
 		public static final String EXIT = "MUSCLE_EXIT_SERVICE";
+		public static final String AGENT = "MUSCLE_AGENT_SERVICE";
 	
 	}
 

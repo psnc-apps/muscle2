@@ -40,7 +40,6 @@ import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.core.Scale;
 import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.PipeConverter;
@@ -187,6 +186,7 @@ public abstract class RawKernel {
 		}
 
 		controller.addSink(entrance);
+		System.out.println(controller.getLocalName() + ": adding entrance " + entrance + " to controller done");
 		entrances.add(entrance);
 	}
 
@@ -205,6 +205,7 @@ public abstract class RawKernel {
 		}
 
 		controller.addSource(exit);
+		System.out.println(controller.getLocalName() + ": adding exit " + exit + "  to controller done");
 		exits.add(exit);
 	}
 
@@ -216,7 +217,6 @@ public abstract class RawKernel {
 		}
 
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
-
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		addExit(ec);
 

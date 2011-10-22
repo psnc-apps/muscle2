@@ -21,19 +21,22 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.wrapper;
 
+import java.io.Serializable;
 import muscle.core.messaging.Timestamp;
 
 /**
 container for a data message
 @author Jan Hegewald
 */
-public class Observation<T> implements java.io.Serializable {
-	private Timestamp siTime; // global time where this data belongs to (may be null)
-	private T data; // our unwrapped data
+public class Observation<T> implements Serializable {
+	private final Timestamp siTime; // global time where this data belongs to (may be null)
+	private final Timestamp nextSITime; // time of the next observation
+	private final T data; // our unwrapped data
 
-	public Observation(T newData, Timestamp newSITime) {
+	public Observation(T newData, Timestamp newSITime, Timestamp newNextSITime) {
 		siTime = newSITime;
 		data = newData;
+		nextSITime = newNextSITime;
 	}
 
 	public T getData() {
@@ -42,6 +45,14 @@ public class Observation<T> implements java.io.Serializable {
 
 	public Timestamp getTimestamp() {
 		return siTime;
+	}
+
+	public Timestamp getNextTimestamp() {
+		return nextSITime;
+	}
+	
+	public <R> Observation<R> copyWithNewData(R newData) {
+		return new Observation<R>(newData, siTime, nextSITime);
 	}
 
 	public String toString() {

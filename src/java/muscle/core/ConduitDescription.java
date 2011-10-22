@@ -21,12 +21,8 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-
-import muscle.exception.MUSCLERuntimeException;
-
 import jade.core.AID;
-import java.util.logging.Logger;
+import java.util.List;
 
 /**
 stores info necessary to setup a conduit
@@ -35,9 +31,9 @@ stores info necessary to setup a conduit
 public class ConduitDescription implements Serializable {
 	private String className;
 	private String id;
-	String additionalArgs[];
+	List<String> additionalArgs;
 	private EntranceDescription entrance;
-	private ArrayList<ExitDescription> targetExits = new ArrayList<ExitDescription>();
+	private ExitDescription exit;
 	private AID conduitAID;
 
 	public boolean equals(Object b) {
@@ -52,23 +48,12 @@ public class ConduitDescription implements Serializable {
 		return hash;
 	}
 
-	public ConduitDescription(String newClassName, String newID, String newAdditionalArgs[], EntranceDescription newEntrance) {
+	public ConduitDescription(String newClassName, String newID, List<String> newAdditionalArgs, EntranceDescription newEntrance, ExitDescription newExit) {
 		className = newClassName;
 		id = newID;
 		additionalArgs = newAdditionalArgs;
 		entrance = newEntrance;
-	}
-
-	public void addExitDescription(ExitDescription description) {
-		for (int i = 0; i < targetExits.size(); i++) {
-			if (targetExits.get(i).getID().equals(description.getID())) {
-				throw new MUSCLERuntimeException("Error: can not add exit <" + description.getID() + "> twice to conduit <" + getID() + ">");
-			}
-		}
-		if (targetExits.size() > 1) {
-			Logger.getLogger(ConduitDescription.class.getName()).warning("Warning: multifeed conduits are not supported yet -- multiple conduits will be spawned instead");
-		}
-		targetExits.add(description);
+		exit = newExit;
 	}
 
 	public String getClassName() {
@@ -79,7 +64,7 @@ public class ConduitDescription implements Serializable {
 		return id;
 	}
 
-	public String[] getArgs() {
+	public List<String> getArgs() {
 		return additionalArgs;
 	}
 
@@ -88,12 +73,11 @@ public class ConduitDescription implements Serializable {
 	}
 
 	public EntranceDescription getEntranceDescription() {
-		assert entrance.hasConduit(this);
 		return entrance;
 	}
 
-	public boolean hasExit(ExitDescription exit) {
-		return targetExits.contains(exit);
+	public ExitDescription getExitDescription() {
+		return this.exit;
 	}
 
 	public void markAvailable(AID newConduitAID) {

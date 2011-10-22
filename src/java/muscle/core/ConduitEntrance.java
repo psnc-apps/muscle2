@@ -12,23 +12,24 @@ import muscle.core.messaging.BasicMessage;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.Timestamp;
+import muscle.core.wrapper.Observation;
 
 /**
  * Sends information over a conduit
  * @author Joris Borgdorff
  */
 public class ConduitEntrance<T> {
-	private final QueueConsumer<Message<T>> consumer;
-	private final Queue<Message<T>> queue;
+	private final QueueConsumer<Observation<T>> consumer;
+	private final Queue<Observation<T>> queue;
 	protected Timestamp nextTime;
 	protected final Duration dt;
 	
-	public ConduitEntrance(QueueConsumer<Message<T>> controller) {
+	public ConduitEntrance(QueueConsumer<Observation<T>> controller) {
 		this(controller, new Timestamp(0d), new Duration(1d));
 	}
 	
-	public ConduitEntrance(QueueConsumer<Message<T>> controller, Timestamp origin, Duration timeStep) {
-		this.queue = new LinkedBlockingQueue<Message<T>>();
+	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
+		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		
 		this.nextTime = origin;
 		this.dt = timeStep;
@@ -38,13 +39,22 @@ public class ConduitEntrance<T> {
 	}
 	
 	public void send(T data) {
-		Timestamp currentTime = nextTime;
+		this.send(data, nextTime);
+	}
+	
+	public void send(T data, Timestamp currentTime) {
 		nextTime = nextTime.add(dt);
-		Message<T> msg = new BasicMessage<T>(data, currentTime, nextTime, null);
+		this.send(data, currentTime, nextTime);		
+	}
+
+	public void send(T data, Timestamp currentTime, Timestamp next) {
+		this.nextTime = next;
+		Observation<T> msg = new Observation<T>(data, currentTime, next);
 		this.send(msg);
 	}
 	
-	public void send(Message<T> msg) {
+	private void send(Observation<T> msg) {
+		System.out.println("Sending observation...");
 		this.queue.add(msg);
 		this.consumer.apply();
 	}

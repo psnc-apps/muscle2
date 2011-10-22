@@ -15,16 +15,17 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.JadeInstanceController;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.serialization.ACLConverter;
-import muscle.core.messaging.serialization.ByteDataConverter;
+import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.core.wrapper.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class CommunicationPointFactory {
+public class PortFactory {
 	public <T> Receiver<DataMessage<T>,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide) {
 		Receiver<DataMessage<T>,ACLMessage, JadeIdentifier, JadePortalID> recv = new JadeReceiver<T>();
-		recv.setDataConverter(new ACLConverter<T>());
+		recv.setDataConverter(new ACLConverter<T>(new ByteJavaObjectConverter<T>()));
 		if (otherSide instanceof JadePortalID) {
 			recv.setComplementaryPort((JadePortalID)otherSide);
 		}
@@ -36,7 +37,7 @@ public class CommunicationPointFactory {
 	
 	public <T> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide) {
 		Transmitter<T,byte[],JadeIdentifier, JadePortalID> trans = new JadeTransmitter<T>((JadeInstanceController)localInstance);
-		trans.setDataConverter(new ByteDataConverter<T>());
+		trans.setDataConverter(new ByteJavaObjectConverter<Observation<T>>());
 		if (otherSide instanceof JadePortalID) {
 			trans.setComplementaryPort((JadePortalID)otherSide);
 		}
@@ -47,9 +48,9 @@ public class CommunicationPointFactory {
 	}
 	
 	// Singleton pattern
-	protected CommunicationPointFactory() {}
-	private static CommunicationPointFactory instance = new CommunicationPointFactory();
-	public static CommunicationPointFactory getInstance() {
+	protected PortFactory() {}
+	private static PortFactory instance = new PortFactory();
+	public static PortFactory getInstance() {
 		return instance;
 	}
 }

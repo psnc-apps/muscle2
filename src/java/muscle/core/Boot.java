@@ -35,7 +35,9 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import muscle.core.kernel.JadeInstanceController;
+import muscle.utilities.agent.QuitMonitor;
 import utilities.JVM;
 
 
@@ -48,9 +50,10 @@ public class Boot {
 	private final List<Thread> otherHooks = new LinkedList<Thread>();
 	private final File infoFile;
 	private final Map<String, String> agentNames;
-	private Locator locator;
+	private Resolver resolver;
 	private static Boot instance;
 	private final String[] args;
+	private boolean isDone;
 	
 	static {
 		// try to workaround LogManager deadlock http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6487638
@@ -69,6 +72,7 @@ public class Boot {
 		}
 		return instance;
 	}
+	private boolean monitorQuit;
 	
 	//
 	private Boot(String[] args) {
@@ -83,30 +87,36 @@ public class Boot {
 
 		writeInitialInfo();
 		
-		this.locator = null;
+		this.resolver = null;
 		
 		agentNames = new HashMap<String,String>();
 		this.args = mapAgentsToInstances(args);
+		this.isDone = false;
 	}
 	
 	private String[] mapAgentsToInstances(String[] args) {
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-agents")) {
+				boolean quit = false;
 				String agentArg = args[i+1];
 				String[] agents = agentArg.split(";");
 				StringBuilder sb = new StringBuilder();
 				for (String agent : agents) {
 					String[] agentInfo = agent.split(":");
 					if (agentInfo[0].equals("plumber")) {
-						sb.append(agent).append(';');
+						//sb.append(agent).append(';');
+					}
+					else if (agentInfo[0].equals(QuitMonitor.class.getCanonicalName())) {
+						quit = true;
 					}
 					else {
 						agentNames.put(agentInfo[0], agentInfo[1]);
 						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
 				}
-				sb.append("locator:muscle.core.JadeLocator");
+				sb.append("locator:").append(JadeAgentIDManipulator.class.getCanonicalName());
 				args[i+1] = sb.toString();
+				this.monitorQuit = quit;
 			}
 		}
 		return args;
@@ -121,17 +131,33 @@ public class Boot {
 		return agentNames.get(agentName);
 	}
 	
-	public synchronized void registerLocator(Locator loc) {
-		this.locator = loc;
+	public Set<String> getAgentNames() {
+		return agentNames.keySet();
+	}
+	
+	public boolean monitorQuit() {
+		return this.monitorQuit;
+	}
+	
+	public synchronized void registerResolver(Resolver res) {
+		this.resolver = res;
 		this.notifyAll();
 	}
 	
 	/** waits for the locator to register */
-	public synchronized Locator getLocator() throws InterruptedException {
-		while (this.locator == null) {
+	public synchronized Resolver getResolver() throws InterruptedException {
+		while (!this.isDone && this.resolver == null) {
 			this.wait();
 		}
-		return this.locator;
+		if (this.isDone) {
+			throw new InterruptedException("Getting local resolver interrupted");
+		}
+		return this.resolver;
+	}
+	
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
 	}
 	
 	//
@@ -254,7 +280,8 @@ public class Boot {
 	private class JVMHook extends Thread {
 		// CTRL-C is signal 2 (SIGINT)
 		// see rubys Signal.list for a full list on your OS
-		public void run() {		
+		public void run() {
+			dispose();
 			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 			writeClosingInfo();
 

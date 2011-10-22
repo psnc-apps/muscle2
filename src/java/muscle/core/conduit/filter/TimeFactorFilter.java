@@ -36,6 +36,6 @@ public class TimeFactorFilter<E> extends AbstractObservationFilter<E,E> {
 	}
 
 	protected void apply(Observation<E> subject) {		
-		put(new Observation<E>(subject.getData(), subject.getTimestamp().multiply(factor)));
+		put(new Observation<E>(subject.getData(), subject.getTimestamp().multiply(factor), subject.getNextTimestamp().multiply(factor)));
 	}
 }

@@ -194,6 +194,19 @@ public class ArrayMap<K,V> implements Map<K, V>, Serializable {
 		}
 	}
 	
+	public String toString() {
+		StringBuilder sb = new StringBuilder(size*100);
+		sb.append('{');
+		for (int i = 0; i < size - 1; i++) {
+			sb.append(keys[i]).append(" => ").append(values[i]).append(',');
+		}
+		if (size > 0) {
+			sb.append(keys[size-1]).append(" => ").append(values[size-1]);
+		}
+		sb.append('}');
+		return sb.toString();
+	}
+	
 	private class KeySet implements Set<K> {
 		@Override
 		public int size() {

@@ -31,6 +31,10 @@ public abstract class AbstractID  implements Identifier {
 		return this.equals(ident.getIdentifier());
 	}
 	
+	public String toString() {
+		return getName() + "[" + getType() + "]";
+	}
+	
 	public final boolean equals(Object other) {
 		if (other == null || !(other instanceof AbstractID)) return false;
 		

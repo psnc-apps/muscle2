@@ -212,6 +212,20 @@ public class FastArrayList<T> implements List<T> {
 		return elems;
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(50*size);
+		sb.append('[');
+		for (int i = 0; i < size - 1; i++) {
+			sb.append(elems[i]);
+		}
+		if (size > 0) {
+			sb.append(elems[size-1]);
+		}
+		sb.append(']');
+		return sb.toString();
+	}
+	
 	private void ensureCapacity(int capacity) {
 		if (elems.length <= capacity) {
 			int newLen = Math.max(elems.length * 2 + 1, capacity);

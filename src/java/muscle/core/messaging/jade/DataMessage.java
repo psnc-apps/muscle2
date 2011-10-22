@@ -21,8 +21,6 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core.messaging.jade;
 
 import jade.lang.acl.ACLMessage;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.PortalID;
 
@@ -33,9 +31,9 @@ public class DataMessage<E> extends ACLMessage implements Cloneable {
 	// note: JADE sends messages differently if they are passed to a remote container or locally within the same container
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
-	public final static String DATA_KEY = DataMessage.class.toString() + "#id";
-	public final static String PORT_KEY = DataMessage.class.toString() + "#portid";
-	public final static String TYPE_KEY = DataMessage.class.toString() + "#idtype";
+	public final static String DATA_KEY = DataMessage.class.getName() + "#id";
+	public final static String PORT_KEY = DataMessage.class.getName() + "#portid";
+	public final static String TYPE_KEY = DataMessage.class.getName() + "#idtype";
 	private transient E storedItem;
 	private JadeIdentifier sinkID;
 	private Long byteCount;

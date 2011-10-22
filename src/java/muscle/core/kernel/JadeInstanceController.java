@@ -3,32 +3,36 @@
  */
 package muscle.core.kernel;
 
-import jade.core.AID;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.domain.FIPAException;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-import jadetool.DFServiceTool;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.core.Boot;
+import muscle.core.ConduitDescription;
+import muscle.core.PortFactory;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
-import muscle.core.Locator;
+import muscle.core.ConnectionScheme;
+import muscle.core.EntranceDescription;
+import muscle.core.ExitDescription;
+import muscle.core.Resolver;
 import muscle.core.MultiDataAgent;
-import muscle.core.Plumber;
+import muscle.core.PortDescription;
+import muscle.core.conduit.communication.JadeReceiver;
+import muscle.core.conduit.communication.Receiver;
+import muscle.core.ident.Identifier;
+import muscle.core.ident.PortalID;
 import muscle.core.messaging.SinkObserver;
+import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
-import muscle.exception.MUSCLERuntimeException;
 import utilities.FastArrayList;
 import utilities.JVM;
 import utilities.MiscTool;
+import utilities.SafeTriggeredThread;
 import utilities.Timing;
 
 /**
@@ -41,24 +45,84 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	private File infoFile;
 	private RawKernel kernel;
 	private final static Logger logger = Logger.getLogger(JadeInstanceController.class.getName());
+	private final transient PortFactory factory = PortFactory.getInstance();
+	private transient Map<String,ExitDescription> exitDescriptions;
+	private transient Map<String,EntranceDescription> entranceDescriptions;
+	private final static boolean ENTRANCE = true;
+	private final static boolean EXIT = false;
 	
+	private final List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
+	private final List<ConduitEntranceController<?>> dataSinks = new ArrayList<ConduitEntranceController<?>>(); // these are the conduit entrances
+	
+	public <T> void addSink(ConduitEntranceController<T> s) {
+		s.start();
+		PortalID other = resolvePort(s.getIdentifier(), entranceDescriptions, ENTRANCE);
+		if (other == null) return;
+		System.out.println(getLocalName() + ": port " + other + " resolved");
+		s.setTransmitter(factory.<T>getTransmitter(this, other));
+		System.out.println(getLocalName() + ": port " + other + " transmitter added");
+		dataSinks.add(s);
+	}
+
+	public <T> void addSource(ConduitExitController<T> s) {
+		s.start();
+		PortalID other = resolvePort(s.getIdentifier(), exitDescriptions, EXIT);
+		if (other == null) return;
+		System.out.println(getLocalName() + ": port " + other + " resolved");
+		Receiver<DataMessage<T>, ?, ?, ?> recv = factory.<T>getReceiver(this, other);
+		s.setReceiver(recv);
+		messageProcessor.addReceiver(s.getIdentifier(), (JadeReceiver)recv);
+		System.out.println(getLocalName() + ": port " + other + " receiver added");
+		dataSources.add(s);
+	}
+	
+	private PortalID resolvePort(PortalID id, Map<String,? extends PortDescription> descriptions, boolean entrance) {
+		ConduitDescription desc = null;
+		if (descriptions != null)
+			desc = descriptions.get(id.getPortName()).getConduitDescription();
+		if (desc == null)
+			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
+
+		PortalID other = entrance ? desc.getExitDescription().getID() : desc.getExitDescription().getID();
+		if (!other.isResolved()) {
+			try {
+				System.out.println(getLocalName() + ": getting resolver");
+				Resolver r = Boot.getInstance().getResolver();
+				System.out.println(getLocalName() + ": resolving id");
+				r.resolveIdentifier(other);
+				if (!other.isResolved()) return null;
+			} catch (InterruptedException ex) {
+				logger.log(Level.SEVERE, null, ex);
+			}
+		}
+		return other;
+	}
+
 	@Override
 	public void takeDown() {
 		super.takeDown();
 
-		for (ConduitEntranceController entrance : kernel.entrances) {
-			entrance.dispose();
+		System.out.println("Taking down controller "+ this.getIdentifier() + "...");
+		for (ConduitExitController<?> source : dataSources) {
+			source.dispose();
 		}
-		for (ConduitExitController exit : kernel.exits) {
-			exit.dispose();
+		for (ConduitEntranceController<?> sink : dataSinks) {
+			sink.dispose();
 		}
-
+		
 		logger.log(Level.INFO, "kernel tmp dir: {0}", kernel.getTmpPath());
 		logger.info("bye");
 
-		if (stopWatch.isCounting()) {
+		if (stopWatch != null && stopWatch.isCounting()) {
 			// probably the agent has been killed and did not call its afterExecute
 			afterExecute();
+		}
+		// Deregister with the resolver
+		try {
+			Resolver r = Boot.getInstance().getResolver();
+			r.deregister(this);
+		} catch (InterruptedException ex) {
+			logger.log(Level.SEVERE, null, ex);
 		}
 	}
 	
@@ -67,6 +131,12 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	final protected void setup() {
 		super.setup();
 		
+		Identifier id = getIdentifier();
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		exitDescriptions = cs.exitDescriptionsForIdentifier(id);
+		entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
+		
+		System.out.println(getLocalName() + ": starting kernel");
 		String kernelName = Boot.getInstance().getAgentClass(this.getLocalName());
 		try {
 			kernel = (RawKernel) Class.forName(kernelName).newInstance();
@@ -77,12 +147,15 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		} catch (ClassNotFoundException ex) {
 			logger.log(Level.SEVERE, null, ex);
 		}
-		kernel.setInstanceController(this);
 		
+		kernel.setInstanceController(this);
+
 		kernel.beforeSetup();
 
 		kernel.setArguments(initFromArgs());
 
+		registerPortals();
+		System.out.println(getLocalName() + ": connecting portals");
 		kernel.connectPortals();
 
 		// log info about this controller
@@ -92,53 +165,33 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		}
 
 		if (execute) {
-			addBehaviour(new OneShotBehaviour(this) {
+			SafeTriggeredThread executor = new SafeTriggeredThread() {
 				@Override
-				public void action() {
-					try {
-						System.out.println(getLocalName() + " is waiting for plumber");
-						waitForPlumber();
+				protected void handleInterruption(InterruptedException ex) {
+					logger.severe("Kernel interrupted");
+				}
 
-						// tell plumber about our portals
-						System.out.println(getLocalName() + " is registering portals");
-						registerPortals();
-
-						// connect portals to their conduits
-						System.out.println(getLocalName() + " is attaching portals");
-						attach();
-
-						System.out.println(getLocalName() + " is preparing execution");
-						beforeExecute();
-						System.out.println(getLocalName() + " is executing");
-						kernel.execute();
-						System.out.println(getLocalName() + " is finishing execution");
-						afterExecute();
-					} catch (Exception e) {
-						throw new MUSCLERuntimeException(e);
+				@Override
+				protected void execute() throws InterruptedException {
+					beforeExecute();
+					System.out.println(getLocalName() + " is executing");
+					kernel.execute();
+					System.out.println(getLocalName() + " is finished executing");
+					for (ConduitEntranceController ec : dataSinks) {
+						if (!ec.waitUntilEmpty()) {
+							break;
+						}
 					}
-				}
-
-				@Override
-				public int onEnd() {
-					// we are done, terminate agent
+					afterExecute();
+					System.out.println(getLocalName() + " is finished");
+					dispose();
 					doDelete();
-
-					return super.onEnd();
 				}
-			});
-		}
-
-	}
-	
-	public <E> void sendData(E data) {
-		if (data instanceof ACLMessage) {
-			this.send((ACLMessage)data);
-		}
-		else {
-			throw new IllegalArgumentException("JADE agent can only send ACLMessage directly.");
+			};
+			executor.start();
+			executor.trigger();
 		}
 	}
-	
 	
 	private void beforeExecute() {
 		logger.info("begin execute");
@@ -204,104 +257,13 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 	}
 	
-	void sendException(Throwable t, AID dst) {
-		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg = new ACLMessage(ACLMessage.INFORM);
-		msg.setProtocol("" + Throwable.class);
-		msg.addReceiver(dst);
-
-		try {
-			msg.setContentObject(t);
-		} catch (java.io.IOException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-	}
-	
-	/**
-	connect all portals of this RawKernel with their conduits,
-	the conduit will initiate the communication 
-	 */
-	private void attach() {
-		LinkedList<ConduitEntranceController> missingEntrances = new LinkedList<ConduitEntranceController>();
-		missingEntrances.addAll(kernel.entrances);
-		LinkedList<ConduitExitController> missingExits = new LinkedList<ConduitExitController>();
-
-		MessageTemplate msgTemplate = MessageTemplate.MatchProtocol(Constant.Protocol.PORTAL_ATTACH);
-
-		logger.config("waiting for conduit announcements ...");
-		while (missingEntrances.size() > 0 || missingExits.size() > 0) {
-
-			// generate log message
-			Level logLevel = Level.FINEST;
-			if (logger.isLoggable(logLevel)) {
-				StringBuilder waitText = new StringBuilder(100 + 50*missingEntrances.size() + 50*missingExits.size());
-				waitText.append("waiting for conduits for <").append(missingEntrances.size()).append("> entrances: ");
-				for (int i = 0; i < missingEntrances.size(); i++) {
-					waitText.append(missingEntrances.get(i).getLocalName());
-					if ((i + 1) < missingEntrances.size()) {
-						waitText.append(", ");
-					}
-				}
-				waitText.append(" and <").append(missingExits.size()).append("> exits: ");
-				for (int i = 0; i < missingExits.size(); i++) {
-					waitText.append(missingExits.get(i).getLocalName());
-					if ((i + 1) < missingExits.size()) {
-						waitText.append(", ");
-					}
-				}
-				logger.log(logLevel, waitText.toString());
-			}
-
-			// receive attach message from a destination (sink) agent (usually a conduit)
-			ACLMessage msg = blockingReceive(msgTemplate);
-			AID dstAgent = msg.getSender();
-			String dstSink = msg.getContent();
-
-			// see to which entrance this attach message belongs
-			if (missingEntrances.size() > 0) {
-				String conduitEntranceName = msg.getUserDefinedParameter("entrance");
-				for (Iterator<ConduitEntranceController> iter = missingEntrances.iterator(); iter.hasNext();) {
-					ConduitEntranceController entrance = iter.next();
-					if (entrance.getLocalName().equals(conduitEntranceName)) {
-						logger.log(Level.FINEST, "attaching entrance <{0}> to its destination <{1}>", new Object[]{entrance.getLocalName(), dstAgent.getLocalName()});
-						entrance.setDestination(dstAgent, dstSink);
-						iter.remove();
-						break;
-					}
-				}
-			}
-		}
-
-		logger.config("... done waiting for conduit announcements");
-	}
-	
-	
-	// TODO let every portal announce/attach itelf??
 	private void registerPortals() {
 		try {
-			Locator locator = Boot.getInstance().getLocator();
+			Resolver locator = Boot.getInstance().getResolver();
 			locator.register(this);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
 		}
-	}
-
-	private AID waitForPlumber() {
-		logger.finest("searching for an Plumber Agent registering with the DF");
-		List<AID> ids = null;
-		try {
-			ids = DFServiceTool.agentForService(this, true, Plumber.class.getName(), null);
-		} catch (FIPAException e) {
-			logger.log(Level.SEVERE, "search with DF is not succeeded", e);
-			doDelete();
-		}
-		if (ids.size() != 1) {
-			logger.log(Level.SEVERE, "we found {0} plumbers, but only one is allowed", ids.size());
-			doDelete();
-		}
-
-		AID plumberID = ids.get(0);
-		return plumberID;
 	}
 	
 	private Object[] initFromArgs() {
@@ -324,7 +286,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 					kargs = new KernelArgs(str);
 				} catch (IllegalArgumentException ex) {
 					list.add(i, str);
-					// the string has wrong format for our args, re-add it
+					// the string has wrong format for our args, re-add it to the original arguments
 				}
 				// Don't break for string, a KernelArgs might still come by
 			}
@@ -336,5 +298,9 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		}
 		
 		return rawArgs;
+	}
+	
+	public String toString() {
+		return getClass().getSimpleName() + "[" + getIdentifier() + "]";
 	}
 }

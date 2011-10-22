@@ -21,17 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-import muscle.exception.MUSCLERuntimeException;
-
-import jade.core.AID;
-
-import muscle.core.DataTemplate;
-import java.util.Arrays;
-
+import muscle.core.ident.PortalID;
 
 // a leaf in our connection scheme tree
 // is now a "node" instead of a leaf because it may have multiple conduits
@@ -39,74 +29,8 @@ import java.util.Arrays;
 stores info necessary to setup an exit
 @author Jan Hegewald
 */
-public class ExitDescription implements Serializable {
-
-	private String id; // name of portal, as in connection scheme
-	private List<ConduitDescription> conduits = new ArrayList<ConduitDescription>();
-	private DataTemplate dataTemplate;
-	private AID controllerID;
-	
-	public ExitDescription(String newID, ConduitDescription ... newConduits) {
-	
-		id = newID;
-		conduits.addAll(Arrays.asList(newConduits));
-	}
-	
-	public boolean equals(Object b) {
-		
-		return b != null && getClass().isInstance(b) && id.equals(getClass().cast(b).getID());
-	}
-
-	
-	public void addConduitDescription(ConduitDescription cd) {
-		
-		// assure this conduit is not added yet
-		for(int i = 0; i < conduits.size(); i++) {
-			if(conduits.get(i).getID().equals(cd.getID()))
-				throw new MUSCLERuntimeException("Error: can not add conduit <"+cd.getID()+"> twice to exit <"+getID()+">");
-		}
-		
-		conduits.add(cd);
-	}
-	
-	public String getID() {
-	
-		return id;
-	}
-
-	public ConduitDescription getConduitDescription(int index) {
-	
-		if(index >= conduits.size())
-			return null;
-		
-		return conduits.get(index);
-	}
-	
-	public void markAvailable(DataTemplate newDataTemplate, AID newControllerID) {
-	
-		dataTemplate = newDataTemplate;
-		controllerID = newControllerID;
-	}
-
-	public DataTemplate getDataTemplate() {
-	
-		return dataTemplate;
-	}
-
-	public AID getControllerID() {
-	
-		return controllerID;
-	}
-	
-	public boolean isAvailable() {
-	
-		return controllerID != null;
-	}
-
-	public void markUnavailable() {
-
-		dataTemplate = null;
-		controllerID = null;
+public class ExitDescription extends PortDescription {
+	public ExitDescription(PortalID newID) {
+		super(newID);
 	}
 }
-

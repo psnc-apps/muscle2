@@ -61,7 +61,7 @@ public class Sender extends muscle.core.kernel.CAController {
 
 		double[] dataA = new double[5];
 		
-		for(time = 0; !willStop(); time ++) {
+		for(time = 0; time < 4; time ++) {
 								
 			// process data
 			for(int i = 0; i < dataA.length; i++) {

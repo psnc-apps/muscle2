@@ -71,7 +71,7 @@ public class LinearTimeInterpolationFilterDouble extends AbstractObservationFilt
 		// retain the current coarse data to be able to calculate the next timestep
 		lastCoarseData = (subject.getData()).clone();
 		
-		Observation<double[]> interpolatedData = new Observation<double[]>(interpolatedArray, subject.getTimestamp().divide(dtFactor));
+		Observation<double[]> interpolatedData = new Observation<double[]>(interpolatedArray, subject.getTimestamp().divide(dtFactor), subject.getNextTimestamp().divide(dtFactor));
 		assert interpolatedData.getTimestamp().compareTo(subject.getTimestamp()) != 0;
 		
 		// feed next filter with interpolated data for last fine timestep

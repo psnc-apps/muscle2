@@ -40,7 +40,7 @@ public class MultiplyFilterDouble extends AbstractObservationFilter<double[],dou
 
 		for (int i = 0; i < inData.length; i++) {			
 			inData[i] *= factor;
-		}		
+		}
 		put(subject);
 	}
 }

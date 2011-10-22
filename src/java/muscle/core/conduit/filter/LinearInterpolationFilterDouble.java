@@ -38,7 +38,6 @@ public class LinearInterpolationFilterDouble extends AbstractObservationFilter<d
 			outData[i] = ( inData[i] + inData[i+1]) / 2.0;
 		}
 		
-		put(new Observation<double[]>(outData, subject.getTimestamp()));
+		put(subject.copyWithNewData(outData));
 	}
 }
-
