@@ -45,9 +45,10 @@ handle booting/terminating of MUSCLE
 */
 public class Boot {
 
-	private List<Thread> otherHooks = new LinkedList<Thread>();
-	private File infoFile;
-	private Map<String, String> agentNames;
+	private final List<Thread> otherHooks = new LinkedList<Thread>();
+	private final File infoFile;
+	private final Map<String, String> agentNames;
+	private Locator locator;
 	private static Boot instance;
 	private final String[] args;
 	
@@ -82,7 +83,13 @@ public class Boot {
 
 		writeInitialInfo();
 		
+		this.locator = null;
+		
 		agentNames = new HashMap<String,String>();
+		this.args = mapAgentsToInstances(args);
+	}
+	
+	private String[] mapAgentsToInstances(String[] args) {
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-agents")) {
 				String agentArg = args[i+1];
@@ -102,7 +109,7 @@ public class Boot {
 				args[i+1] = sb.toString();
 			}
 		}
-		this.args = args;
+		return args;
 	}
 	
 	public void init() {
@@ -112,6 +119,19 @@ public class Boot {
 
 	public String getAgentClass(String agentName) {
 		return agentNames.get(agentName);
+	}
+	
+	public synchronized void registerLocator(Locator loc) {
+		this.locator = loc;
+		this.notifyAll();
+	}
+	
+	/** waits for the locator to register */
+	public synchronized Locator getLocator() throws InterruptedException {
+		while (this.locator == null) {
+			this.wait();
+		}
+		return this.locator;
 	}
 	
 	//
@@ -250,7 +270,7 @@ public class Boot {
 				if( !otherHooks.isEmpty() ) {
 					System.out.print(".");
 					try {
-						sleep(500);
+						sleep(750l);
 					}
 					catch(java.lang.InterruptedException e) {
 						e.printStackTrace();

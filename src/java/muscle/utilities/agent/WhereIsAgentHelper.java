@@ -30,8 +30,9 @@ import jade.core.behaviours.Behaviour;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.ACLMessage;
 import jade.core.behaviours.DataStore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.behaviour.WhereIsAgentBehaviour;
-import muscle.logging.AgentLogger;
 import muscle.exception.MUSCLERuntimeException;
 
 
@@ -41,8 +42,8 @@ helper agent to retrieve the location of an agent
 */
 public class WhereIsAgentHelper extends DoAgent {
 
+	private final static transient Logger logger = Logger.getLogger(QuitMonitor.class.getName());
 	private AID targetAgent;
-	private AgentLogger logger;
 	
 	//
 	public static Location whereIsAgent(AID targetAgent, Agent callerAgent) {
@@ -65,9 +66,6 @@ public class WhereIsAgentHelper extends DoAgent {
 
 	//
 	protected void optionalSetup(Object[] args) {
-	
-		logger = AgentLogger.getLogger(this);
-
 		if(args.length == 0) {
 			logger.severe("got no args to configure from -> terminating");
 			doDelete();		
@@ -75,7 +73,7 @@ public class WhereIsAgentHelper extends DoAgent {
 		}
 
 		if(! (args[0] instanceof AID)) {
-			logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(args[0].getClass())+"> -> terminating");
+			logger.log(Level.SEVERE, "got invalid args to configure from <{0}> -> terminating", javatool.ClassTool.getName(args[0].getClass()));
 			doDelete();
 			return;		
 		}

@@ -33,7 +33,7 @@ helper agent to immediately quit the agent platform
 @author Jan Hegewald
 */
 public class QuickQuitUtilityAgent extends jade.core.Agent {
-	private final static Logger logger = Logger.getLogger(QuickQuitUtilityAgent.class.getName());
+	private final static transient Logger logger = Logger.getLogger(QuickQuitUtilityAgent.class.getName());
 	
 	protected void setup() {
 		addBehaviour(new KillPlatformBehaviour(this));

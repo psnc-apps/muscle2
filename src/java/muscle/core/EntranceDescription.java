@@ -27,6 +27,7 @@ import muscle.exception.MUSCLERuntimeException;
 
 import jade.core.AID;
 
+import java.util.logging.Logger;
 import muscle.core.DataTemplate;
 import muscle.core.EntranceDependency;
 
@@ -43,7 +44,6 @@ public class EntranceDescription implements Serializable {
 	private EntranceDependency[] dependencies;
 
 	public boolean equals(Object b) {
-
 		return b != null && getClass().isInstance(b) && id.equals(getClass().cast(b).getID());
 	}
 
@@ -60,8 +60,7 @@ public class EntranceDescription implements Serializable {
 			}
 		}
 		if (targetConduits.size() > 1) {
-			java.util.logging.Logger l = muscle.logging.Logger.getLogger(getClass());
-			l.warning("Warning: multifeed entrances are not supported yet -- multiple conduits will be spawned instead");
+			Logger.getLogger(EntranceDescription.class.getName()).warning("Warning: multifeed entrances are not supported yet -- multiple conduits will be spawned instead");
 		}
 		targetConduits.add(description);
 	}

@@ -23,11 +23,12 @@ package muscle.core;
 
 import jade.core.ContainerID;
 import jade.core.Location;
-import javatool.PropertiesTool;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.Serializable;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import utilities.MiscTool;
@@ -46,7 +47,7 @@ import utilities.Env;
 singleton which holds information about the current CxA
 @author Jan Hegewald
 */
-public class CxADescription extends utilities.Env implements java.io.Serializable {
+public class CxADescription extends utilities.Env implements Serializable {
 
 	static public class Key {
 		static public final String FINEST_DT = "finest_dt";
@@ -82,7 +83,7 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 	public static CxADescription ONLY = new CxADescription(); // handle for the singleton
 	
    private Location sharedLocation;
-	private Logger logger;
+	private final static transient Logger logger = Logger.getLogger(CxADescription.class.getName());
 	private File tmpDir;
 	
 	{
@@ -95,9 +96,6 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 
 	// disallow instantiation from everywhere
 	protected CxADescription() {
-	
-		logger = muscle.logging.Logger.getLogger(getClass());
-
 		initEnv();
 
 		// init default shared Location if any
@@ -208,7 +206,7 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 		String tmpDirPath = JVM.ONLY.tmpDir().toString();
 		if(tmpDirPath == null) {
 			tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			logger.info("using default tmp directory <"+tmpDir+">");
+			logger.log(Level.INFO, "using default tmp directory <{0}>", tmpDir);
 		}
 		else {
 			tmpDir = new File(MiscTool.resolveTilde(tmpDirPath));
@@ -216,10 +214,10 @@ public class CxADescription extends utilities.Env implements java.io.Serializabl
 		if(!tmpDir.isDirectory()) {
 			File oldTmp = tmpDir;
 			tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			logger.info("omitting invalid tmp directory <"+oldTmp+">, using default tmp directory <"+tmpDir+">");
+			logger.log(Level.INFO, "omitting invalid tmp directory <{0}>, using default tmp directory <{1}>", new Object[]{oldTmp, tmpDir});
 		}
 		else {
-			logger.info("using tmp directory <"+tmpDir+">");
+			logger.log(Level.INFO, "using tmp directory <{0}>", tmpDir);
 		}
 
 //		if( !PropertiesTool.hasKeys(props, MANDATORY_KEYS) )

@@ -93,8 +93,6 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 		kernel.setArguments(initFromArgs());
 
-		kernel.observer.notifyKernelActivated(kernel);
-
 		kernel.connectPortals();
 
 		// log info about this controller

@@ -29,6 +29,7 @@ import utilities.jni.JNITool;
 import muscle.exception.MUSCLERuntimeException;
 import java.io.File;
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 
 /**
@@ -101,7 +102,7 @@ public class DataTemplate<T> implements Serializable {
 		else if(dataClass.equals(double[].class))
 			dataSize = Double.SIZE;
 		else {
-			muscle.logging.Logger.getLogger(getClass()).log(Level.INFO, "unknown data class <{0}>", dataClass.getName());
+			Logger.getLogger(DataTemplate.class.getName()).log(Level.INFO, "unknown data class <{0}>", dataClass.getName());
 			return UNKNOWN_QUANTITY;
 		}
 			

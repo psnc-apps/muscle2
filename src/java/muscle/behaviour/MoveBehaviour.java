@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jade.core.Agent;
@@ -55,9 +56,9 @@ abstract public class MoveBehaviour extends SimpleBehaviour {
 			callback(myAgentCopy);
 		}
 		else {
-			Logger logger = muscle.logging.Logger.getLogger(getClass());
-			logger.fine("moving to location <"+targetLocation.getName()+">");
-			myAgent.doMove(targetLocation);			
+			Logger logger = Logger.getLogger(MoveBehaviour.class.getName());
+			logger.log(Level.FINE, "moving to location <{0}>", targetLocation.getName());
+			myAgent.doMove(targetLocation);
 		}
 	}
 

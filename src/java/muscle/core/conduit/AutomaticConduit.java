@@ -23,10 +23,10 @@ package muscle.core.conduit;
 import java.util.logging.Level;
 import muscle.core.wrapper.Observation;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.logging.AgentLogger;
 import utilities.MiscTool;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.logging.Logger;
 import muscle.core.conduit.filter.*;
 import muscle.core.ident.PortalID;
 import muscle.core.messaging.jade.ObservationMessage;
@@ -39,6 +39,7 @@ to load the MultiplyFilterDouble_42 and pass a 42 to its constructor
 @author Jan Hegewald
  */
 public class AutomaticConduit extends BasicConduit {
+	private final static transient Logger logger = Logger.getLogger(AutomaticConduit.class.getName());
 
 	@Override
 	protected void constructMessagePassingMechanism() {
@@ -50,7 +51,6 @@ public class AutomaticConduit extends BasicConduit {
 	}
 
 	protected Filter<ObservationMessage,Observation> initFilterChain(final FilterTail<ObservationMessage> filterTail) {
-		AgentLogger logger = AgentLogger.getLogger(this);
 		List<String> filterArgs = getOptionalArgs();
 		logger.log(Level.FINE, "filter args: <{0}>", MiscTool.joinItems(filterArgs, ", "));
 

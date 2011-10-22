@@ -44,7 +44,7 @@ helper agent to perform a task (usually a behaviour) and send back results to it
 @author Jan Hegewald
 */
 public class DoAgent extends Agent {
-	private final static Logger logger = Logger.getLogger(DoAgent.class.getName());
+	private final static transient Logger logger = Logger.getLogger(DoAgent.class.getName());
 	
 	private static final int MANDATORY_ARG_COUNT = 1;
 //	private DoAgentArgs args;

@@ -21,12 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.util.logging.Level;
 import muscle.Constant;
 import muscle.core.conduit.ConduitArgs;
 import muscle.core.ConnectionScheme.Pipeline;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.exception.SpawnAgentException;
-import muscle.logging.AgentLogger;
 
 import com.thoughtworks.xstream.XStream;
 
@@ -93,7 +93,7 @@ public class Plumber extends Agent {
 		cs = initConnectionScheme();
 		logger.info(cs.toString());
 
-		logger.info("Plumber of kind <"+getClass()+"> is up");
+		logger.log(Level.INFO, "Plumber of kind <{0}> is up", getClass());
 
 		addEntranceListener();
 		addExitListener();
@@ -131,24 +131,24 @@ public class Plumber extends Agent {
 		conduitCounter ++;
 		AgentController conduitController;
 		String agentName = "conduit#"+conduitCounter+"["+entranceAgent.getLocalName()+":"+entrance.getID()+">-"+conduit.getClassName()+"("+conduit.getID()+")->"+exitAgent.getLocalName()+":"+exit.getID()+"]";
-		logger.info("spawning conduit:"+agentName);
+		logger.log(Level.INFO, "spawning conduit:{0}", agentName);
 		try {
 			conduitController = getContainerController().createNewAgent(agentName, conduit.getClassName(), args);
 		} catch (jade.wrapper.StaleProxyException e) {
-			logger.severe("can not createNewAgent agent: "+agentName);
+			logger.log(Level.SEVERE, "can not createNewAgent agent: {0}", agentName);
 			throw new SpawnAgentException("getContainerController().createNewAgent failed -- "+e.getMessage(), e.getCause());
 		}
 		try {
 			AID conduitAID = new AID(conduitController.getName(), AID.ISGUID);
 			conduit.markAvailable(conduitAID);				
 		} catch (jade.wrapper.StaleProxyException e) {
-			logger.severe("can not get name of agent: "+agentName);
+			logger.log(Level.SEVERE, "can not get name of agent: {0}", agentName);
 			throw new SpawnAgentException("getName() failed -- "+e.getMessage(), e.getCause());
 		}
 		try {
 			conduitController.start();
 		} catch (jade.wrapper.StaleProxyException e) {
-			logger.severe("can not start agent: "+agentName);
+			logger.log(Level.SEVERE, "can not start agent: {0}", agentName);
 			throw new SpawnAgentException("start() failed -- "+e.getMessage(), e.getCause());
 		}
 	}
@@ -207,7 +207,7 @@ public class Plumber extends Agent {
 		EntranceDescription entrance = cs.entranceDescriptionForID(entranceID);
 		if(entrance != null) {			
 			if( entrance.isAvailable() ) {
-				logger.severe("can not add entrance <"+entranceID+">, an entrance with the same id is already registered");
+				logger.log(Level.SEVERE, "can not add entrance <{0}>, an entrance with the same id is already registered", entranceID);
 				return;
 			}
 			
@@ -217,16 +217,16 @@ public class Plumber extends Agent {
 		}
 		// entrance does not exist in connection scheme
 		else if( !cs.isComplete() ) {
-			logger.info("postponing entrance <"+entranceID+"> -- it is not part of the current connection scheme");
+			logger.log(Level.INFO, "postponing entrance <{0}> -- it is not part of the current connection scheme", entranceID);
 			entrance = new EntranceDescription(entranceID);
 			entrance.markAvailable(dataTemplate, controllerID, dependencies);
 			if(postponedEntrances.contains(entrance))
-				logger.severe("entrance <"+entranceID+"> -- already exists");
+				logger.log(Level.SEVERE, "entrance <{0}> -- already exists", entranceID);
 			else
 				postponedEntrances.add(entrance);
 		}
 		else {
-			logger.severe("ignoring entrance <"+entranceID+"> -- it is not part of the final connection scheme");
+			logger.log(Level.SEVERE, "ignoring entrance <{0}> -- it is not part of the final connection scheme", entranceID);
 		}
 	}
 
@@ -239,7 +239,7 @@ public class Plumber extends Agent {
 		ExitDescription exit = cs.exitDescriptionForID(exitID);
 		if(exit != null) {
 			if( exit.isAvailable() ) {
-				logger.severe("can not add exit <"+exitID+">, an exit with the same id is already registered");
+				logger.log(Level.SEVERE, "can not add exit <{0}>, an exit with the same id is already registered", exitID);
 				return;
 			}
 
@@ -249,16 +249,16 @@ public class Plumber extends Agent {
 		}
 		// exit does not exist in connection scheme
 		else if( !cs.isComplete() ) {
-			logger.info("postponing exit <"+exitID+"> -- it is not part of the current connection scheme");
+			logger.log(Level.INFO, "postponing exit <{0}> -- it is not part of the current connection scheme", exitID);
 			exit = new ExitDescription(exitID);
 			exit.markAvailable(dataTemplate, controllerID);
 			if(postponedExits.contains(exit))
-				logger.severe("exit <"+exitID+"> -- already exists");
+				logger.log(Level.SEVERE, "exit <{0}> -- already exists", exitID);
 			else
 				postponedExits.add(exit);
 		}
 		else {
-			logger.severe("ignoring exit <"+exitID+"> -- it is not part of the final connection scheme");
+			logger.log(Level.SEVERE, "ignoring exit <{0}> -- it is not part of the final connection scheme", exitID);
 		}
 	}
 	
@@ -372,7 +372,7 @@ public class Plumber extends Agent {
 									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(entranceProperties.get("DataTemplate"));
 									EntranceDependency[] dependencies = (EntranceDependency[])xstream.fromXML(entranceProperties.get("Dependencies"));
 
-									logger.info("found an entrance: <"+dfd.getName().getLocalName()+":"+entranceID+">");
+									logger.log(Level.INFO, "found an entrance: <{0}:{1}>", new Object[]{dfd.getName().getLocalName(), entranceID});
 									addEntrance(entranceID, dataTemplate, dfd.getName(), dependencies);																		
 								}
 							}
@@ -439,7 +439,7 @@ public class Plumber extends Agent {
 									String exitID = exitProperties.get("Name");
 									DataTemplate dataTemplate = (DataTemplate)xstream.fromXML(exitProperties.get("DataTemplate"));
 
-									logger.info("found an exit: <"+dfd.getName().getLocalName()+":"+exitID+">");
+									logger.log(Level.INFO, "found an exit: <{0}:{1}>", new Object[]{dfd.getName().getLocalName(), exitID});
 									addExit(exitID, dataTemplate, dfd.getName());																	
 								}
 							}

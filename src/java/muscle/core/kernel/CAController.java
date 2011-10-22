@@ -22,6 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.kernel;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.CxADescription;
 
 
@@ -39,7 +40,7 @@ public abstract class CAController extends RawKernel {
 	@Deprecated
 	static public String getCxAPath() {
 		
-		muscle.logging.Logger.getLogger(CAController.class).fine("using deprecated method muscle.core.kernel.CAController#getCxAPath()");
+		Logger.getLogger(CAController.class.getName()).fine("using deprecated method muscle.core.kernel.CAController#getCxAPath()");
 
 		return CxADescription.ONLY.getPathProperty("cxa_path");
 	}
@@ -58,11 +59,11 @@ public abstract class CAController extends RawKernel {
 		if(rsrc != null)
 			path = rsrc.getPath();
 		else
-			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
+			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
 			
 		cls.getResource("").getPath();
 		if(cls.getPackage() == null) {
-			muscle.logging.Logger.getLogger(cls).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
+			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
 		}
 		
 		return path;
@@ -87,5 +88,4 @@ public abstract class CAController extends RawKernel {
 	static public String getLegacyProperties() {
 		return CxADescription.ONLY.getLegacyProperties();
 	}
-
 }

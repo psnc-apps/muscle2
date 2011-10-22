@@ -62,7 +62,6 @@ public abstract class RawKernel {
 	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
 	List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
 	private boolean acceptPortals;
-	protected KernelListener observer = new NullKernelListener();
 	protected InstanceController controller;
 
 	public void setInstanceController(InstanceController ic) {
@@ -188,7 +187,6 @@ public abstract class RawKernel {
 
 		controller.addSink(entrance);
 		entrances.add(entrance);
-		observer.notifyEntranceAdded(entrance);
 	}
 
 	//
@@ -207,7 +205,6 @@ public abstract class RawKernel {
 
 		controller.addSource(exit);
 		exits.add(exit);
-		observer.notifyExitAdded(exit);
 	}
 
 	//
@@ -330,7 +327,7 @@ public abstract class RawKernel {
 					Class<? extends RawKernel> c = (Class<? extends RawKernel>) Class.forName(arg);
 					classes.add(c);
 				} catch (ClassCastException e) {
-					AgentLogger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
+					Logger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
 				}
 			}
 
@@ -342,7 +339,15 @@ public abstract class RawKernel {
 	}
 
 	protected Logger getLogger() {
-		return logger;
+		return Logger.getLogger(getClass().getName());
+	}
+	
+	protected void log(String msg) {
+		log(msg, Level.INFO);
+	}
+
+	protected void log(String msg, Level lvl) {
+		getLogger().log(lvl, msg);
 	}
 
 	void setArguments(Object[] args) {

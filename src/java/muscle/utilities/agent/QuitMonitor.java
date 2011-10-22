@@ -21,46 +21,23 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.utilities.agent;
 
-import jade.content.lang.Codec;
-import jade.content.lang.sl.SLCodec;
-import jade.content.onto.basic.Action;
-import jade.content.onto.basic.Result;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Location;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
-import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.content.onto.Ontology;
-import jade.content.onto.OntologyException;
-import jade.content.onto.UngroundedException;
-import jade.domain.JADEAgentManagement.JADEManagementOntology;
-import jade.domain.JADEAgentManagement.ShutdownPlatform;
-import jade.domain.JADEAgentManagement.WhereIsAgentAction;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.ACLCodec.CodecException;
-import jade.proto.AchieveREInitiator;
 
 import java.util.HashMap;
 import java.util.Iterator;
 
+import java.util.logging.Level;
 import muscle.behaviour.WatchAgentBehaviour;
 
-import jade.core.behaviours.DataStore;
-import jade.core.behaviours.SimpleBehaviour;
-import jadetool.MessageTool;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.behaviour.KillPlatformBehaviour;
 import muscle.behaviour.PrintPlatformAgentsBehaviour;
-import muscle.behaviour.PrintLocationAgentsBehaviour;
 import java.util.logging.Logger;
-import muscle.logging.AgentLogger;
 import jade.wrapper.AgentController;
 import jadetool.ContainerControllerTool;
 import jade.core.behaviours.SequentialBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
 
 
 /**
@@ -68,7 +45,7 @@ this agent monitors a given list of agents and kills the platform if all these a
 @author Jan Hegewald
 */
 public class QuitMonitor extends jade.core.Agent {
-	private final static Logger logger = Logger.getLogger(DoAgent.class.getName());
+	private final static transient Logger logger = Logger.getLogger(QuitMonitor.class.getName());
 	
 	enum AgentState {UNAVAILABLE, ACTIVATED, DONE};
 	
@@ -80,7 +57,7 @@ public class QuitMonitor extends jade.core.Agent {
 	public static AID spawn(Agent ownerAgent, String[] watchNames) {
 
 		String agentName = javatool.ClassTool.getName(QuitMonitor.class);
-		logger.info("spawning agent: <"+agentName+">");
+		logger.log(Level.INFO, "spawning agent: <{0}>", agentName);
 			
 		AgentController controller = ContainerControllerTool.createUniqueNewAgent(ownerAgent.getContainerController(), agentName, javatool.ClassTool.getName(QuitMonitor.class), watchNames);
 
@@ -106,8 +83,6 @@ public class QuitMonitor extends jade.core.Agent {
 	args must be an array of agent names which this agent should watch
 	*/
 	protected void setup() {
-
-		logger = AgentLogger.getLogger(this);
 		boolean parseError = false;
 		Object[] args = getArguments();
 
@@ -127,7 +102,7 @@ public class QuitMonitor extends jade.core.Agent {
 		
 		StringBuilder text = new StringBuilder(javatool.ClassTool.getName(getClass())+"@ container:"+here().getName()+" is up and watching for agents:");
 		for(Iterator<AID> iter = agentContainerMap.keySet().iterator(); iter.hasNext();)
-			text.append("\n\t"+iter.next().getName());
+			text.append("\n\t").append(iter.next().getName());
 			
 		logger.info(text.toString());
 		
@@ -166,13 +141,13 @@ public class QuitMonitor extends jade.core.Agent {
 	private void agentDeleted(AID agentID) {
 
 		if(agentContainerMap.containsValue(AgentState.UNAVAILABLE))
-			logger.warning("Error: agent<"+agentID.getName()+"> already deleted but other agents are still missing");
+			logger.log(Level.WARNING, "Error: agent<{0}> already deleted but other agents are still missing", agentID.getName());
 		
 		if(agentContainerMap.get(agentID) == AgentState.ACTIVATED) {
 			agentContainerMap.put(agentID, AgentState.DONE);
 		}
 		else
-			logger.severe("Error: agent<"+agentID.getName()+"> deleted but previous state was <"+agentContainerMap.get(agentID)+">");
+			logger.log(Level.SEVERE, "Error: agent<{0}> deleted but previous state was <{1}>", new Object[]{agentID.getName(), agentContainerMap.get(agentID)});
 
 		for(Iterator<AgentState> iter = agentContainerMap.values().iterator(); iter.hasNext();) {
 			AgentState state = iter.next();
