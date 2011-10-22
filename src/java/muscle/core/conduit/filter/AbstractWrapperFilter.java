@@ -10,10 +10,10 @@ import muscle.core.wrapper.DataWrapper;
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractWrapperFilter extends AbstractFilter<DataWrapper,DataWrapper> implements WrapperFilter {
-	protected DataTemplate inTemplate;
+public abstract class AbstractWrapperFilter<E,F> extends AbstractFilter<DataWrapper<E>,DataWrapper<F>> implements WrapperFilter<E,F> {
+	protected DataTemplate<E> inTemplate;
 	
-	public void setQueueConsumer(WrapperQueueConsumer qc) {
+	public void setQueueConsumer(WrapperQueueConsumer<F> qc) {
 		super.setQueueConsumer(qc);
 		this.setInTemplate(qc.getInTemplate());
 	}
@@ -21,11 +21,11 @@ public abstract class AbstractWrapperFilter extends AbstractFilter<DataWrapper,D
 	/** Sets the expected DataTemplate, based on the template of the consumer of this filter.
 	 * Override if the DataTemplate is altered by using this filter.
 	 */
-	protected void setInTemplate(DataTemplate consumerTemplate) {
-		this.inTemplate = consumerTemplate;		
+	protected void setInTemplate(DataTemplate<F> consumerTemplate) {
+		this.inTemplate = (DataTemplate<E>)consumerTemplate;		
 	}
 	
-	public DataTemplate getInTemplate() {
+	public DataTemplate<E> getInTemplate() {
 		return this.inTemplate;
 	}
 }

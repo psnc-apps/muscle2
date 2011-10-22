@@ -27,7 +27,7 @@ import muscle.core.wrapper.DataWrapper;
 multiplies every value of incoming data with a constant factor
 @author Jan Hegewald
 */
-public class MultiplyFilterDouble extends AbstractWrapperFilter {
+public class MultiplyFilterDouble extends AbstractWrapperFilter<double[],double[]> {
 	private final double factor;
 	
 	public MultiplyFilterDouble(double newFactor) {
@@ -35,8 +35,8 @@ public class MultiplyFilterDouble extends AbstractWrapperFilter {
 		factor = newFactor;
 	}
 
-	protected void apply(DataWrapper subject) {
-		double[] inData = (double[])subject.getData();
+	protected void apply(DataWrapper<double[]> subject) {
+		double[] inData = subject.getData();
 
 		for (int i = 0; i < inData.length; i++) {			
 			inData[i] *= factor;

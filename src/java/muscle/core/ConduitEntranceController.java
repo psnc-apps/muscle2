@@ -103,7 +103,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements RemoteDat
 			}
 		}
 
-		ownerAgent.sendMessage(dmsg);
+		transmitter.send(dmsg);
 	}
 
 	@Override

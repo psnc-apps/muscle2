@@ -21,27 +21,23 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import muscle.core.messaging.Duration;
 import muscle.core.wrapper.DataWrapper;
-import javatool.DecimalMeasureTool;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
-import javax.measure.DecimalMeasure;
-import java.math.BigDecimal;
 
 /**
 modifies timestep with a given offset
 @author Jan Hegewald
 */
-public class TimeOffsetFilter extends AbstractWrapperFilter {
-	DecimalMeasure<Duration> offset;
+public class TimeOffsetFilter<E> extends AbstractWrapperFilter<E,E> {
+	private final Duration offset;
 
 	/** @param newOffset offset in seconds */
 	public TimeOffsetFilter(int newOffset) {
 		super();
-		offset = new DecimalMeasure<Duration>(new BigDecimal(newOffset), SI.SECOND);
+		offset = new Duration(newOffset);
 	}
 
-	protected void apply(DataWrapper subject) {
-		put(new DataWrapper(subject.getData(), DecimalMeasureTool.add(subject.getSITime(), offset)));
+	protected void apply(DataWrapper<E> subject) {
+		put(new DataWrapper<E>(subject.getData(), subject.getSITime().add(offset)));
 	}
 }

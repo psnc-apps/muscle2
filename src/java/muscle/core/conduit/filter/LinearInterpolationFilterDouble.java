@@ -28,19 +28,17 @@ interpolates two adjacent values of the incoming data array
 for this filter to work, the incoming data must have one value more than the outgoing data
 @author Jan Hegewald
 */
-public class LinearInterpolationFilterDouble extends AbstractWrapperFilter {
-	protected void apply(DataWrapper subject) {
-		double[] inData = (double[])subject.getData();
+public class LinearInterpolationFilterDouble extends AbstractWrapperFilter<double[],double[]> {
+	protected void apply(DataWrapper<double[]> subject) {
+		double[] inData = subject.getData();
 		double[] outData = new double[inData.length-1];
 
 		// warning: as outWrapper is mutable, a successive filter might change its length
-
 		for (int i = 0; i < outData.length; i++) {			
 			outData[i] = ( inData[i] + inData[i+1]) / 2.0;
 		}
 		
-		DataWrapper<double[]> outWrapper = new DataWrapper<double[]>(outData, subject.getSITime());
-		put(outWrapper);
+		put(new DataWrapper<double[]>(outData, subject.getSITime()));
 	}
 }
 

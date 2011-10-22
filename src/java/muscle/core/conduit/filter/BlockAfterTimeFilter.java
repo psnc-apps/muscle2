@@ -29,7 +29,7 @@ import muscle.core.messaging.Timestamp;
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
-public class BlockAfterTimeFilter extends AbstractWrapperFilter {
+public class BlockAfterTimeFilter<E> extends AbstractWrapperFilter<E,E> {
 	private final Timestamp maxTime;
 
 	/** @param newMaxTime seconds after which the filter blocks */
@@ -38,11 +38,10 @@ public class BlockAfterTimeFilter extends AbstractWrapperFilter {
 		maxTime = new Timestamp(newMaxTime);
 	}
 
-	protected void apply(DataWrapper subject) {
+	protected void apply(DataWrapper<E> subject) {
 		if(subject.getSITime().compareTo(maxTime) < 1)
 			put(subject);
 		else
 			System.out.println("warning: blocking data for time <"+subject.getSITime()+">");
 	}
 }
-

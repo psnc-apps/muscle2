@@ -21,39 +21,23 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.Scale;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.DataTemplate;
-import muscle.exception.MUSCLERuntimeException;
 import utilities.array3d.Array3D_double;
 import utilities.array2d.Array2D_double;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
 
 /**
 maps 3d grid data to 2d data (calculates the average value for the third dimension)
 @author Jan Hegewald
 */
-public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter {
+public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter<Array3D_double, Array2D_double> {
 	
-	protected void setInTemplate(DataTemplate consumerTemplate) {
-		if( consumerTemplate.getScale().getDimensions() != 2) {
-			throw new MUSCLERuntimeException("this filter must output 2D data");
-
-		}
-		if( !consumerTemplate.getDataClass().equals(Array3D_double.class))
-			throw new MUSCLERuntimeException("input must be a <"+Array3D_double.class+">");
-		
-		DecimalMeasure<Length>[] inDx = new DecimalMeasure[consumerTemplate.getScale().getDimensions()+1]; 
-		inDx = consumerTemplate.getScale().getAllDx().toArray(inDx);
-		Scale inScale = new Scale(consumerTemplate.getScale().getDt(), inDx);
-		
-		this.inTemplate = new DataTemplate(Array2D_double.class, inScale);
+	protected void setInTemplate(DataTemplate<Array2D_double> consumerTemplate) {
+		this.inTemplate = new DataTemplate<Array3D_double>(Array3D_double.class);
 	}
 	
-	protected void apply(DataWrapper subject) {
-		Array3D_double inData = (Array3D_double)subject.getData();
+	protected void apply(DataWrapper<Array3D_double> subject) {
+		Array3D_double inData = subject.getData();
 		
 		int width = inData.getX1Size();
 		int height = inData.getX2Size();
@@ -74,7 +58,7 @@ public class ThreeD2TwoDFilterDouble extends AbstractWrapperFilter {
 				outData.set(ix, iy, val);
 			}
 		}
-		put(new DataWrapper<Array2D_double>(outData, (DecimalMeasure<Duration>)subject.getSITime()));
+		put(new DataWrapper<Array2D_double>(outData, subject.getSITime()));
 	}
 }
 

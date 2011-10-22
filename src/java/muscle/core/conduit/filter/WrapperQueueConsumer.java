@@ -10,6 +10,6 @@ import muscle.core.wrapper.DataWrapper;
  * A wrapper only consumes datawrappers with a certain template.
  * @author Joris Borgdorff
  */
-public interface WrapperQueueConsumer extends QueueConsumer<DataWrapper> {
-	public DataTemplate getInTemplate();
+public interface WrapperQueueConsumer<E> extends QueueConsumer<DataWrapper<E>> {
+	public DataTemplate<E> getInTemplate();
 }

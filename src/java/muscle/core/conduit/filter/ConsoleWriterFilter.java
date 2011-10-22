@@ -28,11 +28,10 @@ import muscle.core.wrapper.DataWrapper;
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald
 */
-public class ConsoleWriterFilter extends AbstractWrapperFilter {
-	protected void apply(DataWrapper subject) {
+public class ConsoleWriterFilter<E> extends AbstractWrapperFilter<E,E> {
+	protected void apply(DataWrapper<E> subject) {
 		System.out.println(subject.toString());
 		
 		put(subject);
 	}
 }
-

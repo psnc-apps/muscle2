@@ -28,7 +28,7 @@ import muscle.core.wrapper.DataWrapper;
 this filter does nothing, data passed to this filter is lost
 @author Jan Hegewald
 */
-public class NullFilter extends AbstractWrapperFilter {
+public class NullFilter<E,F> extends AbstractWrapperFilter<E,F> {
 	
 	public void apply() {
 		if (incomingQueue == null) return;
@@ -37,5 +37,5 @@ public class NullFilter extends AbstractWrapperFilter {
 		}
 	}
 	
-	protected void apply(DataWrapper subject) {}
+	protected void apply(DataWrapper<E> subject) {}
 }

@@ -34,23 +34,15 @@ import javatool.DecimalMeasureTool;
 modifies timestep with a given factor
 @author Jan Hegewald
 */
-public class TimeFactorFilter extends AbstractWrapperFilter {
+public class TimeFactorFilter<E> extends AbstractWrapperFilter<E,E> {
 	private final int factor;
 
 	public TimeFactorFilter(int newFactor) {
 		super();
 		factor = newFactor;
 	}
-	
-	protected void setInTemplate(DataTemplate consumerTemplate) {
-		Scale outScale = consumerTemplate.getScale();
-		assert outScale != null;
-		DecimalMeasure<Duration> inDt = new DecimalMeasure(outScale.getDt().getValue().multiply(new BigDecimal(factor)), outScale.getDt().getUnit());
 
-		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
-	}
-
-	protected void apply(DataWrapper subject) {		
-		put(new DataWrapper(subject.getData(), DecimalMeasureTool.multiply(subject.getSITime(), new BigDecimal(factor))));
+	protected void apply(DataWrapper<E> subject) {		
+		put(new DataWrapper<E>(subject.getData(), subject.getSITime().multiply(factor)));
 	}
 }

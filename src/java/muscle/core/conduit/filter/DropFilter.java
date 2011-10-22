@@ -35,7 +35,7 @@ drops data if incoming time scale is not a multiple of outgoing dt, newInDt is o
 use for testing, usually better try to not send the dropped data at all from within the CA
 @author Jan Hegewald
 */
-public class DropFilter extends AbstractWrapperFilter {
+public class DropFilter<E> extends AbstractWrapperFilter<E,E> {
 	private final int outRate;
 	private int counter;
 	
@@ -44,12 +44,8 @@ public class DropFilter extends AbstractWrapperFilter {
 		super();
 		outRate = newInDtSec;
 	}
-	
-	protected void setInTemplate(DataTemplate consumerTemplate) {
-		this.inTemplate = new DataTemplate(consumerTemplate.getDataClass());
-	}
 
-	protected void apply(DataWrapper subject) {
+	protected void apply(DataWrapper<E> subject) {
 		if(counter % outRate == 0)
 			put(subject);
 		

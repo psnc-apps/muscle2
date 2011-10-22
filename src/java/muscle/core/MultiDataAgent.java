@@ -28,6 +28,7 @@ import muscle.logging.AgentLogger;
 import java.util.logging.Logger;
 import jade.core.Location;
 import jade.core.MessageQueue;
+import jade.domain.introspection.ACLMessage;
 import muscle.core.messaging.jade.IncomingMessageProcessor;
 import muscle.core.messaging.RemoteDataSinkHead;
 import muscle.core.messaging.jade.DataMessage;

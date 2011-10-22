@@ -12,4 +12,11 @@ public class Duration extends AbstractTime {
 	public String toString() {
 		return "delta=" + this.t + " s";
 	}
+	
+	public Duration multiply(double factor) {
+		return new Duration(t * factor);
+	}
+	public Duration divide(double factor) {
+		return new Duration(t / factor);
+	}
 }

@@ -26,7 +26,7 @@ import muscle.core.wrapper.DataWrapper;
 /**
 interface for conduit filters which act on wrapped data
 */
-public interface WrapperFilter extends QueueProducer<DataWrapper>, WrapperQueueConsumer {
-	public void setQueueConsumer(WrapperQueueConsumer qc);
+public interface WrapperFilter<E,F> extends WrapperQueueConsumer<E>, QueueProducer<DataWrapper<F>> {
+	public void setQueueConsumer(WrapperQueueConsumer<F> qc);
 }
 

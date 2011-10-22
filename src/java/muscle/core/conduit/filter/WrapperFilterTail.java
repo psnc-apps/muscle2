@@ -28,13 +28,13 @@ import muscle.core.wrapper.DataWrapper;
 exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-public abstract class WrapperFilterTail extends FilterTail<DataWrapper> implements WrapperQueueConsumer {
-	private final DataTemplate template;
+public abstract class WrapperFilterTail<E> extends FilterTail<DataWrapper<E>> implements WrapperQueueConsumer<E> {
+	private final DataTemplate<E> template;
 
-	public WrapperFilterTail(DataTemplate inTemplate) {
+	public WrapperFilterTail(DataTemplate<E> inTemplate) {
 		this.template = inTemplate;
 	}
-	public final DataTemplate getInTemplate() {
+	public final DataTemplate<E> getInTemplate() {
 		return template;
 	}
 }

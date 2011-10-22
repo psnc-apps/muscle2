@@ -27,8 +27,8 @@ import muscle.core.wrapper.DataWrapper;
 this filter simply forwards the data to the next filter without altering the data
 @author Jan Hegewald
 */
-public class PipeFilter extends AbstractWrapperFilter {
-	protected void apply(DataWrapper subject) {
+public class PipeFilter<E> extends AbstractWrapperFilter<E,E> {
+	protected void apply(DataWrapper<E> subject) {
 		put(subject);
 	}
 }

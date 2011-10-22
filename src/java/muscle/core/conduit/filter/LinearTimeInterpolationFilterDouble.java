@@ -42,22 +42,22 @@ dtCoarseCount/2 == dtFineCount<br>
     0�1�2�3�4�5�6 t_fine</tt>
 @author Jan Hegewald
 */
-public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter {
+public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter<double[],double[]> {
 	private double[] lastCoarseData; // copy of the last used coarse timestep data (inData)
-	private final Duration dtFactor;
+	private final int dtFactor;
 		
 	public LinearTimeInterpolationFilterDouble(int dtFactor) {
 		super();
 		// so far only tested with dt_coarse = 2*dt_fine
 		assert dtFactor == 2;
-		this.dtFactor = new Duration(dtFactor);
+		this.dtFactor = dtFactor;
 	}
 	
-	public void apply(DataWrapper subject) {
+	public void apply(DataWrapper<double[]> subject) {
 		// init lastCoarseData buffer
 		// create our buffer for out data only once
 		if(lastCoarseData == null) {
-			lastCoarseData = ((double[])subject.getData()).clone();
+			lastCoarseData = (subject.getData()).clone();
 
 			// feed next filter with data for the current coarse timestep
 			put(subject);
@@ -66,16 +66,16 @@ public class LinearTimeInterpolationFilterDouble extends AbstractWrapperFilter {
 		}
 
 		double[] lastCoarseArray = lastCoarseData;
-		double[] currentCoarseArray = (double[])subject.getData();
+		double[] currentCoarseArray = subject.getData();
 		double[] interpolatedArray = new double[currentCoarseArray.length];
 		for(int i = 0; i < lastCoarseArray.length; i++) {
 			interpolatedArray[i] = (lastCoarseArray[i] + currentCoarseArray[i]) / 2.0;
 		}
 		
 		// retain the current coarse data to be able to calculate the next timestep
-		lastCoarseData = ((double[])subject.getData()).clone();
+		lastCoarseData = (subject.getData()).clone();
 		
-		DataWrapper interpolatedData = new DataWrapper(interpolatedArray, subject.getSITime().divide(dtFactor));
+		DataWrapper<double[]> interpolatedData = new DataWrapper<double[]>(interpolatedArray, subject.getSITime().divide(dtFactor));
 		assert interpolatedData.getSITime().compareTo(subject.getSITime()) != 0;
 		
 		// feed next filter with interpolated data for last fine timestep
