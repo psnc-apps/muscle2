@@ -58,11 +58,10 @@ public class OTFLogger {
 	private static boolean timer_exit = false;
 	private static boolean libotf_not_found = false;
 	
-	private static Logger logger;
+	private final static Logger logger = Logger.getLogger(OTFLogger.class.getName());
 	
 	private OTFLogger()
 	{ 
-		logger = muscle.logging.Logger.getLogger(this.getClass());		
 		loadProperties();			
 	}
 	

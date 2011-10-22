@@ -20,14 +20,15 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.conduit;
 
-import java.util.ArrayList;
 import java.util.logging.Level;
 import muscle.core.wrapper.Observation;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.logging.AgentLogger;
 import utilities.MiscTool;
 import java.lang.reflect.Constructor;
+import java.util.List;
 import muscle.core.conduit.filter.*;
+import muscle.core.ident.PortalID;
 import muscle.core.messaging.jade.ObservationMessage;
 
 /**
@@ -50,18 +51,14 @@ public class AutomaticConduit extends BasicConduit {
 
 	protected Filter<ObservationMessage,Observation> initFilterChain(final FilterTail<ObservationMessage> filterTail) {
 		AgentLogger logger = AgentLogger.getLogger(this);
-		logger.log(Level.FINE, "filter args: <{0}>", MiscTool.joinItems(getOptionalArgs(), ", "));
+		List<String> filterArgs = getOptionalArgs();
+		logger.log(Level.FINE, "filter args: <{0}>", MiscTool.joinItems(filterArgs, ", "));
 
 		// assume our optional args are filter names
 		// cast our optional args to filter names
-		ArrayList<String> filterArgs = new ArrayList<String>();
-		for (Object o : getOptionalArgs()) {
-			filterArgs.add((String) o);
-		}
 
 		final ObservationMessage dataMessage = new ObservationMessage();
-		dataMessage.setSinkId(exitName);
-		dataMessage.addReceiver(this.exitAgent);
+		dataMessage.setRecipient(new PortalID(exitName, exitAgent));
 
 		// At the end, convert wrappers back to messages
 		final Filter<Observation, ObservationMessage> wrapper2dmsg = new AbstractFilter<Observation, ObservationMessage>(filterTail) {
@@ -86,7 +83,7 @@ public class AutomaticConduit extends BasicConduit {
 		return dmsg2wrapper;
 	}
 
-	private QueueConsumer<Observation> automaticPipeline(ArrayList<String> filterNames,  QueueConsumer<Observation> tailFilter) {
+	private QueueConsumer<Observation> automaticPipeline(List<String> filterNames,  QueueConsumer<Observation> tailFilter) {
 		QueueConsumer<Observation> filter = tailFilter;
 		for (int i = filterNames.size() - 1; i > -1; i--) {
 			filter = filterForName(filterNames.get(i), filter);
@@ -95,7 +92,7 @@ public class AutomaticConduit extends BasicConduit {
 		return filter;
 	}
 
-	private ObservationFilter filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
+	private QueueConsumer<Observation> filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once
 		String name = tmp[0];
@@ -179,7 +176,10 @@ public class AutomaticConduit extends BasicConduit {
 		
 		if (filter != null) {
 			filter.setQueueConsumer(tailFilter);
+			return filter;
 		}
-		return filter;
+		else {
+			return tailFilter;
+		}
 	}
 }

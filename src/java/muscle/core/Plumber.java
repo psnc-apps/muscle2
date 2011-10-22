@@ -22,11 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import muscle.Constant;
-import muscle.core.conduit.BasicConduit;
 import muscle.core.conduit.ConduitArgs;
 import muscle.core.ConnectionScheme.Pipeline;
-import muscle.core.DataTemplate;
-import muscle.core.EntranceDependency;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.exception.SpawnAgentException;
 import muscle.logging.AgentLogger;
@@ -48,12 +45,13 @@ import jade.wrapper.AgentController;
 import jadetool.DFServiceTool;
 import jadetool.DFServiceTool.RegisterSingletonAgentException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import jade.core.Location;
+import java.util.logging.Logger;
+import utilities.FastArrayList;
 
 
 /**
@@ -68,7 +66,7 @@ public class Plumber extends Agent {
 	private LinkedList<ExitDescription> postponedExits = new LinkedList<ExitDescription>();
 	
 	private static int conduitCounter = 0;
-	private transient AgentLogger logger;
+	private static final Logger logger = Logger.getLogger(Plumber.class.getName());
 
 	private transient XStream xstream = new XStream();
 
@@ -76,9 +74,6 @@ public class Plumber extends Agent {
 	
 	//
 	protected void setup() {
-
-		logger = AgentLogger.getLogger(this);
-
 		if( DFServiceTool.hasSingletonAgent(this, Plumber.class.getName()) ) {
 			logger.severe("can not start because there are already other Plumber(s) available for this platform");
 			doDelete();
@@ -118,20 +113,17 @@ public class Plumber extends Agent {
 
 		AID exitAgent = exit.getControllerID();
 		
-
-		ArrayList<Object> optionalArgs = new ArrayList<Object>(conduit.getArgs().length);
-		// fill optional args
-		for(int i = 0; i < conduit.getArgs().length; i++) {
-			optionalArgs.add(conduit.getArgs()[i]);
-		}
+		String[] optArgs = conduit.getArgs();
+		String[] tmp = new String[optArgs.length];
+		System.arraycopy(optArgs, 0, tmp, 0, optArgs.length);
+		List<String> optionalArgs = new FastArrayList<String>(tmp);
 		
 		Location targetLocation = locationForConduit(entrance, conduit, exit);
 		
 		ConduitArgs conduitArgs = new ConduitArgs(
 												entranceAgent, entrance.getID(), entrance.getDataTemplate()
 												, exitAgent, exit.getID(), exit.getDataTemplate()
-												, BasicConduit.LowBandwidthStrategy.class, targetLocation
-												, optionalArgs);
+												, targetLocation, optionalArgs);
 		Object[] args = new Object[1];
 		args[0] = conduitArgs;										
 		

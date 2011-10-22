@@ -27,14 +27,13 @@ import jade.core.Location;
 import muscle.core.DataTemplate;
 
 import java.util.ArrayList;
-
+import java.util.List;
 
 /**
 helps with args for a conduit
 @author Jan Hegewald
 */
 public class ConduitArgs implements Serializable {
-
 	// mandatory args
 	private AID entranceAgent;
 	private String entranceName;
@@ -43,88 +42,51 @@ public class ConduitArgs implements Serializable {
 	private AID exitAgent;
 	private String exitName;
 	private DataTemplate exitDataTemplate;
-	private Class<? extends ResourceStrategy> strategyClass;
 	private Location targetLocation;
 	
 	// optional args
-	private ArrayList<Object> optionalArgs;
+	private List<String> optionalArgs;
 
-
-	//
-	public ConduitArgs(AID newEntranceAgent, String newEntranceName, DataTemplate newEntranceDataTemplate, AID newExitAgent, String newExitName, DataTemplate newExitDataTemplate, Class<? extends ResourceStrategy> newStrategyClass, Location newTargetLocation, ArrayList<Object> newOptionalArgs) {
-
+	public ConduitArgs(AID newEntranceAgent, String newEntranceName, DataTemplate newEntranceDataTemplate, AID newExitAgent, String newExitName, DataTemplate newExitDataTemplate, Location newTargetLocation, List<String> newOptionalArgs) {
 		entranceAgent = newEntranceAgent;
 		entranceName = newEntranceName;
 		entranceDataTemplate = newEntranceDataTemplate;
 		exitAgent = newExitAgent;
 		exitName = newExitName;
 		exitDataTemplate = newExitDataTemplate;
-		strategyClass = newStrategyClass;
 		targetLocation = newTargetLocation; // set to null if conduit should detect targetLocation automatically
 		optionalArgs = newOptionalArgs;
 	}
 
-
-	//
 	public AID getEntranceAgent() {
-	
 		return entranceAgent;
 	}
 
-
-	//
 	public DataTemplate getEntranceDataTemplate() {
-	
 		return entranceDataTemplate;
 	}
 
-
-	//
 	public String getEntranceName() {
-	
 		return entranceName;
 	}
 
-
-	//
 	public AID getExitAgent() {
-	
 		return exitAgent;
 	}
 
-
-	//
-	public DataTemplate getExitDataTemplate() {
-	
+	public DataTemplate getExitDataTemplate() {	
 		return exitDataTemplate;
 	}
 
-
-	//
 	public String getExitName() {
-	
 		return exitName;
 	}
 
-
-	//
-	public Class<? extends ResourceStrategy> getStrategyClass() {
-	
-		return strategyClass;
-	}
-
-
-	//
 	public Location getTargetLocation() {
-	
 		return targetLocation;
 	}
 
-
-	//
-	public ArrayList<Object> getOptionalArgs() {
-	
+	public List<String> getOptionalArgs() {
 		return optionalArgs;
 	}
-	 
 }

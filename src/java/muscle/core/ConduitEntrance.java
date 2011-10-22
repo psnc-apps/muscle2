@@ -7,6 +7,7 @@ package muscle.core;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import muscle.core.conduit.filter.QueueConsumer;
+import muscle.core.ident.Identifier;
 import muscle.core.messaging.BasicMessage;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Message;
@@ -39,7 +40,7 @@ public class ConduitEntrance<T> {
 	public void send(T data) {
 		Timestamp currentTime = nextTime;
 		nextTime = nextTime.add(dt);
-		Message<T> msg = new BasicMessage<T>(data, currentTime, nextTime);
+		Message<T> msg = new BasicMessage<T>(data, currentTime, nextTime, null);
 		this.send(msg);
 	}
 	

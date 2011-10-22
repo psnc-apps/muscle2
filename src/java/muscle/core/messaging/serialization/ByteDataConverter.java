@@ -48,7 +48,6 @@ public class ByteDataConverter<T> implements DataConverter<T, byte[]> {
 	}
 
 	public T deserialize(byte[] data) {
-
 		ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
 
 		ObjectInputStream in;

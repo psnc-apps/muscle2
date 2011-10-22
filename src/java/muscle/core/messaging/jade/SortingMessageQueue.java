@@ -32,17 +32,17 @@ custom message queue for a jade.core.Agent which sorts arriving messages to pure
 @author Jan Hegewald
  */
 public class SortingMessageQueue<E> extends PublicMessageQueue {
-	private final Queue<Message<E>> nonACLQueue;
+	private final Queue<DataMessage<E>> nonACLQueue;
 	private final ACLConverter<E> deserializer;
 
-	public SortingMessageQueue(Queue<Message<E>> newNonACLQueue) {
+	public SortingMessageQueue(Queue<DataMessage<E>> newNonACLQueue) {
 		nonACLQueue = newNonACLQueue;
 		deserializer = new ACLConverter<E>();
 	}
 
 	@Override
 	public void addFirst(ACLMessage msg) {
-		Message<E> dmsg;
+		DataMessage<E> dmsg;
 		if ((dmsg = deserializer.deserialize(msg)) != null) {
 			nonACLQueue.add(dmsg);
 		} else {
@@ -52,7 +52,7 @@ public class SortingMessageQueue<E> extends PublicMessageQueue {
 
 	@Override
 	public void addLast(ACLMessage msg) {
-		Message<E> dmsg;
+		DataMessage<E> dmsg;
 		if ((dmsg = deserializer.deserialize(msg)) != null) {
 			nonACLQueue.add(dmsg);
 		} else {

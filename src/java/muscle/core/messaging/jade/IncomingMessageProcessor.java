@@ -20,91 +20,60 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.messaging.jade;
 
+import java.util.Map;
 import java.util.Queue;
 import java.util.logging.Level;
-import muscle.core.MultiDataAgent;
-import muscle.core.conduit.filter.QueueConsumer;
-import muscle.core.messaging.serialization.ByteDataConverter;
-import muscle.core.messaging.signal.Signal;
-import utilities.SafeThread;
+import java.util.logging.Logger;
+import muscle.core.conduit.communication.JadeReceiver;
+import muscle.core.ident.Identifier;
+import muscle.core.ident.JadeAgentID;
+import utilities.ArrayMap;
+import utilities.SafeQueueConsumerThread;
 
 /**
 process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends SafeThread implements QueueConsumer<ObservationMessage<?>> {
-	private final MultiDataAgent owner;
-	private final Queue<ObservationMessage<?>> queue;
+public class IncomingMessageProcessor extends SafeQueueConsumerThread<DataMessage<?>> {
+	private final Map<Identifier, JadeReceiver> receivers;
+	private static final Logger logger = Logger.getLogger(IncomingMessageProcessor.class.getName());
 
-	public IncomingMessageProcessor(MultiDataAgent newOwner, Queue<ObservationMessage<?>> newQueue) {
-		owner = newOwner;
-		queue = newQueue;
+	public IncomingMessageProcessor(Queue<DataMessage<?>> newQueue) {
+		receivers = new ArrayMap<Identifier, JadeReceiver>();
+		super.setIncomingQueue(newQueue);
 	}
-
-	@Override
-	public synchronized void apply() {
-		this.notifyAll();
+	
+	public void addReceiver(Identifier id, JadeReceiver recv) {
+		this.receivers.put(id, recv);
 	}
 	
 	@Override
-	protected void execute() throws InterruptedException {
-		ObservationMessage dmsg = queue.remove();
-		
+	protected void execute(DataMessage dmsg) {
 		if (dmsg != null) {
-			put(dmsg);
+			JadeAgentID id = dmsg.getRecipient();
+			JadeReceiver recv = receivers.get(id);
+			if (recv == null)
+				logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
+
+			recv.put(dmsg);
 		}
-	}
-	
-	/**
-	 * Wait until queue is non-empty. Returns false if the thread should halt.
-	 */
-	protected synchronized boolean continueComputation() throws InterruptedException {
-		while (!isDone && queue.isEmpty()) {
-			wait();
-		}
-		return !isDone;
 	}
 
 	public void start() {
-		owner.getLogger().log(Level.INFO, "starting {0}", getClass());
+		Logger.getLogger(IncomingMessageProcessor.class.getName()).log(Level.INFO, "starting {0}", getClass());
 		super.start();
-	}
-
-	private void put(ObservationMessage dmsg) {
-		// deserialize message content and store it in the message object
-		long byteCount = 0;
-		if (dmsg.hasByteSequenceContent()) {
-			Object data = null;
-			// deserialize message content
-			byte[] rawData = dmsg.getByteSequenceContent();
-			dmsg.setByteSequenceContent(null);
-			byteCount = rawData.length;
-
-			data = new ByteDataConverter().deserialize(rawData);
-//			data = MiscTool.gunzip(rawData);
-			rawData = null;
-
-			dmsg.store(data, byteCount);
-		} else {
-			throw new muscle.exception.MUSCLERuntimeException("[" + owner.getLocalName() + "] can not handle empty DataMessage");
-		}
-		
-		if (dmsg.getSinkID().equals(Signal.class.toString())) {
-			owner.handleRemoteSignal(dmsg);
-		}
-		else {
-			owner.handleDataMessage(dmsg, byteCount);
-		}
-	}
-	
-	@Override
-	public void setIncomingQueue(Queue<ObservationMessage<?>> queue) {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
 		throw new RuntimeException(ex);
+	}
+	
+	/**
+	 * maximum buffer size in bytes
+	 */
+	protected static long suggestedMaxBufferSize() {
+		return 1042 * 1042 * 800; // 800MB
 	}
 }

@@ -29,24 +29,21 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import java.util.logging.Logger;
 import utilities.MiscTool;
 import muscle.Constant;
 import muscle.behaviour.MoveBehaviour;
 import muscle.core.ConduitEntranceController;
-import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
-import muscle.utilities.RemoteOutputStream;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.core.conduit.filter.FilterTail;
 import muscle.core.messaging.jade.ObservationMessage;
+import utilities.FastArrayList;
 
 /**
 unidirectional pipe
@@ -55,44 +52,25 @@ the readable end of a conduit is its "exit" (AKA source)
 @author Jan Hegewald
  */
 public class BasicConduit extends muscle.core.MultiDataAgent {
-
+	private final static Logger logger = Logger.getLogger(BasicConduit.class.getName());
 	protected AID entranceAgent;
 	protected String entranceName;
 	private DataTemplate entranceDataTemplate;
 	protected AID exitAgent;
 	protected String exitName;
 	private DataTemplate exitDataTemplate;
-	private ArrayList<Object> optionalArgs;
-	private MessageTemplate receiveTemplate;
-	private ResourceStrategy resourceStrategy;
-	private OutputStreamWriter traceReceiveWriter;
-	private OutputStreamWriter traceSendWriter;
-
+	private List<String> optionalArgs;
+	
 	//
 	@Override
 	public void takeDown() {
-		if (traceReceiveWriter != null) {
-			try {
-				traceReceiveWriter.close();
-			} catch (IOException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		}
-		if (traceSendWriter != null) {
-			try {
-				traceSendWriter.close();
-			} catch (IOException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		}
-
 		if (getCurQueueSize() > 0) {
-			getLogger().log(Level.CONFIG, "there are <{0}> unprocessed messages", getCurQueueSize());
+			logger.log(Level.CONFIG, "there are <{0}> unprocessed messages", getCurQueueSize());
 		}
-		getLogger().info("bye");
+		logger.info("bye");
 	}
 
-	public ArrayList<Object> getOptionalArgs() {
+	public List<String> getOptionalArgs() {
 		return optionalArgs;
 	}
 
@@ -117,15 +95,15 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 		Object[] rawArgs = getArguments();
 
 		if (rawArgs.length == 0) {
-			getLogger().severe("got no args to configure from -> terminating");
+			logger.severe("got no args to configure from -> terminating");
 			doDelete();
 			return;
 		} else if (rawArgs.length > 1) {
-			getLogger().log(Level.WARNING, "skipping {0} unknown args -> terminating", (rawArgs.length - 1));
+			logger.log(Level.WARNING, "skipping {0} unknown args -> terminating", (rawArgs.length - 1));
 		}
 
 		if (!(rawArgs[0] instanceof ConduitArgs)) {
-			getLogger().log(Level.SEVERE, "got invalid args to configure from <{0}> -> terminating", rawArgs[0].getClass().getName());
+			logger.log(Level.SEVERE, "got invalid args to configure from <{0}> -> terminating", rawArgs[0].getClass().getName());
 			doDelete();
 			return;
 		}
@@ -140,63 +118,21 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 		exitDataTemplate = args.getExitDataTemplate();
 		Location targetLocation = args.getTargetLocation();
 
-		Class<? extends ResourceStrategy> strategyClass = args.getStrategyClass();
-		// if strategyClass is a member class, we can not call newInstance() on the class object
-		// (this is only possible for static member classes)
-		// instead, we fetch the defaulf member class constructor which takes a reference to the enclosing class as argument
-		//	note that strategyClass.getConstructor(this.getClass()); does not work for classes which derive from the original enclosing class
-		// so only strategyClass.getConstructor(muscle.core.conduit.Conduit); would work here
-		// below is a workaround to this: we fetch the default constructor and test if our current instance (this) is an instance of the required type
-		if (strategyClass.isMemberClass()) {
-
-			// get the default constructor for a member class of type ResourceStrategy
-			Constructor<? extends ResourceStrategy> constructor = null;
-			constructor = (Constructor<? extends ResourceStrategy>) strategyClass.getConstructors()[0];
-			if (constructor == null || constructor.getParameterTypes().length != 1) {
-				if (constructor.getParameterTypes()[0].getClass().isInstance(this)) {
-					throw new MUSCLERuntimeException("can not create ResourceStrategy instance for class <" + strategyClass.getName() + ">");
-				}
-			}
-
-			// instantiate member class of type ResourceStrategy
-			try {
-				resourceStrategy = constructor.newInstance(this);
-			} catch (InstantiationException e) {
-				throw new MUSCLERuntimeException(e);
-			} catch (IllegalAccessException e) {
-				throw new MUSCLERuntimeException(e);
-			} catch (java.lang.reflect.InvocationTargetException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		} else {
-			// instantiate non-member class of type ResourceStrategy
-			try {
-				resourceStrategy = strategyClass.newInstance();
-			} catch (InstantiationException e) {
-				throw new MUSCLERuntimeException(e);
-			} catch (IllegalAccessException e) {
-				throw new MUSCLERuntimeException(e);
-			}
-		}
-
 		if (targetLocation == null) {
 			targetLocation = targetLocation();
 		}
 
 		optionalArgs = args.getOptionalArgs();
 		if (optionalArgs == null) {
-			optionalArgs = new ArrayList<Object>();
+			optionalArgs = new FastArrayList<String>(0);
 		}
 
 		// sanity check: only proceed if mandatory args are successfully set
-		if (MiscTool.anyNull(entranceAgent, entranceName, entranceDataTemplate, exitAgent, exitName, exitDataTemplate, resourceStrategy, targetLocation, optionalArgs)) {
-			getLogger().severe("can not configure conduit from given args -> terminating");
+		if (MiscTool.anyNull(entranceAgent, entranceName, entranceDataTemplate, exitAgent, exitName, exitDataTemplate, targetLocation, optionalArgs)) {
+			logger.severe("can not configure conduit from given args -> terminating");
 			doDelete();
 			return;
 		}
-
-		// prepare template for incomming data messages
-		receiveTemplate = MessageTemplate.MatchProtocol(entranceName + ":" + Constant.Protocol.DATA_TRANSFER);
 
 		// move to target container
 		addBehaviour(new MoveBehaviour(targetLocation, this) {
@@ -217,20 +153,10 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 		DetachListener detachListener = new DetachListener(8000); // add listener with low priority
 		addBehaviour(detachListener);
 
-		getLogger().log(Level.INFO, "conduit <{0}> is up -- entrance <{1}:{2}> -> exit <{3}:{4}>", new Object[]{getClass(), entranceAgent.getName(), entranceName, exitAgent.getName(), exitName});
+		logger.log(Level.INFO, "conduit <{0}> is up -- entrance <{1}:{2}> -> exit <{3}:{4}>", new Object[]{getClass(), entranceAgent.getName(), entranceName, exitAgent.getName(), exitName});
 	}
 
 	protected void constructMessagePassingMechanism() {
-		// we do not use any manipulating filters here,
-		// so the out template must be identical with the in template
-		try {
-			if (!DataTemplate.match(getEntranceDataTemplate(), getExitDataTemplate())) {
-				throw new muscle.exception.DataTemplateMismatchException(getEntranceDataTemplate().toString() + " vs. " + getExitDataTemplate().toString());
-			}
-		} catch (muscle.exception.DataTemplateMismatchException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-
 		// init filter chain
 		FilterTail<ObservationMessage> filters = new DataSenderFilterTail(this);
 
@@ -242,7 +168,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 	private Location targetLocation() {
 
 		final long t0 = System.currentTimeMillis();
-		getLogger().finer("looking for target location ...");
+		logger.finer("looking for target location ...");
 
 		final Timer watcher = new Timer();
 		TimerTask watcherTask = new TimerTask() {
@@ -250,27 +176,19 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 			@Override
 			public void run() {
 				long t1 = System.currentTimeMillis();
-				getLogger().log(Level.WARNING, "looking for target location already takes <{0}> ms, maybe there is an error with the WhereIsAgentHelper agent?", (t1 - t0));
+				logger.log(Level.WARNING, "looking for target location already takes <{0}> ms, maybe there is an error with the WhereIsAgentHelper agent?", (t1 - t0));
 				watcher.cancel();
 			}
 		};
 		long timeout = 1000;
 		watcher.schedule(watcherTask, timeout);
 
-		Location location = muscle.utilities.agent.WhereIsAgentHelper.whereIsAgent(resourceStrategy.adjacentAgent(), this);
+		Location location = muscle.utilities.agent.WhereIsAgentHelper.whereIsAgent(adjacentAgent(), this);
 		watcher.cancel();
 		long t1 = System.currentTimeMillis();
-		getLogger().log(Level.FINER, "looking for target location took <{0}> ms", (t1 - t0));
+		logger.log(Level.FINER, "looking for target location took <{0}> ms", (t1 - t0));
 
 		return location;
-	}
-
-	private RemoteOutputStream newTraceReceiveStream() {
-		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Entrance_" + entranceName + "--f.txt", 1024);
-	}
-
-	private RemoteOutputStream newTraceSendStream() {
-		return new RemoteOutputStream(this, CxADescription.ONLY.getSharedLocation(), getName() + "_Exit_" + exitName + "--f.txt", 1024);
 	}
 
 	/**
@@ -299,7 +217,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 
 		@Override
 		protected void onTick() {
-			getLogger().fine("listening for detach");
+			logger.fine("listening for detach");
 			ACLMessage msg = receive(detachTemplate);
 			if (msg != null) {
 				Class<?> portalClass = null;
@@ -311,7 +229,7 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 
 				if (ConduitEntranceController.class.isAssignableFrom(portalClass)) {
 					entranceAvailable = false;
-					getLogger().info("entrance detached");
+					logger.info("entrance detached");
 				} else {
 					throw new MUSCLERuntimeException("can not detach unknown portal: <" + portalClass.getName() + ">");
 				}
@@ -359,31 +277,20 @@ public class BasicConduit extends muscle.core.MultiDataAgent {
 //		, DYNAMIC_LOW_NETWORK // try to reduce network traffic and may move to another container during runtime if this helps
 //	}
 	// try to reduce network traffic
-	public class LowBandwidthStrategy implements ResourceStrategy, Serializable {
-
-		public AID adjacentAgent() {
-//			if(resourceStrategy == ResourceStrategy.STATIC_LOW_NETWORK) {
-			// determine prefered host container (usually where the entrance or exit lives)
-			if (exitDataTemplate.getQuantity() < 0 || entranceDataTemplate.getQuantity() < 0) {
-				return entranceAgent; // default to entranceAgent if quantity is not specified
-			} else if (exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
-				// move to the container which hosts the exit
-				return exitAgent;
-			} else {
-				// move to the container which hosts the entrance
-				return entranceAgent;
-			}
+	public AID adjacentAgent() {
+//		if(resourceStrategy == ResourceStrategy.STATIC_LOW_NETWORK) {
+		// determine prefered host container (usually where the entrance or exit lives)
+		if (exitDataTemplate.getQuantity() < 0 || entranceDataTemplate.getQuantity() < 0) {
+			return entranceAgent; // default to entranceAgent if quantity is not specified
+		} else if (exitDataTemplate.getQuantity() < entranceDataTemplate.getQuantity()) {
+			// move to the container which hosts the exit
+			return exitAgent;
+		} else {
+			// move to the container which hosts the entrance
+			return entranceAgent;
 		}
 	}
 
-	// do not move or try to be clever
-	public class DullStrategy implements ResourceStrategy, Serializable {
-
-		public AID adjacentAgent() {
-			return getAID();
-		}
-	}
-		
 	public <E> void sendData(E data) {
 		if (data instanceof ACLMessage) {
 			this.send((ACLMessage)data);

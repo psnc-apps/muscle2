@@ -36,6 +36,7 @@ import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.ObservationMessage;
 import muscle.exception.MUSCLERuntimeException;
+import utilities.FastArrayList;
 import utilities.JVM;
 import utilities.MiscTool;
 import utilities.Timing;
@@ -49,6 +50,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	private boolean execute = true;
 	private File infoFile;
 	private RawKernel kernel;
+	private final static Logger logger = Logger.getLogger(JadeInstanceController.class.getName());
 	
 	@Override
 	public void takeDown() {
@@ -61,8 +63,8 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			exit.dispose();
 		}
 
-		getLogger().log(Level.INFO, "kernel tmp dir: {0}", kernel.getTmpPath());
-		getLogger().info("bye");
+		logger.log(Level.INFO, "kernel tmp dir: {0}", kernel.getTmpPath());
+		logger.info("bye");
 
 		if (stopWatch.isCounting()) {
 			// probably the agent has been killed and did not call its afterExecute
@@ -79,11 +81,11 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		try {
 			kernel = (RawKernel) Class.forName(kernelName).newInstance();
 		} catch (InstantiationException ex) {
-			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		} catch (IllegalAccessException ex) {
-			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		} catch (ClassNotFoundException ex) {
-			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		}
 		kernel.setInstanceController(this);
 		
@@ -97,8 +99,8 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 		// log info about this controller
 		Level logLevel = Level.INFO;
-		if (getLogger().isLoggable(logLevel)) {
-			getLogger().log(logLevel, kernel.infoText());
+		if (logger.isLoggable(logLevel)) {
+			logger.log(logLevel, kernel.infoText());
 		}
 
 		if (execute) {
@@ -151,7 +153,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	
 	
 	private void beforeExecute() {
-		getLogger().info("begin execute");
+		logger.info("begin execute");
 		stopWatch = new Timing();
 		// write info file
 		infoFile = new File(MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX));
@@ -164,7 +166,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			writer.write("this is file <" + infoFile + "> created by <" + getClass() + ">" + nl);
 			writer.write("start date: " + (new java.util.Date()) + nl);
 			writer.write("agent name: " + getName() + nl);
-			writer.write("coarsest log level: " + LoggerTool.loggableLevel(getLogger()) + nl);
+			writer.write("coarsest log level: " + logger.getLevel() + nl);
 			writer.write(nl);
 			writer.write("executing ..." + nl);
 
@@ -185,7 +187,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 	private void afterExecute() {
 		stopWatch.stop();
-		getLogger().log(Level.INFO, "end execute <{0}>", stopWatch);
+		logger.log(Level.INFO, "end execute <{0}>", stopWatch);
 		// write info file
 		assert infoFile != null;
 		String nl = System.getProperty("line.separator");
@@ -227,7 +229,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		}
 	}
 	
-		/**
+	/**
 	connect all portals of this RawKernel with their conduits,
 	the conduit will initiate the communication 
 	 */
@@ -238,12 +240,12 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 
 		MessageTemplate msgTemplate = MessageTemplate.MatchProtocol(Constant.Protocol.PORTAL_ATTACH);
 
-		getLogger().config("waiting for conduit announcements ...");
+		logger.config("waiting for conduit announcements ...");
 		while (missingEntrances.size() > 0 || missingExits.size() > 0) {
 
 			// generate log message
 			Level logLevel = Level.FINEST;
-			if (getLogger().isLoggable(logLevel)) {
+			if (logger.isLoggable(logLevel)) {
 				StringBuilder waitText = new StringBuilder(100 + 50*missingEntrances.size() + 50*missingExits.size());
 				waitText.append("waiting for conduits for <").append(missingEntrances.size()).append("> entrances: ");
 				for (int i = 0; i < missingEntrances.size(); i++) {
@@ -259,7 +261,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 						waitText.append(", ");
 					}
 				}
-				getLogger().log(logLevel, waitText.toString());
+				logger.log(logLevel, waitText.toString());
 			}
 
 			// receive attach message from a destination (sink) agent (usually a conduit)
@@ -273,7 +275,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 				for (Iterator<ConduitEntranceController> iter = missingEntrances.iterator(); iter.hasNext();) {
 					ConduitEntranceController entrance = iter.next();
 					if (entrance.getLocalName().equals(conduitEntranceName)) {
-						getLogger().log(Level.FINEST, "attaching entrance <{0}> to its destination <{1}>", new Object[]{entrance.getLocalName(), dstAgent.getLocalName()});
+						logger.log(Level.FINEST, "attaching entrance <{0}> to its destination <{1}>", new Object[]{entrance.getLocalName(), dstAgent.getLocalName()});
 						entrance.setDestination(dstAgent, dstSink);
 						iter.remove();
 						break;
@@ -282,7 +284,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			}
 		}
 
-		getLogger().config("... done waiting for conduit announcements");
+		logger.config("... done waiting for conduit announcements");
 	}
 	
 	
@@ -331,16 +333,16 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	}
 
 	private AID waitForPlumber() {
-		getLogger().finest("searching for an Plumber Agent registering with the DF");
+		logger.finest("searching for an Plumber Agent registering with the DF");
 		List<AID> ids = null;
 		try {
 			ids = DFServiceTool.agentForService(this, true, Plumber.class.getName(), null);
 		} catch (FIPAException e) {
-			getLogger().log(Level.SEVERE, "search with DF is not succeeded", e);
+			logger.log(Level.SEVERE, "search with DF is not succeeded", e);
 			doDelete();
 		}
 		if (ids.size() != 1) {
-			getLogger().log(Level.SEVERE, "we found {0} plumbers, but only one is allowed", ids.size());
+			logger.log(Level.SEVERE, "we found {0} plumbers, but only one is allowed", ids.size());
 			doDelete();
 		}
 
@@ -355,44 +357,30 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			return rawArgs;
 		}
 
-		int index = ArraysTool.indexForInstanceOf(rawArgs, KernelArgs.class);
-		if (index > -1) {
-			KernelArgs args = (KernelArgs) rawArgs[index];
-			execute = args.execute;
-		}
-		// try to load args from a string
-		try {
-			index = ArraysTool.indexForInstanceOf(rawArgs, String.class);
-			if (index > -1) {
-				KernelArgs args = new KernelArgs((String) rawArgs[index]);
-				execute = args.execute;
-			} else {
-				// no args for us here
+		List<Object> list = new FastArrayList<Object>(rawArgs);
+		KernelArgs kargs = null;
+		for (int i = 0; i < list.size(); i++) {
+			if (list.get(i) instanceof KernelArgs) {
+				kargs = (KernelArgs)list.remove(i);
+				break;
 			}
-		} catch (java.lang.IllegalArgumentException e) {
-			index = -1;
-			// no args for us here
-			// the string has wrong format for our args
-			// just init with default values
+			if (list.get(i) instanceof String) {
+				String str = (String)list.remove(i);
+				try {
+					kargs = new KernelArgs(str);
+				} catch (IllegalArgumentException ex) {
+					list.add(i, str);
+					// the string has wrong format for our args, re-add it
+				}
+				// Don't break for string, a KernelArgs might still come by
+			}
 		}
-
-		// remove used arg from args
-		if (index == 0) {
-			rawArgs = Arrays.copyOfRange(rawArgs, index + 1, rawArgs.length);
-		} else if (index == rawArgs.length) {
-			rawArgs = Arrays.copyOfRange(rawArgs, 0, index - 1);
-		} else if (index > -1) {
-			Object[] begin = Arrays.copyOfRange(rawArgs, 0, index - 1);
-			Object[] end = Arrays.copyOfRange(rawArgs, index + 1, rawArgs.length);
-
-			rawArgs = ArraysTool.joinArrays(begin, end);
+		
+		if (kargs != null) {
+			execute = kargs.execute;
+			return list.toArray();
 		}
-
+		
 		return rawArgs;
-	}
-	
-	@Override
-	public Identifier getID() {
-		return new JadeAgentID(this.getAID());
 	}
 }

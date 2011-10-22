@@ -68,23 +68,19 @@ this agent monitors a given list of agents and kills the platform if all these a
 @author Jan Hegewald
 */
 public class QuitMonitor extends jade.core.Agent {
+	private final static Logger logger = Logger.getLogger(DoAgent.class.getName());
 	
 	enum AgentState {UNAVAILABLE, ACTIVATED, DONE};
 	
 	private HashMap<AID, AgentState> agentContainerMap = new HashMap<AID, AgentState>();
-	private AgentLogger logger;
-
 	
 	/**
 	spawns a QuitMonitor agent
 	*/
 	public static AID spawn(Agent ownerAgent, String[] watchNames) {
 
-		// do not create a simple logger with an agent class name because we might use the agent class name to create an AgentLogger
-		Logger simpleLogger = muscle.logging.Logger.getLogger(QuitMonitor.class);
-							
 		String agentName = javatool.ClassTool.getName(QuitMonitor.class);
-		simpleLogger.info("spawning agent: <"+agentName+">");
+		logger.info("spawning agent: <"+agentName+">");
 			
 		AgentController controller = ContainerControllerTool.createUniqueNewAgent(ownerAgent.getContainerController(), agentName, javatool.ClassTool.getName(QuitMonitor.class), watchNames);
 

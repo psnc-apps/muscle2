@@ -21,21 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import muscle.logging.AgentLogger;
-
 import java.text.MessageFormat;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.LogRecord;
 import java.util.Date;
-import java.util.Locale;
 
-	
 /**
 formats log messages
 @author Jan Hegewald
@@ -52,7 +44,7 @@ public class AgentFormatter extends SimpleFormatter {
 	
 	public synchronized String format(LogRecord record) {
 	
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		// Minimize memory allocations here.
 		dat.setTime(record.getMillis());
 		args[0] = dat;

@@ -20,7 +20,7 @@ public abstract class SafeThread extends Thread {
 	}
 	
 	/** The thread calls execute() until it is done. */
-	public void run() {
+	public final void run() {
 		try {
 			while(continueComputation()) {
 				execute();

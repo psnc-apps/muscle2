@@ -35,10 +35,7 @@ initializes our logging mechanism, load with<br>
 */
 public class LoggingConfiguration {
 
-
-	//
 	public LoggingConfiguration() throws java.io.IOException {
-			
 		InputStream loggingConfig = null;
 
 		String fileName = System.getProperty("java.util.logging.config.file");

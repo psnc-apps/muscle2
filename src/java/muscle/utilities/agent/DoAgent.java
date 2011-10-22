@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.SequentialBehaviour;
 import jade.wrapper.AgentController;
-import muscle.logging.AgentLogger;
 import jade.lang.acl.MessageTemplate;
 import muscle.Constant;
 import jadetool.ContainerControllerTool;
@@ -45,9 +44,9 @@ helper agent to perform a task (usually a behaviour) and send back results to it
 @author Jan Hegewald
 */
 public class DoAgent extends Agent {
-
+	private final static Logger logger = Logger.getLogger(DoAgent.class.getName());
+	
 	private static final int MANDATORY_ARG_COUNT = 1;
-	private AgentLogger logger;
 //	private DoAgentArgs args;
 	private Agent ownerAgent;
 	private DataStore resultData;
@@ -99,8 +98,6 @@ public class DoAgent extends Agent {
 	
 	//
 	final protected void setup() {
-
-		logger = AgentLogger.getLogger(this);
 
 		Object[] rawArgs = getArguments();
 		

@@ -5,17 +5,14 @@ package muscle.core.conduit.filter;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import utilities.SafeThread;
-import utilities.SafeTriggeredThread;
+import utilities.SafeQueueConsumerThread;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractThreadedFilter<E,F> extends SafeTriggeredThread implements Filter<E,F> {
-	protected Queue<E> incomingQueue;
+public abstract class AbstractThreadedFilter<E,F> extends SafeQueueConsumerThread<E> implements Filter<E,F> {
 	protected final Queue<F> outgoingQueue;
 	protected QueueConsumer<F> consumer;
 	
@@ -29,21 +26,12 @@ public abstract class AbstractThreadedFilter<E,F> extends SafeTriggeredThread im
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
 	
-	protected void execute() {
-		if (incomingQueue == null) return;
-
-		while (!incomingQueue.isEmpty()) {
-			E message = incomingQueue.remove();
-			if (message != null) {
-				this.apply(message);
-			}
+	protected void execute(E message) {
+		if (message != null) {
+			this.apply(message);
 		}
 
 		consumer.apply();
-	}
-	
-	public void apply() {
-		this.trigger();
 	}
 	
 	protected void put(F message) {
@@ -61,8 +49,9 @@ public abstract class AbstractThreadedFilter<E,F> extends SafeTriggeredThread im
 		this.consumer = qc;
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
-
-	public void setIncomingQueue(Queue<E> queue) {
-		this.incomingQueue = queue;
+	
+	@Override
+	protected void handleInterruption(InterruptedException ex) {
+		Logger.getLogger(getClass().toString()).severe("Filter interrupted.");
 	}
 }

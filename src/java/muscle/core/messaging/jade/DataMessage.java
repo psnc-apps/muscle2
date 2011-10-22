@@ -21,33 +21,40 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core.messaging.jade;
 
 import jade.lang.acl.ACLMessage;
+import muscle.core.ident.Identifier;
+import muscle.core.ident.JadeAgentID;
 
 /**
 @author Jan Hegewald
  */
-public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneable {
+public class DataMessage<E> extends ACLMessage implements Cloneable {
 	// note: JADE sends messages differently if they are passed to a remote container or locally within the same container
 	// for the remote container, a new ACLMessage is created and filled with the proper contents
 	// for the local container, a clone is created via ACLMessage#clone and thus remains a DataMessage class including transient fields
-	public final static String DATA_KEY = DataMessage.class.toString() + "#sinkId";
+	public final static String DATA_KEY = DataMessage.class.toString() + "#id";
+	public final static String TYPE_KEY = DataMessage.class.toString() + "#idtype";
 	private transient E storedItem;
-	private String sinkID;
+	private JadeAgentID sinkID;
 	private Long byteCount;
 
 	public DataMessage() {
 		super(ACLMessage.INFORM);
 	}
 	
-	protected void setSinkId(String messageType, String sid) {
-		this.sinkID = sid;
-		addUserDefinedParameter(messageType, sinkID);
+	public void setRecipient(JadeAgentID id) {
+		this.sinkID = id;
+		this.addReceiver(id.getAID());
+		this.setIdentifierString(sinkID.getName(), sinkID.getType().name());
 	}
-
-	public void setSinkId(String sid) {
-		this.sinkID = sid;
-		addUserDefinedParameter(DATA_KEY, sinkID);
+	
+	protected void setIdentifierString(String name, String type) {
+		this.setIdentifierString(DATA_KEY, name, type);
 	}
-
+	protected void setIdentifierString(String key, String name, String type) {
+		addUserDefinedParameter(key, name);
+		addUserDefinedParameter(TYPE_KEY, type);
+	}
+	
 	public void store(E item, Long newByteCount) {
 		assert newByteCount == null || newByteCount > 0;
 		byteCount = newByteCount;
@@ -62,7 +69,7 @@ public class DataMessage<E> extends jade.lang.acl.ACLMessage implements Cloneabl
 		return storedItem;
 	}
 
-	public String getSinkID() {
-		return sinkID;
+	public JadeAgentID getRecipient() {
+		return this.sinkID;
 	}
 }

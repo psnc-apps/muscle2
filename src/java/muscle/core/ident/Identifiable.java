@@ -5,8 +5,8 @@ package muscle.core.ident;
 
 /**
  *
- * @author jborgdo1
+ * @author Joris Borgdorff
  */
 public interface Identifiable {
-	public Identifier getId();
+	public Identifier getIdentifier();
 }

@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
+import muscle.core.ConduitEntranceController;
+import muscle.core.ConduitExitController;
 
 /**
 receive events about kernel status
@@ -30,9 +32,9 @@ public class NullKernelListener implements KernelListener {
 	public void notifyKernelActivated(RawKernel kernel) {
 	}
 
-	public void notifyEntranceAdded(muscle.core.ConduitEntranceController entrance) {
+	public void notifyEntranceAdded(ConduitEntranceController entrance) {
 	}
 	
-	public void notifyExitAdded(muscle.core.ConduitExit exit) {
+	public void notifyExitAdded(ConduitExitController exit) {
 	}
 }

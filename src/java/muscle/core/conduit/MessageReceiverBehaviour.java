@@ -1,6 +1,3 @@
-/*
- * 
- */
 package muscle.core.conduit;
 
 import jade.core.behaviours.CyclicBehaviour;

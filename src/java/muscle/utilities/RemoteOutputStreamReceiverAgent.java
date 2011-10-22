@@ -30,12 +30,12 @@ import jade.lang.acl.MessageTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.behaviour.MoveBehaviour;
-import muscle.logging.AgentLogger;
 import utilities.MiscTool;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -46,14 +46,11 @@ receives a RemoteOutputStream
 */
 class RemoteOutputStreamReceiverAgent extends Agent {
 	
-	transient private AgentLogger logger;
+	transient private final static Logger logger = Logger.getLogger(RemoteOutputStreamReceiverAgent.class.getName());
 		
 	
 	//
 	final protected void setup() {
-
-		logger = AgentLogger.getLogger(this);
-
 		Object[] rawArgs = getArguments();
 		
 		if(rawArgs.length != 1 ) {
@@ -63,7 +60,7 @@ class RemoteOutputStreamReceiverAgent extends Agent {
 		}				
 		
 		if(! (rawArgs[0] instanceof RemoteOutputStreamReceiverAgentArgs)) {
-			logger.severe("got invalid args to configure from <"+javatool.ClassTool.getName(rawArgs[0].getClass())+"> -> terminating");
+			logger.log(Level.SEVERE, "got invalid args to configure from <{0}> -> terminating", javatool.ClassTool.getName(rawArgs[0].getClass()));
 			doDelete();
 			return;		
 		}
@@ -103,18 +100,6 @@ System.out.println("creating file: <"+MiscTool.joinPaths(MiscTool.pwd(), name)+"
 			}
 		}
 	}
-
-
-	//
-	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		
-		// do default deserialization
-		in.defaultReadObject();
-		
-		// init transient fields
-		logger = AgentLogger.getLogger(this);
-	}
-
 
 	//
 	static public class RemoteOutputStreamReceiverAgentArgs implements java.io.Serializable {

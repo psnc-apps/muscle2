@@ -13,16 +13,12 @@ public class JadeAgentID extends AbstractID implements Identifier {
 	protected AID id;
 	
 	public JadeAgentID(AID id) {
-		super(id.getName());
-		this.id = id;
+		this(id.getName(), id);
 	}
 	
-	public JadeAgentID(String name, Identifier id) {
+	public JadeAgentID(String name, AID id) {
 		super(name);
-		if (!(id instanceof JadeAgentID)) {
-			throw new IllegalArgumentException("Only JadeAgentId is accepted when specifying a name");
-		}
-		this.id = ((JadeAgentID)id).getAID();
+		this.id = id;
 	}
 
 	public AID getAID() {
@@ -35,25 +31,5 @@ public class JadeAgentID extends AbstractID implements Identifier {
 
 	public Location getLocation() {
 		return null;
-	}
-
-	@Override
-	public int compareTo(Identifier t) {
-		if (t instanceof JadeAgentID) {
-			return this.id.compareTo(((JadeAgentID)t).id);
-		}
-		else {
-			return super.compareTo(t);
-		}
-	}
-	
-	public boolean equals(Object o) {
-		if (o instanceof JadeAgentID) {
-			return this.id.equals(((JadeAgentID)o).id);
-		}
-		else {
-			return super.equals(o);
-		}
-		
 	}
 }

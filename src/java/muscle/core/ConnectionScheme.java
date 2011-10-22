@@ -39,10 +39,6 @@ import java.util.logging.Logger;
 
 import muscle.Constant;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.gui.graph.ConnectionSchemeViewable;
-import muscle.gui.graph.Edge;
-import muscle.gui.graph.Vertex;
-import muscle.gui.graph.jung.ConnectionSchemeJUNGPanel;
 import utilities.Env;
 import utilities.MiscTool;
 
@@ -390,41 +386,6 @@ public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 		in.defaultReadObject();
 	}
 
-
-	//
-	public void toView(ConnectionSchemeViewable view) {
-
-		for(ExitDescription exit : this.targetExitDescriptions) {
-
-			String[] parts = exit.getID().split("@");
-			if(parts.length != 2) {
-				throw new RuntimeException("can not create vertex from <"+exit.getID()+">");
-			}
-			//Vertex v1 = new Vertex(exit.getControllerID().getName()); // might not be announced yet
-			Vertex v1 = new Vertex(parts[1], exit);
-			v1 = view.addVertex(v1);
-
-			for(int i = 0; ; i++) {
-				ConduitDescription conduit = exit.getConduitDescription(i);
-				if( conduit == null) {
-					break;
-				}
-
-				EntranceDescription entrance = conduit.getEntranceDescription();
-
-				parts = entrance.getID().split("@");
-				if(parts.length != 2) {
-					throw new RuntimeException("can not create vertex from <"+entrance.getID()+">");
-				}
-				//Vertex v2 = new Vertex(entrance.getControllerID().getName()); // might not be announced yet
-				Vertex v2 = new Vertex(parts[1], entrance);
-				v2 = view.addVertex(v2);
-				view.addEdge(new Edge(conduit.getID(), conduit), v2, v1);
-			}
-		}
-	}
-
-
 	//
 	public static class Pipeline {
 
@@ -509,25 +470,4 @@ public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 		Collections.sort(kernelList);
 		Collections.sort(conduitList);
 	}
-
-
-	//
-	public static void main(String[] args) {
-
-		ConnectionScheme cs = null;
-		// instantiate our connection scheme class
-		Class<? extends ConnectionScheme> csClass = CxADescription.ONLY.getConnectionSchemeClass();
-		try {
-			cs = csClass.newInstance();
-		}
-		catch(java.lang.InstantiationException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-		catch(java.lang.IllegalAccessException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-
-		ConnectionSchemeJUNGPanel.create(cs);
-	}
-
 }

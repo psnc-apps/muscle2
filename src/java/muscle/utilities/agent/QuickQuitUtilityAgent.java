@@ -22,8 +22,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.utilities.agent;
 
 import jade.wrapper.ContainerController;
+import java.util.logging.Level;
 import muscle.behaviour.KillPlatformBehaviour;
 import jade.wrapper.AgentController;
+import java.util.logging.Logger;
 
 
 /**
@@ -31,17 +33,13 @@ helper agent to immediately quit the agent platform
 @author Jan Hegewald
 */
 public class QuickQuitUtilityAgent extends jade.core.Agent {
-
-	//
+	private final static Logger logger = Logger.getLogger(QuickQuitUtilityAgent.class.getName());
+	
 	protected void setup() {
-		
 		addBehaviour(new KillPlatformBehaviour(this));
 	}
 
-
-	//
 	static public void launch(ContainerController jadeContainer) throws muscle.exception.SpawnAgentException {
-
 		Class cls = QuickQuitUtilityAgent.class;
 		
 		Object[] args = new Object[0];		
@@ -51,13 +49,13 @@ public class QuickQuitUtilityAgent extends jade.core.Agent {
 		try {
 			controller = jadeContainer.createNewAgent(agentName, cls.getName(), args);
 		} catch (jade.wrapper.StaleProxyException e) {
-			muscle.logging.Logger.getLogger(cls).severe("can not createNewAgent agent: "+agentName);
+			logger.log(Level.SEVERE, "can not createNewAgent agent: {0}", agentName);
 			throw new muscle.exception.SpawnAgentException("createNewAgent failed -- "+e.getMessage(), e.getCause());
 		}
 		try {
 			controller.start();
 		} catch (jade.wrapper.StaleProxyException e) {
-			muscle.logging.Logger.getLogger(cls).severe("can not start agent: "+agentName);
+			logger.log(Level.SEVERE, "can not start agent: {0}", agentName);
 			throw new muscle.exception.SpawnAgentException("start() failed -- "+e.getMessage(), e.getCause());
 		}
 

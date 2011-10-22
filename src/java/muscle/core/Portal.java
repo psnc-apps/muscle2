@@ -26,13 +26,14 @@ import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import java.math.BigDecimal;
 import javatool.DecimalMeasureTool;
+import muscle.core.ident.Identifiable;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
 import utilities.SafeThread;
 import utilities.SafeTriggeredThread;
 
 //
-public abstract class Portal<T> extends SafeTriggeredThread implements Serializable {
+public abstract class Portal<T> extends SafeTriggeredThread implements Serializable, Identifiable {
 	protected final PortalID portalID;
 	private int usedCount;
 	protected Timestamp customSITime;
@@ -50,7 +51,7 @@ public abstract class Portal<T> extends SafeTriggeredThread implements Serializa
 		return portalID.getName();
 	}
 
-	public PortalID getPortalID() {
+	public PortalID getIdentifier() {
 		return portalID;
 	}
 

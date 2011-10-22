@@ -21,16 +21,21 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.ident;
 
-import java.io.Serializable;
-
+import jade.core.AID;
 
 /**
 portal identifier
 @author Jan Hegewald
 */
-public class PortalID extends JadeAgentID implements Serializable, Identifier {
-	public PortalID(String newName, Identifier newAgentID) {
-		super(newName, newAgentID);
+public class PortalID extends JadeAgentID implements Identifier {
+	private final JadeAgentID ownerID;
+	public PortalID(String newName, JadeAgentID newAgentID) {
+		super(newName, newAgentID.getAID());
+		this.ownerID = newAgentID;
+	}
+	
+	public PortalID(String newName, AID newAgentID) {
+		this(newName, new JadeAgentID(newAgentID));
 	}
 	
 	@Override
@@ -38,37 +43,17 @@ public class PortalID extends JadeAgentID implements Serializable, Identifier {
 		return name+"@"+id.getLocalName();
 	}
 	
+	public JadeAgentID getOwnerID() {
+		return this.ownerID;
+	}
+	
 	@Override
 	public IDType getType() {
 		return IDType.port;
 	}
-
+	
 	@Override
 	public Location getLocation() {
 		throw new UnsupportedOperationException("Not supported yet.");
-	}
-	
-	@Override
-	public int compareTo(Identifier t) {
-		if (t instanceof PortalID && super.equals(t)) {
-			return this.name.compareTo(((PortalID)t).name);
-		}
-		else {
-			return super.compareTo(t);
-		}
-	}
-	
-	@Override
-	public boolean equals(Object o) {
-		if (!super.equals(o)) return false;
-		return this.name.equals(((PortalID)o).name);
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 31 * hash + super.hashCode();
-		hash = 31 * hash + this.name.hashCode();
-		return hash;
 	}
 }

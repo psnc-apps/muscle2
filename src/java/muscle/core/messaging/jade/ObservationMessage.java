@@ -13,10 +13,10 @@ import muscle.core.wrapper.Observation;
  * @author Joris Borgdorff
  */
 public class ObservationMessage<E> extends DataMessage<Observation<E>> implements Message<E> {
-	public final static String OBSERVATION_KEY = ObservationMessage.class.toString() + "#sinkId";
+	public final static String OBSERVATION_KEY = ObservationMessage.class.toString() + "#id";
 	
-	public void setSinkId(String sid) {
-		setSinkId(OBSERVATION_KEY, sid);
+	protected void setIdentifierString(String name, String type) {
+		this.setIdentifierString(OBSERVATION_KEY, name, type);
 	}
 	
 	public E getRawData() {

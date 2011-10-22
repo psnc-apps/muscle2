@@ -17,7 +17,7 @@ import muscle.core.messaging.Message;
  * @author Joris Borgdorff
  */
 public class ConduitExitController<T> extends Portal<T> {
-	private Receiver<T, ?> receiver;
+	private Receiver<Message<T>, ?> receiver;
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<T> queue;
 	private static final Logger logger = Logger.getLogger(ConduitExitController.class.getName());
@@ -29,7 +29,7 @@ public class ConduitExitController<T> extends Portal<T> {
 		this.conduitExit = null;
 	}
 	
-	public synchronized void setReceiver(Receiver<T, ?> recv) {
+	public synchronized void setReceiver(Receiver<Message<T>, ?> recv) {
 		this.receiver = recv;
 		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
 
@@ -50,7 +50,7 @@ public class ConduitExitController<T> extends Portal<T> {
 
 	@Override
 	protected void execute() throws InterruptedException {
-		Receiver<T, ?> recv = waitForReceiver();
+		Receiver<Message<T>, ?> recv = waitForReceiver();
 		if (recv != null) {
 			Message<T> msg = this.receiver.receive();
 			if (msg != null) {
@@ -59,7 +59,7 @@ public class ConduitExitController<T> extends Portal<T> {
 		}
 	}
 	
-	private synchronized Receiver<T, ?> waitForReceiver() throws InterruptedException {
+	private synchronized Receiver<Message<T>, ?> waitForReceiver() throws InterruptedException {
 		while (!isDone && this.receiver == null) {
 			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
 			wait(WAIT_FOR_ATTACHMENT_MILLIS);
@@ -69,6 +69,9 @@ public class ConduitExitController<T> extends Portal<T> {
 	
 	@Override
 	public synchronized void dispose() {
+		// Empty the message queue and signal a null to the conduitexit
+		queue.clear();
+		queue.offer(null);
 		receiver = null;
 		super.dispose();
 	}

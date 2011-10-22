@@ -32,8 +32,8 @@ public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[]> im
 		byte[] rawData = null;
 		rawData = converter.serialize(dmsg.getRawData());
 		dmsg.setByteSequenceContent(rawData);
+		dmsg.setRecipient(portalID);
 		dmsg.store(null, null);
-		dmsg.addReceiver(portalID.getAID());
 		
 		// send data to target agent
 		senderAgent.send(dmsg);
@@ -42,23 +42,8 @@ public class JadeTransmitter<T> extends AbstractCommunicatingPoint<T, byte[]> im
 
 	public void signal(Signal signal) {
 		DataMessage<Signal> dmsg = new DataMessage<Signal>();
-		dmsg.setSinkId(Signal.class.toString());
+		dmsg.setRecipient(portalID.getOwnerID());
 		dmsg.store(signal, null);
-		dmsg.addReceiver(portalID.getAID());
 		senderAgent.send(dmsg);
 	}
-	
-//	public void setDestination(AID newDstAgent, String newDstSink) {
-//		// allow only once to connect this sender
-//		if (dstAgent != null) {
-//			throw new IllegalStateException("already connected to <" + dstAgent + ":" + dstSink + ">");
-//		}
-//
-//		dstAgent = newDstAgent;
-//		dstSink = newDstSink;
-//
-//		// set up message dummy for outgoing data messages
-//		dataMessage = new DataMessage(dstSink);
-//		dataMessage.addReceiver(dstAgent);
-//	}
 }

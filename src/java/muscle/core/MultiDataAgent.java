@@ -20,33 +20,22 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import jade.core.AID;
 
 import java.util.logging.Level;
-import muscle.logging.AgentLogger;
 
 import java.util.logging.Logger;
 import jade.core.Location;
 import jade.core.MessageQueue;
 import muscle.core.messaging.jade.IncomingMessageProcessor;
 import muscle.core.messaging.jade.ObservationMessage;
-import muscle.core.messaging.signal.Signal;
-import muscle.core.messaging.signal.QueueLimitExceededSignal;
-import muscle.core.messaging.signal.QueueWithinLimitSignal;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
 import javatool.ClassTool;
-import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
 import muscle.core.kernel.InstanceController;
-import muscle.core.messaging.Message;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.SortingMessageQueue;
-import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.utilities.ObservableLinkedBlockingQueue;
 
 /**
@@ -55,11 +44,9 @@ JADE agent which filters incoming data messages and passes them to multiple mess
  */
 public abstract class MultiDataAgent extends jade.core.Agent implements SinkObserver<ObservationMessage<?>>, InstanceController {
 	private transient IncomingMessageProcessor messageProcessor;
-	private static final transient Logger logger = AgentLogger.getLogger(MultiDataAgent.class.getName());
-	private volatile long bufferSizeCount = 0;
-	private ObservableLinkedBlockingQueue<ObservationMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<ObservationMessage<?>>();
-	private final List<AID> toldToPauseList = Collections.synchronizedList(new LinkedList<AID>());
-
+	private static final transient Logger logger = Logger.getLogger(MultiDataAgent.class.getName());
+	private ObservableLinkedBlockingQueue<DataMessage<?>> nonACLQueue = new ObservableLinkedBlockingQueue<DataMessage<?>>();
+	
 	private List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
 	private List<ConduitEntranceController<?>> dataSinks = new ArrayList<ConduitEntranceController<?>>(); // these are the conduit entrances
 	
@@ -71,13 +58,20 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		dataSources.add(s);
 	}
 
-	public Identifier getID() {
+	@Override
+	public JadeAgentID getIdentifier() {
 		return new JadeAgentID(this.getAID());
 	}
 	
 	@Override
 	public void takeDown() {
-		messageProcessor.pause();
+		messageProcessor.dispose();
+		for (ConduitExitController source : dataSources) {
+			source.dispose();
+		}
+		for (ConduitEntranceController sink : dataSinks) {
+			sink.dispose();
+		}
 		logger.log(Level.INFO, "waiting for {0} to join", messageProcessor.getClass());
 		try {
 			messageProcessor.join();
@@ -92,12 +86,13 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 		initTransients();
 	}
 
+	@Override
 	protected void afterMove() {
 		initTransients();
 	}
 
 	protected void initTransients() {
-		messageProcessor = new IncomingMessageProcessor(this, nonACLQueue);
+		messageProcessor = new IncomingMessageProcessor(nonACLQueue);
 		nonACLQueue.setQueueConsumer(messageProcessor);
 		messageProcessor.start();
 	}
@@ -106,20 +101,9 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	protected MessageQueue createMessageQueue() {
 		return new SortingMessageQueue(nonACLQueue);
 	}
-
-	/**
-	maximum buffer size in bytes
-	 */
-	protected long suggestedMaxBufferSize() {
-		return 1042 * 1042 * 800; // 800MB
-	}
-
-	/**
-	returns our logger
-	 */
-	public Logger getLogger() {
-		return logger;
-	}
+	
+	@Override
+	public void notifySinkWillYield(ObservationMessage msg) {}
 
 	/**
 	custom implementation of Agent#doMove to deny moving this agent if inappropriate
@@ -145,106 +129,6 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 			return;
 		} else {
 			super.doClone(destination, newName);
-		}
-	}
-
-	// an incoming DataMessage has arrived at this agent
-	public void handleDataMessage(ObservationMessage dmsg, long byteCount) {
-
-		// put message to its sink
-		// there we process all generic data messages
-		// see if this message is intended for one of our other sinks
-		for (Iterator<ConduitExitController<?>> sourceIterator = dataSources.iterator(); sourceIterator.hasNext();) {
-			ConduitExitController<?> source = sourceIterator.next();
-
-			if (source.id().equals(dmsg.getSinkID())) {
-
-				// only add to buffer counter for generic data messages
-				// administrative messages like SignalMessage or ACLMessage are not added
-				synchronized (toldToPauseList) {
-					bufferSizeCount += byteCount;
-				}
-
-				if (bufferSizeCount >= suggestedMaxBufferSize()) {
-
-					if ((bufferSizeCount - byteCount) <= 0) {
-						throw new muscle.exception.MUSCLERuntimeException("configuration error: [" + getLocalName() + "] does not accept a data message because its buffer size is too limited");
-					}
-
-					// send pause signal to source kernel
-					synchronized (toldToPauseList) {
-						if (!toldToPauseList.contains(dmsg.getSender())) {
-							QueueLimitExceededSignal s = new QueueLimitExceededSignal();
-							sendRemoteSignal(s, dmsg.getSender());
-							toldToPauseList.add(dmsg.getSender());
-						}
-					}
-				}
-
-				source.put(dmsg);
-				return; // it is not possible for a message to feed multiple sources
-			}
-		}
-
-		logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", dmsg.getSinkID());
-	}
-
-	public void handleRemoteSignal(DataMessage<? extends Signal> dmsg) { // or better limit to java.rmi.RemoteException?
-		Signal s = dmsg.getData();
-
-		if (s instanceof QueueLimitExceededSignal) {
-			// tell all our senders which send to the agent who issued the exception to pause
-			pauseSendersForDst(dmsg.getSender());
-		} else if (s instanceof QueueWithinLimitSignal) {
-			// tell all our senders which send to the agent who issued the exception to continute
-			resumeSendersForDst(dmsg.getSender());
-		} else {
-			throw new muscle.exception.MUSCLERuntimeException("unknown signal <" + s.getClass() + ">");
-		}
-	}
-
-	@Override
-	public void notifySinkWillYield(ObservationMessage dmsg) {
-		assert dmsg.getByteCount() != null : "[" + getLocalName() + "] DataMessage#getByteCount must not be <null> here";
-
-		synchronized (toldToPauseList) {
-			bufferSizeCount -= dmsg.getByteCount();
-		}
-		assert bufferSizeCount >= 0 : "[" + getLocalName() + "] bufferSizeCount " + bufferSizeCount;
-
-		// se if we have to tell any source kernels to resume sending data to us
-		synchronized (toldToPauseList) {
-			if (!toldToPauseList.isEmpty() && bufferSizeCount < suggestedMaxBufferSize()) {
-				for (Iterator<AID> iter = toldToPauseList.iterator(); iter.hasNext();) {
-
-					AID sender = iter.next();
-					sendRemoteSignal(new QueueWithinLimitSignal(), sender);
-					iter.remove();
-				}
-			}
-		}
-	}
-
-	private void pauseSendersForDst(AID dst) {
-		logger.log(Level.WARNING, "pausing senders for {0}", dst.getLocalName());
-		// pause all senders which send to agent dst
-		for (Iterator<ConduitEntranceController<?>> iter = dataSinks.iterator(); iter.hasNext();) {
-			ConduitEntranceController<?> head = iter.next();
-
-			if (head.dstAgent().equals(dst)) {
-				head.pause();
-			}
-		}
-	}
-
-	private void resumeSendersForDst(AID dst) {
-		logger.log(Level.INFO, "resuming senders for {0}", dst.getLocalName());
-		// resume all senders which send to agent dst
-		for (Iterator<ConduitEntranceController<?>> iter = dataSinks.iterator(); iter.hasNext();) {
-			ConduitEntranceController<?> head = iter.next();
-			if (head.dstAgent().equals(dst)) {
-				head.unpause();
-			}
 		}
 	}
 }

@@ -36,9 +36,13 @@ public class ConduitExit<T> { // generic T will be the underlying unwrapped data
 	}
 
 	/**
-	return our unwrapped data once
+	return our unwrapped data once, or null if the model has to stop computing
 	*/
 	public T receive() {
-		return this.queue.remove();
+		try {
+			return this.queue.take();
+		} catch (InterruptedException ex) {
+			return null;
+		}
 	}
 }

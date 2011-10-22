@@ -23,15 +23,10 @@ package muscle.core.kernel;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javatool.DecimalMeasureTool;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
@@ -44,12 +39,12 @@ import muscle.core.JNIConduitExit;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.core.Scale;
+import muscle.core.ident.JadeAgentID;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.PipeConverter;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.logging.AgentLogger;
 import utilities.MiscTool;
 import utilities.OSTool;
 import utilities.jni.JNIMethod;
@@ -61,19 +56,19 @@ JADE agent to wrap a kernel (e.g. CA or MABS)
 @author Jan Hegewald
  */
 public abstract class RawKernel {
-	private static final transient Logger logger = AgentLogger.getLogger(RawKernel.class.getName());
-	
+
+	private static final transient Logger logger = Logger.getLogger(RawKernel.class.getName());
 	private Object[] arguments;
 	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
 	List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
 	private boolean acceptPortals;
 	protected KernelListener observer = new NullKernelListener();
 	protected InstanceController controller;
-	
+
 	public void setInstanceController(InstanceController ic) {
 		this.controller = ic;
 	}
-	
+
 	/**
 	prints info about a given kernel to stdout
 	 */
@@ -141,11 +136,10 @@ public abstract class RawKernel {
 		addPortals();
 		acceptPortals = false;
 	}
-	
+
 	// use addExit/addEntrance to add portals to this controller
 	protected abstract void addPortals();
 
-	//
 	protected abstract void execute();
 
 	/**
@@ -180,9 +174,7 @@ public abstract class RawKernel {
 		return null;
 	}
 
-	//
 	protected void addEntrance(ConduitEntranceController entrance) {
-
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of porals not allowed here");
 		}
@@ -225,18 +217,18 @@ public abstract class RawKernel {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
 		}
 
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass));
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		addExit(ec);
-		
+
 		return e;
 	}
 
 	//
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass));
-		
+		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
+
 		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
 		ec.setExit(e);
 		addExit(ec);
@@ -250,22 +242,22 @@ public abstract class RawKernel {
 
 	//
 	protected <T> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
+
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec);
 		ec.setEntrance(e);
-		
+
 		addEntrance(ec);
 		return e;
 	}
 	//
 
 	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		
+		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID(newPortalName, (JadeAgentID) controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
+
 		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec);
 		ec.setEntrance(e);
-		
+
 		addEntrance(ec);
 		return e;
 	}
@@ -335,10 +327,9 @@ public abstract class RawKernel {
 			for (String arg : args) {
 				try {
 					@SuppressWarnings("unchecked")
-					Class<? extends RawKernel> c = (Class<? extends RawKernel>)Class.forName(arg);
+					Class<? extends RawKernel> c = (Class<? extends RawKernel>) Class.forName(arg);
 					classes.add(c);
-				}
-				catch (ClassCastException e) {
+				} catch (ClassCastException e) {
 					AgentLogger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
 				}
 			}
@@ -349,15 +340,15 @@ public abstract class RawKernel {
 
 		}
 	}
-	
+
 	protected Logger getLogger() {
 		return logger;
 	}
-	
+
 	void setArguments(Object[] args) {
 		this.arguments = args;
 	}
-	
+
 	public Object[] getArguments() {
 		if (arguments == null) {
 			return new Object[0];
