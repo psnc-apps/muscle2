@@ -19,15 +19,34 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package utilities.persistence;
+package muscle.core.messaging.serialization;
 
+import utilities.array3d.Array3D_double;
 
 /**
-generic interface to serialize/deserialize objects (marshalling/unmarshalling)
+creates an Array3D from a plain c-style array
 @author Jan Hegewald
 */
-public interface Serializer<T,S> {
+public class CStyleArray2Array3DConverter implements DataConverter<double[],Array3D_double> {
 
-	S dump(T object);
-	T load(S serialized);
+	private int xSize;
+	private int ySize;
+	private int zSize;
+
+	public CStyleArray2Array3DConverter(int newXSize, int newYSize, int newZSize) {
+		xSize = newXSize;
+		ySize = newYSize;
+		zSize = newZSize;
+	}
+
+	@Override
+	public Array3D_double serialize(double[] data) {
+		return new Array3D_double(xSize, ySize, zSize, data);
+	}
+
+	@Override
+	public double[] deserialize(Array3D_double data) {
+		return data.getData();
+	}
+
 }

@@ -78,7 +78,7 @@ public class AutomaticConduit extends BasicConduit {
 		final Filter<DataMessage,DataWrapper> dmsg2wrapper = new AbstractFilter<DataMessage,DataWrapper>(filters) {
 			@Override
 			public void apply(DataMessage in) {
-				DataWrapper wrapper = (DataWrapper)in.getStored();
+				DataWrapper wrapper = (DataWrapper)in.getData();
 				put(wrapper);
 			}
 		};

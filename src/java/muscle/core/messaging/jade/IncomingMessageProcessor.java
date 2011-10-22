@@ -24,6 +24,7 @@ import java.util.Queue;
 import java.util.logging.Level;
 import muscle.core.MultiDataAgent;
 import muscle.core.conduit.filter.QueueConsumer;
+import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.core.messaging.signal.Signal;
 import utilities.MiscTool;
 
@@ -92,7 +93,7 @@ public class IncomingMessageProcessor extends java.lang.Thread implements QueueC
 			dmsg.setByteSequenceContent(null);
 			byteCount = rawData.length;
 
-			data = MiscTool.deserialize(rawData);
+			data = new ByteDataConverter().deserialize(rawData);
 //			data = MiscTool.gunzip(rawData);
 			rawData = null;
 

@@ -44,6 +44,7 @@ import javatool.ClassTool;
 import muscle.core.messaging.RemoteDataSinkTail;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.SortingMessageQueue;
+import muscle.core.messaging.serialization.ByteDataConverter;
 import muscle.utilities.ObservableLinkedBlockingQueue;
 
 /**
@@ -141,11 +142,11 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	// todo: data serialization in separate thread
-	public void sendDataMessage(DataMessage<? extends java.io.Serializable> dmsg) {
+	public <E extends java.io.Serializable> void sendDataMessage(DataMessage<E> dmsg) {
 		assert !dmsg.hasByteSequenceContent();
 
 		byte[] rawData = null;
-		rawData = MiscTool.serialize(dmsg.getStored());
+		rawData = new ByteDataConverter<E>().serialize(dmsg.getData());
 // 		rawData = MiscTool.gzip(dmsg.getStored());
 
 		dmsg.setByteSequenceContent(rawData);
@@ -212,7 +213,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements SinkObse
 	}
 
 	public void handleRemoteSignal(DataMessage<? extends Signal> dmsg) { // or better limit to java.rmi.RemoteException?
-		Signal s = dmsg.getStored();
+		Signal s = dmsg.getData();
 
 		if (s instanceof QueueLimitExceededSignal) {
 			// tell all our senders which send to the agent who issued the exception to pause

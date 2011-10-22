@@ -19,31 +19,57 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package utilities.persistence;
+package muscle.core.ident;
 
-import utilities.MiscTool;
+import jade.core.AID;
+
+import jade.core.Location;
+import java.io.Serializable;
 
 
 /**
-serialize/deserialize serializable objects
+portal identifier
 @author Jan Hegewald
 */
-public class BasicSerializer<T extends java.io.Serializable> implements Serializer<T, byte[]> {
+public class PortalID implements Serializable, Identifier {
 
 
-   //
-   @Override
-	public byte[] dump(java.io.Serializable object) {
-		
-		return MiscTool.serialize(object);
+	private String name; // unique per agent
+	private AID agentID;
+
+
+	//
+	public PortalID(String newName, AID newAgentID) {
+	
+		name =  newName;
+		agentID = newAgentID;
 	}
 	
-
-   //
-   @Override
-	public T load(byte[] bytes) {
-
-      return MiscTool.<T>deserialize(bytes);
+	
+	//
+	public AID getOwnerAID() {
+		return agentID;
 	}
 
+
+	//
+	public String getName() {
+	
+		return name+"@"+agentID.getLocalName();
+	}
+	
+//	//
+//	public String getStrippedName() {
+//	
+//		return name;
+//	}
+
+	public IdType getType() {
+		return IdType.port;
+	}
+
+	public Location getLocation() {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+	
 }

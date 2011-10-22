@@ -63,18 +63,18 @@ import muscle.core.JNIConduitEntrance;
 import muscle.core.JNIConduitExit;
 import muscle.core.Plumber;
 import muscle.core.Portal;
-import muscle.core.PortalID;
+import muscle.core.ident.PortalID;
 import muscle.core.Scale;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.serialization.CastConverter;
+import muscle.core.messaging.serialization.DataConverter;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
 import utilities.JVM;
 import utilities.MiscTool;
 import utilities.OSTool;
-import utilities.PipeTransmuter;
 import utilities.Timing;
-import utilities.Transmutable;
 import utilities.jni.JNIMethod;
 
 // experimental info mode with
@@ -341,8 +341,7 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 	}
 
 	//
-	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, Transmutable<T, R> newTransmuter) {
-
+	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
 		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, new PortalID(newPortalName, getAID()), this, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
 		addExit(e);
 		return e;
@@ -352,7 +351,7 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
 
 		Class<R> newJNIClass = (Class<R>) newDataClass;
-		Transmutable<T, R> newTransmuter = new PipeTransmuter<T, R>();
+		DataConverter<R, T> newTransmuter = new CastConverter<R, T>();
 		return addJNIExit(newPortalName, newRate, newDataClass, newJNIClass, newTransmuter);
 	}
 
@@ -365,7 +364,7 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 	}
 	//
 
-	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, Transmutable<R, T> newTransmuter, EntranceDependency... newDependencies) {
+	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 
 		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, getAID()), this, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
 		addEntrance(e);
@@ -376,7 +375,7 @@ public abstract class RawKernel extends muscle.core.MultiDataAgent implements Si
 	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 
 		Class<R> newJNIClass = (Class<R>) newDataClass;
-		Transmutable<R, T> newTransmuter = new PipeTransmuter<R, T>();
+		DataConverter<R, T> newTransmuter = new CastConverter<R, T>();
 		return addJNIEntrance(newPortalName, newRate, newJNIClass, newDataClass, newTransmuter, newDependencies);
 	}
 

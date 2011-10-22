@@ -24,23 +24,26 @@ import jade.core.PublicMessageQueue;
 import jade.lang.acl.ACLMessage;
 import java.util.Collection;
 import java.util.Queue;
+import muscle.core.messaging.Message;
+import muscle.core.messaging.serialization.ACLConverter;
 
 /**
 custom message queue for a jade.core.Agent which sorts arriving messages to pure jade acl messages and other messages
 @author Jan Hegewald
  */
-public class SortingMessageQueue extends PublicMessageQueue {
+public class SortingMessageQueue<E> extends PublicMessageQueue {
+	private final Queue<Message<E>> nonACLQueue;
+	private final ACLConverter<E> deserializer;
 
-	private Queue<DataMessage> nonACLQueue;
-
-	public SortingMessageQueue(Queue<DataMessage> newNonACLQueue) {
+	public SortingMessageQueue(Queue<Message<E>> newNonACLQueue) {
 		nonACLQueue = newNonACLQueue;
+		deserializer = new ACLConverter<E>();
 	}
 
 	@Override
 	public void addFirst(ACLMessage msg) {
-		DataMessage dmsg;
-		if ((dmsg = DataMessage.extractFromACLMessage(msg)) != null) {
+		Message<E> dmsg;
+		if ((dmsg = deserializer.deserialize(msg)) != null) {
 			nonACLQueue.add(dmsg);
 		} else {
 			super.addFirst(msg);
@@ -49,8 +52,8 @@ public class SortingMessageQueue extends PublicMessageQueue {
 
 	@Override
 	public void addLast(ACLMessage msg) {
-		DataMessage dmsg;
-		if ((dmsg = DataMessage.extractFromACLMessage(msg)) != null) {
+		Message<E> dmsg;
+		if ((dmsg = deserializer.deserialize(msg)) != null) {
 			nonACLQueue.add(dmsg);
 		} else {
 			super.addLast(msg);

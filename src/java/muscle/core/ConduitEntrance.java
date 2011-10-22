@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import muscle.core.ident.PortalID;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
 import java.io.IOException;

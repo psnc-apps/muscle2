@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import muscle.core.messaging.serialization.ByteDataConverter;
 import utilities.MiscTool;
 
 
@@ -29,8 +30,9 @@ deserialize a byte array
 @author Jan Hegewald
 */
 public class DeserializeFilter extends AbstractFilter<byte[],Object> {
+	private ByteDataConverter converter = new ByteDataConverter();
 	protected void apply(byte[] subject) {
-		put(MiscTool.deserialize(subject));
+		put(converter.deserialize(subject));
 	}
 }
 

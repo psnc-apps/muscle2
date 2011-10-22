@@ -20,7 +20,6 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.messaging;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import muscle.core.messaging.jade.DataMessage;
 

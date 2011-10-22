@@ -31,7 +31,7 @@ import muscle.core.CxADescription;
 import muscle.core.DataTemplate;
 import muscle.core.wrapper.DataWrapper;
 import muscle.core.Portal;
-import muscle.core.PortalID;
+import muscle.core.ident.PortalID;
 import muscle.exception.DataSizeMismatchException;
 import muscle.exception.DataTypeMismatchException;
 import muscle.exception.DataValueMismatchException;

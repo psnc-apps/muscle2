@@ -23,10 +23,11 @@ package muscle.core;
 
 
 
+import muscle.core.ident.PortalID;
 import muscle.core.kernel.RawKernel;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
-import utilities.Transmutable;
+import muscle.core.messaging.serialization.DataConverter;
 
 
 /**
@@ -37,11 +38,11 @@ C for conduit type, R for raw jni type
 public class JNIConduitEntrance<R,C extends java.io.Serializable> extends ConduitEntrance<C> {
 
 	private Class<R> jniClass;
-	private Transmutable<R,C> transmuter;
+	private DataConverter<R,C> transmuter;
 
 
 	//
-	public JNIConduitEntrance(Transmutable<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
+	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate, newDependencies);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
@@ -57,7 +58,7 @@ public class JNIConduitEntrance<R,C extends java.io.Serializable> extends Condui
 	//
 	public void toJava(R rawData) {
 		
-		C data = transmuter.transmute(rawData);
+		C data = transmuter.serialize(rawData);
 		send(data);
 	}
 }

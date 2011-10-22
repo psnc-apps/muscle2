@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import muscle.core.ident.PortalID;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -104,7 +105,7 @@ public class ConduitExit<T> extends Portal<T> implements RemoteDataSinkTail<Data
 			throw new MUSCLERuntimeException(ex);
 		}
 		
-		DataWrapper<T> wrapper = dmsg.getStored();
+		DataWrapper<T> wrapper = dmsg.getData();
 		T data = wrapper.getData();
 		
 		assert getDataTemplate().getDataClass().isInstance(data);
