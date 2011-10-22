@@ -20,20 +20,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 */
 
 package muscle.core.ident;
-<<<<<<< HEAD
-=======
-
-import jade.core.AID;
-
-import java.io.Serializable;
-
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 
 /**
 portal identifier
 @author Jan Hegewald
 */
-<<<<<<< HEAD
 public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
 	protected final E ownerID;
 	
@@ -71,22 +62,4 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 	public Location getLocation() {
 		return ownerID.getLocation();
 	}
-=======
-public class PortalID extends JadeAgentID implements Serializable, Identifier {
-	public PortalID(String newName, Identifier newAgentID) {
-		super(newName, newAgentID);
-	}
-	
-	public String getName() {
-		return name+"@"+id.getLocalName();
-	}
-	
-	public IDType getType() {
-		return IDType.port;
-	}
-
-	public Location getLocation() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 }

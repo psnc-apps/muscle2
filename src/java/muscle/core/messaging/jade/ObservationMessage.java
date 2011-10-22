@@ -5,7 +5,6 @@
 package muscle.core.messaging.jade;
 
 import muscle.core.messaging.Message;
-import muscle.core.messaging.Timestamp;
 import muscle.core.wrapper.Observation;
 
 /**

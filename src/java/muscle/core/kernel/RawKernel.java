@@ -27,13 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-<<<<<<< HEAD
-=======
-import javatool.DecimalMeasureTool;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExit;
@@ -46,19 +39,12 @@ import muscle.core.JNIConduitExit;
 import muscle.core.Portal;
 import muscle.core.ident.PortalID;
 import muscle.core.Scale;
-<<<<<<< HEAD
 import muscle.core.ident.Identifier;
 import muscle.core.messaging.Timestamp;
-=======
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.PipeConverter;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
-<<<<<<< HEAD
-=======
-import muscle.logging.AgentLogger;
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 import utilities.MiscTool;
 import utilities.OSTool;
 import utilities.jni.JNIMethod;
@@ -70,8 +56,6 @@ JADE agent to wrap a kernel (e.g. CA or MABS)
 @author Jan Hegewald
  */
 public abstract class RawKernel {
-<<<<<<< HEAD
-
 	private static final transient Logger logger = Logger.getLogger(RawKernel.class.getName());
 	private Object[] arguments;
 	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
@@ -83,21 +67,6 @@ public abstract class RawKernel {
 		this.controller = ic;
 	}
 
-=======
-	private static final transient Logger logger = AgentLogger.getLogger(RawKernel.class.getName());
-	
-	private Object[] arguments;
-	List<ConduitEntrance> entrances = new ArrayList<ConduitEntrance>();
-	List<ConduitExit> exits = new ArrayList<ConduitExit>();
-	private boolean acceptPortals;
-	protected KernelListener observer = new NullKernelListener();
-	protected InstanceController controller;
-	
-	public void setInstanceController(InstanceController ic) {
-		this.controller = ic;
-	}
-	
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	/**
 	prints info about a given kernel to stdout
 	 */
@@ -165,11 +134,7 @@ public abstract class RawKernel {
 		addPortals();
 		acceptPortals = false;
 	}
-<<<<<<< HEAD
 
-=======
-	
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	// use addExit/addEntrance to add portals to this controller
 	protected abstract void addPortals();
 
@@ -220,10 +185,7 @@ public abstract class RawKernel {
 		}
 
 		controller.addSink(entrance);
-<<<<<<< HEAD
 		System.out.println(controller.getLocalName() + ": adding entrance " + entrance + " to controller done");
-=======
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		entrances.add(entrance);
 	}
 
@@ -242,10 +204,7 @@ public abstract class RawKernel {
 		}
 
 		controller.addSource(exit);
-<<<<<<< HEAD
 		System.out.println(controller.getLocalName() + ": adding exit " + exit + "  to controller done");
-=======
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		exits.add(exit);
 	}
 
@@ -256,30 +215,20 @@ public abstract class RawKernel {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
 		}
 
-<<<<<<< HEAD
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		addExit(ec);
 
-=======
-		ConduitExit<T> e = new ConduitExit<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
-		addExit(e);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		return e;
 	}
 
 	//
 	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-<<<<<<< HEAD
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
 		ec.setExit(e);
 		addExit(ec);
-=======
-		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)));
-		addExit(e);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		return e;
 	}
 
@@ -289,7 +238,6 @@ public abstract class RawKernel {
 	}
 
 	//
-<<<<<<< HEAD
 	protected <T> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
@@ -297,16 +245,10 @@ public abstract class RawKernel {
 		ec.setEntrance(e);
 
 		addEntrance(ec);
-=======
-	protected <T extends java.io.Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntrance<T> e = new ConduitEntrance<T>(new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		addEntrance(e);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		return e;
 	}
 	//
 
-<<<<<<< HEAD
 	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
@@ -314,20 +256,11 @@ public abstract class RawKernel {
 		ec.setEntrance(e);
 
 		addEntrance(ec);
-=======
-	protected <R, T extends java.io.Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, new PortalID(newPortalName, controller.getID()), controller, newRate, new DataTemplate<T>(newDataClass, getPortalScale(newRate)), newDependencies);
-		addEntrance(e);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		return e;
 	}
 	//
 
-<<<<<<< HEAD
 	protected <T> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-=======
-	protected <T extends java.io.Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
 		return addJNIEntrance(newPortalName, newRate, newDataClass, newDataClass, newTransmuter, newDependencies);
 	}
@@ -391,18 +324,10 @@ public abstract class RawKernel {
 			for (String arg : args) {
 				try {
 					@SuppressWarnings("unchecked")
-<<<<<<< HEAD
 					Class<? extends RawKernel> c = (Class<? extends RawKernel>) Class.forName(arg);
 					classes.add(c);
 				} catch (ClassCastException e) {
 					Logger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
-=======
-					Class<? extends RawKernel> c = (Class<? extends RawKernel>)Class.forName(arg);
-					classes.add(c);
-				}
-				catch (ClassCastException e) {
-					AgentLogger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 				}
 			}
 
@@ -412,7 +337,6 @@ public abstract class RawKernel {
 
 		}
 	}
-<<<<<<< HEAD
 
 	protected Logger getLogger() {
 		return Logger.getLogger(getClass().getName());
@@ -430,17 +354,6 @@ public abstract class RawKernel {
 		this.arguments = args;
 	}
 
-=======
-	
-	protected Logger getLogger() {
-		return logger;
-	}
-	
-	void setArguments(Object[] args) {
-		this.arguments = args;
-	}
-	
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	public Object[] getArguments() {
 		if (arguments == null) {
 			return new Object[0];

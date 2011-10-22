@@ -35,13 +35,9 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
-<<<<<<< HEAD
 import java.util.Set;
 import muscle.core.kernel.JadeInstanceController;
 import muscle.utilities.agent.QuitMonitor;
-=======
-import muscle.core.kernel.JadeInstanceController;
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 import utilities.JVM;
 
 
@@ -51,7 +47,6 @@ handle booting/terminating of MUSCLE
 */
 public class Boot {
 
-<<<<<<< HEAD
 	private final List<Thread> otherHooks = new LinkedList<Thread>();
 	private final File infoFile;
 	private final Map<String, String> agentNames;
@@ -59,13 +54,7 @@ public class Boot {
 	private static Boot instance;
 	private final String[] args;
 	private boolean isDone;
-=======
-	private List<Thread> otherHooks = new LinkedList<Thread>();
-	private File infoFile;
-	private Map<String, String> agentNames;
-	private static Boot instance;
-	private final String[] args;
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
+	private boolean monitorQuit;
 	
 	static {
 		// try to workaround LogManager deadlock http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6487638
@@ -84,10 +73,6 @@ public class Boot {
 		}
 		return instance;
 	}
-<<<<<<< HEAD
-	private boolean monitorQuit;
-=======
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	
 	//
 	private Boot(String[] args) {
@@ -102,7 +87,6 @@ public class Boot {
 
 		writeInitialInfo();
 		
-<<<<<<< HEAD
 		this.resolver = null;
 		
 		agentNames = new HashMap<String,String>();
@@ -114,45 +98,28 @@ public class Boot {
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-agents")) {
 				boolean quit = false;
-=======
-		agentNames = new HashMap<String,String>();
-		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-agents")) {
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 				String agentArg = args[i+1];
 				String[] agents = agentArg.split(";");
 				StringBuilder sb = new StringBuilder();
 				for (String agent : agents) {
 					String[] agentInfo = agent.split(":");
 					if (agentInfo[0].equals("plumber")) {
-<<<<<<< HEAD
 						//sb.append(agent).append(';');
 					}
 					else if (agentInfo[0].equals(QuitMonitor.class.getCanonicalName())) {
 						quit = true;
-=======
-						sb.append(agent).append(';');
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 					}
 					else {
 						agentNames.put(agentInfo[0], agentInfo[1]);
 						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
 				}
-<<<<<<< HEAD
 				sb.append("locator:").append(JadeAgentIDManipulator.class.getCanonicalName());
 				args[i+1] = sb.toString();
 				this.monitorQuit = quit;
 			}
 		}
 		return args;
-=======
-				sb.deleteCharAt(sb.length() - 1);
-				args[i+1] = sb.toString();
-			}
-		}
-		this.args = args;
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	}
 	
 	public void init() {
@@ -164,7 +131,6 @@ public class Boot {
 		return agentNames.get(agentName);
 	}
 	
-<<<<<<< HEAD
 	public Set<String> getAgentNames() {
 		return agentNames.keySet();
 	}
@@ -194,9 +160,6 @@ public class Boot {
 		this.notifyAll();
 	}
 	
-=======
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
-	//
 	public static void main(String args[]) {
 		Boot.getInstance(args);
 //		jade.Boot.main(args); // forward booting to jade
@@ -316,12 +279,8 @@ public class Boot {
 	private class JVMHook extends Thread {
 		// CTRL-C is signal 2 (SIGINT)
 		// see rubys Signal.list for a full list on your OS
-<<<<<<< HEAD
 		public void run() {
 			dispose();
-=======
-		public void run() {		
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 			writeClosingInfo();
 
@@ -337,11 +296,7 @@ public class Boot {
 				if( !otherHooks.isEmpty() ) {
 					System.out.print(".");
 					try {
-<<<<<<< HEAD
 						sleep(750l);
-=======
-						sleep(500);
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 					}
 					catch(java.lang.InterruptedException e) {
 						e.printStackTrace();

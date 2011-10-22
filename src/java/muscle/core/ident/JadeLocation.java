@@ -3,7 +3,6 @@
  */
 package muscle.core.ident;
 
-<<<<<<< HEAD
 import jade.domain.FIPAAgentManagement.Property;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import java.util.Iterator;
@@ -100,32 +99,5 @@ public class JadeLocation implements jade.core.Location, Location, Iterable<Prop
 		public void remove() {
 			throw new UnsupportedOperationException("Not supported yet.");
 		}
-=======
-/**
- *
- * @author Joris Borgdorff
- */
-public class JadeLocation implements jade.core.Location, Location {
-	private final jade.core.Location jadeLocation;
-
-	public JadeLocation(jade.core.Location loc) {
-		this.jadeLocation = loc;
-	}
-	
-	public String getID() {
-		return jadeLocation.getID();
-	}
-
-	public String getName() {
-		return jadeLocation.getName();
-	}
-
-	public String getProtocol() {
-		return jadeLocation.getProtocol();
-	}
-
-	public String getAddress() {
-		return jadeLocation.getAddress();
->>>>>>> a8c652eb292cdbcf135af6155a23c69c08aef9c0
 	}
 }
