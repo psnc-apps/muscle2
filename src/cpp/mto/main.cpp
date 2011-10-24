@@ -496,7 +496,7 @@ void startConnectingToPeers()
   foreach(string mto, connects)
   {
     error_code e;
-    tcp::resolver_iterator it = rslvr.resolve(tcp::resolver_query(mtoConfigs[mto].address, mtoConfigs[mto].port), e);
+    tcp::resolver::iterator it = rslvr.resolve(tcp::resolver::query(mtoConfigs[mto].address, mtoConfigs[mto].port), e);
     if(e)
     {
       Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config, 
@@ -542,7 +542,7 @@ int main(int argc, char **argv)
 
   if(anyoneConnectsToMe) 
   {
-    tcp::resolver_iterator it = tcp::resolver(ioService).resolve(tcp::resolver_query(mtoConfigs[myName].address, mtoConfigs[myName].port), e);
+    tcp::resolver::iterator it = tcp::resolver(ioService).resolve(tcp::resolver::query(mtoConfigs[myName].address, mtoConfigs[myName].port), e);
     if(e)
     {
       Logger::error(-1, "Address of this MTO (%s:%s) not understod!",

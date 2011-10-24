@@ -76,7 +76,7 @@ module Misc
 	# javac
 	def Misc.javac(build_dir, sources, classpaths)
 		#flags = %w(-nowarn -Xlint:none)
-		flags = %w(-encoding ISO8859-1 -Xlint:deprecated)
+		flags = %w(-J-Xms16m -J-Xmx48m -encoding ISO8859-1 -Xlint:deprecated)
 		dst_dir = "#{$env[:muscle_dir]}/#{build_dir}/intermediate/classes"
 		# rm files from previous build
 		rm_rf dst_dir if File.directory?(dst_dir)
@@ -93,7 +93,7 @@ module Misc
 		classes.map! {|item| item[classes_dir.length+1..-1]} # paths must be relative to classes dir
 		classes.map! {|item| item.gsub(/\$/, '\$')} # escape the $ in nested class names to be able to pass them to the jar utility
 		classes.map! {|item| "-C #{$env[:muscle_dir]}/#{build_dir}/intermediate/classes #{item}"} # let jar cd to our classes dir to be able to find the files
-		Misc.run "jar -cf #{$env[:muscle_dir]}/#{build_dir}/#{output_name}.jar #{classes.join(' ')}"
+		Misc.run "jar -J-Xms16m -J-Xmx48m -cf #{$env[:muscle_dir]}/#{build_dir}/#{output_name}.jar #{classes.join(' ')}"
 	end
 
 end
@@ -183,6 +183,7 @@ module Targets
 		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/doc"
 		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/ruby"
 		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/resources"
+		Misc.run "cd #{$env[:muscle_dir]}/src/cxa ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/cxa"
 	end
 
 	def Targets.clean
