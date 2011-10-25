@@ -167,12 +167,15 @@ module Targets
 
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
+		mkdir_p "#{prefix}/etc" # make sure dir exists
 		mkdir_p "#{prefix}/share/muscle/java/thirdparty" # make sure dir exists
 
 		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true
         
         if(File.exists?("#{$env[:muscle_dir]}/build/mto"))
           FileUtils.install "#{$env[:muscle_dir]}/build/mto", "#{prefix}/bin", :mode => 0755, :verbose => true
+          FileUtils.install "#{$env[:muscle_dir]}/src/cpp/mto/mto-config.cfg.dist", "#{prefix}/etc", :mode => 0755, :verbose => true
+          FileUtils.install "#{$env[:muscle_dir]}/src/cpp/mto/mto-topology.cfg.dist", "#{prefix}/etc", :mode => 0755, :verbose => true
         end
         
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
