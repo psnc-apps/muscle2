@@ -298,12 +298,11 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
 
 void PeerConnectionHandler::Bufferfreeer::operator()(const boost::system::error_code& e, size_t )
 {
-  delete data;
+  delete [] data;
   thiz->pendingOperatons--;
   if(thiz->closing)
   {
     thiz->errorOcured(e);
-    delete [] data;
     return;
   }
 
