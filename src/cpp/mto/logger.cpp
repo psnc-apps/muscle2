@@ -2,9 +2,13 @@
 #include <string.h>
 #include <cstdarg>
 
-#include <boost/date_time.hpp>
-
-using namespace boost::posix_time;
+#ifdef USE_BOOST_FOR_GETTING_TIME
+  #include <boost/date_time.hpp>
+  using namespace boost::posix_time;
+#else
+  #include <sys/time.h>
+  #include <ctime>
+#endif
 
 namespace Logger
 {
@@ -36,22 +40,30 @@ void setLogMsgTypes(int logMsgTypes_)
 
 char * getPrefix(int logLevel_, int logMsgTypes_, const char* format)
 {
-  char * fmt = new char[ /* name */ 6 + /* date */ 15 + strlen(format) + /* "\n\0" */ 2];
+#ifdef USE_BOOST_FOR_GETTING_TIME
+  char * fmt = new char[ /* name */ 8 + /* date */ 15 + strlen(format) + /* "\n\0" */ 2];
   time_duration time = microsec_clock::local_time() - from_time_t(0);
-  sprintf(fmt, "      %14.3f %s\n", time.total_milliseconds()/1000.0, format);
+  sprintf(fmt, "        %14.3f %s\n", time.total_milliseconds()/1000.0, format);
+#else
+  char * fmt = new char[ /* name */ 8 + /* date */ 23 + strlen(format) + /* "\n\0" */ 2];
+  timeval now; gettimeofday(&now,0);
+  sprintf(fmt, "                           .%03d %s\n", (int) now.tv_usec/1000, format);
+  tm * timeTm = localtime(&now.tv_sec);
+  strftime(fmt+8, 20, "%Y.%m.%d %H:%M:%S ", timeTm);
+#endif
   
   if(logLevel_ == LogLevel_Error) {
-    strncpy(fmt, "ERROR", 5);
+    strncpy(fmt, "[ERROR]", 7);
   } else if(logLevel_ == LogLevel_Debug) {
-    strncpy(fmt, "DEBUG", 5);
+    strncpy(fmt, "[DEBUG]", 7);
   } else if(logLevel_ == LogLevel_Info) {
-    strncpy(fmt, " INFO", 5);
+    strncpy(fmt, "[ INFO]", 7);
   } else if(logLevel_ == LogLevel_Trace) {
-    strncpy(fmt, "TRACE", 5);
+    strncpy(fmt, "[TRACE]", 7);
   } else {
     char unknown[11];
-    sprintf(unknown, "%-5d", logLevel_);
-    strncpy(fmt, unknown, 5);
+    sprintf(unknown, "[%-5d]", logLevel_);
+    strncpy(fmt, unknown, 7);
   }
   
   return fmt;
