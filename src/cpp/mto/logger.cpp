@@ -45,7 +45,7 @@ char * getPrefix(int logLevel_, int logMsgTypes_, const char* format)
   time_duration time = microsec_clock::local_time() - from_time_t(0);
   sprintf(fmt, "        %14.3f %s\n", time.total_milliseconds()/1000.0, format);
 #else
-  char * fmt = new char[ /* name */ 8 + /* date */ 23 + strlen(format) + /* "\n\0" */ 2];
+  char * fmt = new char[ /* name */ 8 + /* date */ 24 + strlen(format) + /* "\n\0" */ 2];
   timeval now; gettimeofday(&now,0);
   sprintf(fmt, "                           .%03d %s\n", (int) now.tv_usec/1000, format);
   tm * timeTm = localtime(&now.tv_sec);
@@ -81,7 +81,7 @@ void log(int logLevel_, int logMsgTypes_, const char* format, va_list ap )
   char * extendedFormat = getPrefix(logLevel_, logMsgTypes_, format);
   vfprintf(stream, extendedFormat, ap);
   fflush(stream);
-  delete extendedFormat;
+  delete [] extendedFormat;
 }
 
 void log(int logLevel_, int logMsgTypes_, const char* format, ... )
