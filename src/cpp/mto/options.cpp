@@ -90,8 +90,8 @@ bool loadOptions(int argc, char **argv)
 {
   program_options::options_description opts("Options");
   opts.add_options()
-    ("config", program_options::value<string>(), "Location of the config file (default: mto-config.cfg)")
-    ("topology", program_options::value<string>(), "Location of the config file (default: mto-topology.cfg)")
+    ("config", program_options::value<string>(), "Location of the config file (default: $MUSCLE_HOME/etc/mto-config.cfg)")
+    ("topology", program_options::value<string>(), "Location of the config file (default: $MUSCLE_HOME/etc/mto-topology.cfg)")
     
     ("myName", program_options::value<string>(), "Name of the MTO, s specified in the topology file")
     
@@ -110,6 +110,7 @@ bool loadOptions(int argc, char **argv)
   program_options::variables_map read_opts;
   
   bool logFileChanged = false;
+  const char *muscle_home = getenv("MUSCLE_HOME") ? getenv("MUSCLE_HOME") : ".";
   
   // Reading opts, in precedence the ones from arguments
   try
@@ -133,16 +134,16 @@ bool loadOptions(int argc, char **argv)
   // Locate config
   if(read_opts.find("config")!=read_opts.end())
     configFilePath = read_opts["config"].as<string>();
-  if(configFilePath.empty()) configFilePath = CONFIG_FILE_NAMEPATH;
+  if(configFilePath.empty()) configFilePath = muscle_home + "/etc/" + CONFIG_FILE_NAMEPATH;
   
   // Locate topology
   if(read_opts.find("topology")!=read_opts.end())
     topologyFilePath = read_opts["topology"].as<string>();
-  if(topologyFilePath.empty()) topologyFilePath = TOPOLOGY_FILE_NAMEPATH;
+  if(topologyFilePath.empty()) topologyFilePath = muscle_home + "/etc/" + TOPOLOGY_FILE_NAMEPATH;
   
   // Reading opts, complement with config file
     
-  ifstream configFile(configFilePath.empty() ? CONFIG_FILE_NAMEPATH : configFilePath.c_str());
+  ifstream configFile(configFilePath.c_str());
   if(configFile)
   {
     Logger::info(Logger::MsgType_Config, "Config file '%s'", configFilePath.c_str());
@@ -182,7 +183,12 @@ bool loadOptions(int argc, char **argv)
   read_opts.erase("logLevel");
   
   int l = Logger::getLogLevel();
-  Logger::info(-1, "Logging level %d (%s)", l, (l==Logger::LogLevel_Trace?"TRACE":(l==Logger::LogLevel_Debug?"DEBUG":(l==Logger::LogLevel_Info?"INFO":(l==Logger::LogLevel_Error?"ERROR":"?")))));
+  Logger::info(-1, "Logging level %d (%s)", l, 
+	( l == Logger::LogLevel_Trace ? "TRACE":
+	( l == Logger::LogLevel_Debug ? "DEBUG":
+	( l == Logger::LogLevel_Info ? "INFO":
+	( l == Logger::LogLevel_Error ? "ERROR": 
+	  "?")))));
   
   // Daemon
   
@@ -216,6 +222,7 @@ bool loadOptions(int argc, char **argv)
   myName =  read_opts["myName"].as<string>();
   
   Logger::info(Logger::MsgType_Config, "My name in topology file: %s", myName.c_str());
+  Logger::info(Logger::MsgType_Config, "Internal address: %s:%s", read_opts["internalAddress"].as<string>().c_str(), read_opts["internalPort"].as<string>().c_str());
   
   // Internal endpoint (address and port)
   tcp::resolver resolver(ioService);
