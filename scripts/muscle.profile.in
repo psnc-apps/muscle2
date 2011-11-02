@@ -9,3 +9,7 @@ export MUSCLE_HOME
 export PATH=$MUSCLE_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$MUSCLE_HOME/lib:$LD_LIBRARY_PATH
 
+if [ -f $MUSCLE_HOME/etc/muscle.defaults ]
+then
+	. $MUSCLE_HOME/etc/muscle.defaults
+fi

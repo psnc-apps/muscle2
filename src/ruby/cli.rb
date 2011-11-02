@@ -83,8 +83,7 @@ class MuscleCli
 		@parser.on("--port_min ARG", "defines lower bound of the port range used (inclusive)") { |arg| @env['port_min'] = arg }
 		@parser.on("--port_max ARG", "defines higher bound of the port range used (inclusive)") { |arg| @env['port_max'] = arg }
 		@parser.on("--qcg", "enables cooperation with QosCosGrid services (forces local port)") { @env['qcg'] = true }
-		@parser.on("--mtohost HOST", "IP or hostname where MTO lives") {|arg| @env['mtohost'] = arg; }
-		@parser.on("--mtoport PORT", "port where MTO should be contacted") {|arg| @env['mtoport'] = arg.to_i; }
+		@parser.on("--mto HOST:PORT", "IP or hostname where MTO lives") {|arg| @env['mto'] = arg; }
 		
 		# jvm flags
 		@parser.separator "JVM flags:"

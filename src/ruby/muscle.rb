@@ -305,14 +305,14 @@ PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address"
 PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port"
 
 if(m.env.has_key?('intercluster'))
-  port_min = m.env['port_min']
-  port_max = m.env['port_max']
+  
+  port_min = m.env['port_min'] || ENV['MUSCLE_PORT_MIN']
+  port_max = m.env['port_max'] || ENV['MUSCLE_PORT_MAX']
   if(port_min.nil? or port_max.nil?)
 	puts "Warning: intercluster specified, but no local port range given! Intercluster ignored."
   else
-	mtoPort = m.env['mtoport']
-	mtoHost = m.env['mtohost']
-	mto =  m.env['mto']
+  
+	mto =  m.env['mto'] || ENV['MUSCLE_MTO']
 	if (! mto.nil?)
 		mtoHost = mto.split(':')[0]
 		mtoPort = mto.split(':')[1]
