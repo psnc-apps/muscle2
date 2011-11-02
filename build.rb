@@ -169,6 +169,7 @@ module Targets
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
 		mkdir_p "#{prefix}/etc" # make sure dir exists
+		mkdir_p "#{prefix}/log/muscle" # make sure dir exists
 		mkdir_p "#{prefix}/share/muscle/java/thirdparty" # make sure dir exists
 
 		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true

@@ -312,6 +312,12 @@ if(m.env.has_key?('intercluster'))
   else
 	mtoPort = m.env['mtoport']
 	mtoHost = m.env['mtohost']
+	mto =  m.env['mto']
+	if (! mto.nil?)
+		mtoHost = mto.split(':')[0]
+		mtoPort = mto.split(':')[1]
+	end
+	
 	if(mtoPort.nil? or mtoHost.nil?)
 	  puts "Warning: intercluster specified, but no MTO address/port given! Intercluster ignored."
 	else

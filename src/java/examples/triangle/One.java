@@ -19,43 +19,30 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package examples.simplejava;
+package examples.triangle;
 
+import muscle.core.ConduitEntrance;
+import muscle.core.ConduitExit;
+import muscle.core.Scale;
+import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 
-import muscle.core.ConduitExit;
-import muscle.core.Scale;
-
 
 /**
-a simple java example kernel which receives data and prints its content to stdout
-@author Jan Hegewald
+@author Bartosz Bosak
 */
-public class Pong extends muscle.core.kernel.CAController {
+public class One extends muscle.core.kernel.CAController {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private static final int INTERNAL_DT = 1;
-
-	// external dt's for out portals
-	private static final int DT_READ_A = 1;
-	private static final int dtWriteA = 1;
-
-	private ConduitExit<double[]> readerA;
-
-	private int time; // cxa time
-
+	private ConduitEntrance<double[]> writer1;
+	private ConduitExit<double[]> reader1;
+	
+	private int time;
 
 	//
-	@Override
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
@@ -64,41 +51,32 @@ public class Pong extends muscle.core.kernel.CAController {
 
 
 	//
-	@Override
 	protected void addPortals() {
-
-		this.readerA = this.addExit("data", DT_READ_A, double[].class);
+	
+		writer1 = addEntrance("data", 1, double[].class);
+		reader1 = addExit("data", 1, double[].class);
 	}
 
 
 	//
-	@Override
 	protected void execute() {
 
-		this.startAutomaton();
-	}
-
-
-	//
-	private void startAutomaton() {
-
-		double[] dataA = null;
-
-		// loop stepping with INTERNAL_DT
-		for(this.time = 0; !this.willStop(); this.time += INTERNAL_DT) {
-
-			// read from our portals at designated frequency
-			if(this.time % DT_READ_A == 0) {
-				dataA = this.readerA.receive();
+		double[] dataA = new double[5];
+		
+		for(time = 0; !willStop(); time ++) {
+								
+			// process data
+			for(int i = 0; i < dataA.length; i++) {
+				dataA[i] = 1;
 			}
-
-			// dump to our portals at designated frequency
-			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			if(this.time % dtWriteA == 0) {
-				for (double element : dataA) {
-					System.out.println("got: "+element);
-				}
-				System.out.println();
+						
+			// dump to our portals
+			System.out.println("Sending data to Two");
+			writer1.send(dataA);
+			dataA = reader1.receive();
+			for(int i = 0; i < dataA.length; i++)
+			{
+				System.out.println("Got from Three: "+dataA[i]);
 			}
 		}
 	}
