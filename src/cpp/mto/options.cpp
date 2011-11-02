@@ -110,7 +110,7 @@ bool loadOptions(int argc, char **argv)
   program_options::variables_map read_opts;
   
   bool logFileChanged = false;
-  const char *muscle_home = getenv("MUSCLE_HOME") ? getenv("MUSCLE_HOME") : ".";
+  string muscle_home = string(getenv("MUSCLE_HOME") ? getenv("MUSCLE_HOME") : ".");
   
   // Reading opts, in precedence the ones from arguments
   try
