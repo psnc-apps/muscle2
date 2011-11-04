@@ -9,7 +9,6 @@ set(Boost_USE_STATIC_RUNTIME     ON)
 find_package(Boost system program_options regex )
 find_package(Threads)
 
-set(CMAKE_CXX_FLAGS "-g -Wall")
 
 if(NOT Boost_FOUND)
     message("Boost has not been found! MTO will not be built")
