@@ -93,7 +93,7 @@ bool Options::load(int argc, char **argv)
     ("internalPort", program_options::value<string>(), "Port to listen for conections to be transported")
     ("internalAddress", program_options::value<string>(), "Address to listen for conections to be transported")
     
-    ("daemon", "Causes the program to go to background immediatly after start")
+    ("debug", "Causes the program NOT to go to background and sets logLevel to TRACE")
     ("logLevel", program_options::value<string>(), "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)")
     ("logMsgTypes", program_options::value<string>(), "Allows filtering log msgs (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
     ("logFile", program_options::value<string>(), "Path to the log file (default behaviour - logging to stderr)")
@@ -101,7 +101,7 @@ bool Options::load(int argc, char **argv)
   
   program_options::variables_map read_opts;
   
-  bool logFileChanged = false;
+  bool logFileSet = false;
   string muscle_home = string(getenv("MUSCLE_HOME") ? getenv("MUSCLE_HOME") : ".");
   
   // Reading opts, in precedence the ones from arguments
@@ -112,7 +112,7 @@ bool Options::load(int argc, char **argv)
     {
       if( ! setLogFile(read_opts["logFile"].as<string>()))
         return false;
-      logFileChanged = true;
+      logFileSet = true;
     }
     read_opts.erase("logFile");
   
@@ -145,7 +145,7 @@ bool Options::load(int argc, char **argv)
     try
     {
       program_options::store(program_options::parse_config_file(configFile, opts), read_opts);
-      if(!logFileChanged && read_opts.find("logFile")!=read_opts.end())
+      if(!logFileSet && read_opts.find("logFile")!=read_opts.end())
         if( ! setLogFile(read_opts["logFile"].as<string>()))
           return false;
       read_opts.erase("logFile");
@@ -186,9 +186,17 @@ bool Options::load(int argc, char **argv)
   
   // Daemon
   
-  if(read_opts.find("daemon")!=read_opts.end()){
-    Logger::debug(Logger::MsgType_Config, "Will daemonize");
-    daemonize = true;
+  if(read_opts.find("debug")!=read_opts.end())
+  {
+	setLogLvL("TRACE");
+    Logger::debug(Logger::MsgType_Config, "Will not daemonize. Debug mode");
+    daemonize = false;
+  }
+  else
+  {
+	daemonize = true;
+	if (!logFileSet) /*log file do not set explicitly */
+	  setLogFile(muscle_home + "/log/muscle/mto.log");
   }
   read_opts.erase("daemon");
   

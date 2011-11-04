@@ -39,7 +39,7 @@ public class CrossSocketFactory implements SocketFactory {
 
 	public static final String PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min";
 	public static final String PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max";
-	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.mainport";
+	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
 	public static final String PROP_DEBUG = "pl.psnc.mapper.muscle.debug";
 	public static final String PROP_TRACE = "pl.psnc.mapper.muscle.trace";
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
@@ -64,7 +64,7 @@ public class CrossSocketFactory implements SocketFactory {
 
 	protected int portMin = 9000;
 	protected int portMax = 9500;
-	protected int mainPort = 22;
+	protected int magicPort = 22;
 	protected boolean debug = true;
 	protected boolean trace = false;
 	protected String socketFile = "socket.file";
@@ -81,7 +81,7 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 
 		if (System.getProperty(PROP_MAIN_PORT) != null) {
-			mainPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
+			magicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
 		}
 
 		if (System.getProperty(PROP_DEBUG) != null) {
@@ -112,7 +112,7 @@ public class CrossSocketFactory implements SocketFactory {
 		logDebug("binding socket on port " + port + " and addr " + addr);
 		trace();
 
-		if (port == mainPort || port == 0) {
+		if (port == magicPort || port == 0) {
 			ServerSocket ss = null;
 			BindException lastEx = null;
 
@@ -132,17 +132,16 @@ public class CrossSocketFactory implements SocketFactory {
 
 				if (mtoAddr != null && mtoPort != -1) {
 					try {
-						mtoRegisterListening((InetSocketAddress) ss
-								.getLocalSocketAddress());
+						mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
 					} catch (IOException ex) {
-						throw new IOException("Could not register a server socket at the MTO");
+						throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
 					}
 
 					logDebug("Registered to MTO");
 				} else
 					logDebug("Missing MTO address / port. MTO will not be used.");
 
-				if (port == mainPort) {
+				if (port == magicPort) {
 					putConnectionData(InetAddress.getLocalHost()
 							.getHostAddress(), ss.getLocalPort());
 
@@ -347,7 +346,7 @@ public class CrossSocketFactory implements SocketFactory {
 				throws IOException {
 			InetSocketAddress iaddr = (InetSocketAddress) endpoint;
 
-			if (iaddr.getPort() == mainPort)
+			if (iaddr.getPort() == magicPort)
 				return getConnectionData();
 			else
 				return endpoint;
