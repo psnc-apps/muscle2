@@ -45,7 +45,7 @@ public class CrossSocketFactory implements SocketFactory {
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
 	public static final String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
 
-	public static final String ENV_COORDINATOR_URL = "GRMS_COORDINATOR_URL";
+	public static final String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
 	public static final String ENV_SESSION_ID = "SESSION_ID";
 
 	public static final String PUT_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"> "
