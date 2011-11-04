@@ -369,6 +369,9 @@ public class CrossSocketFactory implements SocketFactory {
 			getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
 
+			Console.out.writeln("Req: " + req.toString());
+			Console.out.writeln("Res: " + res.toString());
+
 			assert res.dstA == req.dstA && res.dstP == req.dstP
 					&& res.srcA == req.srcA && res.srcP == req.srcP;
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
@@ -457,6 +460,10 @@ public class CrossSocketFactory implements SocketFactory {
 			} catch (UnknownHostException e) {
 				throw new RuntimeException("This is why we don't like Java", e);
 			}
+		}
+
+		public String toString() {
+			return "Type: "+ type + "; src: " + srcA.toString() + ":" + srcP + "; dst: " + dstA.toString() + ":" + dstP;
 		}
 
 		public void setSource(InetSocketAddress isa) {
