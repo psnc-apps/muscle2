@@ -137,29 +137,45 @@ std::size_t hash_value(const Identifier& b)
     return h(b.dstAddress)-h(b.srcAddress)+h(b.dstPort)-h(b.srcPort);
 }
 
+#define USE_TEXT_FOR_HELLO true
+
 unsigned MtoHello::getSize()
 {
-  return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
-         + sizeof(/* distance */ unsigned short)
-         + sizeof( /* isLastMtoHello as char */ char );
+#ifdef USE_TEXT_FOR_HELLO
+  return 20;
+#else
+   return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
+          + sizeof(/* distance */ unsigned short)
+          + sizeof( /* isLastMtoHello as char */ char );
+#endif
 }
 
 MtoHello MtoHello::deserialize(char * buf)
 {
   MtoHello hello;
+#ifdef USE_TEXT_FOR_HELLO
+  int isLastMtoHello;
+  sscanf(buf,"%6hu%6hu%6hu %d", &hello.portLow, &hello.portHigh, &hello.distance, &isLastMtoHello);
+  hello.isLastMtoHello = isLastMtoHello;
+#else
   readFromBuffer(buf, &hello.portLow);
   readFromBuffer(buf, &hello.portHigh);
   readFromBuffer(buf, &hello.distance);
   readFromBuffer(buf, ((char*)&hello.isLastMtoHello));
+#endif
   return hello;
 }
 
 void MtoHello::serialize(char * buf) const
 {
+#ifdef USE_TEXT_FOR_HELLO
+  sprintf(buf,"%6hu%6hu%6hu %d", portLow, portHigh, distance, isLastMtoHello?1:0);
+#else
   writeToBuffer(buf, portLow);
   writeToBuffer(buf, portHigh);
   writeToBuffer(buf, distance);
   writeToBuffer(buf, (char)isLastMtoHello);
+#endif
 }
 
  std::string MtoHello::str() const
