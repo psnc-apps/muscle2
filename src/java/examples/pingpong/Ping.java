@@ -70,14 +70,14 @@ public class Ping extends CAController {
 		while (!willStop()) {
 
 			// The step
-			long _ = System.nanoTime();
+			long _ = System.currentTimeMillis();
 			entrance.send(ba);
 			exit.receive();
-			_ -= System.nanoTime();
+			_ -= System.currentTimeMillis();
 
 			// Managing results
 			times[stepCount] = -_;
-			System.out.printf(" %9.3f", -_ / (double) 10e6);
+			System.out.printf(" %9d", -_);
 
 			// As the test finishes, write the results
 			if (++stepCount == steps) {
