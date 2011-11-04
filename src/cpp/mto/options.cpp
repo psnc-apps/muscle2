@@ -146,7 +146,7 @@ bool Options::load(int argc, char **argv)
     {
       program_options::store(program_options::parse_config_file(configFile, opts), read_opts);
       if(!logFileSet && read_opts.find("logFile")!=read_opts.end())
-/        if( ! setLogFile(read_opts["logFile"].as<string>()))
+        if( ! setLogFile(read_opts["logFile"].as<string>()))
           return false;
       read_opts.erase("logFile");
   
