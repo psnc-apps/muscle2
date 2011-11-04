@@ -27,6 +27,8 @@ namespace Logger
   void error(int logMsgTypes_, const char* format, ...);
   
   void setLogStream(FILE * stream);
+  
+  void closeLogFile();
 };
 
 #endif // LOGGER_H

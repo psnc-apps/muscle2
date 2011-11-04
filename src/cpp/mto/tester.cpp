@@ -1,7 +1,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include "messages.h"
+#include "messages.hpp"
 using namespace std;
 using namespace boost;
 using namespace boost::asio;
@@ -27,7 +27,7 @@ void doListen(char ** argv){
  tcp::acceptor acc(io, e);
  
  char * buf = new char[Request::getSize()];
- r.write(buf);
+ r.serialize(buf);
  s.send(buffer(buf, Request::getSize()));
  delete buf;
  
@@ -64,13 +64,13 @@ void doConnect(char ** argv)
  r.dstPort = e3.port();
  
  char * buf = new char[Request::getSize()];
- r.write(buf);
+ r.serialize(buf);
  s.send(buffer(buf, Request::getSize()));
  delete buf;
  
  buf = new char(Header::getSize());
  read(s, buffer(buf, Header::getSize()), transfer_all());
- Header h = Header::read(buf); 
+ Header h = Header::deserialize(buf); 
  delete buf;
  
  if(h.length){

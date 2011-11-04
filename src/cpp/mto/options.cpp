@@ -1,24 +1,16 @@
-#include "options.h"
-#include "logger.h"
+#include "options.hpp"
+#include "logger.hpp"
+
+#include <cstdio> //TODO: needed?
 
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 using namespace boost::algorithm;
-
 #define foreach BOOST_FOREACH
 
-#include <cstdio>
+Options * Options::instance = 0;
 
-unsigned short localPortLow, localPortHigh;     ///< Local port range
-string myName;
-tcp::endpoint internalEndpoint;
-
-string configFilePath;
-string topologyFilePath;
-
-bool daemonize = false;
-
-bool setLogFile(string x){
+bool Options::setLogFile(string x){
   FILE * file = fopen(x.c_str(), "a");
   if(!file)
   {
@@ -29,7 +21,7 @@ bool setLogFile(string x){
   return true;
 }
 
-bool setLogLvL(string f){
+bool Options::setLogLvL(string f){
   to_upper(f);
   if(f=="TRACE"){
       Logger::setLogLevel(Logger::LogLevel_Trace);
@@ -50,7 +42,7 @@ bool setLogLvL(string f){
     return true;
 }
 
-bool setLogMsgType(string x){
+bool Options::setLogMsgType(string x){
   vector<string> found;
   split(found, x, is_any_of(",|"), token_compress_on);
   
@@ -86,7 +78,7 @@ bool setLogMsgType(string x){
   return true;
 }
 
-bool loadOptions(int argc, char **argv)
+bool Options::load(int argc, char **argv)
 {
   program_options::options_description opts("Options");
   opts.add_options()
@@ -130,6 +122,8 @@ bool loadOptions(int argc, char **argv)
     opts.print(cout);
     return false;
   }
+  
+  string configFilePath;
   
   // Locate config
   if(read_opts.find("config")!=read_opts.end())
@@ -184,11 +178,11 @@ bool loadOptions(int argc, char **argv)
   
   int l = Logger::getLogLevel();
   Logger::info(-1, "Logging level %d (%s)", l, 
-	( l == Logger::LogLevel_Trace ? "TRACE":
-	( l == Logger::LogLevel_Debug ? "DEBUG":
-	( l == Logger::LogLevel_Info ? "INFO":
-	( l == Logger::LogLevel_Error ? "ERROR": 
-	  "?")))));
+    ( l == Logger::LogLevel_Trace ? "TRACE":
+    ( l == Logger::LogLevel_Debug ? "DEBUG":
+    ( l == Logger::LogLevel_Info ? "INFO":
+    ( l == Logger::LogLevel_Error ? "ERROR": 
+      "?")))));
   
   // Daemon
   

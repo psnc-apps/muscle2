@@ -38,13 +38,13 @@ struct Request
   int sessionId;
   
   /** Serializes the Request to an existing char* of size at least of getSize */
-  virtual void write(char* buf) const;
+  virtual void serialize(char* buf) const;
   
   /** Size, in bytes, of the serialized request */
   static unsigned getSize();
   
   /** Deserializes request from the given buffer */
-  static Request read(char * buf);
+  static Request deserialize(char * buf);
 };
 
 
@@ -60,10 +60,10 @@ struct Header : Request
   static unsigned getSize();
   
   /** Deserializes the header from the given buffer */
-  static Header read(char * buf);
+  static Header deserialize(char * buf);
   
   /** Serializes the Header to an existing char* of size at least of getSize */
-  void write(char* buf) const;
+  void serialize(char* buf) const;
   
   Header(){};
   
@@ -107,10 +107,10 @@ struct MtoHello
   static unsigned getSize();
   
   /** Deserializes the MtoHello from the given buffer */
-  static MtoHello read(char * buf);
+  static MtoHello deserialize(char * buf);
   
   /** Serializes the MtoHello to an existing char* of size at least of getSize */
-  void write(char* buf) const;
+  void serialize(char* buf) const;
   
   std::string str() const;
 };

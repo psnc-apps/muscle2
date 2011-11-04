@@ -1,4 +1,4 @@
-#include "messages.h"
+#include "messages.hpp"
 #include <cstring>
 #include <cstdio>
 #include <sstream>
@@ -57,7 +57,7 @@ unsigned Request::getSize()
   return sizeof(/*type*/ char)+sizeof(/*srcAddress*/ unsigned int)+sizeof(/*srcPort*/ unsigned short)+sizeof(/*dstAddress*/ unsigned int)+sizeof(/*dstPort*/ unsigned short)+sizeof(/*sessionId*/ int);
 }
 
-Request Request::read(char * buf)
+Request Request::deserialize(char * buf)
 {
   Request r;
   readFromBuffer(buf, & r.type);
@@ -69,7 +69,7 @@ Request Request::read(char * buf)
   return r;
 }
 
-void Request::write(char* buf) const
+void Request::serialize(char* buf) const
 {
   writeToBuffer(buf, type);
   writeToBuffer(buf, srcAddress);
@@ -85,10 +85,10 @@ unsigned Header::getSize()
   return Request::getSize()+sizeof(/*length*/ unsigned int);
 }
 
-Header Header::read(char * buf)
+Header Header::deserialize(char * buf)
 {
   
-  Header h(Request::read(buf));
+  Header h(Request::deserialize(buf));
   buf+=Request::getSize();
   readFromBuffer(buf, & h.length);
   return h;
@@ -98,9 +98,9 @@ Header::Header(const Request & r): Request(r)
 {
 }
 
-void Header::write(char* buf) const
+void Header::serialize(char* buf) const
 {
-  Request::write(buf);
+  Request::serialize(buf);
   buf+=Request::getSize();
   writeToBuffer(buf, length);
 }
@@ -144,7 +144,7 @@ unsigned MtoHello::getSize()
          + sizeof( /* isLastMtoHello as char */ char );
 }
 
-MtoHello MtoHello::read(char * buf)
+MtoHello MtoHello::deserialize(char * buf)
 {
   MtoHello hello;
   readFromBuffer(buf, &hello.portLow);
@@ -154,7 +154,7 @@ MtoHello MtoHello::read(char * buf)
   return hello;
 }
 
-void MtoHello::write(char * buf) const
+void MtoHello::serialize(char * buf) const
 {
   writeToBuffer(buf, portLow);
   writeToBuffer(buf, portHigh);

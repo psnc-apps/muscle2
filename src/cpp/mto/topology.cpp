@@ -3,8 +3,8 @@
 #include <set>
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
-#include "topology.h"
-#include "logger.h"
+#include "topology.hpp"
+#include "logger.hpp"
 
 using namespace std;
 using namespace boost;
@@ -57,7 +57,10 @@ bool hasLoops(const map<string, mto_config> & results, map<string,set<string> > 
     }
   
   if(subgraphs > 1)
+  {
     Logger::error(Logger::MsgType_Config, "Not all machines are linked together in the topology file!");
+    return false;
+  }
   return false;
 }
 

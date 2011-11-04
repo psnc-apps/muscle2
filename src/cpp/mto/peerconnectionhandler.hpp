@@ -5,9 +5,9 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/unordered_map.hpp>
 
-#include "messages.h"
-#include "connection.h"
-#include "main.h"
+#include "messages.hpp"
+#include "connection.hpp"
+#include "main.hpp"
 
 using namespace std;
 using namespace boost;

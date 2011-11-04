@@ -1,4 +1,4 @@
-#include "connection.h"
+#include "connection.hpp"
 
 Connection::Connection(Header h, tcp::socket* s, PeerConnectionHandler * t)
   : firstSocket(s), header(h), closing(false), secondSocket(0), hasRemotePeer(true), referenceCount(0), reqBuf(0) ,
@@ -26,11 +26,12 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
     return;
   }
   
-  Request request = Request::read(reqBuf);
+  Request request = Request::deserialize(reqBuf);
   header = Header(request);
   delete [] reqBuf;
   
-  
+  unsigned short localPortLow = Options::getInstance().getLocalPortLow();
+  unsigned short localPortHigh = Options::getInstance().getLocalPortHigh();
   
   switch(request.type){
     case Request::Register:
@@ -100,7 +101,7 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
         }
         
         Header h(request);
-        h.write(s_f.c_array());
+        h.serialize(s_f.c_array());
         
         remoteConnections[Identifier(h)]=this;
         
@@ -146,7 +147,7 @@ void Connection::clean()
    hasRemotePeer=false;
    header.type=Header::Close;
    char * data = new char[Header::getSize()];
-   header.write(data);
+   header.serialize(data);
    if(secondMto)
      async_write(*(secondMto->getSocket()), buffer(data, Header::getSize()), transfer_all(), Bufferfreeer(data, 0));
   }
@@ -200,24 +201,23 @@ void Connection::error(const boost::system::error_code& e)
                   e.message().c_str()
     );
   
+  error_code ec;
   
-  firstSocket->shutdown(boost::asio::socket_base::shutdown_both);
+  if(firstSocket->is_open())
+      firstSocket->shutdown(boost::asio::socket_base::shutdown_both, ec);
+
+  if(ec)
+    Logger::trace(Logger::MsgType_ClientConn, "Could not shut down first socket - eror: %s", ec.message().c_str() );
   
   if(secondSocket && secondSocket->is_open())
-    secondSocket->shutdown(boost::asio::socket_base::shutdown_both);
-  
+  {
+    secondSocket->shutdown(boost::asio::socket_base::shutdown_both, ec);
+    if(ec)
+      Logger::trace(Logger::MsgType_ClientConn, "Could not shut down second socket - eror: %s", ec.message().c_str() );
+  }
+    
   clean();
 }
-
-/*    _____      
-     |_____|     
-  \__|_____|__/  
-    /       \    
-  (|  [] []  |)  
-   |    ^    |   
-    \ \___/ /    
-     \_____/     */
-
 
 void Connection::firstToSecondW(const error_code& e, size_t count)
 {
@@ -225,7 +225,7 @@ void Connection::firstToSecondW(const error_code& e, size_t count)
     async_write(*secondSocket, buffer(f_s, count), transfer_all(), bind(&Connection::firstToSecondR, this, placeholders::error, placeholders::bytes_transferred));
   else
   {
-    --referenceCount;
+    referenceCount--;
     error(e);
   }
 }
@@ -278,7 +278,7 @@ void Connection::connectedLocal(const error_code& e)
                  );
     h.length = 1;
     reqBuf = new char[Header::getSize()];
-    h.write(reqBuf);
+    h.serialize(reqBuf);
     async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,0));
     clean();
     return;
@@ -286,7 +286,7 @@ void Connection::connectedLocal(const error_code& e)
   
   h.length=0;
   reqBuf = new char[Header::getSize()];
-  h.write(reqBuf);
+  h.serialize(reqBuf);
   
   referenceCount++;
   async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,this));
@@ -333,7 +333,7 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
   }
   reqBuf = new char[count + Header::getSize()];
   header.length=count;
-  header.write(reqBuf);
+  header.serialize(reqBuf);
   memcpy(reqBuf+Header::getSize(), f_s.c_array(), count);
   async_write(*(secondMto->getSocket()), buffer(reqBuf, count + Header::getSize()), transfer_all(),
               bind(&Connection::localToRemoteR, this, placeholders::error, placeholders::bytes_transferred));
@@ -349,7 +349,7 @@ void Connection::remoteToLocal(char * data, int length )
 void Connection::connectedRemote(Header h)
 {
   reqBuf = new char[Header::getSize()];
-  h.write(reqBuf);
+  h.serialize(reqBuf);
   referenceCount++;
   async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,this));
   reqBuf = 0;

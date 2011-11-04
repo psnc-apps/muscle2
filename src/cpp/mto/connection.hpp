@@ -8,10 +8,10 @@
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 
-#include "main.h"
-#include "options.h"
-#include "messages.h"
-#include "peerconnectionhandler.h"
+#include "main.hpp"
+#include "options.hpp"
+#include "messages.hpp"
+#include "peerconnectionhandler.hpp"
 
 /** Size of a single-direction buffer for each connection */
 #define CONNECTION_BUFFER_SIZE 65536

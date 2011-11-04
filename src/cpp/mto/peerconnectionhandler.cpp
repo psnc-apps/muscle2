@@ -1,4 +1,4 @@
-#include "peerconnectionhandler.h"
+#include "peerconnectionhandler.hpp"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -46,7 +46,7 @@ void PeerConnectionHandler::readHeader(const error_code& e, size_t)
     return;
   }
   
-  Header h = Header::read(dataBufffer);
+  Header h = Header::deserialize(dataBufffer);
   delete [] dataBufffer;
   switch(h.type)
   {
@@ -104,7 +104,7 @@ void PeerConnectionHandler::handleConnectFailed(Header h)
   h.length = 1;
       
   char * buf = new char[h.getSize()];
-  h.write(buf);
+  h.serialize(buf);
   pendingOperatons++;
   async_write(*socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, this));
   
@@ -132,7 +132,7 @@ void PeerConnectionHandler::HandleConnected::operator () (const error_code& e)
   h.length = 0;
   
   char * buf = new char[h.getSize()];
-  h.write(buf);
+  h.serialize(buf);
   t->pendingOperatons++;
   async_write(*t->socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, t));
   Connection * c = new Connection(h, s,  t);
@@ -221,7 +221,7 @@ void PeerConnectionHandler::forward(const Header & h, int dataLen, const char * 
 {
   int size = Header::getSize() + dataLen;
   char * newdata = new char[size];
-  h.write(newdata);
+  h.serialize(newdata);
   if(dataLen) memcpy(newdata+Header::getSize(), data, dataLen);
   pendingOperatons++;
   async_write(*socket, buffer(newdata, size), Bufferfreeer(newdata,this));
@@ -241,7 +241,7 @@ void PeerConnectionHandler::propagateHello(const MtoHello& hello)
     h.dstPort=hello.portHigh;
     h.length = hello.distance+1;
     char * data = new char[Header::getSize()];
-    h.write(data);
+    h.serialize(data);
     pendingOperatons++;
     async_write(*socket, buffer(data, Header::getSize()), Bufferfreeer(data, this));
 }

@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "logger.hpp"
 #include <string.h>
 #include <cstdarg>
 
@@ -96,5 +96,10 @@ void trace(int logMsgTypes_, const char* format, ...) { va_list ap; va_start(ap,
 void  info(int logMsgTypes_, const char* format, ...) { va_list ap; va_start(ap, format); log(LogLevel_Info,  logMsgTypes_, format, ap); va_end(ap);}
 void debug(int logMsgTypes_, const char* format, ...) { va_list ap; va_start(ap, format); log(LogLevel_Debug, logMsgTypes_, format, ap); va_end(ap);}
 void error(int logMsgTypes_, const char* format, ...) { va_list ap; va_start(ap, format); log(LogLevel_Error, logMsgTypes_, format, ap); va_end(ap);}
+
+void closeLogFile()
+{
+  fclose(stream);
+}
 
 }
