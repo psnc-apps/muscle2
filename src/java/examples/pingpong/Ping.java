@@ -85,8 +85,8 @@ public class Ping extends CAController {
 				// calculate avg and std dev
 				avgs[testNumber] = average(times);
 				stDevs[testNumber] = stDev(times, avgs[testNumber]);
-				System.out.printf(" %10.3f %10.3f", avgs[testNumber] / 10e6,
-						stDevs[testNumber] / 10e6);
+				System.out.printf(" %10.3f %10.3f", avgs[testNumber],
+						stDevs[testNumber]);
 
 				// MB
 				double speed = 953.67432 * (size == 0 ? Double.NaN : size)
