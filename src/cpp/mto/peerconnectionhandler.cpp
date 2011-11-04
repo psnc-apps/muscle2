@@ -42,7 +42,7 @@ void PeerConnectionHandler::readHeader(const error_code& e, size_t)
   if(closing) errorOcured(e);
   if(e)
   {
-    errorOcured(e, "reading header failed");
+    errorOcured(e, "Reading header failed");
     return;
   }
   
@@ -153,7 +153,7 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
         fwdMap.erase(id);  
     }
     else
-      Logger::info(Logger::MsgType_PeerConn, "Got response for unwanted connection");
+      Logger::info(Logger::MsgType_PeerConn, "Got response for invalid connection");
     return;
   }
   
@@ -186,7 +186,7 @@ void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size
       delete [] data;
     }
     else
-      Logger::error(Logger::MsgType_PeerConn, "Received data for unexisting dest");
+      Logger::error(Logger::MsgType_PeerConn, "Received data for nonexistent destination");
   }
   else
     remoteConnections[id]->remoteToLocal( data, header.length );

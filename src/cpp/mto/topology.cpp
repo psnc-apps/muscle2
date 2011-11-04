@@ -66,7 +66,7 @@ bool loadTopology(const char * fname, map<string, mto_config> & results)
   ifstream file(fname);
   if(!file)
   {
-    Logger::error(-1, "Config file open failed!");
+    Logger::error(-1, "Opening topology file (%s) failed!", fname);
     return false;
   }
   
@@ -110,7 +110,7 @@ bool loadTopology(const char * fname, map<string, mto_config> & results)
       {
         if(results.find(matches[1])!=results.end())
         {
-          Logger::error(Logger::MsgType_Config, "Redefinition of machine called %s", matches[1].str().c_str());
+          Logger::error(Logger::MsgType_Config, "Redefinition of machine  %s", matches[1].str().c_str());
           return false;
         }
         

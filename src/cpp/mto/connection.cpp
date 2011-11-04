@@ -62,7 +62,7 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
       { // local to local
         if(availablePorts.find(pair<unsigned long, unsigned short>(request.dstAddress,request.dstPort))==availablePorts.end())
         {
-          Logger::error(Logger::MsgType_ClientConn, "Requested connection to not registered %s:%hu from %s:%hu",
+          Logger::error(Logger::MsgType_ClientConn, "Requested connection to not registered endpoint %s:%hu received from %s:%hu",
                    ip::address_v4(request.dstAddress).to_string().c_str(),
                    request.dstPort,
                    firstSocket->remote_endpoint().address().to_string().c_str(),
@@ -133,7 +133,7 @@ void Connection::clean()
 {
   if(!closing)
   {
-    Logger::trace(Logger::MsgType_ClientConn, "Closing connection between %s:%hu to %s:%hu",
+    Logger::trace(Logger::MsgType_ClientConn, "Closing connection between %s:%hu and %s:%hu",
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),
@@ -165,7 +165,7 @@ void Connection::clean()
   }
   if(!referenceCount)
   {
-    Logger::debug(Logger::MsgType_ClientConn, "Closed connection between %s:%hu to %s:%hu",
+    Logger::debug(Logger::MsgType_ClientConn, "Closed connection between %s:%hu and %s:%hu",
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),
@@ -192,7 +192,7 @@ void Connection::error(const boost::system::error_code& e)
   }
 
   if(e!=asio::error::eof)
-    Logger::error(Logger::MsgType_ClientConn, "Error ocurred between %s:%hu to %s:%hu (%s)",
+    Logger::error(Logger::MsgType_ClientConn, "Error ocurred in connection between %s:%hu and %s:%hu (%s)",
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),
@@ -269,7 +269,7 @@ void Connection::connectedLocal(const error_code& e)
   h.type=Header::ConnectResponse;
   if(e)
   {
-    Logger::error(Logger::MsgType_ClientConn, "Error connecting to local side (%s:%hu -- %s:%hu) - %s", 
+    Logger::error(Logger::MsgType_ClientConn, "Error connecting to local site (%s:%hu -- %s:%hu) - %s", 
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),
@@ -303,7 +303,7 @@ void Connection::connectRemoteRequestErrorMonitor(const error_code& e, size_t co
   
   if(e)
   {
-    secondMto->errorOcured(e, "Write failed");
+    secondMto->errorOcured(e, "ConnectionMonitor: Write failed");
     clean();
   }
 }
@@ -314,7 +314,7 @@ void Connection::localToRemoteR(const error_code& e, size_t)
   if(closing) { clean(); return;};
   if(e)
   {
-    secondMto->errorOcured(e, "Write failed");
+    secondMto->errorOcured(e, "localToRemoteR: Write failed");
     clean();
   }
   delete [] reqBuf;
@@ -356,7 +356,7 @@ void Connection::connectedRemote(Header h)
   
   if(h.length)
   { // Fail
-    Logger::debug(Logger::MsgType_ClientConn, "Got negative response for connect request (%s:%hu -- %s:%hu)", 
+    Logger::debug(Logger::MsgType_ClientConn, "Got negative response for connection request (%s:%hu -- %s:%hu)", 
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),

@@ -22,7 +22,7 @@ bool setLogFile(string x){
   FILE * file = fopen(x.c_str(), "a");
   if(!file)
   {
-    Logger::error(-1, "Failed to open file '%s' for loging!", x.c_str());
+    Logger::error(-1, "Failed to open log file '%s'!", x.c_str());
     return false;
   }
   Logger::setLogStream(file);
@@ -104,7 +104,7 @@ bool loadOptions(int argc, char **argv)
     ("daemon", "Causes the program to go to background immediatly after start")
     ("logLevel", program_options::value<string>(), "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)")
     ("logMsgTypes", program_options::value<string>(), "Allows filtering log msgs (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
-    ("logFile", program_options::value<string>(), "Path to log file (default behaviour - logging to stderr)")
+    ("logFile", program_options::value<string>(), "Path to the log file (default behaviour - logging to stderr)")
   ;
   
   program_options::variables_map read_opts;
@@ -222,7 +222,7 @@ bool loadOptions(int argc, char **argv)
   myName =  read_opts["myName"].as<string>();
   
   Logger::info(Logger::MsgType_Config, "My name in topology file: %s", myName.c_str());
-  Logger::info(Logger::MsgType_Config, "Internal address: %s:%s", read_opts["internalAddress"].as<string>().c_str(), read_opts["internalPort"].as<string>().c_str());
+  Logger::info(Logger::MsgType_Config, "My internal address: %s:%s", read_opts["internalAddress"].as<string>().c_str(), read_opts["internalPort"].as<string>().c_str());
   
   // Internal endpoint (address and port)
   tcp::resolver resolver(ioService);
@@ -231,7 +231,7 @@ bool loadOptions(int argc, char **argv)
   tcp::resolver::iterator indoor = resolver.resolve(indoorQuery,e);
   if(e || tcp::resolver::iterator() == indoor)
   {
-    Logger::error(Logger::MsgType_Config, "unknown host/port for internal socket: %s:%s (error: %s)",
+    Logger::error(Logger::MsgType_Config, "Unknown host/port for internal endpoint: %s:%s (error: %s)",
                   read_opts["internalAddress"].as<string>().c_str(),
                   read_opts["internalPort"].as<string>().c_str(),
                   e.message().c_str()
@@ -243,7 +243,7 @@ bool loadOptions(int argc, char **argv)
   // Port range validity check
   if(localPortLow > localPortHigh)
   {
-    Logger::error(Logger::MsgType_Config, "Inverted limits in the port range");
+    Logger::error(Logger::MsgType_Config, "Invalid port range");
     return false;
   }
   

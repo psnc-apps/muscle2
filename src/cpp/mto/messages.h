@@ -73,7 +73,7 @@ struct Header : Request
 
 
 /**
- * All that's needed to identify a connection. Implements all requirements for (tree and hash) map keys.
+ * All that's needed to identify a connection. Implements all mandatory methods for (tree and hash) map keys.
  */ 
 struct Identifier
 {
