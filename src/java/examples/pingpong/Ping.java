@@ -90,7 +90,7 @@ public class Ping extends CAController {
 
 				// MB
 				double speed = 953.67432 * (size == 0 ? Double.NaN : size)
-						/ avgs[testNumber];
+						/ avgs[testNumber] / 10e6;
 
 				System.out.printf(" %4.1f %14.6f", stDevs[testNumber]
 						/ avgs[testNumber] * 100, speed);
