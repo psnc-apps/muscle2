@@ -369,8 +369,8 @@ public class CrossSocketFactory implements SocketFactory {
 			getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
 
-			System.out.writeln("Req: " + req.toString());
-			System.out.writeln("Res: " + res.toString());
+			System.out.println("Req: " + req.toString());
+			System.out.println("Res: " + res.toString());
 
 			assert res.dstA == req.dstA && res.dstP == req.dstP
 					&& res.srcA == req.srcA && res.srcP == req.srcP;
