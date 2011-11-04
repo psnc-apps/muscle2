@@ -239,6 +239,7 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
     error(e);
     return;
   }
+  
   reqBuf = new char[count + Header::getSize()];
   header.length=count;
   header.serialize(reqBuf);

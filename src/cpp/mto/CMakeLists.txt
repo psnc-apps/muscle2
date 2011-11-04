@@ -6,6 +6,8 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 find_package(Boost COMPONENTS system program_options regex )
 find_package(Threads)
 
