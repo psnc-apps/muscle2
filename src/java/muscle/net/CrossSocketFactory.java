@@ -369,11 +369,11 @@ public class CrossSocketFactory implements SocketFactory {
 			getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
 
-			System.out.println("Req: " + req.toString());
-			System.out.println("Res: " + res.toString());
+//			System.out.println("Req: " + req.toString());
+//			System.out.println("Res: " + res.toString());
 
-			assert res.dstA == req.dstA && res.dstP == req.dstP
-					&& res.srcA == req.srcA && res.srcP == req.srcP;
+			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
+					&& res.srcA.equals(req.srcA) && res.srcP == req.srcP;
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
