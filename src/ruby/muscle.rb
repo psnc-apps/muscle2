@@ -323,8 +323,9 @@ if(m.env.has_key?('intercluster'))
 	else
 	  if(m.env.has_key?('qcg'))
 		m.env['localport'] = 22
+		m.env['mainport'] = 22
 	  else
-		m.env['localport'] = 0
+		m.env['localport'] = 0 
 	  end
 	  
 	  if(m.env["jvmflags"].nil?)
