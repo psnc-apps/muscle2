@@ -84,4 +84,3 @@ Building user space boost & building with boost
 
     BOOST_ROOT=/path/to/unpacked/boost cmake ..
 
-  To run the app, copy the libs from  './stage/lib' to the folder with MTO executables.

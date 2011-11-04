@@ -1,7 +1,14 @@
 #include "connection.hpp"
 
+/* from local */
+Connection::Connection(tcp::socket* s, char* requestBuffer)
+   : sock(s), reqBuf(requestBuffer), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0)
+{
+}
+
+/* from remote */
 Connection::Connection(Header h, tcp::socket* s, PeerConnectionHandler * t)
-  : firstSocket(s), header(h), closing(false), secondSocket(0), hasRemotePeer(true), referenceCount(0), reqBuf(0) ,
+  : sock(s), header(h), closing(false), hasRemotePeer(true), referenceCount(0), reqBuf(0) ,
     secondMto(t)
 {
   remoteConnections[Identifier(h)]=this;
@@ -17,8 +24,8 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
   if(e)
   {
     Logger::error(Logger::MsgType_ClientConn, "Error reading request from %s:%d (%s)",
-                  firstSocket->remote_endpoint().address().to_string().c_str(),
-                  firstSocket->remote_endpoint().port(),
+                  sock->remote_endpoint().address().to_string().c_str(),
+                  sock->remote_endpoint().port(),
                   e.message().c_str()
                  );
     delete [] reqBuf;
@@ -41,8 +48,8 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
         Logger::error(Logger::MsgType_ClientConn, "Port %s:%hu out of range - registering port aborted (connection from %s:%hu)",
                       ip::address_v4(request.srcAddress).to_string().c_str(),
                       request.srcPort,
-                      firstSocket->remote_endpoint().address().to_string().c_str(),
-                      firstSocket->remote_endpoint().port()
+                      sock->remote_endpoint().address().to_string().c_str(),
+                      sock->remote_endpoint().port()
                      );
         clean();
         return;
@@ -61,29 +68,14 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
     {
       if(request.dstPort>=localPortLow && request.dstPort<=localPortHigh)
       { // local to local
-        if(availablePorts.find(pair<unsigned long, unsigned short>(request.dstAddress,request.dstPort))==availablePorts.end())
-        {
-          Logger::error(Logger::MsgType_ClientConn, "Requested connection to not registered endpoint %s:%hu received from %s:%hu",
-                   ip::address_v4(request.dstAddress).to_string().c_str(),
-                   request.dstPort,
-                   firstSocket->remote_endpoint().address().to_string().c_str(),
-                   firstSocket->remote_endpoint().port()
-          );
-          clean();
-          return;
-        }
-        else
-        {
-          Logger::trace(Logger::MsgType_ClientConn, "Trying to establish connection from %s:%hu to %s:%hu",
-                   ip::address_v4(request.dstAddress).to_string().c_str(),
-                   request.dstPort,
-                   firstSocket->remote_endpoint().address().to_string().c_str(),
-                   firstSocket->remote_endpoint().port()
-          );
-          secondSocket = new tcp::socket(ioService);
-          secondSocket->async_connect(tcp::endpoint(ip::address_v4(request.dstAddress), request.dstPort),
-                                      bind(&Connection::connectedLocal, this, placeholders::error));
-        }
+        Logger::error(Logger::MsgType_ClientConn, "Requested connection to local port range - to %s:%hu from %s:%hu",
+                  ip::address_v4(request.dstAddress).to_string().c_str(),
+                  request.dstPort,
+                  sock->remote_endpoint().address().to_string().c_str(),
+                  sock->remote_endpoint().port()
+        );
+        clean();
+        return;
       }
       else
       { // local to remote
@@ -93,20 +85,21 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
           Logger::error(Logger::MsgType_ClientConn, "Requested connection to port out of range %s:%hu from %s:%hu",
                    ip::address_v4(request.dstAddress).to_string().c_str(),
                    request.dstPort,
-                   firstSocket->remote_endpoint().address().to_string().c_str(),
-                   firstSocket->remote_endpoint().port()
+                   sock->remote_endpoint().address().to_string().c_str(),
+                   sock->remote_endpoint().port()
           );
           clean();
           break;
         }
         
         Header h(request);
-        h.serialize(s_f.c_array());
+        reqBuf = new char[Header::getSize()];
+        h.serialize(reqBuf);
         
         remoteConnections[Identifier(h)]=this;
         
         ++referenceCount;
-        async_write(*(secondMto->getSocket()), buffer(s_f, h.getSize()), transfer_all(), 
+        async_write(*(secondMto->getSocket()), buffer(reqBuf, Header::getSize()), transfer_all(), 
                     bind(&Connection::connectRemoteRequestErrorMonitor, this, placeholders::error, placeholders::bytes_transferred));
         
         Logger::trace(Logger::MsgType_ClientConn, "Requesting connection to host %s:%hu from peer %s:%hu",
@@ -121,8 +114,8 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
     default:
     {
       Logger::error(Logger::MsgType_ClientConn, "Client from %s:%hu sent unknown message (type %hhd)",
-                    firstSocket->remote_endpoint().address().to_string().c_str(),
-                    firstSocket->remote_endpoint().port(),
+                    sock->remote_endpoint().address().to_string().c_str(),
+                    sock->remote_endpoint().port(),
                     request.type
       );
       clean();
@@ -153,17 +146,12 @@ void Connection::clean()
   }
   
   remoteConnections.erase(Identifier(header));
-  if(firstSocket->is_open())
-    firstSocket->close();
+  if(sock->is_open())
+    sock->close();
   if(!referenceCount)
-    delete firstSocket;
-  if(secondSocket)
-  {
-    if(secondSocket->is_open())
-      secondSocket->close();
-    if(!referenceCount)
-      delete secondSocket;
-  }
+    delete sock;
+ 
+  
   if(!referenceCount)
   {
     Logger::debug(Logger::MsgType_ClientConn, "Closed connection between %s:%hu and %s:%hu",
@@ -203,102 +191,19 @@ void Connection::error(const boost::system::error_code& e)
   
   error_code ec;
   
-  if(firstSocket->is_open())
-      firstSocket->shutdown(boost::asio::socket_base::shutdown_both, ec);
+  if(sock->is_open())
+      sock->shutdown(boost::asio::socket_base::shutdown_both, ec);
 
   if(ec)
     Logger::trace(Logger::MsgType_ClientConn, "Could not shut down first socket - eror: %s", ec.message().c_str() );
-  
-  if(secondSocket && secondSocket->is_open())
-  {
-    secondSocket->shutdown(boost::asio::socket_base::shutdown_both, ec);
-    if(ec)
-      Logger::trace(Logger::MsgType_ClientConn, "Could not shut down second socket - eror: %s", ec.message().c_str() );
-  }
     
   clean();
-}
-
-void Connection::firstToSecondW(const error_code& e, size_t count)
-{
-  if(!e)
-    async_write(*secondSocket, buffer(f_s, count), transfer_all(), bind(&Connection::firstToSecondR, this, placeholders::error, placeholders::bytes_transferred));
-  else
-  {
-    referenceCount--;
-    error(e);
-  }
-}
-
-void Connection::firstToSecondR(const error_code& e, size_t)
-{
-  if(!e)
-    firstSocket->async_read_some(buffer(f_s), bind(&Connection::firstToSecondW, this, placeholders::error, placeholders::bytes_transferred));
-  else
-  {
-    referenceCount--;
-    error(e);
-  }
-}
-
-void Connection::secondToFirstW(const error_code& e, size_t count)
-{
-  if(!e)
-    async_write(*firstSocket, buffer(s_f, count), transfer_all(), bind(&Connection::secondToFirstR, this, placeholders::error, placeholders::bytes_transferred));
-  else
-  {
-    referenceCount--;
-    error(e);
-  }
-}
-
-void Connection::secondToFirstR(const error_code& e, size_t)
-{
-  if(!e)
-    secondSocket->async_read_some(buffer(s_f), bind(&Connection::secondToFirstW, this, placeholders::error, placeholders::bytes_transferred));
-  else
-  {
-    referenceCount--;
-    error(e);
-  }
-}
-
-void Connection::connectedLocal(const error_code& e)
-{
-  Header h(header);
-  h.type=Header::ConnectResponse;
-  if(e)
-  {
-    Logger::error(Logger::MsgType_ClientConn, "Error connecting to local site (%s:%hu -- %s:%hu) - %s", 
-                  ip::address_v4(header.dstAddress).to_string().c_str(),
-                  header.dstPort,
-                  ip::address_v4(header.srcAddress).to_string().c_str(),
-                  header.srcPort,
-                  e.message().c_str()
-                 );
-    h.length = 1;
-    reqBuf = new char[Header::getSize()];
-    h.serialize(reqBuf);
-    async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,0));
-    clean();
-    return;
-  }
-  
-  h.length=0;
-  reqBuf = new char[Header::getSize()];
-  h.serialize(reqBuf);
-  
-  referenceCount++;
-  async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,this));
-  
-  referenceCount+=2;
-  firstToSecondR(error_code(), 0);
-  secondToFirstR(error_code(), 0);
 }
 
 void Connection::connectRemoteRequestErrorMonitor(const error_code& e, size_t count)
 {
   referenceCount--;
+  delete [] reqBuf;
   if(closing) { clean(); return;}
   
   if(e)
@@ -316,11 +221,14 @@ void Connection::localToRemoteR(const error_code& e, size_t)
   {
     secondMto->errorOcured(e, "localToRemoteR: Write failed");
     clean();
+    delete [] reqBuf;
+    return;
   }
+  
   delete [] reqBuf;
   
   referenceCount++;
-  firstSocket->async_read_some(buffer(f_s), bind(&Connection::localToRemoteW, this, placeholders::error, placeholders::bytes_transferred));
+  sock->async_read_some(buffer(receiveBuffer), bind(&Connection::localToRemoteW, this, placeholders::error, placeholders::bytes_transferred));
 }
 
 void Connection::localToRemoteW(const error_code& e, size_t count)
@@ -334,7 +242,7 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
   reqBuf = new char[count + Header::getSize()];
   header.length=count;
   header.serialize(reqBuf);
-  memcpy(reqBuf+Header::getSize(), f_s.c_array(), count);
+  memcpy(reqBuf+Header::getSize(), receiveBuffer.c_array(), count);
   async_write(*(secondMto->getSocket()), buffer(reqBuf, count + Header::getSize()), transfer_all(),
               bind(&Connection::localToRemoteR, this, placeholders::error, placeholders::bytes_transferred));
   
@@ -343,7 +251,7 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
 void Connection::remoteToLocal(char * data, int length )
 {
   referenceCount++;
-  async_write(*firstSocket, buffer(data, length), Bufferfreeer(data, this));
+  async_write(*sock, buffer(data, length), Bufferfreeer(data, this));
 }
 
 void Connection::connectedRemote(Header h)
@@ -351,7 +259,7 @@ void Connection::connectedRemote(Header h)
   reqBuf = new char[Header::getSize()];
   h.serialize(reqBuf);
   referenceCount++;
-  async_write(*firstSocket, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,this));
+  async_write(*sock, buffer(reqBuf,Header::getSize()), transfer_all(), Bufferfreeer(reqBuf,this));
   reqBuf = 0;
   
   if(h.length)
@@ -386,5 +294,16 @@ void Connection::peerDied(PeerConnectionHandler* handler)
   secondMto = 0;
   clean();
 }
+
+void Connection::Bufferfreeer::operator ()(const error_code& e, size_t)
+{
+  delete data;
+  if(thiz){
+    thiz->referenceCount--;
+    if(thiz->closing) { thiz->clean(); return;}
+    if(e)
+      thiz->error(e);
+  }
+};
 
 

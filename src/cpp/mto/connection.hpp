@@ -13,7 +13,7 @@
 #include "messages.hpp"
 #include "peerconnectionhandler.hpp"
 
-/** Size of a single-direction buffer for each connection */
+/** Size of a receive data buffer for each connection */
 #define CONNECTION_BUFFER_SIZE 65536
 
 using namespace std;
@@ -36,25 +36,22 @@ extern unordered_set<pair<unsigned int, unsigned short> > availablePorts;
 class Connection
 {
 protected:
-  /** Always non-zero, local side of the connection */
-  tcp::socket * firstSocket;
+  /** Local side of the connection */
+  tcp::socket * sock;
   
-  /** On local-local connections represents the second local one */
-  tcp::socket * secondSocket;
-  
-  /** On local-remote / remote-local connections represents the remote one */
+  /** Represents the remote end */
   PeerConnectionHandler * secondMto;
   
-  /** Place for initial buffer with request */
+  /** Place for initial buffer with request as well as send buffer */
   char * reqBuf;
   
   /** Reusable header with proper adresses and ports */
   Header header;
   
-  /** Buffers for transporting data */
-  array< char, CONNECTION_BUFFER_SIZE > f_s, s_f;
+  /** Buffer for transporting data */
+  array< char, CONNECTION_BUFFER_SIZE > receiveBuffer;
   
-  /** Indcates if the connection is remote AND if there is a peer on the other side */
+  /** Indcates if there is a peer on the other side */
   bool hasRemotePeer;
   
   /** How many completion hooks still will call this class */
@@ -65,26 +62,17 @@ protected:
   
   /** Deletes underlying data buffer once the operation completes */
   struct Bufferfreeer {
-    Bufferfreeer(char*d,Connection*c) : data(d), thiz(c) {}
+  private:
     char * data;
     Connection * thiz;
-    void operator ()(const error_code& e, size_t)
-    {
-      delete data;
-      if(thiz){
-        thiz->referenceCount--;
-        if(thiz->closing) { thiz->clean(); return;}
-        if(e)
-          thiz->error(e);
-      }
-    };
+  public:
+    Bufferfreeer(char*d,Connection*c) : data(d), thiz(c) {}
+    void operator ()(const error_code& e, size_t);
   };
   
 public:
   /** Opening connection from LOCAL */
-  Connection(tcp::socket * s, char * requestBuffer)
-    : firstSocket(s), reqBuf(requestBuffer), closing(false), secondSocket(0), hasRemotePeer(false), referenceCount(0), secondMto(0)
-  {}
+  Connection(tcp::socket * s, char * requestBuffer);
   
   /** Opening connection from REMOTE */
   Connection(Header h, tcp::socket * s, PeerConnectionHandler * toMto);
@@ -95,25 +83,9 @@ public:
   /** Clean close for the Connection */
   void clean();
   
-  /* ===== Local to local functions ===== */
-  
-  /** Reads the initila header and tries to estabish connection */
-  void readRequest(const error_code& e, size_t);
-  
-  /** Reacts on finish of a connect */
-  void connectedLocal(const error_code& e);
-  
-  /* four methods for data transport */
-  
-  void firstToSecondW(const error_code& e, size_t count);
-  
-  void firstToSecondR(const error_code& e, size_t);
-  
-  void secondToFirstW(const error_code& e, size_t count);
-  
-  void secondToFirstR(const error_code& e, size_t);
-  
   /* ====== Local to remote  ===== */
+  /** Reads the initial header and tries to estabish connection */
+  void readRequest(const error_code& e, size_t);
   
   /** Checks if a problem occured when sending request to the peer proxy*/
   void connectRemoteRequestErrorMonitor(const error_code& e, size_t count);
