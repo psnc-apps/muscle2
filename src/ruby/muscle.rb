@@ -322,8 +322,11 @@ if(m.env.has_key?('intercluster'))
 	  puts "Warning: intercluster specified, but no MTO address/port given! Intercluster ignored."
 	else
 	  if(m.env.has_key?('qcg'))
-		m.env['localport'] = 22
-		m.env['mainport'] = 22
+	  	if (m.env['main'])
+			m.env['localport'] = 22 #master
+		else
+			m.env['mainport'] = 22 #slave
+		end
 	  else
 		m.env['localport'] = 0 
 	  end

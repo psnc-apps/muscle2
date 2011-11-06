@@ -109,7 +109,14 @@ public class CrossSocketFactory implements SocketFactory {
 
 	public ServerSocket createServerSocket(int port, int backlog,
 			InetAddress addr) throws IOException {
-		logDebug("binding socket on port " + port + " and addr " + addr);
+		
+		if (port == magicPort)
+			logDebug("binding socket on MAIN port " + port + " and addr " + addr);
+		else if (port == 0)
+			logDebug("binding socket on ANY port and addr " + addr);
+		else
+			logDebug("binding socket on port " + port + " and addr " + addr);
+
 		trace();
 
 		if (port == magicPort || port == 0) {
