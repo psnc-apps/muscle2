@@ -17,7 +17,7 @@ PeerConnectionHandler::PeerConnectionHandler(tcp::socket * _socket)
  
 void PeerConnectionHandler::connectionEstablished()
 {
-  Logger::info(Logger::MsgType_PeerConn, "Established a connection with peer at %s:%uh",
+  Logger::info(Logger::MsgType_PeerConn, "Established a connection with peer at %s:%hu",
                socketEndpt.address().to_string().c_str(),
                socketEndpt.port()
           );
@@ -85,7 +85,7 @@ void PeerConnectionHandler::handleConnect(Header h)
   {
     PeerConnectionHandler * fwdTarget = getPeer(h.dstPort);
     
-    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Forwarding connection %s:%uh - %s:%uh from %s to %s",
+    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Forwarding connection %s:%hu - %s:%hu from %s to %s",
                   ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                   ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
                   socketEndpt.address().to_string().c_str(), fwdTarget->socketEndpt.address().to_string().c_str()
@@ -117,7 +117,7 @@ void PeerConnectionHandler::handleConnectFailed(Header h)
   // indicate fail
   h.length = 1;
   
-  Logger::debug(Logger::MsgType_ClientConn, "Rejected connection requested from peer (%s:%uh-%s:%uh)",
+  Logger::debug(Logger::MsgType_ClientConn, "Rejected connection requested from peer (%s:%hu-%s:%hu)",
                 ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                 ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort
   );

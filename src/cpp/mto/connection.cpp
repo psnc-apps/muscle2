@@ -14,7 +14,7 @@ Connection::Connection(Header h, tcp::socket* s, PeerConnectionHandler * t)
 {
   remoteConnections[Identifier(h)]=this;
   
-  Logger::debug(Logger::MsgType_ClientConn, "Established client connection requested from peer (%s:%uh-%s:%uh)",
+  Logger::debug(Logger::MsgType_ClientConn, "Established client connection requested from peer (%s:%hu-%s:%hu)",
                 ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                 ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort
   );
