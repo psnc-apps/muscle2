@@ -388,10 +388,7 @@ void peerDied(PeerConnectionHandler* handler, bool reconnect)
     it->second->peerDied(handler);
     
   if(reconnect)
-  {
-    tcp::endpoint target = handler->getSocket()->remote_endpoint();
-    startConnectingToPeer(target);
-  }
+    startConnectingToPeer(handler->remoteEndpoint());
 }
 
 void startListeningForClients()

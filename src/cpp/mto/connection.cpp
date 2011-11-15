@@ -115,10 +115,15 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
         remoteConnections[Identifier(h)]=this;
         
         ++referenceCount;
+        
+        Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
+                Header::typeToString((Request::Type)header.type).c_str(), secondMto->remoteEndpoint().address().to_string().c_str());
+  
+        
         async_write(*(secondMto->getSocket()), buffer(reqBuf, Header::getSize()), transfer_all(), 
                     bind(&Connection::connectRemoteRequestErrorMonitor, this, placeholders::error, placeholders::bytes_transferred));
         
-        Logger::trace(Logger::MsgType_ClientConn, "Requesting connection to host %s:%hu from peer %s:%hu",
+        Logger::debug(Logger::MsgType_ClientConn, "Requesting connection to host %s:%hu from peer %s:%hu",
                       ip::address_v4(request.dstAddress).to_string().c_str(),
                       request.dstPort,
                       secondMto->getSocket()->remote_endpoint().address().to_string().c_str(),
@@ -159,7 +164,12 @@ void Connection::clean()
    char * data = new char[Header::getSize()];
    header.serialize(data);
    if(secondMto)
+   {
+     Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
+                Header::typeToString((Request::Type)header.type).c_str(), secondMto->remoteEndpoint().address().to_string().c_str());
+  
      async_write(*(secondMto->getSocket()), buffer(data, Header::getSize()), transfer_all(), Bufferfreeer(data, 0));
+   }
   }
   
   remoteConnections.erase(Identifier(header));
@@ -262,6 +272,10 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
   header.length=count;
   header.serialize(reqBuf);
   memcpy(reqBuf+Header::getSize(), receiveBuffer.c_array(), count);
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' of length %d to %s", 
+                Header::typeToString((Request::Type)header.type).c_str(), header.length, secondMto->remoteEndpoint().address().to_string().c_str());
+  
   async_write(*(secondMto->getSocket()), buffer(reqBuf, count + Header::getSize()), transfer_all(),
               bind(&Connection::localToRemoteR, this, placeholders::error, placeholders::bytes_transferred));
   

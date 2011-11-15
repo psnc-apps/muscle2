@@ -17,7 +17,7 @@ PeerConnectionHandler::PeerConnectionHandler(tcp::socket * _socket)
  
 void PeerConnectionHandler::connectionEstablished()
 {
-  Logger::info(Logger::MsgType_PeerConn, "Established a connection with peer at %s:%hu",
+  Logger::info(Logger::MsgType_PeerConn, "Established a connection with peer at %s:%uh",
                socketEndpt.address().to_string().c_str(),
                socketEndpt.port()
           );
@@ -26,6 +26,11 @@ void PeerConnectionHandler::connectionEstablished()
   startReadHeader();
 }
   
+const boost::asio::ip::tcp::endpoint& PeerConnectionHandler::remoteEndpoint() const
+{
+  return socketEndpt;
+}
+ 
 
 void PeerConnectionHandler::startReadHeader()
 {
@@ -79,6 +84,14 @@ void PeerConnectionHandler::handleConnect(Header h)
   if(getPeer(h.dstPort))
   {
     PeerConnectionHandler * fwdTarget = getPeer(h.dstPort);
+    
+    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Forwarding connection %s:%uh - %s:%uh from %s to %s",
+                  ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                  ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
+                  socketEndpt.address().to_string().c_str(), fwdTarget->socketEndpt.address().to_string().c_str()
+    );
+    
+    
     Identifier id(h);
     fwdTarget->fwdMap.insert(pair<Identifier, PeerConnectionHandler*>(id, this));
     fwdTarget->forward(h);
@@ -112,6 +125,10 @@ void PeerConnectionHandler::handleConnectFailed(Header h)
   char * buf = new char[h.getSize()];
   h.serialize(buf);
   pendingOperatons++;
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
+                Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
+  
   async_write(*socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, this));
   
 }
@@ -140,6 +157,10 @@ void PeerConnectionHandler::HandleConnected::operator () (const error_code& e)
   char * buf = new char[h.getSize()];
   h.serialize(buf);
   t->pendingOperatons++;
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
+                Header::typeToString((Request::Type)h.type).c_str(), t->socketEndpt.address().to_string().c_str());
+  
   async_write(*t->socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, t));
   Connection * c = new Connection(h, s,  t);
   
@@ -230,6 +251,10 @@ void PeerConnectionHandler::forward(const Header & h, int dataLen, const char * 
   h.serialize(newdata);
   if(dataLen) memcpy(newdata+Header::getSize(), data, dataLen);
   pendingOperatons++;
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Forwarding '%s' to %s", 
+                Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
+  
   async_write(*socket, buffer(newdata, size), Bufferfreeer(newdata,this));
 }
 
@@ -249,6 +274,10 @@ void PeerConnectionHandler::propagateHello(const MtoHello& hello)
     char * data = new char[Header::getSize()];
     h.serialize(data);
     pendingOperatons++;
+    
+    Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
+                Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
+    
     async_write(*socket, buffer(data, Header::getSize()), Bufferfreeer(data, this));
 }
 
@@ -300,6 +329,8 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   socket->close();
   delete socket;
   delete [] dataBufffer;
+  if(pendingOperatons==0)
+    delete this;
 }
 
 void PeerConnectionHandler::Bufferfreeer::operator()(const boost::system::error_code& e, size_t )

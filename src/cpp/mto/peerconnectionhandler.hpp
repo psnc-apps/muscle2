@@ -49,6 +49,9 @@ public:
   /** Hook for uniform error handling */
   void errorOcured(const error_code & ec, string message = "");
   
+  /** Returns the remote endpoint for this connection*/
+  const tcp::endpoint & remoteEndpoint() const;
+  
 protected:
   
   int pendingOperatons;
