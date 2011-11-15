@@ -546,7 +546,7 @@ void startConnectingToPeers()
 // Reaction on signal - currantyl sigint
 void signalReceived(int signum)
 {
-  Logger::info(-1, "Received %s, (brute force) exiting...", (signum==SIGINT?"SIGINT":"unknown signal(?)"));
+  Logger::info(-1, "Received %s, exiting...", (signum==SIGINT?"SIGINT":"unknown signal(?)"));
   
   ioService.stop();
   

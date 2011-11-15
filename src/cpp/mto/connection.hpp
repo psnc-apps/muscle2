@@ -39,6 +39,9 @@ protected:
   /** Local side of the connection */
   tcp::socket * sock;
   
+  /** Address of the local side for this connection (needed for logging after connection closes) */
+  tcp::endpoint sockEndp;
+  
   /** Represents the remote end */
   PeerConnectionHandler * secondMto;
   
@@ -69,6 +72,9 @@ protected:
     Bufferfreeer(char*d,Connection*c) : data(d), thiz(c) {}
     void operator ()(const error_code& e, size_t);
   };
+  
+  /** Saves sock remote endpoint to sockEndp */
+  void cacheEndpoint();
   
 public:
   /** Opening connection from LOCAL */

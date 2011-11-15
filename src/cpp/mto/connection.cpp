@@ -4,6 +4,7 @@
 Connection::Connection(tcp::socket* s, char* requestBuffer)
    : sock(s), reqBuf(requestBuffer), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0)
 {
+  cacheEndpoint();
 }
 
 /* from remote */
@@ -13,19 +14,34 @@ Connection::Connection(Header h, tcp::socket* s, PeerConnectionHandler * t)
 {
   remoteConnections[Identifier(h)]=this;
   
+  Logger::debug(Logger::MsgType_ClientConn, "Established client connection requested from peer (%s:%uh-%s:%uh)",
+                ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort
+  );
+  
+  cacheEndpoint();
+  
   header.type=Header::Data;
 
   ++referenceCount;
   localToRemoteR(error_code(),0);
 }
 
+void Connection::cacheEndpoint()
+{
+  error_code ec;
+  sockEndp = sock->remote_endpoint(ec);
+  if(ec) error(ec);
+}
+
+
 void Connection::readRequest(const boost::system::error_code& e, size_t )
 {
   if(e)
   {
     Logger::error(Logger::MsgType_ClientConn, "Error reading request from %s:%d (%s)",
-                  sock->remote_endpoint().address().to_string().c_str(),
-                  sock->remote_endpoint().port(),
+                  sockEndp.address().to_string().c_str(),
+                  sockEndp.port(),
                   e.message().c_str()
                  );
     delete [] reqBuf;
@@ -127,11 +143,12 @@ void Connection::clean()
 {
   if(!closing)
   {
-    Logger::trace(Logger::MsgType_ClientConn, "Closing connection between %s:%hu and %s:%hu",
-                  ip::address_v4(header.dstAddress).to_string().c_str(),
-                  header.dstPort,
-                  ip::address_v4(header.srcAddress).to_string().c_str(),
-                  header.srcPort
+    if(header.type!=Header::Register) 
+      Logger::trace(Logger::MsgType_ClientConn, "Closing connection between %s:%hu and %s:%hu",
+                    ip::address_v4(header.dstAddress).to_string().c_str(),
+                    header.dstPort,
+                    ip::address_v4(header.srcAddress).to_string().c_str(),
+                    header.srcPort
     );
   }
   closing = true;
@@ -154,12 +171,13 @@ void Connection::clean()
   
   if(!referenceCount)
   {
-    Logger::debug(Logger::MsgType_ClientConn, "Closed connection between %s:%hu and %s:%hu",
-                  ip::address_v4(header.dstAddress).to_string().c_str(),
-                  header.dstPort,
-                  ip::address_v4(header.srcAddress).to_string().c_str(),
-                  header.srcPort
-    );
+    if(header.type!=Header::Register)
+      Logger::debug(Logger::MsgType_ClientConn, "Closed connection between %s:%hu and %s:%hu",
+                    ip::address_v4(header.dstAddress).to_string().c_str(),
+                    header.dstPort,
+                    ip::address_v4(header.srcAddress).to_string().c_str(),
+                    header.srcPort
+      );
     delete this;
   }
     

@@ -60,6 +60,9 @@ protected:
   /** Ptr to this inter-proxy socket */
   tcp::socket * socket;
   
+  /** Remote endpoint for the socket, needed for loging after connection crash */
+  tcp::endpoint socketEndpt;
+  
   char * dataBufffer;
   
   /** If reconnect after connection loss */

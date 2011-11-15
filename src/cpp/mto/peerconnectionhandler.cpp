@@ -12,13 +12,14 @@ using namespace boost::asio;
 PeerConnectionHandler::PeerConnectionHandler(tcp::socket * _socket) 
   : socket(_socket) , reconnect(false), pendingOperatons(0), closing(false)
 {
+  socketEndpt = socket->remote_endpoint();
 }
  
 void PeerConnectionHandler::connectionEstablished()
 {
   Logger::info(Logger::MsgType_PeerConn, "Established a connection with peer at %s:%hu",
-               socket->remote_endpoint().address().to_string().c_str(),
-               socket->remote_endpoint().port()
+               socketEndpt.address().to_string().c_str(),
+               socketEndpt.port()
           );
   
   // Start normal operation
@@ -102,6 +103,11 @@ void PeerConnectionHandler::handleConnectFailed(Header h)
 {
   // indicate fail
   h.length = 1;
+  
+  Logger::debug(Logger::MsgType_ClientConn, "Rejected connection requested from peer (%s:%uh-%s:%uh)",
+                ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort
+  );
       
   char * buf = new char[h.getSize()];
   h.serialize(buf);
@@ -272,8 +278,8 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   
   Logger::error(Logger::MsgType_PeerConn, "Peer connection error: '%s' error msg: '%s'. Closing peer connection to %s:%hu",
                 message.c_str(), ec.message().c_str(), 
-               socket->remote_endpoint().address().to_string().c_str(),
-               socket->remote_endpoint().port()
+               socketEndpt.address().to_string().c_str(),
+               socketEndpt.port()
           );
   
   peerDied(this, reconnect);
