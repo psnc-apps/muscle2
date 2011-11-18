@@ -241,12 +241,10 @@ void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size
   if(remoteConnections.find(id) == remoteConnections.end())
   {
     if(thiz->fwdMap.find(id) != thiz->fwdMap.end())
-    {
       thiz->fwdMap[id]->forward(header, header.length, data);
-      delete [] data;
-    }
     else
       Logger::error(Logger::MsgType_PeerConn, "Received data for nonexistent destination");
+    delete [] data;
   }
   else
     remoteConnections[id]->remoteToLocal( data, header.length );
