@@ -1,5 +1,7 @@
 #include "peerconnectionhandler.hpp"
 
+#include <cassert>
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -42,7 +44,7 @@ void PeerConnectionHandler::startReadHeader()
 }
   
 
-void PeerConnectionHandler::readHeader(const error_code& e, size_t)
+void PeerConnectionHandler::readHeader(const error_code& e, size_t len)
 {
   pendingOperatons--;
   if(closing) errorOcured(e);
@@ -51,6 +53,8 @@ void PeerConnectionHandler::readHeader(const error_code& e, size_t)
     errorOcured(e, "Reading header failed");
     return;
   }
+  
+  assert( len == Header::getSize() );
   
   Header h = Header::deserialize(dataBufffer);
   delete [] dataBufffer;
@@ -105,6 +109,12 @@ void PeerConnectionHandler::handleConnect(Header h)
     handleConnectFailed(h);
     return;
   }
+  
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Trying to establish connection %s:%hu - %s:%hu for %s",
+                  ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                  ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
+                  socketEndpt.address().to_string().c_str()
+          );
   
   tcp::endpoint target(address_v4(h.dstAddress), h.dstPort);
   tcp::socket * s = new tcp::socket(ioService);
@@ -170,6 +180,12 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
 {
   startReadHeader();
   
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got info about establish connection %s:%hu - %s:%hu by %s",
+                  ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                  ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
+                  socketEndpt.address().to_string().c_str()
+          );
+  
   Identifier id(h);
   if(remoteConnections.find(id) == remoteConnections.end())
   {
@@ -189,6 +205,13 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
   
 void PeerConnectionHandler::handleData(Header h)
 {
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Starting data transfer of length %u on %s:%hu - %s:%hu from %s",
+                  h.length,
+                  ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                  ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
+                  socketEndpt.address().to_string().c_str()
+          );
+  
   char * data = new char[h.length];
   pendingOperatons++;
   async_read(*socket, buffer(data, h.length), transfer_all(), * new DataForwarder(data, h, this));
@@ -203,6 +226,16 @@ void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size
     delete [] data;
     return;
   }
+  
+  assert(header.length == s);
+  
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got data of length %u on %s:%hu - %s:%hu from %s",
+                  header.length,
+                  ip::address_v4(header.srcAddress).to_string().c_str(), header.srcPort,
+                  ip::address_v4(header.dstAddress).to_string().c_str(), header.dstPort,
+                  thiz->socketEndpt.address().to_string().c_str()
+          );
+  
   
   Identifier id(header);
   if(remoteConnections.find(id) == remoteConnections.end())
@@ -224,7 +257,14 @@ void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size
 void PeerConnectionHandler::handleClose(Header h)
 {
   startReadHeader();
+
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got connection close reuqest for %s:%hu - %s:%hu from %s",
+                  ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
+                  ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
+                  socketEndpt.address().to_string().c_str()
+          );
   
+
   Identifier id(h);
   
   if(remoteConnections.find(id) == remoteConnections.end())
@@ -291,6 +331,12 @@ void PeerConnectionHandler::propagateHellos(vector< MtoHello >& hellos)
 void PeerConnectionHandler::handleHello(Header h)
 {
   startReadHeader();
+  
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got hello from %s for %d-%d",
+                  socketEndpt.address().to_string().c_str(),h.srcPort,h.dstPort
+          );
+  
+  
   helloReceived(h, this);
 }
 
