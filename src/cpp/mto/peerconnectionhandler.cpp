@@ -220,7 +220,7 @@ void PeerConnectionHandler::handleData(Header h)
 void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size_t s)
 {
   thiz->pendingOperatons--;
-  if(thiz->closing)
+  if(thiz->closing || e)
   {
     thiz->errorOcured(e);
     delete [] data;
