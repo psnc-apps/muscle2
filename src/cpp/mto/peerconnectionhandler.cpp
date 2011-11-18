@@ -214,7 +214,7 @@ void PeerConnectionHandler::handleData(Header h)
   
   char * data = new char[h.length];
   pendingOperatons++;
-  async_read(*socket, buffer(data, h.length), transfer_all(), * new DataForwarder(data, h, this));
+  async_read(*socket, buffer(data, h.length), transfer_all(), DataForwarder(data, h, this));
 }
   
 void PeerConnectionHandler::DataForwarder::operator() (const error_code& e, size_t s)
