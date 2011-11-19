@@ -2,8 +2,11 @@
 #define PEERCONNECTIONHANDLER_H
 
 #include <iostream>
+#include <queue>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/function.hpp>
+#include <boost/asio/buffer.hpp>
 
 #include "messages.hpp"
 #include "connection.hpp"
@@ -52,10 +55,31 @@ public:
   /** Returns the remote endpoint for this connection*/
   const tcp::endpoint & remoteEndpoint() const;
   
+  void send(char * data, size_t len) {sender.send(data,len);}
+  
+  void send(char * data, size_t len, function<void (const error_code &, size_t)> callback){sender.send(data,len,callback);}
+  
 protected:
+  class Sender {
+  public:
+    /** Data to be sent and callback at completion */
+    Sender(PeerConnectionHandler * parent);
+    void send(char * data, size_t len);
+    void send(char * data, size_t len, function<void (const error_code &, size_t)> callback);
+    
+    void dataSent(const error_code &, size_t);
+  protected:
+    typedef  pair<pair<char*, size_t>, function<void (const error_code &, size_t)> > sendPair;
+    bool currentlyWriting;
+    char * data;
+    function<void (const error_code &, size_t)> currentCallback;
+    queue<sendPair> sendQueue;
+    PeerConnectionHandler * parent;
+  };
   
   int pendingOperatons;
   bool closing;
+  Sender sender;
   
   /** Keeps information about connections forwarded by this MTO */
   unordered_map<Identifier, PeerConnectionHandler*> fwdMap;
@@ -117,16 +141,6 @@ protected:
   /* ====== Close ====== */
   
   void handleClose(Header h);
-  
-  /* ================== */
-  
-  /** Deletes underlying data buffer once the operation completes */
-  struct Bufferfreeer {
-    Bufferfreeer(char*d, PeerConnectionHandler* t) : data(d), thiz(t) {}
-    char * data;
-    PeerConnectionHandler * thiz;
-    void operator ()(const error_code& e, size_t);
-  };
 };
 
 #endif // PEERCONNECTIONHANDLER_H

@@ -93,9 +93,6 @@ public:
   /** Reads the initial header and tries to estabish connection */
   void readRequest(const error_code& e, size_t);
   
-  /** Checks if a problem occured when sending request to the peer proxy*/
-  void connectRemoteRequestErrorMonitor(const error_code& e, size_t count);
-  
   /** Fires when the response for connection request is received */
   void connectedRemote(Header h);
   

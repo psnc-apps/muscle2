@@ -114,14 +114,11 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
         
         remoteConnections[Identifier(h)]=this;
         
-        ++referenceCount;
-        
         Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
                 Header::typeToString((Request::Type)header.type).c_str(), secondMto->remoteEndpoint().address().to_string().c_str());
   
         
-        async_write(*(secondMto->getSocket()), buffer(reqBuf, Header::getSize()), transfer_all(), 
-                    bind(&Connection::connectRemoteRequestErrorMonitor, this, placeholders::error, placeholders::bytes_transferred));
+        secondMto->send(reqBuf, Header::getSize());
         
         Logger::debug(Logger::MsgType_ClientConn, "Requesting connection to host %s:%hu from peer %s:%hu",
                       ip::address_v4(request.dstAddress).to_string().c_str(),
@@ -168,7 +165,8 @@ void Connection::clean()
      Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
                 Header::typeToString((Request::Type)header.type).c_str(), secondMto->remoteEndpoint().address().to_string().c_str());
   
-     async_write(*(secondMto->getSocket()), buffer(data, Header::getSize()), transfer_all(), Bufferfreeer(data, 0));
+     
+     secondMto->send(data, Header::getSize());
    }
   }
   
@@ -228,19 +226,6 @@ void Connection::error(const boost::system::error_code& e)
   clean();
 }
 
-void Connection::connectRemoteRequestErrorMonitor(const error_code& e, size_t count)
-{
-  referenceCount--;
-  delete [] reqBuf;
-  if(closing) { clean(); return;}
-  
-  if(e)
-  {
-    secondMto->errorOcured(e, "ConnectionMonitor: Write failed");
-    clean();
-  }
-}
-
 void Connection::localToRemoteR(const error_code& e, size_t)
 {
   referenceCount--;
@@ -249,11 +234,8 @@ void Connection::localToRemoteR(const error_code& e, size_t)
   {
     secondMto->errorOcured(e, "localToRemoteR: Write failed");
     clean();
-    delete [] reqBuf;
     return;
   }
-  
-  delete [] reqBuf;
   
   referenceCount++;
   sock->async_read_some(buffer(receiveBuffer), bind(&Connection::localToRemoteW, this, placeholders::error, placeholders::bytes_transferred));
@@ -276,8 +258,8 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
   Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' of length %d to %s", 
                 Header::typeToString((Request::Type)header.type).c_str(), header.length, secondMto->remoteEndpoint().address().to_string().c_str());
   
-  async_write(*(secondMto->getSocket()), buffer(reqBuf, count + Header::getSize()), transfer_all(),
-              bind(&Connection::localToRemoteR, this, placeholders::error, placeholders::bytes_transferred));
+  function<void(const error_code&, size_t len)> callback (bind(&Connection::localToRemoteR, this, placeholders::error, placeholders::bytes_transferred));
+  secondMto->send(reqBuf, count + Header::getSize(), callback);
   
 }
 

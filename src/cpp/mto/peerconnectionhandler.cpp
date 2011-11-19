@@ -12,7 +12,7 @@ using namespace boost;
 using namespace boost::asio;
 
 PeerConnectionHandler::PeerConnectionHandler(tcp::socket * _socket) 
-  : socket(_socket) , reconnect(false), pendingOperatons(0), closing(false)
+  : socket(_socket) , reconnect(false), pendingOperatons(0), closing(false), sender(Sender(this))
 {
   socketEndpt = socket->remote_endpoint();
 }
@@ -134,13 +134,11 @@ void PeerConnectionHandler::handleConnectFailed(Header h)
       
   char * buf = new char[h.getSize()];
   h.serialize(buf);
-  pendingOperatons++;
   
   Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
                 Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
   
-  async_write(*socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, this));
-  
+  send(buf, h.getSize());
 }
   
 void PeerConnectionHandler::HandleConnected::operator () (const error_code& e)
@@ -166,12 +164,12 @@ void PeerConnectionHandler::HandleConnected::operator () (const error_code& e)
   
   char * buf = new char[h.getSize()];
   h.serialize(buf);
-  t->pendingOperatons++;
   
   Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
                 Header::typeToString((Request::Type)h.type).c_str(), t->socketEndpt.address().to_string().c_str());
   
-  async_write(*t->socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf, t));
+  
+  t->send(buf, h.getSize());
   Connection * c = new Connection(h, s,  t);
   
 }
@@ -288,12 +286,13 @@ void PeerConnectionHandler::forward(const Header & h, int dataLen, const char * 
   char * newdata = new char[size];
   h.serialize(newdata);
   if(dataLen) memcpy(newdata+Header::getSize(), data, dataLen);
-  pendingOperatons++;
+  
   
   Logger::trace(Logger::MsgType_PeerConn, "Forwarding '%s' to %s", 
                 Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
   
-  async_write(*socket, buffer(newdata, size), Bufferfreeer(newdata,this));
+  
+  send(newdata, size);
 }
 
 
@@ -311,12 +310,11 @@ void PeerConnectionHandler::propagateHello(const MtoHello& hello)
     h.length = hello.distance+1;
     char * data = new char[Header::getSize()];
     h.serialize(data);
-    pendingOperatons++;
     
     Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s", 
                 Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
     
-    async_write(*socket, buffer(data, Header::getSize()), Bufferfreeer(data, this));
+    send(data, Header::getSize());
 }
 
 
@@ -377,20 +375,62 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
     delete this;
 }
 
-void PeerConnectionHandler::Bufferfreeer::operator()(const boost::system::error_code& e, size_t )
+PeerConnectionHandler::Sender::Sender(PeerConnectionHandler* _parent)
+  : parent(_parent), currentlyWriting(false)
 {
-  delete [] data;
-  thiz->pendingOperatons--;
-  if(thiz->closing)
-  {
-    thiz->errorOcured(e);
+}
+
+void PeerConnectionHandler::Sender::send(char * data, size_t len)
+{
+  send(data, len, function<void (const error_code &, size_t)>());
+}
+
+void PeerConnectionHandler::Sender::send(char * _data, size_t len, function< void (const error_code &, size_t) > callback)
+{
+  if(currentlyWriting){
+    sendQueue.push(sendPair(pair<char*, size_t>(_data,len), callback));
     return;
   }
+  
+  currentlyWriting = true;
+  data = _data;
+  currentCallback = callback;
+  parent->pendingOperatons++;
+  async_write(*(parent->socket), buffer(data,len), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
+}
 
-  if(e)
-    thiz->errorOcured(e, "Communication failed!");
-};
 
+void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
+{
+  if(currentCallback)
+    currentCallback(ec, len);
+  delete [] data;
+  
+  if(ec || parent->closing)
+  {
+    parent->pendingOperatons--;
+    while(!sendQueue.empty())
+    {
+      delete [] sendQueue.front().first.first;
+      sendQueue.pop();
+    }
+    parent->errorOcured(ec, "Send failed");
+    return;
+  }
+  
+  if(sendQueue.empty())
+  {
+    currentlyWriting=false;
+    parent->pendingOperatons--;
+    return;
+  }
+  
+  data = sendQueue.front().first.first;
+  size_t newlen = sendQueue.front().first.second;
+  currentCallback = sendQueue.front().second;
+  sendQueue.pop();
+  (*(parent->socket), buffer(data,newlen), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
+}
 
 
 
