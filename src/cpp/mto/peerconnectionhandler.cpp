@@ -388,9 +388,12 @@ void PeerConnectionHandler::Sender::send(char * data, size_t len)
 void PeerConnectionHandler::Sender::send(char * _data, size_t len, function< void (const error_code &, size_t) > callback)
 {
   if(currentlyWriting){
+    Logger::trace(Logger::MsgType_PeerConn, "Qeueing %u bytes on %s", len, parent->remoteEndpoint().address().to_string().c_str());
     sendQueue.push(sendPair(pair<char*, size_t>(_data,len), callback));
     return;
   }
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Sending directly %u bytes on %s", len, parent->remoteEndpoint().address().to_string().c_str());
   
   currentlyWriting = true;
   data = _data;
@@ -408,6 +411,7 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
   
   if(ec || parent->closing)
   {
+    Logger::trace(Logger::MsgType_PeerConn, "Error occured, cleaning send queue on %s", parent->remoteEndpoint().address().to_string().c_str());
     parent->pendingOperatons--;
     while(!sendQueue.empty())
     {
@@ -420,15 +424,17 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
   
   if(sendQueue.empty())
   {
+    Logger::trace(Logger::MsgType_PeerConn, "Send queue empty on %s", parent->remoteEndpoint().address().to_string().c_str());
     currentlyWriting=false;
     parent->pendingOperatons--;
     return;
   }
-  
+
   data = sendQueue.front().first.first;
   size_t newlen = sendQueue.front().first.second;
   currentCallback = sendQueue.front().second;
   sendQueue.pop();
+  Logger::trace(Logger::MsgType_PeerConn, "Sending from queue %u bytes on %s", newlen, parent->remoteEndpoint().address().to_string().c_str());
   (*(parent->socket), buffer(data,newlen), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
 }
 

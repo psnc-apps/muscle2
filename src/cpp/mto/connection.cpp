@@ -123,8 +123,8 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
         Logger::debug(Logger::MsgType_ClientConn, "Requesting connection to host %s:%hu from peer %s:%hu",
                       ip::address_v4(request.dstAddress).to_string().c_str(),
                       request.dstPort,
-                      secondMto->getSocket()->remote_endpoint().address().to_string().c_str(),
-                      secondMto->getSocket()->remote_endpoint().port()
+                      secondMto->remoteEndpoint().address().to_string().c_str(),
+                      secondMto->remoteEndpoint().port()
         );
       }
       break;
