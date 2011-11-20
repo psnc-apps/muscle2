@@ -388,7 +388,10 @@ void PeerConnectionHandler::Sender::send(char * data, size_t len)
 void PeerConnectionHandler::Sender::send(char * _data, size_t len, function< void (const error_code &, size_t) > callback)
 {
   if(currentlyWriting){
-    Logger::trace(Logger::MsgType_PeerConn, "Qeueing %u bytes on %s. Already %d messages in queue", len, parent->remoteEndpoint().address().to_string().c_str(), sendQueue.)size();
+    Logger::trace(Logger::MsgType_PeerConn, "Qeueing %u bytes on %s. Already %d messages in queue", len, 
+	parent->remoteEndpoint().address().to_string().c_str(), 
+	sendQueue.size());
+
     sendQueue.push(sendPair(pair<char*, size_t>(_data,len), callback));
     return;
   }
