@@ -435,7 +435,7 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
   currentCallback = sendQueue.front().second;
   sendQueue.pop();
   Logger::trace(Logger::MsgType_PeerConn, "Sending from queue %u bytes on %s", newlen, parent->remoteEndpoint().address().to_string().c_str());
-  (*(parent->socket), buffer(data,newlen), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
+  async_write(*(parent->socket), buffer(data,newlen), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
 }
 
 
