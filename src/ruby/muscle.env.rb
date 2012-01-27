@@ -38,8 +38,8 @@ base_dir = ENV["MUSCLE_HOME"]
 ## remember: path separator is ';' on windows systems, else ':' better just use File::PATH_SEPARATOR
 ## be careful: ENV["CLASSPATH"] might be nil or an empty string
 #m.add_classpath ENV["CLASSPATH"].split(File::PATH_SEPARATOR) if ENV["CLASSPATH"] != nil
-m.add_classpath File.expand_path(File.join(base_dir, "build", "muscle.jar"))
-m.add_classpath Dir.glob("#{base_dir}/thirdparty/*.jar")
+#m.add_classpath File.expand_path(File.join(base_dir, "build", "muscle.jar"))
+#m.add_classpath Dir.glob("#{base_dir}/thirdparty/*.jar")
 
 m.add_classpath default_classpaths
 
@@ -50,6 +50,7 @@ require 'utilities'
 assert_LIBPATHENV(ENV)
 m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
 m.add_libpath "#{base_dir}/lib"
+m.add_libpath "#{base_dir}/build"
 
 e = {
 "bootclass" => "muscle.core.Boot",

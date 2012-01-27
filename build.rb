@@ -76,7 +76,7 @@ module Misc
 	# javac
 	def Misc.javac(build_dir, sources, classpaths)
 		#flags = %w(-nowarn -Xlint:none)
-		flags = %w(-encoding ISO8859-1 -Xlint:deprecated)
+		flags = %w(-J-Xms16m -J-Xmx48m -encoding ISO8859-1 -Xlint:deprecated)
 		dst_dir = "#{$env[:muscle_dir]}/#{build_dir}/intermediate/classes"
 		# rm files from previous build
 		rm_rf dst_dir if File.directory?(dst_dir)

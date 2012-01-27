@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include "Test.h"
 
 #include <JNITool.h>

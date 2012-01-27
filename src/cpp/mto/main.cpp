@@ -1,15 +1,24 @@
 #include <iostream>
+#include <map>
+#include <set>
+#include <algorithm>
 
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/bind.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/foreach.hpp>
 
-#include "messages.h"
-#include "options.h"
-#include "connection.h"
+#include <unistd.h>
+#include <signal.h>
 
+#include "main.hpp"
+#include "messages.hpp"
+#include "options.hpp"
+#include "connection.hpp"
+#include "topology.hpp"
+#include "peerconnectionhandler.hpp"
 
 using namespace std;
 using namespace boost;
@@ -17,31 +26,71 @@ using namespace boost::asio;
 using namespace boost::asio::ip;
 using namespace boost::system;
 
+#define foreach         BOOST_FOREACH
+#define reverse_foreach BOOST_REVERSE_FOREACH
 
-void onFirstConnectionToPeerEstablished();
-void establishConnection();
+// // // // //      Forward declarations      // // // // //
 
+struct MtoPeer;
+
+void startListeningForClients();
+
+void startConnectingToPeers();
+
+/** Starts establishing connection with a peer proxy */
+void startConnectingToPeer(boost::asio::ip::tcp::endpoint where);
+
+void writeHellos(tcp::socket * sock);
+
+/** Parses the Hello from newly connected MTO and forwards it to all */
+void parseHello(const MtoHello & hello, PeerConnectionHandler * handler);
+
+PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hellos);
+
+
+// // // // //           Varialbles           // // // // //
 
 io_service ioService;
- 
+
+const posix_time::time_duration peerReconnectTimeout = posix_time::seconds(10);
+
 /** Ports described as 'listening' */
 unordered_set<pair<unsigned int, unsigned short> > availablePorts;
-
 
 /** Open connections tunneled via proxy */
 unordered_map<Identifier, Connection*> remoteConnections;
 
+map<string, mto_config> mtoConfigs;
+// bimap<string, unsigned short> mtoIdToName;
 
-/** Connections between proxies. First established is pointed by mainSocket ptr */
-tcp::socket peerAccept(ioService), peerConnect(ioService), *mainSocket;
+/** Maps port range max to a peer connection */
+map<unsigned short, MtoPeer> peers; 
+
+// // // // //        Classes & Structs       // // // // //
+
+/** Information about an MTO peer */
+struct MtoPeer
+{
+  unsigned short min;                       ///< Lower bound for the port range
+  PeerConnectionHandler * peerConnection;   ///< Where to send messages to the MTO
+  MtoHello bestHello;                       ///< The Hello for this MTO
+};
+
+/** Helper to delete data on completion of the operation */
+struct Bufferfreeer {
+  Bufferfreeer(char * d) : data(d){}
+  void operator ()(const error_code& e, size_t){delete [] data;}
+private:
+  char * data;
+};
+
 
 /**
  * This class waits on internal socket, i.e. socket accepting connections from inside of the cluster.
- * Once a connection to peer is established, this class starts an accept (event) loop
  */
-class IndoorAcceptHandler
+class InternalAcceptor
 {
-public:
+private:
 
   /** Ptr to new socket */
   tcp::socket * s;
@@ -49,325 +98,524 @@ public:
   /** Reference for accepting socket */
   tcp::acceptor & acceptor;
   
-  IndoorAcceptHandler(tcp::acceptor & acc) : acceptor(acc){ s = new tcp::socket(ioService); }
+public:
   
-  void start_accept() { acceptor.async_accept(*s, *this); }
+  InternalAcceptor(tcp::acceptor & acc);
+  
+  void startAccepting();
   
   /** Triggered on accept */
-  void operator()(const error_code& ec)
-  {
-    if (!ec)
-    {
-      handle();
-      s = new tcp::socket(ioService);
-      start_accept();
-    }
-    else
-    {
-      cerr << "Aborting, got error: " << ec.message() << endl;
-      exit(1);
-    }
-  }
+  void operator()(const error_code& ec);
   
   /** Once accept succeded, reads the header and constructs a connection */
-  void handle()
-  {
-    char * reqBuf = new char[Request::getSize()];
-    Connection * conn = new Connection(s, reqBuf);
-    async_read(*s,
-               buffer(reqBuf, Request::getSize()),
-               transfer_all(),
-               bind(&Connection::readRequest, conn, placeholders::error, placeholders::bytes_transferred));
-  }
+  void handle();
 };
+
+inline InternalAcceptor::InternalAcceptor(tcp::acceptor& acc) 
+   : acceptor(acc)
+{
+  s = new tcp::socket(ioService); 
+}
+
+inline void InternalAcceptor::startAccepting()
+{
+  acceptor.async_accept(*s, *this);
+}
+void InternalAcceptor::operator()(const boost::system::error_code& ec)
+{
+  if (!ec)
+  {
+    handle();
+    s = new tcp::socket(ioService);
+    startAccepting();
+  }
+  else
+  {
+    Logger::error(Logger::MsgType_PeerConn, "Failed to listen on incoming internal connections on %s:%hu. Got error: %s. Aborting.",
+                  acceptor.local_endpoint().address().to_string().c_str(),
+                  acceptor.local_endpoint().port(),
+                  ec.message().c_str()
+            );
+    exit(1);
+  }
+}
+
+void InternalAcceptor::handle()
+{
+  char * reqBuf = new char[Request::getSize()];
+  Connection * conn = new Connection(s, reqBuf);
+  async_read(*s,
+              buffer(reqBuf, Request::getSize()),
+              transfer_all(),
+              bind(&Connection::readRequest, conn, placeholders::error, placeholders::bytes_transferred)
+            );
+}
+
+/**
+ * Once a connection between MTO's is established, this class is ued to read all Hellos
+ * before starting normal communication.
+ */
+struct HelloReader
+{
+private:
+  tcp::socket * sock;
+  char * buf;
+  vector<MtoHello>& hellos;
+  function< void(const error_code & ec) > callback;
+  
+public:
+  HelloReader(tcp::socket * _sock, function< void(const error_code & ec) > callback_, vector<MtoHello>& hellos_);
+  
+  void operator()(const error_code & ec, size_t);
+};
+
+inline HelloReader::HelloReader(tcp::socket* _sock, boost::function< void(const error_code & ec) > callback_, vector< MtoHello >& hellos_)
+   : sock(_sock), callback(callback_), hellos(hellos_)
+{
+  buf = new char[MtoHello::getSize()];
+  async_read(*sock, buffer(buf, MtoHello::getSize()), *this);
+}
+
+
+void HelloReader::operator()(const boost::system::error_code& ec, size_t )
+{
+  if(ec)
+  {
+    delete [] buf;
+    callback(ec);
+    return;
+  }
+  MtoHello hello = MtoHello::deserialize(buf);
+  hellos.push_back(hello);
+  if(hello.isLastMtoHello)
+  {
+    delete [] buf;
+    callback(error_code());
+    return;
+  }
+  // Read next hello
+  async_read(*sock, buffer(buf, MtoHello::getSize()), *this);
+}
 
 
 /**
- * The part resposible for interconnection between two proxies.
- * 
- * Two instances arise (one for connection 1->2, second for 2->1 )
+ * Connects to a given peer until success. Retries every peerReconnectTimeout.
+ * On successfull connection creates PeerConnectionHandler and finihses
  */
-class PeerConnectionHandler
+struct StubbornConnecter
 {
+private:
+  tcp::endpoint where;
+  deadline_timer * timeout;
+  tcp::socket * sock;
+  vector<MtoHello> hellos;
+  void connectSucceeded();
+  
 public:
-  /** Whether this side has been doing connect or accept */
-  enum WhichConnection{Connect, Accept} whichConnection;
-
-  /** Ptr to this inter-proxy socket */
-  tcp::socket * socket;
+  StubbornConnecter(tcp::endpoint where_);
   
-  char * dataBufffer;
+  /** Executed after no responce has been received (or at abort) */
+  void timeoutFired(const error_code& ec);
   
-  /** Ptr to the acceptor, kept in order to free it */
-  tcp::acceptor * acc;
+  /** Executed when connecting state changed (new connection, or some error)  */
+  void connectFired(const error_code& ec);  
   
-  PeerConnectionHandler(WhichConnection type, tcp::acceptor * peerAcceptor = 0) 
-    : whichConnection(type), acc(peerAcceptor)
-  {
-  }
-  
-  /** Fires on accept / connect */
-  void ConnectionEstablished(const error_code& ec)
-  {
-    if(ec)
-    {
-      // first connection may fail
-      static bool firstTime = true;
-      if(firstTime)
-      {
-        cerr << "First connection failed: " << ec.message() << endl;
-        firstTime = false;
-        delete this;
-        return;
-      }
-      
-      // if seconf fails as well, indicate error and close the app
-      cerr << "Aborting, got error: " << ec.message() << endl;
-      exit(1);
-      return;
-    }
-
-    // prints informationa about connection success
-    switch(whichConnection)
-    {
-      case Accept:
-        socket = &peerAccept;
-        delete acc;
-        cerr << "Established connection with peer (accepted)" << endl;
-        break;
-      case Connect:
-        socket = &peerConnect;
-        cerr << "Established connection with peer (connected)" << endl;
-        break;
-    }
-    
-    // Sets one of te connections as main
-    if(peerAccept.is_open())
-      mainSocket = &peerAccept;
-    else if(peerConnect.is_open())
-      mainSocket = &peerConnect;
-    else
-    {
-      cerr << "wat? (should never happen)" << endl;
-      exit(1);
-    }
-
-    // Start normal operation
-    startReadHeader();
-    
-    // Start indoor accepting thread
-    onFirstConnectionToPeerEstablished();
-  }
-  
-  /** Starts reading new header from peer */
-  void startReadHeader()
-  {
-    dataBufffer = new char[Header::getSize()];
-    async_read(*socket, buffer(dataBufffer, Header::getSize()), transfer_all(), 
-               bind(&PeerConnectionHandler::readHeader, this, placeholders::error, placeholders::bytes_transferred));
-  }
-  
-  /** Parses header */
-  void readHeader(const error_code& e, size_t)
-  {
-    if(e)
-    {
-      cerr << "Aborting, got error: " << e.message() << endl;
-      exit(1);
-    }
-    
-    Header h = Header::read(dataBufffer);
-    delete [] dataBufffer;
-    switch(h.type)
-    {
-      case Header::Connect:
-        handleConnect(h);
-      break;
-      case Header::ConnectResponse:
-        handleConnectResponse(h);
-      break;
-      case Header::Data:
-        handleData(h);
-      break;
-      case Header::Close:
-        handleClose(h);
-      break;
-      default:
-        cerr << "Unknown message: " << h.type << "!" << endl;
-        exit(1);
-    }
-  }
-
-protected:
-
-  /* ====== Connect ====== */
-  
-  /** On connect, check if we have registered ip:port and try to connect */
-  void handleConnect(Header h)
-  {
-    startReadHeader();
-    
-    h.type = Header::ConnectResponse;
-    if(availablePorts.find(pair<unsigned int, unsigned short>(h.dstAddress, h.dstPort))==availablePorts.end())
-    {
-      handleConnectFailed(h);
-      return;
-    }
-    
-    tcp::endpoint target(address_v4(h.dstAddress), h.dstPort);
-    tcp::socket * s = new tcp::socket(ioService);
-    s->async_connect(target, HandleConnected(h, s, this));
-  }
-  
-  void handleConnectFailed(Header h)
-  {
-    // indicate fail
-    h.length = 1;
-        
-    char * buf = new char[h.getSize()];
-    h.write(buf);
-    async_write(*socket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf));
-    
-  }
-  
-  /** Once connection requested by peer has been established or faled, this is called */
-  struct HandleConnected
-  {
-    Header h;
-    tcp::socket * s;
-    PeerConnectionHandler * t;
-    HandleConnected(Header header, tcp::socket * socket, PeerConnectionHandler * thiz) : h(header), s(socket), t(thiz){}
-    void operator () (const error_code& e)
-    {
-      if(e)
-      {
-        t->handleConnectFailed(h);
-        delete s;
-        return;
-      }
-      
-      // indicate success
-      h.length = 0;
-      
-      char * buf = new char[h.getSize()];
-      h.write(buf);
-      async_write(*mainSocket, buffer(buf, h.getSize()), transfer_all(), Bufferfreeer(buf));
-      Connection * c = new Connection(h, s);
-      
-    }
-  };
-  
-  /* ====== ConnectResponse ====== */
-  
-  /** Informs proper Connection that it's remote end is / is not available */
-  void handleConnectResponse(Header h)
-  {
-    startReadHeader();
-    
-    Identifier id(h);
-    if(remoteConnections.find(id) == remoteConnections.end())
-    {
-      cerr << "Got response for unwanted connection!" << endl;
-      return;
-    }
-    
-    remoteConnections[id]->connectedRemote(h);
-  }
-  
-  /* ====== Data ====== */
-  
-  void handleData(Header h)
-  {
-    char * data = new char[h.length];
-    async_read(*socket, buffer(data, h.length), transfer_all(), * new DataForwarder(data, h, this));
-  }
-  
-  /** Readsthe data and forewards it to proper local connction */
-  struct DataForwarder
-  {
-    DataForwarder(char * d, Header h, PeerConnectionHandler * t) : data(d), header(h), thiz(t) {}
-    char * data;
-    Header header;
-    PeerConnectionHandler * thiz; 
-    void operator() (const error_code& e, size_t s){
-      if(remoteConnections.find(Identifier(header)) == remoteConnections.end())
-        cerr << "Sending data to unexisting dest?!" << endl;
-      else
-        remoteConnections[Identifier(header)]->remoteToLocal( data, header.length );
-      thiz->startReadHeader();
-      // data is deleted in remoteToLocal
-    }
-  };
-  
-  /* ====== Close ====== */
-  
-  void handleClose(Header h)
-  {
-    startReadHeader();
-    
-    if(remoteConnections.find(Identifier(h)) == remoteConnections.end())
-      cerr << "Closing not established connection?!" << endl;
-    else
-      remoteConnections[Identifier(h)]->remoteClosed();
-     
-  }
-  
-  /* ================== */
-  
-  /** Deletes underlying data buffer once the operation completes */
-  struct Bufferfreeer {
-    Bufferfreeer(char*d) : data(d) {}
-    char * data;
-    void operator ()(const error_code& e, size_t)
-    {
-      delete data;
-      if(e) {
-        cerr << "Communication failed!" << endl;
-        exit(1);
-      };
-    };
-  };
+  void allHellosRead(const error_code & ec);
 };
 
-
-/** On first call to this method, starts the IndoorAcceptHandler */
-void onFirstConnectionToPeerEstablished()
+StubbornConnecter::StubbornConnecter(tcp::endpoint where_)
+   : timeout(new deadline_timer(ioService, peerReconnectTimeout)),
+     where(where_), sock(new tcp::socket(ioService))
 {
-  static int first_time = true;
-  if (!first_time) return;
-  first_time=false;
+  timeout->async_wait(bind(&StubbornConnecter::timeoutFired, this, placeholders::error()));
+  sock->async_connect(where, bind(&StubbornConnecter::connectFired, this, placeholders::error()));
+}
+
+void StubbornConnecter::timeoutFired(const boost::system::error_code& ec)
+{
+  if(ec == error::operation_aborted)
+    return;
+  sock->close();
+  delete sock;
+  sock = new tcp::socket(ioService);
+  sock->async_connect(where, bind(&StubbornConnecter::connectFired, this, placeholders::error()));
+  timeout->expires_from_now(peerReconnectTimeout);
+  timeout->async_wait(bind(&StubbornConnecter::timeoutFired, this, placeholders::error()));
+}
+
+void StubbornConnecter::connectFired(const boost::system::error_code& ec)
+{
+  if(ec == error::operation_aborted)
+    return;
+  if(ec == error::connection_refused)
+  {
+    Logger::info(Logger::MsgType_PeerConn, "Connection refused to %s:%hu - will retry later",
+      where.address().to_string().c_str(), where.port()
+    );
+    return;
+  }
+  timeout->cancel();
+  if(ec)
+  {
+    Logger::error(Logger::MsgType_PeerConn, "While connecting to  %s:%hu encountered error %s. Aborting connection.",
+      where.address().to_string().c_str(), where.port(), ec.message().c_str()
+    );
+    return;
+  }
+  connectSucceeded();  
+}
+
+void StubbornConnecter::connectSucceeded()
+{
+  Logger::trace(Logger::MsgType_PeerConn, "Connected to peer  %s:%hu, starting hello exchange",
+      where.address().to_string().c_str(), where.port()
+    );
+  writeHellos(sock);
+  HelloReader(sock,
+              function<void(const error_code & ec)>(bind(&StubbornConnecter::allHellosRead, this, placeholders::error())),
+              hellos
+              );
+}
+
+void StubbornConnecter::allHellosRead(const boost::system::error_code& ec)
+{
+  PeerConnectionHandler * h = parseHellos(sock, hellos);
+  h->setReconnect(true);
+//     Logger::trace(Logger::MsgType_PeerConn, "Connection to peer  %s:%hu succeeded!",
+//         where.address().to_string().c_str(), where.port()
+//       );
+  delete this;
+}
+
+/**
+ * Once a connection is accepted, this class takes responsibility for creating a PeerConnectionHandler
+ */
+struct InitPeerConnection
+{
+private:
+  tcp::socket * sock;
+  char * buf;
+  vector<MtoHello> hellos;
   
-  tcp::acceptor * indoorAcceptor = new tcp::acceptor(ioService, indoorEndpoint);
+public:
+  InitPeerConnection(tcp::socket * _sock);
+  void allHellosReceived(error_code ec);
+};
+
+InitPeerConnection::InitPeerConnection(tcp::socket* _sock)
+   : sock(_sock)
+{
+  buf = new char[MtoHello::getSize()];
+  function< void(error_code ec) > callback( bind(&InitPeerConnection::allHellosReceived, this, placeholders::error()));
+  HelloReader(sock, callback, hellos);
+}
+
+void InitPeerConnection::allHellosReceived(error_code ec)
+{
+  if(ec)
+  {
+    Logger::trace(Logger::MsgType_PeerConn, "Reading hellos from peer %s:%hu failed - occured error: %s",
+                  sock->remote_endpoint().address().to_string().c_str(), sock->remote_endpoint().port(), ec.message().c_str()
+            );
+    sock->close();
+    delete this;
+    return;
+  }
+  writeHellos(sock);  
+  parseHellos(sock, hellos);
+  delete this;
+}
+
+struct ExternalAcceptor
+{
+private:
+  tcp::socket * sock;
+  tcp::acceptor * peerAcceptor;
+
+public:
+  ExternalAcceptor(tcp::acceptor * _peerAcceptor) : peerAcceptor(_peerAcceptor) {}
+  void startAccepting();
+  void operator()(const error_code & ec);
+};
+
+void ExternalAcceptor::startAccepting()
+{
+  sock = new tcp::socket(ioService);
+  peerAcceptor->async_accept(*sock, *this);
+}
+
+void ExternalAcceptor::operator()(const boost::system::error_code& ec)
+{
+  if(ec)
+  {
+    Logger::error(Logger::MsgType_PeerConn, "Failed to listen on incoming external connections on %s:%hu. Got error: %s. Aborting.",
+                peerAcceptor->local_endpoint().address().to_string().c_str(),
+                peerAcceptor->local_endpoint().port(),
+                ec.message().c_str()
+          );
+    exit(1);
+  }
   
-  IndoorAcceptHandler * handler = new IndoorAcceptHandler(*indoorAcceptor);
+  Logger::trace(Logger::MsgType_PeerConn, "Accepted peer connection  %s:%hu, starting hello exchange",
+      sock->remote_endpoint().address().to_string().c_str(), sock->remote_endpoint().port()
+    );
   
-  handler->start_accept();
+  new InitPeerConnection(sock);
+  startAccepting();
+}
+
+// // // // //         Free functions         // // // // //
+
+PeerConnectionHandler * getPeer(unsigned short port)
+{
+  map< unsigned short, MtoPeer >::iterator it = peers.lower_bound(port);
+  if(it == peers.end())
+    return 0;
+  MtoPeer & candidate = it->second;
+  if(port < candidate.min)
+    return 0;
+  return candidate.peerConnection;
+}
+
+void peerDied(PeerConnectionHandler* handler, bool reconnect)
+{
+  for(map< unsigned short, MtoPeer >::iterator it = peers.begin(); it != peers.end(); ++it)
+    if(it->second.peerConnection==handler)
+      peers.erase(it);
+  
+  unordered_map< Identifier, Connection* > rcc(remoteConnections);
+  for(unordered_map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
+    it->second->peerDied(handler);
+    
+  if(reconnect)
+    startConnectingToPeer(handler->remoteEndpoint());
+}
+
+void startListeningForClients()
+{
+  tcp::acceptor * indoorAcceptor = new tcp::acceptor(ioService, Options::getInstance().getInternalEndpoint());
+  
+  InternalAcceptor * handler = new InternalAcceptor(*indoorAcceptor);
+  
+  handler->startAccepting();
+}
+
+void writeHellos(tcp::socket * sock)
+{
+  typedef pair<unsigned short, MtoPeer > peerpair;
+  foreach( peerpair peer , peers)
+  {
+    MtoHello hello = peer.second.bestHello;
+    hello.distance++;
+    hello.isLastMtoHello=false;
+    char * data = new char[MtoHello::getSize()];
+    hello.serialize(data);
+    async_write(*sock, buffer(data, MtoHello::getSize()), Bufferfreeer(data));
+  }
+  
+  MtoHello myHello;
+  myHello.distance=0;
+  myHello.isLastMtoHello=true;
+  myHello.portLow=Options::getInstance().getLocalPortLow();
+  myHello.portHigh=Options::getInstance().getLocalPortHigh();
+  char * data = new char[MtoHello::getSize()];
+  myHello.serialize(data);
+  async_write(*sock, buffer(data, MtoHello::getSize()), Bufferfreeer(data));
+}
+
+void parseHello(const MtoHello & hello, PeerConnectionHandler * handler)
+{
+  Logger::debug(Logger::MsgType_PeerConn|Logger::MsgType_ClientConn,
+                "Parsing hello: %s", hello.str().c_str()
+               );
+  if(peers.find(hello.portHigh)!=peers.end())
+    { // already known
+      MtoPeer & peer = peers[hello.portHigh];
+      if(peer.min!=hello.portLow)
+      {
+        Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                      "Port ranges %s and %s overlap. Ignoring second.",
+                      peer.bestHello.str().c_str(), hello.str().c_str()
+                );
+        return;
+      }
+      if(peer.bestHello.distance > hello.distance)
+      {
+        peer.bestHello = hello;
+        peer.peerConnection = handler;
+      }
+    }
+    else
+    { // new
+      if(peers.size())
+      {
+        map<unsigned short, MtoPeer >::iterator itH = peers.lower_bound(hello.portHigh), itL = peers.lower_bound(hello.portLow);
+        if(itH != peers.end() && itH->second.min < hello.portLow)
+        {
+          Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                        "Port ranges %s and %s overlap. Ignoring second.",
+                        itH->second.bestHello.str().c_str(), hello.str().c_str()
+                  );
+          return;
+        }
+        if ( itL != itH )
+        {
+          Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                        "Port ranges %s and %s overlap. Ignoring second.",
+                        itL->second.bestHello.str().c_str(), hello.str().c_str()
+                  );
+          return;
+        }
+      }
+      MtoPeer peer;
+      peer.bestHello=hello;
+      peer.min = hello.portLow;
+      peer.peerConnection = handler;
+      peers[hello.portHigh] = peer;
+    }
+}
+
+PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hellos) {
+  PeerConnectionHandler * handler = new PeerConnectionHandler(sock);
+  
+  for(map<unsigned short, MtoPeer>::const_iterator it = peers.begin(); it!=peers.end(); ++it)
+    it->second.peerConnection->propagateHellos(hellos);
+  
+  foreach(MtoHello hello, hellos)
+    parseHello(hello, handler);
+  
+  handler->connectionEstablished();
+  
+  return handler;
+}
+
+void helloReceived(Header h, PeerConnectionHandler* receiver)
+{
+  MtoHello hello;
+  hello.portLow = h.srcPort;
+  hello.portHigh = h.dstPort;
+  hello.distance=h.length;
+  parseHello(hello, receiver);
+  
+  h.length++;
+  
+  set<PeerConnectionHandler* > toUpdate;
+  for(map< unsigned short, MtoPeer >::iterator it = peers.begin(); it != peers.end(); ++it)
+    toUpdate.insert(it->second.peerConnection);
+  toUpdate.erase(receiver);
+  
+  foreach(PeerConnectionHandler * handler, toUpdate)
+    handler->propagateHello(hello);
 }
 
 
-/** Starts establishing connection with peer proxy */
-void establishConnection()
+void startConnectingToPeer(tcp::endpoint where)
 {
-  tcp::acceptor * peerAcceptor =  new tcp::acceptor(ioService, my_address);
-  
-  PeerConnectionHandler * acceptH = new PeerConnectionHandler(PeerConnectionHandler::Accept, peerAcceptor);
-  peerAcceptor->async_accept(peerAccept, bind(&PeerConnectionHandler::ConnectionEstablished, acceptH, placeholders::error));
-  
-  PeerConnectionHandler * connectH = new PeerConnectionHandler(PeerConnectionHandler::Connect);
-  peerConnect.async_connect(*peer_address, bind(&PeerConnectionHandler::ConnectionEstablished, connectH, placeholders::error));
+  new StubbornConnecter(where);
 }
 
+void startConnectingToPeers()
+{
+  const vector<string> & connects =  mtoConfigs[Options::getInstance().getMyName()].connectsTo;
+  
+  tcp::resolver rslvr(ioService);
+  
+  foreach(string mto, connects)
+  {
+    error_code e;
+    tcp::resolver::iterator it = rslvr.resolve(tcp::resolver::query(mtoConfigs[mto].address, mtoConfigs[mto].port), e);
+    if(e)
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config, 
+                    "Cannot resolve %s:%s (error %s). Ignoring %s MTO.",
+                    mtoConfigs[mto].address.c_str(), mtoConfigs[mto].port.c_str(),
+                    e.message().c_str(), mto.c_str()
+                   );
+      continue;
+    }
+    
+    tcp::endpoint where = *it;
+    
+    startConnectingToPeer(where);
+  }
+}
+
+// Reaction on signal - currantyl sigint
+void signalReceived(int signum)
+{
+  Logger::info(-1, "Received %s, exiting...", (signum==SIGINT?"SIGINT":"unknown signal(?)"));
+  
+  ioService.stop();
+  
+  Logger::closeLogFile();
+  
+  exit(0);
+}
 
 int main(int argc, char **argv)
 {
-  if(!loadOptions(argc, argv))
+  Options & opts = Options::getInstance();
+  
+  if(!opts.load(argc, argv))
     return 1;
   
-  establishConnection();
-
+  if(!loadTopology(opts.getTopologyFilePath().c_str(), mtoConfigs))
+    return 1;
+  
+  string myName = opts.getMyName();
+  
+  if(mtoConfigs.find(myName) == mtoConfigs.end()){
+    Logger::error(-1, "The name of this MTO (%s) could not be found in the topology file!", myName.c_str());
+    return 1;
+  }
+  
   error_code e;
   
-  // loop!
+  bool anyoneConnectsToMe = false;
+  for(map<string, mto_config>::const_iterator it = mtoConfigs.begin(); it != mtoConfigs.end(); ++it)
+    foreach(const string & s, it->second.connectsTo)
+      if(s==myName)
+      {
+        anyoneConnectsToMe = true;
+        goto doubleLoopBreak;
+      }
+  doubleLoopBreak:
+
+  if(anyoneConnectsToMe) 
+  {
+    tcp::resolver::iterator it = tcp::resolver(ioService).resolve(tcp::resolver::query(mtoConfigs[myName].address, mtoConfigs[myName].port), e);
+    if(e)
+    {
+      Logger::error(-1, "Address of this MTO (%s:%s) not understod!",
+        mtoConfigs[myName].address.c_str(), mtoConfigs[myName].port.c_str()
+      );
+      return 1;
+    }
+    
+    tcp::endpoint myAddress = *it;
+  
+    Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn, "Starting external acceptor on %s:%hu",
+                 myAddress.address().to_string().c_str(), myAddress.port()
+            );
+    tcp::acceptor * peerAcceptor = new tcp::acceptor(ioService, myAddress);
+    ExternalAcceptor * exAcc = new ExternalAcceptor(peerAcceptor);
+    exAcc->startAccepting();
+  } else {
+    Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn, "External acceptor unnecessary, not starting one");
+  }
+  
+  startConnectingToPeers();
+  
+  startListeningForClients();
+  
+  signal(SIGINT, signalReceived);
+  
+  if(opts.getDaemonize())
+  {
+    Logger::info(-1, "Daemonizing...");
+    daemon(0,1);
+  }
+  
   while(!e) ioService.run(e);
   
   return 0;

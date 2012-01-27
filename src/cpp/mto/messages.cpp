@@ -1,5 +1,8 @@
-#include "messages.h"
+#include "messages.hpp"
 #include <cstring>
+#include <cstdio>
+#include <sstream>
+#include <boost/unordered_map.hpp>
 
 // Helpers so that endianess will not affect serialisation
 
@@ -28,30 +31,33 @@ template <typename T> T readFromBuffer( char*& buffer, /*out*/ T * valuePtr = 0)
   return value;
 }
 
-char *& writeAddressToBuffer(char *& buffer, unsigned int address)
+std::string Request::typeToString(Request::Type t)
 {
-  memcpy(buffer, (const unsigned char*) &address, 4);
-  buffer+=4;
-  return buffer;
+  switch(t){
+    case Register:
+      return "Register";
+    case Connect:
+      return "Connect";
+    case ConnectResponse:
+      return "ConnectResponse";
+    case Data:
+      return "Data";
+    case Close:
+      return "Close";
+    case PortRangeInfo:
+      return "PortRangeInfo";
+  }
+  char name[22];
+  sprintf(name, "Unknown (%d)", t);
+  return name;
 }
-
-unsigned int readAddressFromBuffer(char *& buffer, unsigned int * addressPtr = 0)
-{
-  unsigned int address;
-  memcpy((unsigned char*) &address, buffer, 4);
-  buffer+=4;
-  if(addressPtr) *addressPtr = address;
-  return address;
-}
-
-// The messages.cpp file
 
 unsigned Request::getSize()
 {
   return sizeof(/*type*/ char)+sizeof(/*srcAddress*/ unsigned int)+sizeof(/*srcPort*/ unsigned short)+sizeof(/*dstAddress*/ unsigned int)+sizeof(/*dstPort*/ unsigned short)+sizeof(/*sessionId*/ int);
 }
 
-Request Request::read(char * buf)
+Request Request::deserialize(char * buf)
 {
   Request r;
   readFromBuffer(buf, & r.type);
@@ -63,7 +69,7 @@ Request Request::read(char * buf)
   return r;
 }
 
-void Request::write(char* buf)
+void Request::serialize(char* buf) const
 {
   writeToBuffer(buf, type);
   writeToBuffer(buf, srcAddress);
@@ -79,10 +85,10 @@ unsigned Header::getSize()
   return Request::getSize()+sizeof(/*length*/ unsigned int);
 }
 
-Header Header::read(char * buf)
+Header Header::deserialize(char * buf)
 {
   
-  Header h(Request::read(buf));
+  Header h(Request::deserialize(buf));
   buf+=Request::getSize();
   readFromBuffer(buf, & h.length);
   return h;
@@ -92,9 +98,89 @@ Header::Header(const Request & r): Request(r)
 {
 }
 
-void Header::write(char* buf)
+void Header::serialize(char* buf) const
 {
-  Request::write(buf);
+  Request::serialize(buf);
   buf+=Request::getSize();
   writeToBuffer(buf, length);
+}
+
+bool Identifier::operator==(const Identifier& other) const
+{
+  if(srcAddress!=other.srcAddress)
+    return false;
+  if(dstAddress!=other.dstAddress)
+    return false;
+  if(srcPort!=other.srcPort)
+    return false;
+  if(dstPort!=other.dstPort)
+    return false;
+  return true;
+}
+
+bool Identifier::operator<(const Identifier& other) const
+{
+  if(srcAddress<other.srcAddress)
+    return true;
+  if(dstAddress<other.dstAddress)
+    return true;
+  if(srcPort<other.srcPort)
+    return true;
+  if(dstPort<other.dstPort)
+    return true;
+  return false;
+}
+
+std::size_t hash_value(const Identifier& b)
+{
+    boost::hash<int> h;
+    return h(b.dstAddress)-h(b.srcAddress)+h(b.dstPort)-h(b.srcPort);
+}
+
+#define USE_TEXT_FOR_HELLO true
+
+unsigned MtoHello::getSize()
+{
+#ifdef USE_TEXT_FOR_HELLO
+  return 20;
+#else
+   return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
+          + sizeof(/* distance */ unsigned short)
+          + sizeof( /* isLastMtoHello as char */ char );
+#endif
+}
+
+MtoHello MtoHello::deserialize(char * buf)
+{
+  MtoHello hello;
+#ifdef USE_TEXT_FOR_HELLO
+  int isLastMtoHello;
+  sscanf(buf,"%6hu%6hu%6hu %d", &hello.portLow, &hello.portHigh, &hello.distance, &isLastMtoHello);
+  hello.isLastMtoHello = isLastMtoHello;
+#else
+  readFromBuffer(buf, &hello.portLow);
+  readFromBuffer(buf, &hello.portHigh);
+  readFromBuffer(buf, &hello.distance);
+  readFromBuffer(buf, ((char*)&hello.isLastMtoHello));
+#endif
+  return hello;
+}
+
+void MtoHello::serialize(char * buf) const
+{
+#ifdef USE_TEXT_FOR_HELLO
+  sprintf(buf,"%6hu%6hu%6hu %d", portLow, portHigh, distance, isLastMtoHello?1:0);
+#else
+  writeToBuffer(buf, portLow);
+  writeToBuffer(buf, portHigh);
+  writeToBuffer(buf, distance);
+  writeToBuffer(buf, (char)isLastMtoHello);
+#endif
+}
+
+ std::string MtoHello::str() const
+{
+    std::stringstream ss;
+    ss << portLow << "-" << portHigh;
+    return ss.str();
 }

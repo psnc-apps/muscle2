@@ -39,7 +39,7 @@ public class CrossSocketFactory implements SocketFactory {
 
 	public static final String PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min";
 	public static final String PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max";
-	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.mainport";
+	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
 	public static final String PROP_DEBUG = "pl.psnc.mapper.muscle.debug";
 	public static final String PROP_TRACE = "pl.psnc.mapper.muscle.trace";
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
