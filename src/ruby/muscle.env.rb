@@ -66,7 +66,7 @@ e = {
 #'jade_wd' => nil, # value for the JADE output dir (-file-dir flag)
 # use a private port as default http://de.wikipedia.org/wiki/Port_%28Protokoll%29
 # we create a different port for each user so multiple independent environments can be executed at the same time
-'mainport' => (50301+Process.uid),
+'mainport' => nil,
 'changeportifbusy' => false, # only available with leap
 'leap' => true,
 'localport' => nil,

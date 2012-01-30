@@ -164,15 +164,21 @@ module Targets
 		puts "Installing MUSCLE to: #{prefix}"
 
 		Misc.run "sed 's|_PREFIX_|#{prefix}|' #{$env[:muscle_dir]}/scripts/muscle.in > #{$env[:muscle_dir]}/build/muscle"
+		Misc.run "sed 's|_PREFIX_|#{prefix}|' #{$env[:muscle_dir]}/scripts/muscle.profile.in > #{$env[:muscle_dir]}/build/muscle.profile"
 
 		mkdir_p "#{prefix}/bin" # make sure dir exists
 		mkdir_p "#{prefix}/lib" # make sure dir exists
+		mkdir_p "#{prefix}/etc" # make sure dir exists
+		mkdir_p "#{prefix}/log/muscle" # make sure dir exists
 		mkdir_p "#{prefix}/share/muscle/java/thirdparty" # make sure dir exists
 
 		FileUtils.install "#{$env[:muscle_dir]}/build/muscle", "#{prefix}/bin", :mode => 0755, :verbose => true
+		FileUtils.install "#{$env[:muscle_dir]}/build/muscle.profile", "#{prefix}/etc", :mode => 0644, :verbose => true
         
         if(File.exists?("#{$env[:muscle_dir]}/build/mto"))
           FileUtils.install "#{$env[:muscle_dir]}/build/mto", "#{prefix}/bin", :mode => 0755, :verbose => true
+          FileUtils.install "#{$env[:muscle_dir]}/src/cpp/mto/mto-config.cfg.dist", "#{prefix}/etc", :mode => 0644, :verbose => true
+          FileUtils.install "#{$env[:muscle_dir]}/src/cpp/mto/mto-topology.cfg.dist", "#{prefix}/etc", :mode => 0644, :verbose => true
         end
         
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
@@ -183,6 +189,7 @@ module Targets
 		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/doc"
 		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/ruby"
 		Misc.run "cd #{$env[:muscle_dir]}/src/resources ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/resources"
+		Misc.run "cd #{$env[:muscle_dir]}/src/cxa ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/cxa"
 	end
 
 	def Targets.clean
@@ -199,78 +206,89 @@ module Targets
 end
 
 def get_opts
-	require 'optparse'
+        require 'optparse'
 
-	# Configure an OptionParser.
-	parser = OptionParser.new
+        # Configure an OptionParser.
+        parser = OptionParser.new
 
-	parser.on('-h', '--help', 'displays usage information') do
-  		puts parser
-  		exit
-	end
+        parser.banner = "Usage: build.rb [target] [options]
+  Available targets: default, all, java, cpp, otf, install, clean, clobber
+  Available options:"
+        parser.on('-h', '--help', 'displays usage information') do |v|
+                puts parser
+                $env[:options][:target] = v
+                exit
+        end
 
-	parser.on('-t=TARGET', '--target=TARGET', Array, 'name(s) of the target to run: default, all, java, cpp, otf, install, clean, clobber') do |v|
-  		$env[:options][:target] = v
-	end
+        parser.on('-p=PREFIX', '--prefix=PREFIX', 'installation prefix, default is /opt/muscle') do |v|
+                $env[:options][:prefix] = v
+        end
 
-	parser.on('-p=PREFIX', '--prefix=PREFIX', 'installation prefix, default is /opt/muscle') do |v|
-  		$env[:options][:prefix] = v
-	end
+        parser.on('-o=OTF', '--otf=OTF', 'OTF library location') do |v|
+                $env[:options][:otf] = v
+        end
 
-	parser.on('-o=OTF', '--otf=OTF', 'OTF library location') do |v|
-  		$env[:options][:otf] = v
-	end
+        parser.on('-j=JAVA', '--java=JAVA', 'java location, default is $JAVA_HOME') do |v|
+                $env[:options][:java] = v
+        end
 
-	parser.on('-j=JAVA', '--java=JAVA', 'java location, default is $JAVA_HOME') do |v|
-  		$env[:options][:java] = v
-	end
-
-	# Parse command-line options.
-	begin
-  		parser.parse($*)
-		rescue OptionParser::ParseError
-  		puts $!
-  		exit
-	end
+        # Parse command-line options.
+        begin
+                parser.parse!($*)
+                rescue OptionParser::ParseError
+                puts $!
+                exit
+        end
 end
+
 #
 def main
-	$env = {}
-	$env[:execute] = true
-	$env[:verbose] = true
-	$env[:muscle_dir] = File.dirname(File.expand_path(__FILE__))
-	
-	# assert used dir is a muscle dir
-	if( (%w(doc src thirdparty)-Dir.entries($env[:muscle_dir])).size != 0 )
-		abort "can not run: used directory <#{$env[:muscle_dir]}> does not seem to be a muscle directory"
-	else
-		puts "executing in muscle directory <#{$env[:muscle_dir]}>"
-	end
-	
-	$env[:options] = {:target=>[], :prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
-	get_opts 
-	target = $env[:options][:target]
+        $env = {}
+        $env[:execute] = true
+        $env[:verbose] = true
+        $env[:muscle_dir] = File.dirname(File.expand_path(__FILE__))
 
-	ENV['JAVA_HOME'] = $env[:options][:java]
-	puts "Using Java from: #{ENV['JAVA_HOME']}"
-	ENV['PATH'] = "#{$env[:options][:java]}/bin:#{ENV['PATH']}"
-	Dir.mkdir("build") if !File.directory?("build")
+        # assert used dir is a muscle dir
+        if( (%w(doc src thirdparty)-Dir.entries($env[:muscle_dir])).size != 0 )
+                abort "can not run: used directory <#{$env[:muscle_dir]}> does not seem to be a muscle directory"
+        else
+                puts "executing in muscle directory <#{$env[:muscle_dir]}>"
+        end
 
-	require 'benchmark'
-	benchmark = Benchmark.realtime do
+        $env[:options] = {:prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
+        get_opts
+
+        target = []
+
+        ARGV.each do |a|
+                if (Targets.methods-Targets.class.superclass.methods).include? a
+                        puts "selected target '#{a}'"
+                        target << a
+                else
+                        abort "unknown target: '#{a}'"
+                end
+        end
+
+        if target.empty?
+                target << "default"
+        end
+
+        ENV['JAVA_HOME'] = $env[:options][:java]
+        #puts "Using Java from: #{ENV['JAVA_HOME']}"
+        ENV['PATH'] = "#{$env[:options][:java]}/bin:#{ENV['PATH']}"
+        Dir.mkdir("build") if !File.directory?("build")
+
+        require 'benchmark'
+
+        benchmark = Benchmark.realtime do
                 target.each do |arg|
-                	t = arg
-                        if (Targets.methods-Targets.class.superclass.methods).include? t
-				puts "executing target '#{t}'"
-                        	Targets.method(t).call
-			else
-				abort "unknown target: '#{t}'"
-			end
-		end
-	end
-	
-	puts "building [#{target}] took "+sprintf("%.0f", benchmark)+" second(s)."
+                        puts "executing target '#{arg}'"
+                        Targets.method(arg).call
+                end
+        end
+        puts "building targets: #{target.inspect} took "+sprintf("%.0f", benchmark)+" second(s)."
 end
+
 
 # 
 # !!!: begin

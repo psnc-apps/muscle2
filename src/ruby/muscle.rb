@@ -311,15 +311,24 @@ if(m.env.has_key?('intercluster'))
   if(port_min.nil? or port_max.nil?)
 	puts "Warning: intercluster specified, but no local port range given! Intercluster ignored."
   else
-	mtoPort = m.env['mtoport']
-	mtoHost = m.env['mtohost']
+  
+	mto =  m.env['mto'] || ENV['MUSCLE_MTO']
+	if (! mto.nil?)
+		mtoHost = mto.split(':')[0]
+		mtoPort = mto.split(':')[1]
+	end
+	
 	if(mtoPort.nil? or mtoHost.nil?)
 	  puts "Warning: intercluster specified, but no MTO address/port given! Intercluster ignored."
 	else
 	  if(m.env.has_key?('qcg'))
-		m.env['localport'] = 22
+	  	if (m.env['main'])
+			m.env['localport'] = 22 #master
+		else
+			m.env['mainport'] = 22 #slave
+		end
 	  else
-		m.env['localport'] = 0
+		m.env['localport'] = 0 
 	  end
 	  
 	  if(m.env["jvmflags"].nil?)
