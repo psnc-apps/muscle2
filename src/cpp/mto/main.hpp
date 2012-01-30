@@ -17,4 +17,5 @@ void helloReceived(Header h, PeerConnectionHandler * receiver);
 /** Informs the MTO that connection to anther MTO has been lost */
 void peerDied(PeerConnectionHandler *, bool reconnect);
 
-#endif // LOGGER_H
+#endif // MAIN_H
+

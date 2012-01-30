@@ -305,6 +305,9 @@ public:
 InitPeerConnection::InitPeerConnection(tcp::socket* _sock)
    : sock(_sock)
 {
+  boost::asio::socket_base::keep_alive option(true);
+  _sock->set_option(option);
+
   buf = new char[MtoHello::getSize()];
   function< void(error_code ec) > callback( bind(&InitPeerConnection::allHellosReceived, this, placeholders::error()));
   HelloReader(sock, callback, hellos);
