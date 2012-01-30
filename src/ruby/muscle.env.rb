@@ -50,7 +50,6 @@ require 'utilities'
 assert_LIBPATHENV(ENV)
 m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
 m.add_libpath "#{base_dir}/lib"
-m.add_libpath "#{base_dir}/build"
 
 e = {
 "bootclass" => "muscle.core.Boot",

@@ -93,7 +93,7 @@ module Misc
 		classes.map! {|item| item[classes_dir.length+1..-1]} # paths must be relative to classes dir
 		classes.map! {|item| item.gsub(/\$/, '\$')} # escape the $ in nested class names to be able to pass them to the jar utility
 		classes.map! {|item| "-C #{$env[:muscle_dir]}/#{build_dir}/intermediate/classes #{item}"} # let jar cd to our classes dir to be able to find the files
-		Misc.run "jar -cf #{$env[:muscle_dir]}/#{build_dir}/#{output_name}.jar #{classes.join(' ')}"
+		Misc.run "jar -J-Xms16m -J-Xmx48m -cf #{$env[:muscle_dir]}/#{build_dir}/#{output_name}.jar #{classes.join(' ')}"
 	end
 
 end
