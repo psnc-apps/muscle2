@@ -22,15 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 
-import java.util.List;
-import java.util.ArrayList;
-import java.io.StreamTokenizer;
-import java.net.URL;
 import java.io.InputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Scanner;
 
