@@ -21,13 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 this filter simply forwards the data to the next filter without altering the data
 @author Jan Hegewald
 */
-public class PipeFilter<E> extends AbstractObservationFilter<E,E> {
+public class PipeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	protected void apply(Observation<E> subject) {
 		put(subject);
 	}

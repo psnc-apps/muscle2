@@ -110,40 +110,15 @@ public class JADE {
 						e.printStackTrace();
 					}
 				}
-//				long timeout = 8000;
-//				long startTime = System.currentTimeMillis();
 				System.out.println("waiting for container " + containerName + "@" + platformName + " to terminate");
 				while (jadeContainer != null) {
-//					if( System.currentTimeMillis() -startTime >= timeout ) {
-//						break;
-//					}
-//					else {
 					try {
 						sleep(100);
 					} catch (java.lang.InterruptedException e) {
 						e.printStackTrace();
 					}
-//					}
 				}
 			}
 		}
-		// alternative method from jade/src/jade/tools/rma/rma.java
-//		private void shutDownPlatform() {
-//				
-//			jade.domain.JADEAgentManagement.ShutdownPlatform sp = new jade.domain.JADEAgentManagement.ShutdownPlatform();
-//			try {
-//				jade.content.onto.basic.Action a = new jade.content.onto.basic.Action();
-//				a.setActor(getAMS());
-//				a.setAction(sp);
-//				
-//				jade.lang.acl.ACLMessage requestMsg = getRequest();
-//				requestMsg.setOntology(JADEManagementOntology.NAME);
-//				getContentManager().fillContent(requestMsg, a);
-//				addBehaviour(new AMSClientBehaviour("ShutdownPlatform", requestMsg));
-//			}
-//			catch(Exception fe) {
-//				fe.printStackTrace();
-//			}			
-//		}
 	}
 }

@@ -7,7 +7,7 @@ package muscle.core.messaging.serialization;
  *
  * @author Joris Borgdorff
  */
-public class CombinedConverter<E, F, G> implements DataConverter<E,G> {
+public class CombinedConverter<E, F, G> extends AbstractDataConverter<E,G> {
 	private DataConverter<E, F> c1;
 	private DataConverter<F, G> c2;
 	

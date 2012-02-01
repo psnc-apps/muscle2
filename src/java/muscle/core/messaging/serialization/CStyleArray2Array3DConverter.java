@@ -27,7 +27,7 @@ import utilities.array3d.Array3D_double;
 creates an Array3D from a plain c-style array
 @author Jan Hegewald
 */
-public class CStyleArray2Array3DConverter implements DataConverter<double[],Array3D_double> {
+public class CStyleArray2Array3DConverter extends AbstractDataConverter<double[],Array3D_double> {
 
 	private int xSize;
 	private int ySize;

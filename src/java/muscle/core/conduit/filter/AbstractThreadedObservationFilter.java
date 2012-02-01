@@ -3,14 +3,15 @@
  */
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractThreadedObservationFilter<E,F> extends AbstractThreadedFilter<Observation<E>,Observation<F>> implements ObservationFilter<E,F> {
+public abstract class AbstractThreadedObservationFilter<E extends Serializable,F extends Serializable> extends AbstractThreadedFilter<Observation<E>,Observation<F>> implements ObservationFilter<E,F> {
 	protected DataTemplate<E> inTemplate;
 	
 	public void setQueueConsumer(ObservationQueueConsumer<F> qc) {

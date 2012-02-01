@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
 interpolates two adjacent values of the incoming data array

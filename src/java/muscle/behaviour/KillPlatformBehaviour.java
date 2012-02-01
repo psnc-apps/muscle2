@@ -28,7 +28,7 @@ import jadetool.MessageTool;
 import jade.lang.acl.ACLMessage;
 import javatool.LoggerTool;
 import java.util.logging.Level;
-import utilities.Env;
+import utilities.data.Env;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.util.logging.Logger;
@@ -40,7 +40,7 @@ tells the platform to shutdown
 */
 public class KillPlatformBehaviour extends AchieveREInitiator {
 	private transient final static Logger logger = Logger.getLogger(KillPlatformBehaviour.class.getName());
-
+	
 	//
 	public KillPlatformBehaviour(Agent owner) {
 		super(owner, MessageTool.createShutdownPlatformRequest(owner));
@@ -48,9 +48,7 @@ public class KillPlatformBehaviour extends AchieveREInitiator {
 
 
 	//
-	protected void handleInform(ACLMessage inform) {
-
-		
+	protected void handleInform(ACLMessage inform) {		
 		System.out.println("\nkilling platform\n");
 		System.out.flush();
 		

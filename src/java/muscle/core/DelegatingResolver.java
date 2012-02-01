@@ -1,13 +1,14 @@
 package muscle.core;
 
+import muscle.core.ident.IDManipulator;
 import java.util.Map;
 import java.util.Set;
 import muscle.core.ident.IDType;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.Location;
 import muscle.core.kernel.InstanceController;
-import utilities.ArrayMap;
-import utilities.ArraySet;
+import utilities.data.ArrayMap;
+import utilities.data.ArraySet;
 
 /**
  *
@@ -27,9 +28,17 @@ public class DelegatingResolver implements Resolver {
 		searchingNow = new ArraySet<String>();
 		here = delegate.getLocation();
 		this.stillAlive = stillAlive;
+		System.out.println("StillAlive: " + this.stillAlive);
 		this.isDone = false;
 	}
 	
+	/**
+	 * Gets an identifier based on the name and type, or creates a new
+	 * one if none exists. If it is not yet resolved, it tries to resolve it and
+	 * waits until this is completed.
+	 * 
+	 * @throws InterruptedException if the process was interrupted before the id was resolved.
+	 */
 	public synchronized Identifier getResolvedIdentifier(String name, IDType type) throws InterruptedException {
 		if (type == IDType.port) {
 			Identifier id = getIdentifier(name, type);
@@ -47,6 +56,10 @@ public class DelegatingResolver implements Resolver {
 		return idCache.get(fullName);
 	}
 	
+	/**
+	 * Gets a current identifier based on the name and type, or creates
+	 * a new one if none is available.
+	 */
 	public Identifier getIdentifier(String name, IDType type) {
 		String fullName = name(name, type);
 		
@@ -59,10 +72,12 @@ public class DelegatingResolver implements Resolver {
 		return delegate.create(name, type);
 	}
 	
+	/** Resolves an identifier, waiting until this is finished. */
 	public void resolveIdentifier(Identifier id) throws InterruptedException  {
 		delegate.resolve(id);
 	}
 	
+	/** Whether the id resides in the current location */
 	public boolean isLocal(Identifier id) {
 		if (here == null) {
 			return false;
@@ -70,6 +85,7 @@ public class DelegatingResolver implements Resolver {
 		return here.equals(id.getLocation());
 	}
 
+	/** Registers a local InstanceController. */
 	public void register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		this.addIdentifier(id);
@@ -77,12 +93,21 @@ public class DelegatingResolver implements Resolver {
 		delegate.propagate(id, here);
 	}
 	
+	/** Deregisters a local InstanceController. */
 	public void deregister(InstanceController controller) {
-		System.out.println("Deregistering " + controller);
 		Identifier id = controller.getIdentifier();
-		this.idCache.remove(name(id.getName(), id.getType()));
-		if (stillAlive != null) {
-			this.stillAlive.remove(id.getName());
+		delegate.delete(id);
+		removeIdentifier(id.getName(), id.getType());
+	}
+	
+	/**
+	 * Removes the identifier with given name and type from the resolver. If this
+	 * is the last id that was alive, and autoquit is active, it kills the platform.
+	 */
+	public synchronized void removeIdentifier(String name, IDType type) {
+		this.idCache.remove(name(name, type));
+		if (type == IDType.instance && stillAlive != null && !this.stillAlive.isEmpty()) {
+			this.stillAlive.remove(name);
 			System.out.println("Waiting on " + stillAlive + " to kill platform.");
 		
 			if (this.stillAlive.isEmpty()) {
@@ -90,11 +115,11 @@ public class DelegatingResolver implements Resolver {
 			}
 		}
 		
-		//Creates a blocking wait in JADE, somehow.
-		//delegate.delete(id);
 	}
 
-
+	/**
+	 * Searches for an identifier through an IDManipulator.
+	 */
 	public void search(String name, IDType type) {
 		String fullName = name(name, type);
 		synchronized(this) {
@@ -108,10 +133,14 @@ public class DelegatingResolver implements Resolver {
 		delegate.search(getIdentifier(name, type));
 	}
 	
+	/** Add an identifier to the resolver. This also removes it from any 
+	 *  search list it might be on.
+	 */
 	public synchronized void addIdentifier(Identifier identifier) {
 		String fullName = name(identifier.getName(), identifier.getType());
 		idCache.put(fullName, identifier);
 		searchingNow.remove(fullName);
+		
 		notifyAll();
 	}
 	

@@ -21,14 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
 
 /**
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
-public class BlockAfterTimeFilter<E> extends AbstractObservationFilter<E,E> {
+public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	private final Timestamp maxTime;
 
 	/** @param newMaxTime seconds after which the filter blocks */

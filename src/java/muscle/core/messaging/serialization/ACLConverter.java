@@ -17,7 +17,7 @@ import muscle.core.messaging.jade.ObservationMessage;
 /**å
  * @author Joris Borgdorff
  */
-public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage> {
+public class ACLConverter<E> extends AbstractDataConverter<DataMessage<E>, ACLMessage> {
 	private final DataConverter<E,byte[]> byteConverter;
 	
 	public ACLConverter(DataConverter<E,byte[]> byteConverter) {
@@ -52,11 +52,8 @@ public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage
 			byteCount = rawData.length;
 
 			data = byteConverter.deserialize(rawData);
-		} else {
-			System.out.println(getClass() + ": can not handle empty DataMessage");
-			// can not handle empty DataMessage
-			return null;
-		}
+		} 
+		// Else: Signal encountered
 		
 		// copy some relevant settings from the
 		String type = aclmsg.getUserDefinedParameter(ObservationMessage.TYPE_KEY);
@@ -72,7 +69,7 @@ public class ACLConverter<E> implements DataConverter<DataMessage<E>, ACLMessage
 			dmsg.store(data, byteCount);
 			dmsg.setRecipient(recp);
 
-			dmsg.setSender(aclmsg.getSender());
+			//dmsg.setSender(aclmsg.getSender());
 			dmsg.setLanguage(aclmsg.getLanguage());
 			dmsg.setProtocol(aclmsg.getProtocol());
 			dmsg.setPerformative(aclmsg.getPerformative());

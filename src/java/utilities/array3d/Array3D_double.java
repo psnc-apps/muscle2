@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array3d;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import utilities.array3d.IndexStrategy.FortranIndexStrategy;
 
@@ -29,7 +30,7 @@ import utilities.array3d.IndexStrategy.FortranIndexStrategy;
 3D array backed by a 1D C-style array of primitive type
 @author Jan Hegewald
 */
-public class Array3D_double {
+public class Array3D_double implements Serializable {
 	private double[] data;
 	private final int xSize;
 	private final int ySize;

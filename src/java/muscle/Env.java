@@ -34,7 +34,7 @@ import muscle.exception.MUSCLERuntimeException;
 loads environment for a muscle platform
 @author Jan Hegewald
 */
-public class Env extends utilities.Env {
+public class Env extends utilities.data.Env {
 
 	public static Env ONLY = create();
 	

@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package utilities;
 
+import muscle.utilities.parallelism.ThreadCpuTimer;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 

@@ -21,14 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
 exit of a filter chain used within conduits
 @author Jan Hegewald
 */
-public abstract class ObservationFilterTail<E> extends FilterTail<Observation<E>> implements ObservationQueueConsumer<E> {
+public abstract class ObservationFilterTail<E extends Serializable> extends FilterTail<Observation<E>> implements ObservationQueueConsumer<E> {
 	private final DataTemplate<E> template;
 
 	public ObservationFilterTail(DataTemplate<E> inTemplate) {

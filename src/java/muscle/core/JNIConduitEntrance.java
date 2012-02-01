@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.io.Serializable;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
 import muscle.core.messaging.serialization.DataConverter;
@@ -30,7 +31,7 @@ entrance which can directly be called from native code<br>
 C for conduit type, R for raw jni type
 @author Jan Hegewald
 */
-public class JNIConduitEntrance<R,C> extends ConduitEntrance<C> {
+public class JNIConduitEntrance<R,C extends Serializable> extends ConduitEntrance<C> {
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 

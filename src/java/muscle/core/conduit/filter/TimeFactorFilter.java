@@ -21,13 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 modifies timestep with a given factor
 @author Jan Hegewald
 */
-public class TimeFactorFilter<E> extends AbstractObservationFilter<E,E> {
+public class TimeFactorFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	private final int factor;
 
 	public TimeFactorFilter(int newFactor) {

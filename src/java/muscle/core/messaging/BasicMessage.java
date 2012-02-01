@@ -5,13 +5,12 @@ package muscle.core.messaging;
 
 import java.io.Serializable;
 import muscle.core.ident.Identifier;
-import muscle.core.wrapper.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class BasicMessage<E> implements Message<E>, Serializable {
+public class BasicMessage<E extends Serializable> implements Message<E>, Serializable {
 	private final Observation<E> obs;
 	private final Identifier recv;
 	

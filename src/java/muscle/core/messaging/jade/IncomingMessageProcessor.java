@@ -30,7 +30,7 @@ import muscle.core.conduit.communication.JadeReceiver;
 import muscle.core.ident.Identifier;
 import muscle.core.messaging.serialization.ACLConverter;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
-import utilities.ArrayMap;
+import utilities.data.ArrayMap;
 
 /**
 process the agent message queue from a sub-thread of the agents main thread
@@ -56,18 +56,24 @@ public class IncomingMessageProcessor extends CyclicBehaviour {
 	/** Deserialize, process, and send message to receiver*/
 	public void action() {
 		ACLMessage msg = owner.receive();
-		if (msg != null) {
+		while (msg != null) {
 			DataMessage dmsg = deserializer.deserialize(msg);
 			if (dmsg != null) {
 				Identifier id = dmsg.getRecipient();
 				JadeReceiver recv = receivers.get(id);
 				if (recv == null) {
-					logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
+					if (msg.getUserDefinedParameter("signal") != null) {
+						logger.log(Level.SEVERE, "signal intended for removed agent {0} received: {1}", new Object[] {id, msg.getUserDefinedParameter("signal")});
+					}
+					else {
+						logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
+					}
 				}
 				else {
 					recv.put(dmsg);
 				}
 			}
+			msg = owner.receive();
 		}
 		block();
 	}

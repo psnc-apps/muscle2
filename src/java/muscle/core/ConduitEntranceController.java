@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.PortalID;
@@ -29,38 +30,39 @@ import muscle.core.conduit.filter.FilterChain;
 import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.signal.DetachConduitSignal;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
 this is the (remote) head of a conduit,
 an entrance sends data to the conduit exit through a transmitter
 @author Jan Hegewald
  */
-public class ConduitEntranceController<T> extends Portal<T> implements QueueConsumer<Observation<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
+public class ConduitEntranceController<T extends Serializable> extends Portal<T> implements QueueConsumer<Observation<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
-	private boolean shouldPause;
 	private Transmitter<T, ?,?,?> transmitter;
-	private Queue<Observation<T>> queue;
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	private final FilterChain filters;
 	private boolean processingMessage;
+	private boolean processingNextMessage;
+	private Queue<Observation<T>> queue;
 	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-		this.shouldPause = false;
-		this.transmitter = null;
 		this.queue = null;
+		this.transmitter = null;
 		this.conduitEntrance = null;
 		this.filters = createFilterChain();
 	}
 	
+	/** Create a filter chain from the given arguments */
 	private FilterChain createFilterChain() {
 		FilterChain fc = new FilterChain() {
 			protected void apply(Observation subject) {
 				try {
 					ConduitEntranceController.this.send(subject);
 				} catch (InterruptedException ex) {
-					logger.log(Level.SEVERE, "Could not filter observation for ConduitEntrance {0}: {1}", new Object[]{portalID, ex});
+					logger.log(Level.SEVERE, "Could not filter observation for ConduitEntrance {0}: {1}",
+							new Object[]{portalID, ex});
 				}
 			}
 		};
@@ -69,49 +71,79 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		return fc;
 	}
 
+	/** Set the transmitter that will be used to transmit messages. Before this
+	 * is called, the conduit will not be able to send messages.
+	 */
 	public synchronized void setTransmitter(Transmitter<T,?,?,?> trans) {
 		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
 		this.notifyAll();
 	}
 	
+	/** Set the entrance that will be the interface for the CAController. Before
+	 *  this is called, messages are not added. */
 	public void setEntrance(ConduitEntrance<T> entrance) {		
 		this.conduitEntrance = entrance;
 	}
 	
+	/** Get the entrance that is the interface for the CAController. */
 	public ConduitEntrance<T> getEntrance() {
 		return this.conduitEntrance;
 	}
-
-	public void setIncomingQueue(Queue<Observation<T>> queue) {
-		this.queue = queue;
-	}
-
+	
+	/**
+	 * Indicate that a message has been added to the controller. Stores the fact
+	 * that a message will be processed.
+	 */
+	@Override
 	public void apply() {
+		synchronized (this) {
+			// Make sure that a double processingMessage is also processed
+			if (processingMessage) {
+				processingNextMessage = true;
+			}
+			else {
+				processingMessage = true;
+			}
+		}
 		this.trigger();
 	}
 	
+	/**
+	 * Processing messages. When messages are finished processing, the conduitEntrance
+	 * takes note of this.
+	 */
+	@Override
 	protected void execute() throws InterruptedException {
 		while (!queue.isEmpty()) {
-			synchronized (this) {
-				processingMessage = true;
-			}
 			Observation<T> elem = queue.remove();
+			
 			this.filters.process(elem);
-			synchronized (this) {
+		}
+		synchronized (this) {
+			if (processingNextMessage) {
+				processingNextMessage = false;
+				this.trigger();
+			}
+			else {
 				processingMessage = false;
 				this.notifyAll();
 			}
 		}
 	}
 	
+	/** Waits until no more messages have to be sent. */
 	public synchronized boolean waitUntilEmpty() throws InterruptedException {
-		while (!isDone && this.processingMessage || !queue.isEmpty()) {
+		while (!isDone && (this.processingMessage || (queue != null && !queue.isEmpty()))) {
 			wait();
 		}
 		return !this.processingMessage && queue.isEmpty();
 	}
 	
+	@Override
+	public void setIncomingQueue(Queue<Observation<T>> queue) {
+		this.queue = queue;
+	}
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
 		logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
@@ -119,7 +151,7 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
 	private synchronized Transmitter<T, ?,?,?> waitForTransmitter() throws InterruptedException {
-		while (!isDone && (shouldPause || transmitter == null)) {
+		while (!isDone && transmitter == null) {
 			if (logger.isLoggable(Level.FINE)) {
 				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
 				if (queue != null) {
@@ -133,16 +165,6 @@ public class ConduitEntranceController<T> extends Portal<T> implements QueueCons
 		return transmitter;
 	}
 
-	public synchronized void pause() {
-		shouldPause = true;
-		this.notifyAll();
-	}
-
-	public synchronized void unpause() {
-		shouldPause = false;
-		this.notifyAll();
-	}
-	
 	@Override
 	public synchronized void dispose() {
 		// if we are connected to a conduit, tell conduit to detach this exit

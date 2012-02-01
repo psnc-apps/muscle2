@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array2d;
 
+import java.io.Serializable;
 import utilities.array2d.IndexStrategy.FortranIndexStrategy;
 
 
@@ -29,7 +30,7 @@ import utilities.array2d.IndexStrategy.FortranIndexStrategy;
 2D array backed by a 1D C-style array of primitive type
 @author Jan Hegewald
 */
-public class Array2D_double {
+public class Array2D_double implements Serializable {
 
 	private final double[] data;
 	private final IndexStrategy indexStrategy;

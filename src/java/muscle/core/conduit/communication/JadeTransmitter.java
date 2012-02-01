@@ -4,18 +4,19 @@
 package muscle.core.conduit.communication;
 
 import jade.core.Agent;
+import java.io.Serializable;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.JadePortalID;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
 import muscle.core.messaging.signal.Signal;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeTransmitter<T> extends AbstractCommunicatingPoint<Observation<T>, byte[],JadeIdentifier,JadePortalID> implements Transmitter<T, byte[],JadeIdentifier,JadePortalID> {
+public class JadeTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, byte[],JadeIdentifier,JadePortalID> implements Transmitter<T, byte[],JadeIdentifier,JadePortalID> {
 	private Agent senderAgent;
 	
 	public JadeTransmitter(Agent senderAgent) {
@@ -33,13 +34,12 @@ public class JadeTransmitter<T> extends AbstractCommunicatingPoint<Observation<T
 		
 		// send data to target agent
 		senderAgent.send(dmsg);
-		dmsg.setByteSequenceContent(null);
 	}
 
 	public void signal(Signal signal) {
 		DataMessage<Signal> dmsg = new DataMessage<Signal>();
 		dmsg.setRecipient(portalID.getOwnerID());
-		dmsg.store(signal, null);
+		dmsg.addUserDefinedParameter("signal", signal.getClass().toString());
 		senderAgent.send(dmsg);
 	}
 }

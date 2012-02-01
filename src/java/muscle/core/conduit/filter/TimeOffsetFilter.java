@@ -21,14 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
 import muscle.core.messaging.Duration;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
 modifies timestep with a given offset
 @author Jan Hegewald
 */
-public class TimeOffsetFilter<E> extends AbstractObservationFilter<E,E> {
+public class TimeOffsetFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	private final Duration offset;
 
 	/** @param newOffset offset in seconds */

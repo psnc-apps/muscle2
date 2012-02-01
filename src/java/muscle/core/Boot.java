@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.util.Arrays;
+import muscle.core.ident.JadeAgentIDManipulator;
 import muscle.Constant;
 import utilities.MiscTool;
 import java.io.File;
@@ -37,8 +39,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import muscle.core.kernel.JadeInstanceController;
-import muscle.utilities.agent.QuitMonitor;
 import utilities.JVM;
+import utilities.data.ArraySet;
 
 
 /**
@@ -54,7 +56,7 @@ public class Boot {
 	private static Boot instance;
 	private final String[] args;
 	private boolean isDone;
-	private boolean monitorQuit;
+	private Set<String> monitorQuit;
 	
 	static {
 		// try to workaround LogManager deadlock http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6487638
@@ -76,6 +78,7 @@ public class Boot {
 	
 	//
 	private Boot(String[] args) {
+		this.monitorQuit = null;
 		System.out.println("booting muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 		// make sure the JVM singleton has been inited
 		JVM jvm = JVM.ONLY;
@@ -95,30 +98,47 @@ public class Boot {
 	}
 	
 	private String[] mapAgentsToInstances(String[] args) {
+		StringBuilder sb = new StringBuilder();
+		int agentsI = -1;
+		String port = null;
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-agents")) {
-				boolean quit = false;
-				String agentArg = args[i+1];
+				agentsI = i+1;
+				String agentArg = args[agentsI];
 				String[] agents = agentArg.split(";");
-				StringBuilder sb = new StringBuilder();
 				for (String agent : agents) {
 					String[] agentInfo = agent.split(":");
 					if (agentInfo[0].equals("plumber")) {
 						//sb.append(agent).append(';');
 					}
-					else if (agentInfo[0].equals(QuitMonitor.class.getCanonicalName())) {
-						quit = true;
+					else if (agentInfo[0].equals("muscle.utilities.agent.QuitMonitor")) {
+						// Agents to monitor are given as an argument
+						int start = agentInfo[1].indexOf("(") + 1;
+						int end = agentInfo[1].indexOf(")");
+						String[] quitAgents = agentInfo[1].substring(start, end).split(",");
+						this.monitorQuit = new ArraySet<String>(Arrays.asList(quitAgents));
 					}
 					else {
 						agentNames.put(agentInfo[0], agentInfo[1]);
 						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
 				}
-				sb.append("locator:").append(JadeAgentIDManipulator.class.getCanonicalName());
-				args[i+1] = sb.toString();
-				this.monitorQuit = quit;
+			}
+			if (args[i].equals("-local-port")) {
+				if (i + 1 < args.length) {
+					port = args[i+1];
+				}
 			}
 		}
+		
+		if (agentsI != -1) {
+			sb.append("locator");
+			if (port != null)
+				sb.append(".").append(port);
+			sb.append(':').append(JadeAgentIDManipulator.class.getCanonicalName());
+			args[agentsI] = sb.toString();
+		}
+
 		return args;
 	}
 	
@@ -131,11 +151,7 @@ public class Boot {
 		return agentNames.get(agentName);
 	}
 	
-	public Set<String> getAgentNames() {
-		return agentNames.keySet();
-	}
-	
-	public boolean monitorQuit() {
+	public Set<String> monitorQuit() {
 		return this.monitorQuit;
 	}
 	
@@ -283,6 +299,8 @@ public class Boot {
 			dispose();
 			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 			writeClosingInfo();
+			
+			int i = 0;
 
 			// wait for all other threads/shutdownhooks to die
 			while( !otherHooks.isEmpty() ) {
@@ -294,9 +312,12 @@ public class Boot {
 				}
 				
 				if( !otherHooks.isEmpty() ) {
-					System.out.print(".");
+					if (++i == 15) {
+						i = 0;
+						System.out.print(".");					
+					}
 					try {
-						sleep(750l);
+						sleep(50l);
 					}
 					catch(java.lang.InterruptedException e) {
 						e.printStackTrace();

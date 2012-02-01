@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 import muscle.core.DataTemplate;
 import utilities.array3d.Array3D_double;
 import utilities.array2d.Array2D_double;

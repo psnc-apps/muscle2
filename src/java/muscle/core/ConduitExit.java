@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -28,7 +29,7 @@ this is the (remote) tail of a conduit,
 an exit receives data from the conduit agent
 @author Jan Hegewald
 */
-public class ConduitExit<T> { // generic T will be the underlying unwrapped data, e.g. double[]
+public class ConduitExit<T extends Serializable> { // generic T will be the underlying unwrapped data, e.g. double[]
 	private final BlockingQueue<T> queue;
 
 	public ConduitExit(ConduitExitController<T> control) {
@@ -36,7 +37,7 @@ public class ConduitExit<T> { // generic T will be the underlying unwrapped data
 	}
 
 	/**
-	return our unwrapped data once, or null if the model has to stop computing
+	 * Receive one piece of data. Returns null if the model should stop computing.
 	*/
 	public T receive() {
 		try {

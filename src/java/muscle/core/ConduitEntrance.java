@@ -4,55 +4,76 @@
  */
 package muscle.core;
 
+import java.io.Serializable;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.ident.Identifier;
 import muscle.core.messaging.BasicMessage;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.Timestamp;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.messaging.Observation;
 
 /**
  * Sends information over a conduit
  * @author Joris Borgdorff
  */
-public class ConduitEntrance<T> {
+public class ConduitEntrance<T extends Serializable> {
 	private final QueueConsumer<Observation<T>> consumer;
-	private final Queue<Observation<T>> queue;
 	protected Timestamp nextTime;
 	protected final Duration dt;
+	private final DataConverter<T,?> serializer;
+	private Queue<Observation<T>> queue;
 	
-	public ConduitEntrance(QueueConsumer<Observation<T>> controller) {
+	public ConduitEntrance(ConduitEntranceController controller) {
 		this(controller, new Timestamp(0d), new Duration(1d));
 	}
 	
 	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
+		this.serializer = new ByteJavaObjectConverter();
 		this.queue = new LinkedBlockingQueue<Observation<T>>();
-		
+		controller.setIncomingQueue(queue);
+
 		this.nextTime = origin;
 		this.dt = timeStep;
 		
 		this.consumer = controller;
-		this.consumer.setIncomingQueue(this.queue);
 	}
 	
+	/**
+	 * Send a piece of data. This assumes that the current timestep and the next
+	 * follow statically from the temporal scale.
+	 */
 	public void send(T data) {
 		this.send(data, nextTime);
 	}
 	
+	/**
+	 * Send a piece of data at the current timestep. This assumes that the next timestep
+	 * follows statically from the temporal scale.
+	 */
 	public void send(T data, Timestamp currentTime) {
 		nextTime = nextTime.add(dt);
 		this.send(data, currentTime, nextTime);		
 	}
 
+	/**
+	 * Send a piece of data at the current timestep, also mentioning when the next
+	 * piece of data will be sent.
+	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
 		this.nextTime = next;
-		Observation<T> msg = new Observation<T>(data, currentTime, next);
+		T dataCopy = serializer.copy(data);
+		Observation<T> msg = new Observation<T>(dataCopy, currentTime, next);
 		this.send(msg);
 	}
 	
+	/** Send an observation. */
 	private void send(Observation<T> msg) {
 		System.out.println("Sending observation...");
 		this.queue.add(msg);

@@ -4,14 +4,15 @@
  */
 package muscle.core.messaging.jade;
 
+import java.io.Serializable;
 import muscle.core.messaging.Message;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class ObservationMessage<E> extends DataMessage<Observation<E>> implements Message<E> {
+public class ObservationMessage<E extends Serializable> extends DataMessage<Observation<E>> implements Message<E> {
 	public final static String OBSERVATION_KEY = ObservationMessage.class.getName() + "#id";
 	
 	@Override

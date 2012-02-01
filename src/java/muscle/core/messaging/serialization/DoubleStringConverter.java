@@ -6,7 +6,7 @@ package muscle.core.messaging.serialization;
 /**
  * @author Joris Borgdorff
  */
-public class DoubleStringConverter implements DataConverter<double[], String> {
+public class DoubleStringConverter extends AbstractDataConverter<double[], String> {
 	@Override
 	public String serialize(double[] data) {
 		// Sane version

@@ -43,9 +43,9 @@ import muscle.core.ident.IDType;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.PortalID;
-import utilities.ArrayMap;
-import utilities.Env;
-import utilities.FastArrayList;
+import utilities.data.ArrayMap;
+import utilities.data.Env;
+import utilities.data.FastArrayList;
 import utilities.MiscTool;
 
 /**
@@ -78,6 +78,8 @@ public class ConnectionScheme implements Serializable {
 	
 	private ConnectionScheme() {
 		this.init();
+		kernelList = null;
+		conduitList = null;
 	}
 
 	/**
@@ -354,12 +356,14 @@ public class ConnectionScheme implements Serializable {
 		for (ExitDescription exit : targetExitDescriptions) {
 			ConduitDescription conduit = exit.getConduitDescription();
 			EntranceDescription entrance = conduit.getEntranceDescription();
-
-			conduitList.add(exit.getID().getName());
+			String exitName = exit.getID().getName();
+			
+			conduitList.add(exitName);
 
 			try{
 			//	System.out.println("Adding entrance" + entrance.getID());
-				conduitList.add(entrance.getID().getName());					
+				String entranceName = entrance.getID().getName();
+				conduitList.add(entranceName);					
 			}
 			catch (Exception e)
 			{
@@ -367,13 +371,14 @@ public class ConnectionScheme implements Serializable {
 			}
 
 
-			String temp1 = exit.getID().getName().substring(exit.getID().getName().indexOf("@") + 1);
+			String temp1 = exitName.substring(exitName.indexOf("@") + 1);
 			if (!kernelList.contains(temp1))
 				kernelList.add(temp1);
 
 			String temp2 = null;
 			try{
-				temp2 = entrance.getID().getName().substring(entrance.getID().getName().indexOf("@") + 1);
+				String entranceName = entrance.getID().getName();
+				temp2 = entranceName.substring(entranceName.indexOf("@") + 1);
 				if (!kernelList.contains(temp2))
 				{
 					//System.out.println("Adding kernel "+temp2);
@@ -387,5 +392,12 @@ public class ConnectionScheme implements Serializable {
 		}
 		Collections.sort(kernelList);
 		Collections.sort(conduitList);
+	}
+	
+	public List<String> getKernels() {
+		if (kernelList == null) {
+			this.generateLists();
+		}
+		return kernelList;
 	}
 }

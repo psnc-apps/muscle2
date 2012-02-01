@@ -5,6 +5,7 @@ package muscle.core.kernel;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +30,10 @@ import muscle.core.ident.PortalID;
 import muscle.core.messaging.SinkObserver;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.jade.ObservationMessage;
-import utilities.FastArrayList;
+import utilities.data.FastArrayList;
 import utilities.JVM;
 import utilities.MiscTool;
-import utilities.SafeTriggeredThread;
+import muscle.utilities.parallelism.SafeTriggeredThread;
 import utilities.Timing;
 
 /**
@@ -54,25 +55,21 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	private final List<ConduitExitController<?>> dataSources = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
 	private final List<ConduitEntranceController<?>> dataSinks = new ArrayList<ConduitEntranceController<?>>(); // these are the conduit entrances
 	
-	public <T> void addSink(ConduitEntranceController<T> s) {
+	public <T extends Serializable> void addSink(ConduitEntranceController<T> s) {
 		s.start();
 		PortalID other = resolvePort(s.getIdentifier(), entranceDescriptions, ENTRANCE);
 		if (other == null) return;
-		System.out.println(getLocalName() + ": port " + other + " resolved");
 		s.setTransmitter(factory.<T>getTransmitter(this, other));
-		System.out.println(getLocalName() + ": port " + other + " transmitter added");
 		dataSinks.add(s);
 	}
 
-	public <T> void addSource(ConduitExitController<T> s) {
+	public <T extends Serializable> void addSource(ConduitExitController<T> s) {
 		s.start();
 		PortalID other = resolvePort(s.getIdentifier(), exitDescriptions, EXIT);
 		if (other == null) return;
-		System.out.println(getLocalName() + ": port " + other + " resolved");
 		Receiver<DataMessage<T>, ?, ?, ?> recv = factory.<T>getReceiver(this, other);
 		s.setReceiver(recv);
 		messageProcessor.addReceiver(s.getIdentifier(), (JadeReceiver)recv);
-		System.out.println(getLocalName() + ": port " + other + " receiver added");
 		dataSources.add(s);
 	}
 	
@@ -86,13 +83,11 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		PortalID other = entrance ? desc.getExitDescription().getID() : desc.getExitDescription().getID();
 		if (!other.isResolved()) {
 			try {
-				System.out.println(getLocalName() + ": getting resolver");
 				Resolver r = Boot.getInstance().getResolver();
-				System.out.println(getLocalName() + ": resolving id");
 				r.resolveIdentifier(other);
 				if (!other.isResolved()) return null;
 			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, null, ex);
+				logger.log(Level.SEVERE, "Resolving port interrupted", ex);
 			}
 		}
 		return other;
@@ -102,7 +97,6 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 	public void takeDown() {
 		super.takeDown();
 
-		System.out.println("Taking down controller "+ this.getIdentifier() + "...");
 		for (ConduitExitController<?> source : dataSources) {
 			source.dispose();
 		}
@@ -122,7 +116,7 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 			Resolver r = Boot.getInstance().getResolver();
 			r.deregister(this);
 		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
 		}
 	}
 	
@@ -155,9 +149,8 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 		kernel.setArguments(initFromArgs());
 
 		registerPortals();
-		System.out.println(getLocalName() + ": connecting portals");
 		kernel.connectPortals();
-
+		
 		// log info about this controller
 		Level logLevel = Level.INFO;
 		if (logger.isLoggable(logLevel)) {
@@ -174,16 +167,15 @@ public class JadeInstanceController extends MultiDataAgent implements SinkObserv
 				@Override
 				protected void execute() throws InterruptedException {
 					beforeExecute();
-					System.out.println(getLocalName() + " is executing");
+					System.out.println(getLocalName() + ": executing");
 					kernel.execute();
-					System.out.println(getLocalName() + " is finished executing");
 					for (ConduitEntranceController ec : dataSinks) {
 						if (!ec.waitUntilEmpty()) {
 							break;
 						}
 					}
 					afterExecute();
-					System.out.println(getLocalName() + " is finished");
+					System.out.println(getLocalName() + ": finished");
 					dispose();
 					doDelete();
 				}

@@ -21,12 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 interface for conduit filters which act on wrapped data
 */
-public interface ObservationFilter<E,F> extends ObservationQueueConsumer<E>, QueueProducer<Observation<F>> {
+public interface ObservationFilter<E extends Serializable,F extends Serializable> extends ObservationQueueConsumer<E>, QueueProducer<Observation<F>> {
 	public void setQueueConsumer(ObservationQueueConsumer<F> qc);
 }
 

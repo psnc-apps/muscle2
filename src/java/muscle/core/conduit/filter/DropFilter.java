@@ -21,14 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.Observation;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 drops data if incoming time scale is not a multiple of outgoing dt, newInDt is only required to build the corresponding DataTemplate for incomming data
 use for testing, usually better try to not send the dropped data at all from within the CA
 @author Jan Hegewald
 */
-public class DropFilter<E> extends AbstractObservationFilter<E,E> {
+public class DropFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	private final int outRate;
 	private int counter;
 	

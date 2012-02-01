@@ -4,6 +4,7 @@
 package muscle.core;
 
 import jade.lang.acl.ACLMessage;
+import java.io.Serializable;
 import muscle.core.conduit.communication.JadeReceiver;
 import muscle.core.conduit.communication.JadeTransmitter;
 import muscle.core.conduit.communication.Receiver;
@@ -16,7 +17,7 @@ import muscle.core.kernel.JadeInstanceController;
 import muscle.core.messaging.jade.DataMessage;
 import muscle.core.messaging.serialization.ACLConverter;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
-import muscle.core.wrapper.Observation;
+import muscle.core.messaging.Observation;
 
 /**
  *
@@ -35,7 +36,7 @@ public class PortFactory {
 		return recv;
 	}
 	
-	public <T> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide) {
+	public <T extends Serializable> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide) {
 		Transmitter<T,byte[],JadeIdentifier, JadePortalID> trans = new JadeTransmitter<T>((JadeInstanceController)localInstance);
 		trans.setDataConverter(new ByteJavaObjectConverter<Observation<T>>());
 		if (otherSide instanceof JadePortalID) {

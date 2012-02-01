@@ -12,7 +12,7 @@ import java.io.ObjectOutputStream;
  * Deserialize an object from given byte array
  * @author Joris Borgdorff
  */
-public class ByteDataConverter<T> implements DataConverter<T, byte[]> {
+public class ByteDataConverter<T> extends AbstractDataConverter<T, byte[]> {
 
 	/**
 	serialize an object

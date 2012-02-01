@@ -29,11 +29,11 @@ import javatool.DecimalMeasureTool;
 import muscle.core.ident.Identifiable;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
-import utilities.SafeThread;
-import utilities.SafeTriggeredThread;
+import muscle.utilities.parallelism.SafeThread;
+import muscle.utilities.parallelism.SafeTriggeredThread;
 
 //
-public abstract class Portal<T> extends SafeTriggeredThread implements Serializable, Identifiable {
+public abstract class Portal<T extends Serializable> extends SafeTriggeredThread implements Serializable, Identifiable {
 	protected final PortalID portalID;
 	private int usedCount;
 	protected Timestamp customSITime;

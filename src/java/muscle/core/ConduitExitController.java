@@ -3,6 +3,7 @@
  */
 package muscle.core;
 
+import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -17,7 +18,7 @@ import muscle.core.messaging.jade.DataMessage;
  *
  * @author Joris Borgdorff
  */
-public class ConduitExitController<T> extends Portal<T> {
+public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	private Receiver<DataMessage<T>, ?,?,?> receiver;
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<T> queue;
@@ -37,10 +38,6 @@ public class ConduitExitController<T> extends Portal<T> {
 		this.notifyAll();
 	}
 	
-	BlockingQueue<T> getQueue() {
-		return this.queue;
-	}
-
 	public void setExit(ConduitExit<T> exit) {
 		this.conduitExit = exit;
 	}
@@ -54,9 +51,13 @@ public class ConduitExitController<T> extends Portal<T> {
 		Receiver<DataMessage<T>, ?,?,?> recv = waitForReceiver();
 		if (recv != null) {
 			DataMessage<T> msg = this.receiver.receive();
-			System.out.println("Message " + msg + " received.");
 			if (msg != null && msg instanceof Message) {
-				this.queue.add(((Message<T>)msg).getRawData());
+				if (msg.getUserDefinedParameter("signal") != null) {
+					System.out.println("Signal received: " + msg.getUserDefinedParameter("signal"));
+				}
+				else {
+					this.queue.add(((Message<T>)msg).getRawData());
+				}
 			}
 		}
 	}
@@ -86,6 +87,10 @@ public class ConduitExitController<T> extends Portal<T> {
 		return !isDone;
 	}
 	
+	BlockingQueue<T> getQueue() {
+		return this.queue;
+	}
+
 	public String toString() {
 		return this.getIdentifier() + "-->|";
 	}

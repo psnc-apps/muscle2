@@ -39,13 +39,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import muscle.core.kernel.RawKernel;
 import utilities.JVM;
-import utilities.Env;
+import utilities.data.Env;
 
 /**
 singleton which holds information about the current CxA
 @author Jan Hegewald
  */
-public class CxADescription extends utilities.Env implements Serializable {
+public class CxADescription extends utilities.data.Env implements Serializable {
 
 	private final static transient Logger logger = Logger.getLogger(CxADescription.class.getName());
 

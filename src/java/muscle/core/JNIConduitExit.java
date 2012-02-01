@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import java.io.Serializable;
 import muscle.core.messaging.serialization.DataConverter;
 import utilities.jni.JNIMethod;
 
@@ -28,7 +29,7 @@ exit which can directly be called from native code<br>
 C for conduit type, R for raw jni type
 @author Jan Hegewald
  */
-public class JNIConduitExit<C, R> extends ConduitExit<C> {
+public class JNIConduitExit<C extends Serializable, R> extends ConduitExit<C> {
 	private Class<R> jniClass;
 	private DataConverter<R, C> transmuter;
 

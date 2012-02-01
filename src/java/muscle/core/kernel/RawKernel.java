@@ -22,6 +22,7 @@ package muscle.core.kernel;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -185,7 +186,6 @@ public abstract class RawKernel {
 		}
 
 		controller.addSink(entrance);
-		System.out.println(controller.getLocalName() + ": adding entrance " + entrance + " to controller done");
 		entrances.add(entrance);
 	}
 
@@ -204,12 +204,11 @@ public abstract class RawKernel {
 		}
 
 		controller.addSource(exit);
-		System.out.println(controller.getLocalName() + ": adding exit " + exit + "  to controller done");
 		exits.add(exit);
 	}
 
 	//
-	protected <T> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
+	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
 
 		if (newRate < 1) {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
@@ -223,7 +222,7 @@ public abstract class RawKernel {
 	}
 
 	//
-	protected <T, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
+	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
@@ -232,13 +231,13 @@ public abstract class RawKernel {
 		return e;
 	}
 
-	protected <T> JNIConduitExit<T, T> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
+	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
 		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
 		return addJNIExit(newPortalName, newRate, newDataClass, newDataClass, newTransmuter);
 	}
 
 	//
-	protected <T> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
+	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec);
@@ -249,7 +248,7 @@ public abstract class RawKernel {
 	}
 	//
 
-	protected <R, T> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
+	protected <R, T extends Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
 		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec);
@@ -260,7 +259,7 @@ public abstract class RawKernel {
 	}
 	//
 
-	protected <T> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
+	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
 		return addJNIEntrance(newPortalName, newRate, newDataClass, newDataClass, newTransmuter, newDependencies);
 	}

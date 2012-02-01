@@ -22,29 +22,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 import java.lang.reflect.Array;
-import com.thoughtworks.xstream.XStream;
 import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 
 /**
@@ -68,15 +56,6 @@ public class MiscTool {
 	  }
 		return memory;
 	}
-
-
-	//
-	static public String toString(Object item) {
-	
-		XStream xstream = new XStream();
-		return xstream.toXML(item);
-	}
-
 
 	/**
 	converts an e.g. Object[] to a String[]

@@ -82,6 +82,7 @@ public interface Constant {
 		public static final String DOAGENT_RESULTS = "DOAGENT_RESULTS";
 		public static final String ADMINISTRATIVE_CALL = "ADMINISTRATIVE_CALL";
 		public static final String ANNOUNCE_AGENT = "MUSCLE_ANNOUNCE_AGENT";
+		public static final String DETACH_AGENT = "MUSCLE_DETACH_AGENT";
 	
 	}
 
