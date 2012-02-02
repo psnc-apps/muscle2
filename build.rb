@@ -257,18 +257,13 @@ def main
         $env[:options] = {:prefix=>'/opt/muscle/', :otf=>'', :java=>ENV['JAVA_HOME'], :final=>false}
         get_opts
 
-        target = []
-
-        ARGV.each do |a|
-								asym = a.to_sym
-                if (Targets.methods-Targets.class.superclass.methods).include? asym
-                        puts "selected target '#{asym}'"
-                        target << asym
-                else
-                        abort "unknown target: '#{asym}'"
-                end
-        end
-
+				# collect all targets as strings
+				avail = (Targets.methods-Targets.class.superclass.methods).collect { |a| a.to_s.strip }
+				# choose arguments that match a target
+				target = ARGV.select {|a| avail.include? a}
+			  target.collect! {|a| a.strip.to_sym }
+				puts "selected targets #{target.inspect}"
+			  
         if target.empty?
                 target << :default
         end
