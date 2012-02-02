@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.lang.management.RuntimeMXBean;
+import muscle.core.ident.Resolver;
 import java.util.Arrays;
 import muscle.core.ident.JadeAgentIDManipulator;
 import muscle.Constant;
@@ -79,11 +81,12 @@ public class Boot {
 	//
 	private Boot(String[] args) {
 		this.monitorQuit = null;
-		System.out.println("booting muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
 		// make sure the JVM singleton has been inited
 		JVM jvm = JVM.ONLY;
+
+		System.out.println("booting muscle jvm " + jvm.name());
 		
-		infoFile = new File(MiscTool.joinPaths(jvm.tmpDir().toString(), Constant.Filename.JVM_INFO));
+		infoFile = jvm.tmpFile(Constant.Filename.JVM_INFO);
 		
 		// note: it seems like loggers can not be used within shutdown hooks
 		Runtime.getRuntime().addShutdownHook(new JVMHook() );
@@ -189,21 +192,23 @@ public class Boot {
 		FileWriter writer = null;
 		try {
 			writer = new FileWriter(infoFile);
-			
 			writer.write( "this is file <"+infoFile+"> created by <"+getClass()+">"+nl );
 			writer.write( "start date: "+(new java.util.Date())+nl );
 			writer.write( "cwd: "+System.getProperty("user.dir")+nl );
 			writer.write( "user: "+System.getProperty("user.name")+nl );
+			
 			OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
 			writer.write( "OS: "+os.getName()+" "+os.getVersion()+nl );
 			writer.write( "CPU: "+os.getAvailableProcessors()+" "+os.getArch()+nl );
 			writer.write(nl);
-			writer.write( "name: "+ManagementFactory.getRuntimeMXBean().getName()+nl );
+			
+			RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+			writer.write( "name: "+runtime.getName()+nl );
 			writer.write( "version: "+Version.info()+nl );			
-			writer.write( "vm: "+ManagementFactory.getRuntimeMXBean().getVmName()+" "+ManagementFactory.getRuntimeMXBean().getVmVersion()+nl );
-			writer.write( "classpath: "+ManagementFactory.getRuntimeMXBean().getClassPath()+nl );
+			writer.write( "vm: "+runtime.getVmName()+" "+runtime.getVmVersion()+nl );
+			writer.write( "classpath: "+runtime.getClassPath()+nl );
 			writer.write( "JADE version: "+jade.core.Runtime.getVersionInfo()+nl );			
-			writer.write( "arguments: "+MiscTool.joinItems(ManagementFactory.getRuntimeMXBean().getInputArguments(), System.getProperty("path.separator"))+nl );			
+			writer.write( "arguments: "+MiscTool.joinItems(runtime.getInputArguments(), System.getProperty("path.separator"))+nl );			
 			writer.write(nl);
 			writer.write( "executing ..."+nl );
 			
@@ -297,7 +302,7 @@ public class Boot {
 		// see rubys Signal.list for a full list on your OS
 		public void run() {
 			dispose();
-			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+			System.out.println("terminating muscle jvm "+JVM.ONLY.name());
 			writeClosingInfo();
 			
 			int i = 0;

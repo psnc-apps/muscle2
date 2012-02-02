@@ -62,4 +62,8 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 	public Location getLocation() {
 		return ownerID.getLocation();
 	}
+	
+	public void resolveLike(Identifier id) {
+		this.ownerID.resolveLike(id);
+	}
 }

@@ -15,7 +15,6 @@ import jade.proto.SubscriptionInitiator;
 import jade.util.leap.Iterator;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.Resolver;
 import muscle.core.ident.IDType;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.JadeAgentID;
@@ -25,7 +24,7 @@ import muscle.core.ident.Location;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
- *
+ * Listens for removed agents
  * @author Joris Borgdorff
  */
 public class AgentRemovalSubscription extends SubscriptionInitiator {

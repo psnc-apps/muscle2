@@ -75,7 +75,6 @@ public class ConduitEntrance<T extends Serializable> {
 	
 	/** Send an observation. */
 	private void send(Observation<T> msg) {
-		System.out.println("Sending observation...");
 		this.queue.add(msg);
 		this.consumer.apply();
 	}

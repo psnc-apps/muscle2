@@ -1,11 +1,7 @@
-package muscle.core;
+package muscle.core.ident;
 
-import muscle.core.ident.IDManipulator;
 import java.util.Map;
 import java.util.Set;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.Location;
 import muscle.core.kernel.InstanceController;
 import utilities.data.ArrayMap;
 import utilities.data.ArraySet;
@@ -16,6 +12,7 @@ import utilities.data.ArraySet;
  */
 public class DelegatingResolver implements Resolver {
 	private final IDManipulator delegate;
+	/** Stores all resolved IDs */
 	private final Map<String,Identifier> idCache;
 	private Location here;
 	private final Set<String> searchingNow;
@@ -33,30 +30,6 @@ public class DelegatingResolver implements Resolver {
 	}
 	
 	/**
-	 * Gets an identifier based on the name and type, or creates a new
-	 * one if none exists. If it is not yet resolved, it tries to resolve it and
-	 * waits until this is completed.
-	 * 
-	 * @throws InterruptedException if the process was interrupted before the id was resolved.
-	 */
-	public synchronized Identifier getResolvedIdentifier(String name, IDType type) throws InterruptedException {
-		if (type == IDType.port) {
-			Identifier id = getIdentifier(name, type);
-			this.resolveIdentifier(id);
-			return id;
-		}
-		String fullName = name(name, type);
-		if (!idCache.containsKey(fullName)) {
-			this.search(name, type);
-			while (!isDone && !idCache.containsKey(fullName)) {
-				wait();
-			}
-			if (isDone) throw new InterruptedException("Resolver interrupted");
-		}
-		return idCache.get(fullName);
-	}
-	
-	/**
 	 * Gets a current identifier based on the name and type, or creates
 	 * a new one if none is available.
 	 */
@@ -67,14 +40,44 @@ public class DelegatingResolver implements Resolver {
 		if (idCache.containsKey(fullName)) {
 			return idCache.get(fullName);
 		}
-		
-		// Make a new ID
+
 		return delegate.create(name, type);
 	}
 	
-	/** Resolves an identifier, waiting until this is finished. */
+	/**
+	 * Resolves an identifier, waiting until this is finished.
+	 * 
+	 * @throws InterruptedException if the process was interrupted before the id was resolved.
+	 */
 	public void resolveIdentifier(Identifier id) throws InterruptedException  {
-		delegate.resolve(id);
+		if (id.isResolved()) return;
+		// Only search for instances directly
+		if (id.getType() == IDType.port) {
+			resolveIdentifier(((PortalID)id).getOwnerID());
+			return;
+		}
+		
+		// See if we have a resolved id in cache
+		String fullName = name(id.getName(), id.getType());
+				
+		synchronized (this) {
+			// add a search only if this instance is not already searchd for
+			if (!searchingNow.contains(fullName) && !idCache.containsKey(fullName)) {
+				searchingNow.add(fullName);
+				delegate.search(id);
+			}
+			// Whether a new search was conducted or not, there is a search going
+			while (!isDone && !id.isResolved() && !idCache.containsKey(fullName)) {
+				wait();
+			}
+			
+			if (isDone) {
+				throw new InterruptedException("Resolver interrupted");
+			}
+			if (!id.isResolved()) {
+				id.resolveLike(idCache.get(fullName));
+			}
+		}
 	}
 	
 	/** Whether the id resides in the current location */
@@ -88,7 +91,7 @@ public class DelegatingResolver implements Resolver {
 	/** Registers a local InstanceController. */
 	public void register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
-		this.addIdentifier(id);
+		this.addResolvedIdentifier(id);
 		
 		delegate.propagate(id, here);
 	}
@@ -116,29 +119,15 @@ public class DelegatingResolver implements Resolver {
 		}
 		
 	}
-
-	/**
-	 * Searches for an identifier through an IDManipulator.
-	 */
-	public void search(String name, IDType type) {
-		String fullName = name(name, type);
-		synchronized(this) {
-			if (searchingNow.contains(fullName)) {
-				return;
-			}
-			else {
-				searchingNow.add(fullName);
-			}
-		}
-		delegate.search(getIdentifier(name, type));
-	}
 	
 	/** Add an identifier to the resolver. This also removes it from any 
 	 *  search list it might be on.
 	 */
-	public synchronized void addIdentifier(Identifier identifier) {
-		String fullName = name(identifier.getName(), identifier.getType());
-		idCache.put(fullName, identifier);
+	public synchronized void addResolvedIdentifier(Identifier id) {
+		if (!id.isResolved()) throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
+		
+		String fullName = name(id.getName(), id.getType());
+		idCache.put(fullName, id);
 		searchingNow.remove(fullName);
 		
 		notifyAll();

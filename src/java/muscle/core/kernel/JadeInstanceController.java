@@ -20,7 +20,7 @@ import muscle.core.ConduitExitController;
 import muscle.core.ConnectionScheme;
 import muscle.core.EntranceDescription;
 import muscle.core.ExitDescription;
-import muscle.core.Resolver;
+import muscle.core.ident.Resolver;
 import muscle.core.MultiDataAgent;
 import muscle.core.PortDescription;
 import muscle.core.conduit.communication.JadeReceiver;

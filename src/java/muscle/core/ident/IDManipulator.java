@@ -4,10 +4,6 @@
  */
 package muscle.core.ident;
 
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.Location;
-
 /**
  *
  * @author Joris Borgdorff
@@ -15,7 +11,6 @@ import muscle.core.ident.Location;
 public interface IDManipulator {
 	public void propagate(Identifier id, Location loc);
 	public void search(Identifier id);
-	public void resolve(Identifier id) throws InterruptedException ;
 	public Identifier create(String name, IDType iDType);
 	public Location getLocation();
 	public void delete(Identifier id);

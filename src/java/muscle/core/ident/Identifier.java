@@ -13,6 +13,7 @@ public interface Identifier extends Comparable<Identifier>, Serializable {
 	public IDType getType();
 	public boolean isResolved();
 	public void unResolve();
+	public void resolveLike(Identifier other);
 	public Location getLocation();
 	public boolean identifies(Identifiable ident);
 }

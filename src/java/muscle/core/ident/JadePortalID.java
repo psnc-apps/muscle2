@@ -29,4 +29,11 @@ public class JadePortalID extends PortalID<JadeIdentifier> implements JadeIdenti
 	public void resolve(AID aid, Location loc) {
 		this.ownerID.resolve(aid, loc);
 	}
+	
+	public void resolveLike(Identifier id) {
+		if (!(id instanceof JadeIdentifier)) {
+			throw new IllegalArgumentException("Can only resolve a JadeIdentifier with another JadeIdentifier.");
+		}
+		this.resolve(((JadeIdentifier)id).getAID(), id.getLocation());
+	}
 }

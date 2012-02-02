@@ -46,6 +46,10 @@ public class JVM implements java.io.Serializable {
 	public File tmpDir() {
 		return tmpDir;
 	}
+	
+	public File tmpFile(String filename) {
+		return new File(MiscTool.joinPaths(tmpDir.toString(), filename));
+	}
 
 	/**
 	name of this JVM

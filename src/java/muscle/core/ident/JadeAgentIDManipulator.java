@@ -12,22 +12,9 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.proto.SubscriptionInitiator;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import muscle.Constant;
 import muscle.behaviour.KillPlatformBehaviour;
 import muscle.behaviour.PrintPlatformAgentsBehaviour;
 import muscle.core.Boot;
-import muscle.core.DelegatingResolver;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
-import muscle.core.ident.JadeIdentifier;
-import muscle.core.ident.JadeLocation;
-import muscle.core.ident.JadePortalID;
-import muscle.core.ident.Location;
-import muscle.core.ident.PortalID;
-import utilities.data.ArraySet;
 
 /**
  *
@@ -56,20 +43,6 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 	@Override
 	public void takeDown() {
 		if (owner != null) owner.dispose();
-	}
-	
-	public void resolve(Identifier id) throws InterruptedException {
-		if (id.getType() == IDType.port) {
-			resolve(((PortalID)id).getOwnerID());
-			return;
-		}
-		
-		checkJade(id);
-		Identifier newID = owner.getResolvedIdentifier(id.getName(), id.getType());
-		checkJade(newID);
-		
-		JadeIdentifier newJID = (JadeIdentifier)newID;
-		((JadeIdentifier)id).resolve(newJID.getAID(), newJID.getLocation());
 	}
 
 	public void search(Identifier id) {
@@ -130,7 +103,7 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		else if (type == IDType.port) {
 			String[] portId = name.split("@");
 			if (portId.length != 2) {
-				throw new IllegalArgumentException("A port identifier <" + portId + "> must feature a port and owner name, separated by an '@'.");
+				throw new IllegalArgumentException("A port identifier <" + portId + "> must feature a port and owner name, separated by an '@' symbol.");
 			}
 			return new JadePortalID(portId[0], portId[1]);
 		}

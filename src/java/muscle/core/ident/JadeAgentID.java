@@ -34,4 +34,11 @@ public class JadeAgentID extends InstanceID implements JadeIdentifier {
 		this.id = null;
 		super.unResolve();
 	}
+	
+	public void resolveLike(Identifier id) {
+		if (!(id instanceof JadeIdentifier)) {
+			throw new IllegalArgumentException("Can only resolve a JadeIdentifier with another JadeIdentifier.");
+		}
+		this.resolve(((JadeIdentifier)id).getAID(), id.getLocation());
+	}
 }

@@ -8,7 +8,7 @@ import jade.lang.acl.ACLMessage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.Boot;
-import muscle.core.Resolver;
+import muscle.core.ident.Resolver;
 import muscle.core.ident.IDType;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.messaging.jade.DataMessage;

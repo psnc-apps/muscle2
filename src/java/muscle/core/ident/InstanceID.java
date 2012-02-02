@@ -38,4 +38,8 @@ public class InstanceID extends AbstractID {
 	public Location getLocation() {
 		return this.loc;
 	}
+	
+	public void resolveLike(Identifier id) {
+		this.resolve(id.getLocation());
+	}
 }

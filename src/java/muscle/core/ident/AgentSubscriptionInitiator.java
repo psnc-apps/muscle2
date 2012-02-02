@@ -15,17 +15,10 @@ import jade.proto.SubscriptionInitiator;
 import jade.util.leap.Iterator;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.Resolver;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
-import muscle.core.ident.JadeIdentifier;
-import muscle.core.ident.JadeLocation;
-import muscle.core.ident.Location;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
- *
+ * Looks for agents
  * @author Joris Borgdorff
  */
 public class AgentSubscriptionInitiator extends SubscriptionInitiator {
@@ -75,7 +68,10 @@ public class AgentSubscriptionInitiator extends SubscriptionInitiator {
 					ServiceDescription sd = (ServiceDescription)services.next();
 					Location loc = new JadeLocation(sd);
 					jid.resolve(dfd.getName(), loc);
-					resolver.addIdentifier(jid);
+					resolver.addResolvedIdentifier(jid);
+				}
+				else {
+					resolver.removeIdentifier(jid.getName(), jid.getType());
 				}
 			}
 		} catch (FIPAException e) {
