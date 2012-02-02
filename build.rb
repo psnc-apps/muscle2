@@ -29,7 +29,6 @@
 #
 
 # version warning
-puts "warning: this script has not been tested with your version of ruby (#{RUBY_VERSION})" unless RUBY_VERSION < "1.9"
 
 require 'fileutils'
 include FileUtils::Verbose
@@ -261,16 +260,17 @@ def main
         target = []
 
         ARGV.each do |a|
-                if (Targets.methods-Targets.class.superclass.methods).include? a
-                        puts "selected target '#{a}'"
-                        target << a
+								asym = a.to_sym
+                if (Targets.methods-Targets.class.superclass.methods).include? asym
+                        puts "selected target '#{asym}'"
+                        target << asym
                 else
-                        abort "unknown target: '#{a}'"
+                        abort "unknown target: '#{asym}'"
                 end
         end
 
         if target.empty?
-                target << "default"
+                target << :default
         end
 
         ENV['JAVA_HOME'] = $env[:options][:java]
