@@ -139,7 +139,7 @@ module Targets
 		# cmake
 		# always create new cache file, so the user will not be bothered if e.g. CMakeCache.txt expects a different path
 		rm "#{cmake_dst}/CMakeCache.txt" if File.exists?("#{cmake_dst}/CMakeCache.txt")
-		Misc.run "#{$env[:muscle_dir]}/src/ruby/cmake.rb #{cmake_dst} #{flags.join(' ')} -DLIB_NAME=muscle #{$env[:muscle_dir]}"
+		Misc.run "#{$env[:muscle_dir]}/src/ruby/cmake.rb #{cmake_dst} #{flags.join(' ')} #{$env[:options][:cmake_options]} -DLIB_NAME=muscle #{$env[:muscle_dir]}"
 
 		# make (this will probably fail on windows)
 		Misc.run "make -w -j4 --directory=#{cmake_dst}"
@@ -181,9 +181,12 @@ module Targets
         end
         
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.so"), "#{prefix}/lib"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.dylib"), "#{prefix}/lib"
+		cp_r Dir.glob("#{$env[:muscle_dir]}/build/intermediate/cmake/simplecpp2/simplecpp2"), "#{prefix}/bin"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/build/*.jar"), "#{prefix}/share/muscle/java"
 		cp_r Dir.glob("#{$env[:muscle_dir]}/thirdparty/*.jar"), "#{prefix}/share/muscle/java/thirdparty"
 		Misc.run "cd #{$env[:muscle_dir]}/src/cpp/muscle ; find . \\( -wholename '*.h' -o -wholename '*FindJNI*cmake' \\) -print0 | cpio -0pdmu #{prefix}/include"
+		Misc.run "cd #{$env[:muscle_dir]}/src/cpp/muscle2 ; find . \\( -wholename '*.h' -o -wholename '*.hpp' \\) -print0 | cpio -0pdmu #{prefix}/include"
 		Misc.run "cd #{$env[:muscle_dir]}/scripts/OTF ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/OTF"
 		Misc.run "cd #{$env[:muscle_dir]}/doc ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/doc"
 		Misc.run "cd #{$env[:muscle_dir]}/src/ruby ; find . ! -wholename '*.svn*' -print0 | cpio -0pdmu #{prefix}/share/muscle/ruby"
@@ -230,6 +233,11 @@ def get_opts
         parser.on('-j=JAVA', '--java=JAVA', 'java location, default is $JAVA_HOME') do |v|
                 $env[:options][:java] = v
         end
+
+        parser.on('-c=OPTIONS', '--cmake-options=OPTIONS', 'An extra options to be passed to cmake command (e.g. -DMPI_COMPILER=mpCC)') do |v|
+                $env[:options][:cmake_options] = v
+        end
+
 
         # Parse command-line options.
         begin

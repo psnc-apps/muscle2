@@ -45,11 +45,11 @@ public class CrossSocketFactory implements SocketFactory {
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
 	public static final String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
 
-	public static final String ENV_COORDINATOR_URL = "GRMS_COORDINATOR_URL";
+	public static final String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
 	public static final String ENV_SESSION_ID = "SESSION_ID";
 
 	public static final String PUT_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"> "
-			+ "<SOAP-ENV:Body><smoacoordinator:PutProcessEntry xmlns:smoacoordinator=\"http://schemas.smoa-project.com/coordinator/2009/04/service\"><smoacoordinator:ProcessEntry>"
+			+ "<SOAP-ENV:Body><smoacoordinator:PutProcessEntry xmlns:smoacoordinator=\"http://schemas.qoscosgrid.org/coordinator/2009/04/service\"><smoacoordinator:ProcessEntry>"
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
 	public static final String PUT_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader>"
 			+ "<smoacoordinator:ProcessData><items><items>";
@@ -58,13 +58,13 @@ public class CrossSocketFactory implements SocketFactory {
 			+ "</smoacoordinator:ProcessEntry></smoacoordinator:PutProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
 	public static final String GET_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-			+ "<SOAP-ENV:Body><smoacoordinator:GetProcessEntry xmlns:smoacoordinator=\"http://schemas.smoa-project.com/coordinator/2009/04/service\">"
+			+ "<SOAP-ENV:Body><smoacoordinator:GetProcessEntry xmlns:smoacoordinator=\"http://schemas.qoscosgrid.org/coordinator/2009/04/service\">"
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
 	public static final String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
 	protected int portMin = 9000;
 	protected int portMax = 9500;
-	protected int mainPort = 22;
+	protected int magicPort = 22;
 	protected boolean debug = true;
 	protected boolean trace = false;
 	protected String socketFile = "socket.file";
@@ -81,7 +81,7 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 
 		if (System.getProperty(PROP_MAIN_PORT) != null) {
-			mainPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
+			magicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
 		}
 
 		if (System.getProperty(PROP_DEBUG) != null) {
@@ -107,15 +107,22 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 	}
 
-	@Override
 	public ServerSocket createServerSocket(int port, int backlog,
 			InetAddress addr) throws IOException {
-		logDebug("binding socket on port " + port + " and addr " + addr);
+		
+		if (port == magicPort)
+			logDebug("binding socket on MAIN port and addr " + addr);
+		else if (port == 0)
+			logDebug("binding socket on ANY port and addr " + addr);
+		else
+			logDebug("binding socket on port " + port + " and addr " + addr);
+
 		trace();
 
-		if (port == mainPort || port == 0) {
+		if (port == magicPort || port == 0) {
 			ServerSocket ss = null;
-			BindException lastEx = null;
+			Exception lastEx = null;
+
 
 			for (int i = portMin; i <= portMax; i++) {
 				try {
@@ -133,26 +140,23 @@ public class CrossSocketFactory implements SocketFactory {
 
 				if (mtoAddr != null && mtoPort != -1) {
 					try {
-						mtoRegisterListening((InetSocketAddress) ss
-								.getLocalSocketAddress());
+						mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
 					} catch (IOException ex) {
-						throw new IOException(
-								"Could not register a server socket at the MTO",
-								ex);
+						throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
 					}
 
 					logDebug("Registered to MTO");
 				} else
 					logDebug("Missing MTO address / port. MTO will not be used.");
 
-				if (port == mainPort) {
+				if (port == magicPort) {
 					putConnectionData(InetAddress.getLocalHost()
 							.getHostAddress(), ss.getLocalPort());
 
 				}
 				return ss;
 			} else {
-				throw lastEx;
+				throw new BindException(lastEx.getMessage());
 			}
 
 		} else {
@@ -315,7 +319,6 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 	}
 
-	@Override
 	public Socket createSocket() {
 		logDebug("creating new client socket");
 		trace();
@@ -323,7 +326,6 @@ public class CrossSocketFactory implements SocketFactory {
 	}
 
 	public class CrossSocket extends Socket {
-		@Override
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
 			logDebug("connecting to:" + endpoint);
@@ -344,7 +346,6 @@ public class CrossSocketFactory implements SocketFactory {
 			}
 		}
 
-		@Override
 		public void connect(SocketAddress endpoint) throws IOException {
 			connect(endpoint, 0); // this is why we don't like java...
 		}
@@ -353,7 +354,7 @@ public class CrossSocketFactory implements SocketFactory {
 				throws IOException {
 			InetSocketAddress iaddr = (InetSocketAddress) endpoint;
 
-			if (iaddr.getPort() == mainPort)
+			if (iaddr.getPort() == magicPort)
 				return getConnectionData();
 			else
 				return endpoint;
@@ -376,8 +377,11 @@ public class CrossSocketFactory implements SocketFactory {
 			getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
 
-			assert res.dstA == req.dstA && res.dstP == req.dstP
-					&& res.srcA == req.srcA && res.srcP == req.srcP;
+//			System.out.println("Req: " + req.toString());
+//			System.out.println("Res: " + res.toString());
+
+			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
+					&& res.srcA.equals(req.srcA) && res.srcP == req.srcP;
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
@@ -399,7 +403,6 @@ public class CrossSocketFactory implements SocketFactory {
 			this.selectorName = selectorName;
 		}
 
-		@Override
 		public void characters(char[] ch, int start, int length)
 				throws SAXException {
 
@@ -409,7 +412,6 @@ public class CrossSocketFactory implements SocketFactory {
 			}
 		}
 
-		@Override
 		public void startElement(String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
 			if (qName.endsWith(selectorName))
@@ -466,6 +468,10 @@ public class CrossSocketFactory implements SocketFactory {
 			} catch (UnknownHostException e) {
 				throw new RuntimeException("This is why we don't like Java", e);
 			}
+		}
+
+		public String toString() {
+			return "Type: "+ type + "; src: " + srcA.toString() + ":" + srcP + "; dst: " + dstA.toString() + ":" + dstP;
 		}
 
 		public void setSource(InetSocketAddress isa) {

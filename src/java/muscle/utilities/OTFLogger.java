@@ -3,15 +3,17 @@ package muscle.utilities;
 import java.io.*;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Calendar;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
 import java.util.Properties;
+import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 import muscle.core.ConnectionScheme;
+import muscle.core.CxADescription;
 
 public class OTFLogger {
 	// Begin the .otf file
@@ -56,16 +58,16 @@ public class OTFLogger {
 	private static boolean timer_exit = false;
 	private static boolean libotf_not_found = false;
 	
-	private final static Logger logger = Logger.getLogger(OTFLogger.class.getName());
+	private static Logger logger;
 	
 	private OTFLogger()
 	{ 
+		logger = muscle.logging.Logger.getLogger(this.getClass());		
 		loadProperties();			
 	}
 	
-	protected void finalize() throws Throwable
+	protected void finalize()
 	{
-		super.finalize();
 		close();
 		instance = null;
 	}
@@ -84,7 +86,7 @@ public class OTFLogger {
 			if(kernelsRun++ == 0) {
 				log("init");			
 				try {				
-					d = ConnectionScheme.getInstance();
+					d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
 					d.generateLists();
 					if(! (new File(DIR)).exists())
 						if(!(new File(DIR)).mkdir())
@@ -99,8 +101,9 @@ public class OTFLogger {
 					if(define(kernelArray, conduitArray) != 0)
 						throw new Exception("could not allocate memory");						
 				} catch (Exception e) {
-					closeNow();
-					logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
+					closeNow();		
+					logger.severe(OTFLogger.class.getName()+" "+ e.getMessage());
+					e.printStackTrace();
 				}
 			}			
 		}
@@ -129,7 +132,7 @@ public class OTFLogger {
 				if(enabled && libotf_not_found)
 				{
 					enabled = false;
-					logger.log(Level.SEVERE, "{0}.loadProperties libotf not available!", OTFLogger.class.getName());
+					logger.severe(OTFLogger.class.getName()+".loadProperties libotf not available!");
 				}			
 				
 				if(libotf_not_found)
@@ -187,7 +190,7 @@ public class OTFLogger {
 		closed = true;		
 		log("OTFLogger closeNow()");
 		if(end() != 0)
-			logger.log(Level.SEVERE, "{0} log path doeas not exists. Otf will not be saved.", OTFLogger.class.getName());
+			logger.severe(OTFLogger.class.getName()+" log path doeas not exists. Otf will not be saved.");
 	}
 	
 	public synchronized void conduitEnter(String sink) {
@@ -208,6 +211,8 @@ public class OTFLogger {
 	// Display all conduits and kernels
 	private void displayConduitsKernels() {
 		try {
+			ConnectionScheme d = CxADescription.ONLY.getConnectionSchemeClass().newInstance();
+
 			Iterator i = d.conduitList.iterator();
 			while (i.hasNext()) {
 				log("displayConduitsKernels Conduit:" + i.next());
@@ -219,7 +224,7 @@ public class OTFLogger {
 			}
 
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
+			logger.severe(OTFLogger.class.getName()+" "+ e.getMessage());
 		}
 	}
 	
@@ -252,7 +257,7 @@ public class OTFLogger {
 			stream.close();
 			size = bout.size();
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
+			logger.severe(OTFLogger.class.getName()+" "+e.getMessage());
 		}
 		return size;
 	}
@@ -261,7 +266,7 @@ public class OTFLogger {
 	private static void log(String text)
 	{		
 		if(enabled && debug)
-			logger.log(Level.FINEST, "{0}.{1}", new Object[]{OTFLogger.class.getName(), text});
+			logger.finest(OTFLogger.class.getName()+"."+text);
 	}
 
 	// Logs to otf sending data from sender to receiver

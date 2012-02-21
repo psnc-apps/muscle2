@@ -7,7 +7,13 @@ fi
 
 export MUSCLE_HOME
 export PATH=$MUSCLE_HOME/bin:$PATH
-export LD_LIBRARY_PATH=$MUSCLE_HOME/lib:$LD_LIBRARY_PATH
+
+if [ `uname` == "Darwin" ]
+then
+	export DYLD_LIBRARY_PATH=$MUSCLE_HOME/lib:$DYLD_LIBRARY_PATH
+else 
+	export LD_LIBRARY_PATH=$MUSCLE_HOME/lib:$LD_LIBRARY_PATH
+fi
 
 if [ -f $MUSCLE_HOME/etc/muscle.defaults ]
 then
