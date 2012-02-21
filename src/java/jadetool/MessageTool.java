@@ -115,7 +115,6 @@ public class MessageTool {
 		return request;
 	}
 
-
 	//
 	public static ACLMessage createQueryPlatformLocationsRequest(Agent ownerAgent) {
 	
@@ -149,101 +148,6 @@ public class MessageTool {
 	}
 
 
-	//
-	public static ACLMessage createWhereIsAgentRequest(Agent ownerAgent, AID targetAID) {
-	
-		WhereIsAgentAction wiAction = new WhereIsAgentAction();
-		wiAction.setAgentIdentifier(targetAID);
-		Action actExpr = new Action(ownerAgent.getAMS(), wiAction);
-
-		Codec co = new SLCodec(0);
-		ownerAgent.getContentManager().registerLanguage(co);
-		ownerAgent.getContentManager().setValidationMode(true);
-
-		Ontology ontology = JADEManagementOntology.getInstance();
-		ownerAgent.getContentManager().registerOntology(ontology);
-
-		ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
-		request.setSender(ownerAgent.getAID());
-		request.addReceiver(ownerAgent.getAMS());
-		request.setLanguage(FIPANames.ContentLanguage.FIPA_SL0);
-
-		request.setOntology(ontology.getName());
-		request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-
-		try {
-			ownerAgent.getContentManager().fillContent(request, actExpr);
-		} catch (OntologyException e) {
-			throw new JADERuntimeException(e);
-		} catch (jade.content.lang.Codec.CodecException e) {
-			throw new JADERuntimeException(e);
-		}
-				
-		return request;
-	}
-
-
-//	//
-//	// (inspired from JADE TestSuite addon TestUtility.java)
-//	public static ACLMessage createRequestMessage(Agent sender, AID receiver, String language, String ontology) {
-//
-//		ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
-//		request.setSender(sender.getAID());
-//		request.addReceiver(receiver);
-//		request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-//		request.setLanguage(language);
-//		request.setOntology(ontology);
-//		request.setReplyWith("rw"+sender.getName()+(new Date()).getTime());
-//		request.setConversationId("conv"+sender.getName()+(new Date()).getTime());
-//		return request;
-//	}
-
-
-	//
-	public static boolean hasContentObject(ACLMessage message) {
-
-		// if message.hasByteSequenceContent() == true the message was filled via setContentObject
-		return message.hasByteSequenceContent();
-	}
-//	public static boolean hasContentObject(ACLMessage message) {
-//
-//
-//	//String c = message.getContent();
-//	//System.err.println("content:"+c);
-//
-//
-//		java.io.Serializable contentObject = null;
-//		try {
-//			contentObject = message.getContentObject();
-//			if(contentObject != null) {
-//			
-//				return true;
-//				
-////			Foo coData = (Foo)contentObject;
-////			System.err.println("contentObject:"+coData.s);
-////
-////			if(contentObject instanceof DFAgentDescription)
-////				System.err.println("inform is:DFAgentDescription");
-////			else if(contentObject instanceof String)
-////				System.err.println("inform is:String");
-////			else if(contentObject instanceof java.io.Serializable)
-////				System.err.println("inform is:java.io.Serializable");
-////			else
-////				System.err.println("inform is:unknown");
-////
-////			System.err.println("contentObject name:"+contentObject.getClass().getName());
-//
-//		}
-//		
-//		} catch (UnreadableException e) {
-//		
-//			if( !e.getMessage().equals("invalid stream header") ) {		
-//				e.printStackTrace();
-//			}
-//		}
-//
-//		return false;
-//	}
 	
 	
 	public static MessageTemplate concatenate(MessageTemplate ... templates) {

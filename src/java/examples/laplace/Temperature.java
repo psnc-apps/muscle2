@@ -36,6 +36,7 @@ public class Temperature {
    private int nx;
    private int ny;
    private int dx = 1; // dy=dx
+   private long nano;
    
 	double[][] data;
 
@@ -59,6 +60,7 @@ public class Temperature {
       nx = newWidth;
       ny = newHeight;
       dx = newDx;
+      nano = System.nanoTime();
 
       panel.setPreferredSize(new java.awt.Dimension (nx*dx, ny*dx));
    }
@@ -135,7 +137,7 @@ public class Temperature {
          tmpData = ttmpData;
 
          panel.paintAndWait();
-         System.out.println("step "+(i+1)+" of "+iterationCount+" done");
+         System.out.println("step "+(i+1)+" of "+iterationCount+" done at time " + (System.nanoTime() - nano)/1000000000d);
       }
    }
 

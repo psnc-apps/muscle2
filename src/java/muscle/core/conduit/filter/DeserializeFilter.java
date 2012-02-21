@@ -21,32 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import utilities.MiscTool;
-
+import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 
 /**
 deserialize a byte array
 @author Jan Hegewald
 */
-public class DeserializeFilter implements Filter<byte[]> {
-
-	private Filter childFilter;
-	
-
-	//
-	public DeserializeFilter(Filter newChildFilter) {
-
-		childFilter = newChildFilter;
+public class DeserializeFilter extends AbstractFilter<byte[],Object> {
+	private ByteJavaObjectConverter converter = new ByteJavaObjectConverter();
+	protected void apply(byte[] subject) {
+		put(converter.deserialize(subject));
 	}
-
-
-	//
-	public void put(byte[] subject) {
-	
-		Object out = MiscTool.deserialize(subject);
-
-		childFilter.put(out);
-	}
-	
 }
 

@@ -35,10 +35,7 @@ initializes our logging mechanism, load with<br>
 */
 public class LoggingConfiguration {
 
-
-	//
 	public LoggingConfiguration() throws java.io.IOException {
-			
 		InputStream loggingConfig = null;
 
 		String fileName = System.getProperty("java.util.logging.config.file");
@@ -58,7 +55,7 @@ public class LoggingConfiguration {
 			// init LogManager with JVMs default settings<br>
 			// important: unset this class from java.util.logging.config.class,
 			// else the LogManager#readConfiguration() would initialize this class in an endless loop
-			System.setProperty("java.util.logging.config.class", null);
+			System.clearProperty("java.util.logging.config.class");
 
 			LogManager.getLogManager().readConfiguration();		
 		}

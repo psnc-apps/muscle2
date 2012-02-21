@@ -355,7 +355,8 @@ if m.env['use_mpi']
 	                        "PMI_RANK",
 	                        "MP_CHILD",
 	                        "SLURM_PROCID",
-	                        "X10_PLACE"]
+	                        "X10_PLACE",
+				"MP_CHILD"]
 	rank = nil
 	
 	possible_mpi_rank_vars.each do |var|
@@ -364,9 +365,8 @@ if m.env['use_mpi']
 			rank = value
 		end
 	end
-	
+ 	puts "MPI RANK  = " + rank	
 	if rank and rank.to_i > 0
-		puts "SLAVE"
 		
 		unless cxa
 			puts "No --cxa_file Aborting."
@@ -389,6 +389,8 @@ if m.env['use_mpi']
 		end
 		
 		command = JVM.build_command([runner, className], m.env).first
+
+		puts command
 		
 		exit_value = run_command(command, m.env)
 		

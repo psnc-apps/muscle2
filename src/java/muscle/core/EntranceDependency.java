@@ -21,19 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import muscle.exception.MUSCLERuntimeException;
-
 /**
 information about any exit an entrance may depend on
 @author Jan Hegewald
 */
 public class EntranceDependency {
 
-	private ConduitExit exit;
+	private ConduitExitController exit;
 	private int dtOffset;
 	
-	//
-	public EntranceDependency(ConduitExit newExit, int newDtOffset) {
+	public EntranceDependency(ConduitExitController newExit, int newDtOffset) {
 	
 		exit = newExit;
 		if(exit == null)
@@ -43,22 +40,15 @@ public class EntranceDependency {
 			throw new IllegalArgumentException("entrance can not depend on an exit which will be fed in the future");
 	}
 	
-	//
-	public ConduitExit getExit() {
-	
+	public ConduitExitController getExit() {
 		return exit;
 	}
 	
-	//
 	public int getDtOffset() {
-	
 		return dtOffset;
 	}
 	
-	
-	//
 	public String toString() {
-		
 		return "exit <"+exit.getLocalName()+"> offset <"+dtOffset+">";
 	}
 }

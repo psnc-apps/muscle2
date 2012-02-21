@@ -1,9 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" href="$classmuscle_1_1_caller_static_attributes.html" title="CallerStaticAttributes\&lt; jobject \&gt;" alt="" coords="5,132,253,159"/>
-<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__get_anonymous_logger___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="325,5,544,32"/>
-<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__get_anonymous_logger___string___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="301,56,568,83"/>
-<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__get_logger___string___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="340,107,529,133"/>
-<area shape="rect" href="$classmuscle_1_1java__util__logging___logger_1_1__get_logger___string___string___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="317,157,552,184"/>
-<area shape="rect" href="$classmuscle_1_1javatool___logger_tool_1_1__loggable_level___logger___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="325,208,544,235"/>
-<area shape="rect" href="$classmuscle_1_1muscle__core__kernel___c_a_controller_1_1__get_cx_a___caller.html" title="helper class to cache a static jni method invocation procedure this caller can be..." alt="" coords="373,259,496,285"/>
-</map>

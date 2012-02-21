@@ -21,52 +21,27 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import javax.measure.unit.SI;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
-
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
+import muscle.core.messaging.Timestamp;
 
 /**
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
-public class BlockAfterTimeFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+	private final Timestamp maxTime;
 
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	DecimalMeasure<Duration> maxTime;
-
-	//
-	public BlockAfterTimeFilter(WrapperFilter newChildFilter, int newMaxTime/*in seconds*/) {
-	
-		childFilter = newChildFilter;
-		
-		maxTime = new DecimalMeasure(new BigDecimal(newMaxTime), SI.SECOND);
-
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		inTemplate = outTemplate;
+	/** @param newMaxTime seconds after which the filter blocks */
+	public BlockAfterTimeFilter(int newMaxTime) {
+		super();
+		maxTime = new Timestamp(newMaxTime);
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	//	
-	public void put(DataWrapper newInData) {
-		
-		if(newInData.getSITime().compareTo(maxTime) < 1)
-			childFilter.put(newInData);
+	protected void apply(Observation<E> subject) {
+		if(subject.getTimestamp().compareTo(maxTime) < 1)
+			put(subject);
 		else
-			System.out.println("warning: blocking data for time <"+newInData.getSITime()+">");
+			System.out.println("warning: blocking data for time <"+subject.getTimestamp()+">");
 	}
-
 }
-

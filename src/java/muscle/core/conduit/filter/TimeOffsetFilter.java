@@ -21,52 +21,24 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import javatool.DecimalMeasureTool;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
-import javax.measure.DecimalMeasure;
-import java.math.BigDecimal;
-
+import java.io.Serializable;
+import muscle.core.messaging.Duration;
+import muscle.core.messaging.Observation;
 
 /**
 modifies timestep with a given offset
 @author Jan Hegewald
 */
-public class TimeOffsetFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class TimeOffsetFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+	private final Duration offset;
 
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	DecimalMeasure<Duration> offset;
-
-	/**
-	offset in seconds
-	*/
-	public TimeOffsetFilter(WrapperFilter newChildFilter, int newOffset) {
-	
-		childFilter = newChildFilter;
-		
-		offset = new DecimalMeasure<Duration>(new BigDecimal(newOffset), SI.SECOND);
-
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		inTemplate = outTemplate;
+	/** @param newOffset offset in seconds */
+	public TimeOffsetFilter(int newOffset) {
+		super();
+		offset = new Duration(newOffset);
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
+	protected void apply(Observation<E> subject) {
+		put(new Observation<E>(subject.getData(), subject.getTimestamp().add(offset), subject.getNextTimestamp().add(offset)));
 	}
-
-
-	//	
-	public void put(DataWrapper inData) {
-		
-		childFilter.put(new DataWrapper(inData.getData(), DecimalMeasureTool.add(inData.getSITime(), offset)));
-	}
-
 }
-

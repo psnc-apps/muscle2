@@ -21,20 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array2d;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-
-
 /**
 allow different index orderings to access items of an array2d
 @author Jan Hegewald
 */
 public interface IndexStrategy {
-	
-	//
 	int index(int x, int y);
 		
-
 	/**
 	fortran-style index calculation, use<br>
 	for iy in ly<br>
@@ -43,17 +36,13 @@ public interface IndexStrategy {
 	*/
 	public static class FortranIndexStrategy implements IndexStrategy {
 
-		int xSize;
-		int ySize;
+		private final int xSize;
 		
 		public FortranIndexStrategy(int newXSize, int newYSize) {
-
 			xSize = newXSize;
-			ySize = newYSize;
 		}
 
 		public int index(int x, int y) {
-
 			return xSize * y + x;
 		}
 	}
@@ -66,21 +55,15 @@ public interface IndexStrategy {
 			array[ix][iy] = ...
 	*/
 	public static class CIndexStrategy implements IndexStrategy {
-
-		int xSize;
-		int ySize;
+		private final int ySize;
 		
 		public CIndexStrategy(int newXSize, int newYSize) {
-
-			xSize = newXSize;
 			ySize = newYSize;
 		}
 
 		public int index(int x, int y) {
-
 			return ySize * x + y;
 		}
 	}
-
 }
 

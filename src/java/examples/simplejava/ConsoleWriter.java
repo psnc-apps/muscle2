@@ -23,7 +23,6 @@ package examples.simplejava;
 
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
@@ -76,7 +75,7 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 		double[] dataA = null;
 		
 		// loop stepping with INTERNAL_DT
-		for(time = 0; !willStop(); time += INTERNAL_DT) {
+		for(time = 0; time < 4; time += INTERNAL_DT) {
 		
 			// read from our portals at designated frequency
 			if(time % DT_READ_A == 0)

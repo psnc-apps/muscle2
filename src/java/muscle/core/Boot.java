@@ -21,13 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.lang.management.RuntimeMXBean;
+import muscle.core.ident.Resolver;
+import java.util.Arrays;
+import muscle.core.ident.JadeAgentIDManipulator;
 import muscle.Constant;
 import utilities.MiscTool;
-import utilities.Invoker;
-import java.util.logging.Logger;
-import jade.core.Profile;
-import jade.core.ProfileImpl;
-import jade.wrapper.ContainerController;
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.management.ManagementFactory;
@@ -38,7 +37,12 @@ import muscle.Version;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import muscle.core.kernel.JadeInstanceController;
 import utilities.JVM;
+import utilities.data.ArraySet;
 
 
 /**
@@ -47,45 +51,136 @@ handle booting/terminating of MUSCLE
 */
 public class Boot {
 
-	private List<Thread> otherHooks = new LinkedList<Thread>();
-	private File infoFile;
+	private final List<Thread> otherHooks = new LinkedList<Thread>();
+	private final File infoFile;
+	private final Map<String, String> agentNames;
+	private Resolver resolver;
+	private static Boot instance;
+	private final String[] args;
+	private boolean isDone;
+	private Set<String> monitorQuit;
 	
-
-	//
 	static {
-
 		// try to workaround LogManager deadlock http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6487638
 		java.util.logging.LogManager manager = java.util.logging.LogManager.getLogManager();
 		// n.b.: we still sometimes see the LogManager deadlock
 	}
 
+	public static Boot getInstance() {
+		return instance;
+	}
+	
+	public static Boot getInstance(String[] args) {
+		if (instance == null) {
+			instance = new Boot(args);
+			instance.init();
+		}
+		return instance;
+	}
 	
 	//
-	public Boot(String[] args) {
-		
-		System.out.println("booting muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+	private Boot(String[] args) {
+		this.monitorQuit = null;
 		// make sure the JVM singleton has been inited
 		JVM jvm = JVM.ONLY;
+
+		System.out.println("booting muscle jvm " + jvm.name());
 		
-		infoFile = new File(MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.JVM_INFO));
+		infoFile = jvm.tmpFile(Constant.Filename.JVM_INFO);
 		
-//		System.out.println("my args are <"+MiscTool.joinItems(args, ", ")+">");
-				
 		// note: it seems like loggers can not be used within shutdown hooks
 		Runtime.getRuntime().addShutdownHook(new JVMHook() );
 
 		writeInitialInfo();
+		
+		this.resolver = null;
+		
+		agentNames = new HashMap<String,String>();
+		this.args = mapAgentsToInstances(args);
+		this.isDone = false;
+	}
+	
+	private String[] mapAgentsToInstances(String[] args) {
+		StringBuilder sb = new StringBuilder();
+		int agentsI = -1;
+		String port = null;
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals("-agents")) {
+				agentsI = i+1;
+				String agentArg = args[agentsI];
+				String[] agents = agentArg.split(";");
+				for (String agent : agents) {
+					String[] agentInfo = agent.split(":");
+					if (agentInfo[0].equals("plumber")) {
+						//sb.append(agent).append(';');
+					}
+					else if (agentInfo[0].equals("muscle.utilities.agent.QuitMonitor")) {
+						// Agents to monitor are given as an argument
+						int start = agentInfo[1].indexOf("(") + 1;
+						int end = agentInfo[1].indexOf(")");
+						String[] quitAgents = agentInfo[1].substring(start, end).split(",");
+						this.monitorQuit = new ArraySet<String>(Arrays.asList(quitAgents));
+					}
+					else {
+						agentNames.put(agentInfo[0], agentInfo[1]);
+						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
+					}
+				}
+			}
+			if (args[i].equals("-local-port")) {
+				if (i + 1 < args.length) {
+					port = args[i+1];
+				}
+			}
+		}
+		
+		if (agentsI != -1) {
+			sb.append("locator");
+			if (port != null)
+				sb.append(".").append(port);
+			sb.append(':').append(JadeAgentIDManipulator.class.getCanonicalName());
+			args[agentsI] = sb.toString();
+		}
 
-
+		return args;
+	}
+	
+	public void init() {
 		JADE jade = new JADE(args);
 		otherHooks.addAll(jade.getShutdownHooks());
 	}
 
-
-	//
+	public String getAgentClass(String agentName) {
+		return agentNames.get(agentName);
+	}
+	
+	public Set<String> monitorQuit() {
+		return this.monitorQuit;
+	}
+	
+	public synchronized void registerResolver(Resolver res) {
+		this.resolver = res;
+		this.notifyAll();
+	}
+	
+	/** waits for the locator to register */
+	public synchronized Resolver getResolver() throws InterruptedException {
+		while (!this.isDone && this.resolver == null) {
+			this.wait();
+		}
+		if (this.isDone) {
+			throw new InterruptedException("Getting local resolver interrupted");
+		}
+		return this.resolver;
+	}
+	
+	public synchronized void dispose() {
+		this.isDone = true;
+		this.notifyAll();
+	}
+	
 	public static void main(String args[]) {
-		
-		new Boot(args);
+		Boot.getInstance(args);
 //		jade.Boot.main(args); // forward booting to jade
 	}
 	
@@ -97,21 +192,23 @@ public class Boot {
 		FileWriter writer = null;
 		try {
 			writer = new FileWriter(infoFile);
-			
 			writer.write( "this is file <"+infoFile+"> created by <"+getClass()+">"+nl );
 			writer.write( "start date: "+(new java.util.Date())+nl );
 			writer.write( "cwd: "+System.getProperty("user.dir")+nl );
 			writer.write( "user: "+System.getProperty("user.name")+nl );
+			
 			OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
 			writer.write( "OS: "+os.getName()+" "+os.getVersion()+nl );
 			writer.write( "CPU: "+os.getAvailableProcessors()+" "+os.getArch()+nl );
 			writer.write(nl);
-			writer.write( "name: "+ManagementFactory.getRuntimeMXBean().getName()+nl );
+			
+			RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+			writer.write( "name: "+runtime.getName()+nl );
 			writer.write( "version: "+Version.info()+nl );			
-			writer.write( "vm: "+ManagementFactory.getRuntimeMXBean().getVmName()+" "+ManagementFactory.getRuntimeMXBean().getVmVersion()+nl );
-			writer.write( "classpath: "+ManagementFactory.getRuntimeMXBean().getClassPath()+nl );
+			writer.write( "vm: "+runtime.getVmName()+" "+runtime.getVmVersion()+nl );
+			writer.write( "classpath: "+runtime.getClassPath()+nl );
 			writer.write( "JADE version: "+jade.core.Runtime.getVersionInfo()+nl );			
-			writer.write( "arguments: "+MiscTool.joinItems(ManagementFactory.getRuntimeMXBean().getInputArguments(), System.getProperty("path.separator"))+nl );			
+			writer.write( "arguments: "+MiscTool.joinItems(runtime.getInputArguments(), System.getProperty("path.separator"))+nl );			
 			writer.write(nl);
 			writer.write( "executing ..."+nl );
 			
@@ -178,7 +275,7 @@ public class Boot {
 			writer.write(nl);
 			
 			ThreadMXBean tBean = ManagementFactory.getThreadMXBean();
-			ThreadInfo[] tInfos = tBean.getThreadInfo(tBean.getAllThreadIds());
+			ThreadInfo[] tInfos = tBean.dumpAllThreads(true, true);
 			for(ThreadInfo ti : tInfos) {
 				writer.write(ti.toString()+nl);
 			}
@@ -200,16 +297,15 @@ public class Boot {
 		}
 	}
 
-	
-	//
 	private class JVMHook extends Thread {
-			
 		// CTRL-C is signal 2 (SIGINT)
 		// see rubys Signal.list for a full list on your OS
 		public void run() {
-			
-			System.out.println("terminating muscle jvm "+java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+			dispose();
+			System.out.println("terminating muscle jvm "+JVM.ONLY.name());
 			writeClosingInfo();
+			
+			int i = 0;
 
 			// wait for all other threads/shutdownhooks to die
 			while( !otherHooks.isEmpty() ) {
@@ -221,9 +317,12 @@ public class Boot {
 				}
 				
 				if( !otherHooks.isEmpty() ) {
-					System.out.print(".");
+					if (++i == 15) {
+						i = 0;
+						System.out.print(".");					
+					}
 					try {
-						sleep(50);
+						sleep(50l);
 					}
 					catch(java.lang.InterruptedException e) {
 						e.printStackTrace();

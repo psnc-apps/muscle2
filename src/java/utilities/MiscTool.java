@@ -22,29 +22,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package utilities;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 import java.lang.reflect.Array;
-import com.thoughtworks.xstream.XStream;
 import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 
 /**
@@ -68,15 +56,6 @@ public class MiscTool {
 	  }
 		return memory;
 	}
-
-
-	//
-	static public String toString(Object item) {
-	
-		XStream xstream = new XStream();
-		return xstream.toXML(item);
-	}
-
 
 	/**
 	converts an e.g. Object[] to a String[]
@@ -138,74 +117,6 @@ public class MiscTool {
 		return System.getProperty("user.dir");
 	}
 	
-
-   /**
-	serialize an object
-	*/
-	static public byte[] serialize(Serializable object) {
-
-		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-		ObjectOutputStream out;
-      try {
-      out = new ObjectOutputStream(byteStream);
-		}
-		catch (java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			// write object to the byteStream
-			out.writeObject(object);
-		}
-		catch (java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			try {
-				out.close();
-			}
-			catch (java.io.IOException e) {
-				throw new RuntimeException(e);
-			}
-			try {
-				byteStream.close();
-			}
-			catch (java.io.IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		
-		return byteStream.toByteArray();
-	}
-
-
-	/**
-   deserialize an object from given byte array
-	*/
-	static public <T> T deserialize(byte[] data) {
-				
-		ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
-
-		ObjectInputStream in;
-      try {
-            in = new ObjectInputStream(byteStream);
-		}
-		catch (java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		// read an object from the byteStream
-		try {
-         return (T)in.readObject();
-		}
-		catch (java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-		catch (java.lang.ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-
 	//
 	public static String hostName() {
 
@@ -429,6 +340,7 @@ public class MiscTool {
 			public PatternFileFilter(String pattern) {
 				regex = pattern;
 			}
+         @Override
 			public boolean accept(File directory, String name) {
 				if(name.matches(regex)) return true;
 				return false;
@@ -445,6 +357,7 @@ public class MiscTool {
 		}
 
 		class MyStringComparator implements Comparator<String> {
+         @Override
 			public int compare(String o1, String o2) {
 				int a, b;
 				Pattern pattern = Pattern.compile("(\\D*)(\\d+)(.*)");

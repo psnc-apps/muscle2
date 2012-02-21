@@ -7,7 +7,7 @@ PROJECT(muscle CXX)
 INCLUDE(includes.cmake)
 
 FILE( GLOB ALL_SOURCES
-	*.h *.cpp
+	*.h *.cpp *.c *.hpp
 	access/*.h access/*.cpp	
 	logging/*.h logging/*.cpp	
 	)

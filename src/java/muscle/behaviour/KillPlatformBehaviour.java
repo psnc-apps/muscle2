@@ -23,17 +23,15 @@ package muscle.behaviour;
 
 
 import jade.core.Agent;
-import jade.core.Location;
-import jade.core.behaviours.SimpleBehaviour;
 import jade.proto.AchieveREInitiator;
 import jadetool.MessageTool;
 import jade.lang.acl.ACLMessage;
-import java.util.Enumeration;
 import javatool.LoggerTool;
 import java.util.logging.Level;
-import utilities.Env;
+import utilities.data.Env;
 import java.io.InputStream;
 import java.io.FileInputStream;
+import java.util.logging.Logger;
 
 
 /**
@@ -41,7 +39,8 @@ tells the platform to shutdown
 @author Jan Hegewald
 */
 public class KillPlatformBehaviour extends AchieveREInitiator {
-
+	private transient final static Logger logger = Logger.getLogger(KillPlatformBehaviour.class.getName());
+	
 	//
 	public KillPlatformBehaviour(Agent owner) {
 		super(owner, MessageTool.createShutdownPlatformRequest(owner));
@@ -49,27 +48,14 @@ public class KillPlatformBehaviour extends AchieveREInitiator {
 
 
 	//
-	protected void handleInform(ACLMessage inform) {
-
-		
+	protected void handleInform(ACLMessage inform) {		
 		System.out.println("\nkilling platform\n");
 		System.out.flush();
 		
-		// silence System.out
-		if(LoggerTool.loggableLevel(muscle.logging.Logger.getLogger(SystemOut.class)).equals( Level.OFF )) {
-
-			muscle.logging.Logger.getLogger(getClass()).finest("disabling System.out");
-
-//java.util.logging.LogManager lm = java.util.logging.LogManager.getLogManager();
-//lm.getLogger("").setLevel(Level.OFF);
-
-			System.setOut(new java.io.PrintStream(new muscle.utilities.NullOutputStream()));
-		}
-
 		// load logging.after_teardown.properties into LogManager
 		// this way we can configure the system to be silent after the teardown signal
 
-		muscle.logging.Logger.getLogger(getClass()).finest("loading logging_after_teardown_properties into LogManager");
+		logger.finest("loading logging_after_teardown_properties into LogManager");
 
 		Env env = muscle.Env.ONLY.subenv(this.getClass());
 
@@ -80,7 +66,7 @@ public class KillPlatformBehaviour extends AchieveREInitiator {
 				 loggingConfig = new FileInputStream(fileName);
 			} catch (java.io.FileNotFoundException e) {
 				loggingConfig = null;
-				muscle.logging.Logger.getLogger(getClass()).warning(e.getMessage());
+				logger.warning(e.getMessage());
 			}
 		}
 
@@ -93,10 +79,4 @@ public class KillPlatformBehaviour extends AchieveREInitiator {
 			}
 		}
 	}
-	
-	
-	// this class is used to be able to silence System.out from the logging.properties
-	public static class SystemOut {	
-	}
-
 }

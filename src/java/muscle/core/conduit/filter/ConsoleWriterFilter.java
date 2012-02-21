@@ -21,42 +21,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald
 */
-public class ConsoleWriterFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-
-	
-	//
-	public ConsoleWriterFilter(WrapperFilter newChildFilter) {
-
-		childFilter = newChildFilter;
-		inTemplate = childFilter.getInTemplate();
-	}
-
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	//	
-	public void put(DataWrapper newInData) {
+public class ConsoleWriterFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+	protected void apply(Observation<E> subject) {
+		System.out.println(subject.toString());
 		
-		System.out.println(newInData.toString());
-		
-		childFilter.put(newInData);
+		put(subject);
 	}
-
 }
-

@@ -1,11 +1,6 @@
 package utilities;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.messaging.jade.DataMessage;
 
 public class MpiSlaveKernelExecutor {
 

@@ -1,177 +1,81 @@
 /*
-Copyright 2008,2009 Complex Automata Simulation Technique (COAST) consortium
-
-GNU Lesser General Public License
-
-This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-
-    MUSCLE is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MUSCLE is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package muscle.core;
 
-import jade.core.AID;
-import jade.lang.acl.ACLMessage;
-import java.io.IOException;
-import muscle.Constant;
-import muscle.core.kernel.RawKernel;
-import muscle.core.messaging.RemoteDataSinkHead;
-import muscle.core.messaging.jade.DataMessage;
-import muscle.core.wrapper.DataWrapper;
-import muscle.exception.MUSCLERuntimeException;
-
+import java.io.Serializable;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.conduit.filter.QueueConsumer;
+import muscle.core.ident.Identifier;
+import muscle.core.messaging.BasicMessage;
+import muscle.core.messaging.Duration;
+import muscle.core.messaging.Message;
+import muscle.core.messaging.Timestamp;
+import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.messaging.Observation;
 
 /**
-this is the (remote) head of a conduit,
-an entrance sends data to the conduit agent
-@author Jan Hegewald
-*/
-public class ConduitEntrance<T extends java.io.Serializable> extends Portal<T> implements RemoteDataSinkHead<DataMessage<DataWrapper<T>>> {// generic T will be the underlying unwrapped data, e.g. double[]
-
-	private EntranceDependency[] dependencies;
-	private AID dstAgent;
-	private String dstSink;
-	private DataMessage<DataWrapper<T>> dataMessage;
-	private boolean shouldPause = false;
-
-
-	//
-	public ConduitEntrance(PortalID newPortalID, RawKernel newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency ... newDependencies) {
-		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-						
-		dependencies = newDependencies; // dependencies.length == 0 if there are no EntranceDependency references in argument list		
-	}
-
-
-   //
-   public AID dstAgent() {
-		return dstAgent;
-   }
-
-
-	//
-   public void pause() {
-		shouldPause = true;
-   }
-
-   
-	//
-   public void resume() {
-		shouldPause = false;
-   }
+ * Sends information over a conduit
+ * @author Joris Borgdorff
+ */
+public class ConduitEntrance<T extends Serializable> {
+	private final QueueConsumer<Observation<T>> consumer;
+	protected Timestamp nextTime;
+	protected final Duration dt;
+	private final DataConverter<T,?> serializer;
+	private Queue<Observation<T>> queue;
 	
+	public ConduitEntrance(ConduitEntranceController controller) {
+		this(controller, new Timestamp(0d), new Duration(1d));
+	}
 	
-	//
-   public void put(DataMessage<DataWrapper<T>> dmsg) {
+	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
+		this.serializer = new ByteJavaObjectConverter();
+		this.queue = new LinkedBlockingQueue<Observation<T>>();
+		controller.setIncomingQueue(queue);
 
-		while( shouldPause ) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}			
-		}
-
-		ownerAgent.sendDataMessage(dmsg);
-	}
-
-
-	//
-   public DataMessage<DataWrapper<T>> take() {
+		this.nextTime = origin;
+		this.dt = timeStep;
 		
-		throw new java.lang.UnsupportedOperationException("can not take from "+getClass());
+		this.consumer = controller;
 	}
-
-   
-	//
-   public DataMessage<DataWrapper<T>> poll() {
-		
-		throw new java.lang.UnsupportedOperationException("can not poll from "+getClass());
+	
+	/**
+	 * Send a piece of data. This assumes that the current timestep and the next
+	 * follow statically from the temporal scale.
+	 */
+	public void send(T data) {
+		this.send(data, nextTime);
 	}
-
-
-	//
-   public String id() {
-		
-		return dstSink;
+	
+	/**
+	 * Send a piece of data at the current timestep. This assumes that the next timestep
+	 * follows statically from the temporal scale.
+	 */
+	public void send(T data, Timestamp currentTime) {
+		nextTime = nextTime.add(dt);
+		this.send(data, currentTime, nextTime);		
 	}
-
-
-	//
-	public void setDestination(AID newDstAgent, String newDstSink) {
-
-		// allow only once to connect this sender
-		if(dstAgent != null)
-			throw new IllegalStateException("already connected to <"+dstAgent+":"+dstSink+">");
-		
-		dstAgent = newDstAgent;
-		dstSink = newDstSink;
-		
-		// set up message dummy for outgoing data messages
-		dataMessage = new DataMessage(id());
-		dataMessage.addReceiver(dstAgent());
-	}
-
 
 	/**
-	pass raw unwrapped data to this entrance
-	*/
-	public void send(T data) {
-
-		DataWrapper wrapper = new DataWrapper<T>(data, getSITime());
-		dataMessage.store(wrapper, null);
-
-		increment();
-
-		// send data to target kernel
-		put(dataMessage);
+	 * Send a piece of data at the current timestep, also mentioning when the next
+	 * piece of data will be sent.
+	 */
+	public void send(T data, Timestamp currentTime, Timestamp next) {
+		this.nextTime = next;
+		T dataCopy = serializer.copy(data);
+		Observation<T> msg = new Observation<T>(dataCopy, currentTime, next);
+		this.send(msg);
 	}
-
-
-	//
-	public EntranceDependency[] getDependencies() {
-		return dependencies;
-	}
-
-
-	//
-	public void detachDestination() {
-
-		assert ownerAgent != null;
-		// if we are connected to a conduit, tell conduit to detach this exit		
-		if( dstAgent != null ) {
-			ownerAgent.send(getDetachDstMessage());
-		}
-		
-		dstAgent = null;
-	}
-
-
-	//
-	private ACLMessage getDetachDstMessage() {
 	
-		// bulid message which tells the conduit to detach this portal
-		ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-		msg.setProtocol(Constant.Protocol.PORTAL_DETACH);
-		try {
-			msg.setContentObject(this.getClass());
-		} catch (IOException e) {
-			throw new MUSCLERuntimeException();
-		}
-		
-		msg.addReceiver(dstAgent);
-		return msg;
+	/** Send an observation. */
+	private void send(Observation<T> msg) {
+		this.queue.add(msg);
+		this.consumer.apply();
 	}
 }
-

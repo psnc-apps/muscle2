@@ -14,6 +14,7 @@
 #include <logging/JavaLogHandler.h>
 #include <access/KernelController.h>
 #include <Version.h>
+#include <mpi.h>
 #include <string.h>
 
 

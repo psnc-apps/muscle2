@@ -21,9 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package jadetool;
 
-import jade.core.AID;
-import jade.core.Agent;
-import jade.core.Location;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import java.util.UUID;		

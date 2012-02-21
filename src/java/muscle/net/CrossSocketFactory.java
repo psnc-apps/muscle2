@@ -111,7 +111,7 @@ public class CrossSocketFactory implements SocketFactory {
 			InetAddress addr) throws IOException {
 		
 		if (port == magicPort)
-			logDebug("binding socket on MAIN port " + port + " and addr " + addr);
+			logDebug("binding socket on MAIN port and addr " + addr);
 		else if (port == 0)
 			logDebug("binding socket on ANY port and addr " + addr);
 		else
@@ -121,7 +121,8 @@ public class CrossSocketFactory implements SocketFactory {
 
 		if (port == magicPort || port == 0) {
 			ServerSocket ss = null;
-			BindException lastEx = null;
+			Exception lastEx = null;
+
 
 			for (int i = portMin; i <= portMax; i++) {
 				try {
@@ -155,7 +156,7 @@ public class CrossSocketFactory implements SocketFactory {
 				}
 				return ss;
 			} else {
-				throw lastEx;
+				throw new BindException(lastEx.getMessage());
 			}
 
 		} else {

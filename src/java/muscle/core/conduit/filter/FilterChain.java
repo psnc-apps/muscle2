@@ -1,116 +1,142 @@
 /*
-Copyright 2008,2009 Complex Automata Simulation Technique (COAST) consortium
-
-GNU Lesser General Public License
-
-This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-
-    MUSCLE is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MUSCLE is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package muscle.core.conduit.filter;
 
-import muscle.core.conduit.*;
-import jade.core.AID;
-import jade.lang.acl.MessageTemplate;
-import java.util.ArrayList;
-import java.io.OutputStreamWriter;
-import muscle.core.DataTemplate;
-import muscle.core.messaging.jade.DataMessage;
-
+import java.lang.reflect.Constructor;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.messaging.Observation;
+import muscle.exception.MUSCLERuntimeException;
 
 /**
-the inner filter mechanism of a conduit
-@author Jan Hegewald
-*/
-public class FilterChain {
-
-	AID entranceAgent;
-	String entranceName;
-	private DataTemplate entranceDataTemplate;
-	AID exitAgent;
-	String exitName;
-	private DataTemplate exitDataTemplate;
-	private ArrayList<Object> optionalArgs;
-	private MessageTemplate receiveTemplate;
+ *
+ * @author Joris Borgdorff
+ */
+public abstract class FilterChain extends AbstractFilter<Observation,Observation> {
+	private boolean isProcessing;
 	
-	private ResourceStrategy resourceStrategy;
-	
-	private OutputStreamWriter traceReceiveWriter;
-	private OutputStreamWriter traceSendWriter;
-	
-
-	//
-	public ArrayList<Object> getOptionalArgs() {
-	
-		return optionalArgs;
+	public void init(List<String> args) {
+		System.out.println("Filterchain args: " + args);
+		isProcessing = false;
+		if (!args.isEmpty()) {
+			QueueConsumer<Observation> qc = automaticPipeline(args, this);
+			this.setQueueConsumer(qc);
+		}
 	}
 	
-	
-	//
-	public DataTemplate getEntranceDataTemplate() {
-	
-		return entranceDataTemplate;
+	public boolean isActive() {
+		return this.consumer != null;
 	}
 
-
-	//
-	public DataTemplate getExitDataTemplate() {
-	
-		return exitDataTemplate;
+	public void process(Observation obs) {
+		if (this.isActive()) {
+			put(obs);
+			this.consumer.apply();
+		} else {
+			this.apply(obs);
+		}
 	}
 	
-	
-	//
-	public FilterChain() {
-	
+	public void apply() {
+		while (!incomingQueue.isEmpty()) {
+			Observation message = incomingQueue.remove();
+			this.apply(message);
+		}
 	}
 	
-	
-	//
-	protected Filter initFilterChain(Filter filterTail) {
-	
-		// we do not insert other filters by default
-		// by default we directly pass the entrance data to the exit
-		return filterTail;
+	private QueueConsumer<Observation> automaticPipeline(List<String> filterNames, QueueConsumer<Observation> tailFilter) {
+		QueueConsumer<Observation> filter = tailFilter;
+		for (int i = filterNames.size() - 1; i >= 0; i--) {
+			filter = filterForName(filterNames.get(i), filter);
+		}
+
+		return filter;
 	}
 
-	//
-	private Filter initHeadFilters(Filter remainingFilters) {
-			
-		return remainingFilters;
+	private QueueConsumer<Observation> filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
+		// split any args from the preceding filter name
+		String[] tmp = fullName.split("_", 2); // 2 means only split once
+		String name = tmp[0];
+		String remainder = null;
+		if (tmp.length > 1) {
+			remainder = tmp[1];
+		}
+
+		ObservationFilter filter = null;
+
+		// filters without args
+		if (name.equals("null")) {
+			filter = new NullFilter();
+		} else if (name.equals("pipe")) {
+			filter = new PipeFilter();
+		} else if (name.equals("console")) {
+			filter = new ConsoleWriterFilter();
+		} else if (name.equals("linearinterpolation")) {
+			filter = new LinearInterpolationFilterDouble();
+		} // filters with mandatory args
+		else if (name.equals("multiply")) {
+			filter = new MultiplyFilterDouble(Double.valueOf(remainder));
+		} else if (name.equals("drop")) {
+			filter = new DropFilter(Integer.valueOf(remainder));
+		} else if (name.equals("timeoffset")) {
+			filter = new TimeOffsetFilter(Integer.valueOf(remainder));
+		} else if (name.equals("timefactor")) {
+			filter = new TimeFactorFilter(Integer.valueOf(remainder));
+		} else if (name.equals("blockafter")) {
+			filter = new BlockAfterTimeFilter(Integer.valueOf(remainder));
+		} else if (name.equals("lineartimeinterpolation")) {
+			filter = new LinearTimeInterpolationFilterDouble(Integer.valueOf(remainder));
+		} // assume name refers to a class name
+		else {
+			Class<? extends ObservationFilter> filterClass = null;
+			double rem = 0d;
+			if (remainder != null) {
+				rem = Double.valueOf(remainder);
+			}
+
+			try {
+				filterClass = (Class<? extends ObservationFilter>) Class.forName(name);
+			} catch (ClassNotFoundException e) {
+				throw new MUSCLERuntimeException(e);
+			}
+
+
+			// try to find constructor with tailFilter
+			Constructor<? extends ObservationFilter> filterConstructor = null;
+			try {
+				if (remainder == null) {
+					filterConstructor = filterClass.getDeclaredConstructor((Class[]) null);
+				} else {
+					filterConstructor = filterClass.getDeclaredConstructor(new Class[]{Double.TYPE});
+				}
+			} catch (java.lang.NoSuchMethodException e) {
+				throw new MUSCLERuntimeException(e);
+			}
+
+			try {
+				if (remainder == null) {
+					filter = filterConstructor.newInstance();
+				} else {
+					filter = filterConstructor.newInstance(rem);
+				}
+			} catch (java.lang.InstantiationException e) {
+				throw new MUSCLERuntimeException(e);
+			} catch (java.lang.IllegalAccessException e) {
+				throw new MUSCLERuntimeException(e);
+			} catch (java.lang.reflect.InvocationTargetException e) {
+				throw new MUSCLERuntimeException(e);
+			}
+
+		}
+
+		if (filter != null) {
+			filter.setQueueConsumer(tailFilter);
+			return filter;
+		} else {
+			return tailFilter;
+		}
 	}
-
-	//
-	protected Filter initTailFilters(Filter lastFilter) {
-		
-		return lastFilter;
-	}
-
-
-	
-	public Filter buildFilterChain(Filter<DataMessage> senderFilter) {
-
-		// init filters
-
-		Filter filters = initTailFilters(senderFilter);
-
-		filters = initFilterChain(filters);
-
-		filters = initHeadFilters(filters);
-
-      return filters;
-	}
-
 }

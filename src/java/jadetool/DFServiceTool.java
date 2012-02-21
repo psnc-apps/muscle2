@@ -30,6 +30,7 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -38,7 +39,7 @@ additional functionality for jade.domain.DFService
 @author Jan Hegewald
 */
 public class DFServiceTool {
-
+	private final static long SERVICE_SEARCH_WAIT = 500l;
 
 	/**
 	registers a single agent service description at the default DF
@@ -67,7 +68,6 @@ public class DFServiceTool {
 		if(serviceType == null && serviceName == null)
 			throw new IllegalArgumentException("<String serviceType> and <String serviceName> can not both be null");
 		
-		long loopDelay = 500L;
 		DFAgentDescription dfd = new DFAgentDescription();
 		ServiceDescription sd = new ServiceDescription();
 		if(serviceType != null)
@@ -77,10 +77,10 @@ public class DFServiceTool {
 		dfd.addServices(sd);
 
 		List<AID> serviceAgents = new ArrayList<AID>();
-		Logger logger = muscle.logging.Logger.getLogger(DFServiceTool.class);
+		Logger logger = Logger.getLogger(DFServiceTool.class.getName());
 		while(true) {
 			// we are in a while loop, so write something to the log
-			logger.finer("searching for service <"+serviceType+"> <"+serviceName+">");
+			logger.log(Level.FINER, "searching for service <{0}> <{1}>", new Object[]{serviceType, serviceName});
 
 			DFAgentDescription[] results = DFService.search(agent, dfd);
 			if( (results != null) && (results.length > 0) ) {
@@ -99,7 +99,7 @@ public class DFServiceTool {
 			}
 
 			try {
-				Thread.sleep(loopDelay);
+				Thread.sleep(SERVICE_SEARCH_WAIT);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}			

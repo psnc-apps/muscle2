@@ -23,7 +23,6 @@ package examples.simplejava;
 
 import muscle.core.ConduitEntrance;
 import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
@@ -62,7 +61,7 @@ public class Sender extends muscle.core.kernel.CAController {
 
 		double[] dataA = new double[5];
 		
-		for(time = 0; !willStop(); time ++) {
+		for(time = 0; time < 4; time ++) {
 								
 			// process data
 			for(int i = 0; i < dataA.length; i++) {

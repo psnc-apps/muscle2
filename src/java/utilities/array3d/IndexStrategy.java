@@ -21,20 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array3d;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-
-
 /**
 allow different index orderings to access items of an array3d
 @author Jan Hegewald
 */
 public interface IndexStrategy {
 	
-	//
 	int index(int x, int y, int z);
 		
-
 	/**
 	fortran-style index calculation, use<br>
 	for iz in lz<br>
@@ -43,20 +37,15 @@ public interface IndexStrategy {
 				array[ix][iy][iz] = ...
 	*/
 	public static class FortranIndexStrategy implements IndexStrategy {
-
-		int xSize;
-		int ySize;
-		int zSize;
+		private final int xSize;
+		private final int ySize;
 		
 		public FortranIndexStrategy(int newXSize, int newYSize, int newZSize) {
-
 			xSize = newXSize;
 			ySize = newYSize;
-			zSize = newZSize;		
 		}
 
 		public int index(int x, int y, int z) {
-
 			return xSize * (ySize * z + y) + x;
 		}
 	}
@@ -70,20 +59,15 @@ public interface IndexStrategy {
 				array[ix][iy][iz] = ...
 	*/
 	public static class CIndexStrategy implements IndexStrategy {
-
-		int xSize;
-		int ySize;
-		int zSize;
+		private final int ySize;
+		private final int zSize;
 		
 		public CIndexStrategy(int newXSize, int newYSize, int newZSize) {
-
-			xSize = newXSize;
 			ySize = newYSize;
 			zSize = newZSize;		
 		}
 
 		public int index(int x, int y, int z) {
-
 			return zSize * (ySize * x + y) + z;
 		}
 	}

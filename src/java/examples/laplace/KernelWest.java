@@ -29,8 +29,8 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 import javax.swing.JFrame;
-import muscle.core.ConduitExit;
 import muscle.core.ConduitEntrance;
+import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
 
 

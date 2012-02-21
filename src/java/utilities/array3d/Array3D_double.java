@@ -21,127 +21,74 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.array3d;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
+import java.io.Serializable;
 import java.util.Arrays;
+import utilities.array3d.IndexStrategy.FortranIndexStrategy;
 
 // TODO: inherit functionality from cern.colt.matrix.DoubleMatrix3D?
 /**
 3D array backed by a 1D C-style array of primitive type
 @author Jan Hegewald
 */
-public class Array3D_double {
-
+public class Array3D_double implements Serializable {
 	private double[] data;
-	private int xSize;
-	private int ySize;
-	private int zSize;
+	private final int xSize;
+	private final int ySize;
+	private final int zSize;
 	private IndexStrategy indexStrategy;
 
-	
-	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize) {
-	
-		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], IndexStrategy.FortranIndexStrategy.class);
+		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], new FortranIndexStrategy(newXSize, newYSize, newZSize));
 	}
 
-	//
 	public Array3D_double(int newXSize, int newYSize, int newZSize, double[] newData) {
-	
-		this(newXSize, newYSize, newZSize, newData, IndexStrategy.FortranIndexStrategy.class);
+		this(newXSize, newYSize, newZSize, newData, new FortranIndexStrategy(newXSize, newYSize, newZSize));
 	}
 
-	//
-	public Array3D_double(int newXSize, int newYSize, int newZSize, Class<? extends IndexStrategy> strategyClass) {
-	
-		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], strategyClass);
+	public Array3D_double(int newXSize, int newYSize, int newZSize, IndexStrategy strategy) {
+		this(newXSize, newYSize, newZSize, new double[newXSize*newYSize*newZSize], strategy);
 	}
 
-
-	//
-	public Array3D_double(int newXSize, int newYSize, int newZSize, double[] newData, Class<? extends IndexStrategy> strategyClass) {
-	
+	public Array3D_double(int newXSize, int newYSize, int newZSize, double[] newData, IndexStrategy strategy) {
 		xSize = newXSize;
 		ySize = newYSize;
 		zSize = newZSize;
 
 		data = newData;
 		
-		if( !IndexStrategy.class.isAssignableFrom(strategyClass) )
-			throw new IllegalArgumentException("index strategy must be a "+javatool.ClassTool.getName(IndexStrategy.class));
-			
-		
-		Constructor<? extends IndexStrategy> strategyConstructor = null;
-		try {
-			strategyConstructor = strategyClass.getConstructor(int.class, int.class, int.class); // simply assume this constructor is indeed available
-		}
-		catch(java.lang.NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			indexStrategy = strategyConstructor.newInstance(newXSize, newYSize, newZSize);
-		}
-		catch(java.lang.InstantiationException e) {
-			throw new RuntimeException(e);
-		}
-		catch(java.lang.IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-		catch(java.lang.reflect.InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
+		indexStrategy = strategy;
 	}
 	
-	
-	//
 	public void fill(double value) {
-		
 		Arrays.fill(data, value);
 	}
 
-
-	//
 	public double get(int x1, int x2, int x3) {
-
 		return data[indexStrategy.index(x1, x2, x3)];
 	}
 	
-	//
 	public double[] getData() {
-
 		return data;
 	}
 
 
-	//
 	public void set(int x1, int x2, int x3, double value) {
-
 		data[indexStrategy.index(x1, x2, x3)] = value;
 	}
 
-	
-	//
 	public int getSize() {
-
 		return data.length;
 	}
 
-	//
 	public int getX1Size() {
-
 		return xSize;
 	}
 
-	//
 	public int getX2Size() {
-
 		return ySize;
 	}
 
-	//
 	public int getX3Size() {
-
 		return zSize;
 	}
 }
-

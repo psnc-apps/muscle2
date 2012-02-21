@@ -122,16 +122,6 @@ public class ArraysTool {
 	public static void assertEqualArrays(Object arrA, Object arrB) throws NotEqualException {
 		assertEqualArrays(arrA, arrB, MiscTool.COMPARE_THESHOLD);
 	}
-	
-	
-	// returns a copy of arr where the element at index is removed
-//	public static <T> T removeAt(T arr, int index) {
-//	
-//		T begin = Arrays.copyOfRange(arr, 0, index-1);
-//		T end = Arrays.copyOfRange(arr, index+1, arr.length);
-//		
-//		return joinArrays(begin, end);
-//	}
 
 
 	/**

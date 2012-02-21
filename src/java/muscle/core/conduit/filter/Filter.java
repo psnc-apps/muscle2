@@ -21,23 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-//import muscle.core.DataTemplate;
-
-
 /**
 interface for conduit filters
 */
-public interface Filter<E> {
-
-	/**
-	usually modify data here and pass to next filter/device)
-	note: usually the filters shoult try to modify the data in place, so do not cache the pointer to the data passed to the next filter, as its contents might be changed
-	*/
-	public void put(E subject);	
-	
-	/**
-	description of incomming data. most filters try to generate this at runtime from the in-template of their successive filter
-	*/
-//	public DataTemplate getInTemplate();
+public interface Filter<E,F> extends QueueConsumer<E>, QueueProducer<F> {
 }
 

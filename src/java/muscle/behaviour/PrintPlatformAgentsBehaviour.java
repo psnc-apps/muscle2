@@ -21,37 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.behaviour;
 
-import java.util.logging.Logger;
-
-import jade.content.lang.Codec;
-import jade.content.lang.sl.SLCodec;
-import jade.content.onto.basic.Action;
-import jade.content.onto.basic.Result;
-import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ContainerID;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
-import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.content.onto.Ontology;
-import jade.content.onto.OntologyException;
-import jade.content.onto.UngroundedException;
-import jade.domain.JADEAgentManagement.JADEManagementOntology;
-import jade.domain.JADEAgentManagement.WhereIsAgentAction;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.ACLCodec.CodecException;
-import jade.proto.AchieveREInitiator;
 
-import java.util.HashMap;
 import java.util.Iterator;
-
-import jade.core.behaviours.DataStore;
-import jade.core.behaviours.SimpleBehaviour;
-import jadetool.MessageTool;
-import java.util.List;
-
 
 /**
 prints AIDs available in the platform to System.out

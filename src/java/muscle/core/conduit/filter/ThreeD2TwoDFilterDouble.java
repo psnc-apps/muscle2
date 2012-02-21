@@ -21,54 +21,23 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.Scale;
-import muscle.core.wrapper.DataWrapper;
+import muscle.core.messaging.Observation;
 import muscle.core.DataTemplate;
-import muscle.exception.MUSCLERuntimeException;
 import utilities.array3d.Array3D_double;
 import utilities.array2d.Array2D_double;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Length;
-
 
 /**
 maps 3d grid data to 2d data (calculates the average value for the third dimension)
 @author Jan Hegewald
 */
-public class ThreeD2TwoDFilterDouble implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private WrapperFilter childFilter;	
-	private DataTemplate inTemplate;
+public class ThreeD2TwoDFilterDouble extends AbstractObservationFilter<Array3D_double, Array2D_double> {
 	
-	//
-	public ThreeD2TwoDFilterDouble(WrapperFilter newChildFilter) {
-		
-		childFilter = newChildFilter;
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		if( outTemplate.getScale().getDimensions() != 2)
-			throw new MUSCLERuntimeException("this filter must output 2D data");
-		if( !outTemplate.getDataClass().equals(Array3D_double.class))
-			throw new MUSCLERuntimeException("input must be a <"+Array3D_double.class+">");
-		
-		DecimalMeasure<Length>[] inDx = new DecimalMeasure[outTemplate.getScale().getDimensions()+1]; 
-		System.arraycopy(outTemplate.getScale().getAllDx(), 0, inDx, 0, inDx.length);
-		Scale inScale = new Scale(outTemplate.getScale().getDt(), inDx);
-		
-		inTemplate = new DataTemplate(Array2D_double.class, inScale);
+	protected void setInTemplate(DataTemplate<Array2D_double> consumerTemplate) {
+		this.inTemplate = new DataTemplate<Array3D_double>(Array3D_double.class);
 	}
 	
-	
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	// 
-	public void put(DataWrapper input) {
-				
-		Array3D_double inData = (Array3D_double)input.getData();
+	protected void apply(Observation<Array3D_double> subject) {
+		Array3D_double inData = subject.getData();
 		
 		int width = inData.getX1Size();
 		int height = inData.getX2Size();
@@ -89,10 +58,7 @@ public class ThreeD2TwoDFilterDouble implements muscle.core.conduit.filter.Wrapp
 				outData.set(ix, iy, val);
 			}
 		}
-		
-		DataWrapper<Array2D_double> outWrapper = new DataWrapper<Array2D_double>(outData, input.getSITime());
-		childFilter.put(outWrapper);
+		put(subject.copyWithNewData(outData));
 	}
-
 }
 

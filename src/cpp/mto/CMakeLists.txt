@@ -13,6 +13,8 @@ find_package(Threads)
 
 if(NOT Boost_FOUND)
     message("Boost has not been found! MTO will not be built")
+elseif (${Boost_MINOR_VERSION} LESS 36)
+    message("Boost version ${Boost_VERSION} found is too old! MTO will not be built")
 else(NOT Boost_FOUND)
 
     include_directories(${Boost_INCLUDE_DIRS})

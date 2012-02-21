@@ -21,60 +21,29 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
-
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 /**
 drops data if incoming time scale is not a multiple of outgoing dt, newInDt is only required to build the corresponding DataTemplate for incomming data
 use for testing, usually better try to not send the dropped data at all from within the CA
 @author Jan Hegewald
 */
-public class DropFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
-
-	private DataTemplate inTemplate;
-	private WrapperFilter childFilter;
-	DecimalMeasure<Duration> outDt;
-	int counter;
-	int outRate;
-
-	//
-	public DropFilter(WrapperFilter newChildFilter, int newInDtSec/*assume dt in seconds here*/) {
+public class DropFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+	private final int outRate;
+	private int counter;
 	
-		childFilter = newChildFilter;
-		
+	/** @param newInDtSec in seconds */
+	public DropFilter(int newInDtSec) {
+		super();
 		outRate = newInDtSec;
-		DecimalMeasure<Duration> inDt = DecimalMeasure.valueOf(new BigDecimal(newInDtSec), SI.SECOND);
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		Scale outScale = outTemplate.getScale();
-		assert outScale != null;
-		outDt = outTemplate.getScale().getDt();
-
-		inTemplate = new DataTemplate(outTemplate.getDataClass(), new Scale(inDt, outScale.getAllDx()));
 	}
 
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
-	}
-
-
-	//	
-	public void put(DataWrapper newInData) {
-		
-		// only pass data to next filter on given interval
+	protected void apply(Observation<E> subject) {
 		if(counter % outRate == 0)
-			childFilter.put(newInData);
+			put(subject);
 		
-		counter ++;
+		counter++;
 	}
-
 }
 

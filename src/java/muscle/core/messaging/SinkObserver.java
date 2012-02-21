@@ -26,7 +26,6 @@ package muscle.core.messaging;
 @author Jan Hegewald
 */
 public interface SinkObserver<E> {
-	
 	void notifySinkWillYield(E item);
 }
 

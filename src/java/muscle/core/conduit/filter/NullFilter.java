@@ -21,41 +21,22 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.wrapper.DataWrapper;
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
+import java.io.Serializable;
+import muscle.core.messaging.Observation;
 
 
 /**
 this filter does nothing, data passed to this filter is lost
 @author Jan Hegewald
 */
-public class NullFilter implements muscle.core.conduit.filter.WrapperFilter<DataWrapper> {
+public class NullFilter<E extends Serializable,F extends Serializable> extends AbstractObservationFilter<E,F> {
 	
-	private DataTemplate inTemplate;
-
-
-	//
-	public NullFilter(WrapperFilter newChildFilter) {
-	
-		WrapperFilter childFilter = newChildFilter;
-		DataTemplate outTemplate = childFilter.getInTemplate();
-		inTemplate = outTemplate;
-	}
-
-
-	//
-	public DataTemplate getInTemplate() {
-	
-		return inTemplate;
+	public void apply() {
+		if (incomingQueue == null) return;
+		else {
+			incomingQueue.clear();
+		}
 	}
 	
-	
-	//	
-	public void put(DataWrapper newInData) {
-	
-		// do nothing
-	}
-
+	protected void apply(Observation<E> subject) {}
 }
-

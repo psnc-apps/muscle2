@@ -136,7 +136,7 @@
 //
 //
 //	//
-//	private void action(ConduitEntrance<? extends java.io.Serializable> entrance, int time) {
+//	private void action(ConduitEntrance<?> entrance, int time) {
 //
 ////		int dataSize = entrance.getDataTemplate().getSize();
 ////		if(dataSize == DataTemplate.ANY_SIZE) {
