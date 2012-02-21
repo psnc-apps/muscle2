@@ -41,7 +41,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	}
 	
 	public String getKernelName() {
-		return getLocalName();
+		return controller.getLocalName();
 	}
 	
 	public String getProperty(String name) {
@@ -60,10 +60,10 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			NativeGateway gateway = new NativeGateway(this);
 		
 			ProcessBuilder pb = new ProcessBuilder(
-				CxADescription.ONLY.getProperty(getLocalName() + ":command"));
+				CxADescription.ONLY.getProperty(controller.getLocalName() + ":command"));
 			
-			if (CxADescription.ONLY.containsKey(getLocalName() + ":arg"))
-				pb.command().add(CxADescription.ONLY.getProperty(getLocalName() + ":arg"));
+			if (CxADescription.ONLY.containsKey(controller.getLocalName() + ":arg"))
+				pb.command().add(CxADescription.ONLY.getProperty(controller.getLocalName() + ":arg"));
 		
 			pb.environment().put("MUSCLE_GATEWAY", gateway.getContactInformation());
 		
@@ -90,7 +90,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 
 	@Override
 	public Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal( CxADescription.ONLY.getDoubleProperty(getLocalName() +  ":timeScale")), SI.SECOND);
+		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal( CxADescription.ONLY.getDoubleProperty(controller.getLocalName() +  ":timeScale")), SI.SECOND);
 		
 		
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER); /* not used anywhere so can be hardcoded by now. TODO provide information about scale in native code */
