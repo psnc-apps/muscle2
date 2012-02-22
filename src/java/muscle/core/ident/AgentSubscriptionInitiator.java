@@ -3,7 +3,6 @@
  */
 package muscle.core.ident;
 
-import cern.colt.Arrays;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -57,8 +56,6 @@ public class AgentSubscriptionInitiator extends SubscriptionInitiator {
 		//System.out.println("replyto:"+inform.getInReplyTo()); // matches the subscription message
 		try {
 			DFAgentDescription[] results = DFService.decodeNotification(inform.getContent());
-			System.out.println("Search completed; " + Arrays.toString(results));
-			//System.out.println("results:"+results.length);
 			for (int i = 0; i < results.length; ++i) {
 				DFAgentDescription dfd = results[i];
 				

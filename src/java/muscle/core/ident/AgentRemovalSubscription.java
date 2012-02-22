@@ -3,7 +3,6 @@
  */
 package muscle.core.ident;
 
-import cern.colt.Arrays;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -15,12 +14,6 @@ import jade.proto.SubscriptionInitiator;
 import jade.util.leap.Iterator;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeAgentID;
-import muscle.core.ident.JadeIdentifier;
-import muscle.core.ident.JadeLocation;
-import muscle.core.ident.Location;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
@@ -54,13 +47,8 @@ public class AgentRemovalSubscription extends SubscriptionInitiator {
 	}
 
 	protected void handleInform(ACLMessage inform) {
-		//System.out.println("Agent "+getLocalName()+": Notification received from DF: msg:\n"+inform.toString()+"\n\n");
-		//System.out.println("performative:"+ACLMessage.getPerformative(inform.getPerformative()));
-		//System.out.println("replyto:"+inform.getInReplyTo()); // matches the subscription message
 		try {
 			DFAgentDescription[] results = DFService.decodeNotification(inform.getContent());
-			System.out.println("Search completed; " + Arrays.toString(results));
-			//System.out.println("results:"+results.length);
 			for (int i = 0; i < results.length; ++i) {
 				DFAgentDescription dfd = results[i];
 				
