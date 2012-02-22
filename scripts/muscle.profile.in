@@ -8,7 +8,7 @@ fi
 export MUSCLE_HOME
 export PATH=$MUSCLE_HOME/bin:$PATH
 
-if [ `uname` == "Darwin" ]
+if [ `uname` = "Darwin" ]
 then
 	export DYLD_LIBRARY_PATH=$MUSCLE_HOME/lib:$DYLD_LIBRARY_PATH
 else 
