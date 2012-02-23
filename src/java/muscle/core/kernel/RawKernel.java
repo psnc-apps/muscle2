@@ -53,7 +53,7 @@ import utilities.jni.JNIMethod;
 // experimental info mode with
 // coast sk:coast.cxa.test.sandbox.RawKernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
 /**
-JADE agent to wrap a kernel (e.g. CA or MABS)
+A basic kernel, that all kernels must extend
 @author Jan Hegewald
  */
 public abstract class RawKernel {
@@ -66,6 +66,13 @@ public abstract class RawKernel {
 
 	public void setInstanceController(InstanceController ic) {
 		this.controller = ic;
+	}
+	
+	/**
+	 * Get the local name of the current kernel. This call is delegated to the InstanceController.
+	*/
+	protected String getLocalName() {
+		return this.controller.getLocalName();
 	}
 
 	/**
