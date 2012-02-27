@@ -21,82 +21,15 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package javatool;
 
-import java.util.Arrays;
 import java.lang.reflect.Array;
-import java.io.File;
 import utilities.MiscTool;
 import utilities.MiscTool.NotEqualException;
-
 
 /**
 provides additional functionality like the java.util.Arrays class
 @author Jan Hegewald
 */
 public class ArraysTool {
-
-	/**
-	returns the first index where an instance of the specified class can be found
-	*/
-	public static int indexForInstanceOf(Object[] arr, Class cls) {
-	
-		for(int i = 0; i < arr.length; i++) {
-			if( cls.isInstance(arr[i]) )
-				return i;
-		}
-
-		return -1;
-	}
-
-
-	/**
-	creates a array from an ascii file
-	*/
-	public static double[] getFromFile_double(File file) {
-		
-		String[] content = null;
-		try {
-			content = MiscTool.fileToString(file).split("(\r\n)|(\n)|(\r)");
-		} catch (java.io.IOException e) {
-			new RuntimeException(e);
-		}
-		double[] fileData = new double[content.length];
-		// set value for every line
-		for(int i = 0; i < content.length; i++) {
-			fileData[i] = Double.parseDouble(content[i]);
-		}
-		
-		return fileData;
-	}
-
-
-	/**
-	creates a array from an ascii file
-	*/
-	public static boolean[] getFromFile_boolean(File file) {
-		
-		String[] content = null;
-		try {
-			content = MiscTool.fileToString(file).split("(\r\n)|(\n)|(\r)");
-		} catch (java.io.IOException e) {
-			new RuntimeException(e);
-		}
-		boolean[] fileData = new boolean[content.length];
-		// set value for every line
-		for(int i = 0; i < content.length; i++) {
-			fileData[i] = Boolean.parseBoolean(content[i]);
-		}
-		
-		return fileData;
-	}
-
-
-	//
-	public static <T> T[] asArray(T item) {
-		
-		return Arrays.asList(item).toArray((T[])Array.newInstance(item.getClass(), 1));
-	}
-
-	
 	/**
 	throws an exception if the data of the two arrays does not match
 	*/
@@ -119,54 +52,6 @@ public class ArraysTool {
 				throw new NotEqualException("index <"+i+">:"+Array.get(arrA, i)+" vs "+Array.get(arrB, i));		
 		}
 	}
-	public static void assertEqualArrays(Object arrA, Object arrB) throws NotEqualException {
-		assertEqualArrays(arrA, arrB, MiscTool.COMPARE_THESHOLD);
-	}
-
-
-	/**
-	copies several arrays of same component type into one array<br>
-	this will not compile with java 5 in case of primitive component types
-	I am not sure if this is an autoboxing bug or a generics bug
-	*/
-	public static <T> T joinArrays(T ... arrs) {
-			
-		// all args must be arrays of same component type
-		Class arrayClass = null;
-		Class componentClass = null;
-		for(T a : arrs) {
-			if(!a.getClass().isArray())
-				throw new IllegalArgumentException("not an array");
-			if(arrayClass == null) {
-				arrayClass = a.getClass();
-				componentClass = arrayClass.getComponentType();
-			}
-			else if(!a.getClass().equals(arrayClass))
-				throw new IllegalArgumentException("arrays must be of same baseclass <"+arrayClass.getName()+"> vs. <"+a.getClass().getName()+">");
-		}
-		
-		int len = 0;
-		for(T a : arrs)
-			len += Array.getLength(a);
-	
-		T joined = (T)Array.newInstance(componentClass, len);
-		int pos = 0;
-		for(T src : arrs) {
-			System.arraycopy(src, 0, joined, pos, Array.getLength(src));
-			pos += Array.getLength(src);
-		}
-
-		return joined;
-	}
-	/**
-	@deprecated workaround for java 5, {see joinArrays(T ... arrs)}
-	*/
-	@Deprecated
-	public static double[] joinArraysDouble(double[] ... arrs) {
-		return joinArrays(arrs);
-	}
-
-
 }
 
 

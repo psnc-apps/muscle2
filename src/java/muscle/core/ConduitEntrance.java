@@ -7,17 +7,12 @@ package muscle.core;
 import java.io.Serializable;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import muscle.core.conduit.filter.QueueConsumer;
-import muscle.core.ident.Identifier;
-import muscle.core.messaging.BasicMessage;
 import muscle.core.messaging.Duration;
-import muscle.core.messaging.Message;
+import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 import muscle.core.messaging.serialization.DataConverter;
-import muscle.core.messaging.Observation;
 
 /**
  * Sends information over a conduit
@@ -30,12 +25,12 @@ public class ConduitEntrance<T extends Serializable> {
 	private final DataConverter<T,?> serializer;
 	private Queue<Observation<T>> queue;
 	
-	public ConduitEntrance(ConduitEntranceController controller) {
+	public ConduitEntrance(ConduitEntranceController<T> controller) {
 		this(controller, new Timestamp(0d), new Duration(1d));
 	}
 	
 	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
-		this.serializer = new ByteJavaObjectConverter();
+		this.serializer = new ByteJavaObjectConverter<T>();
 		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		controller.setIncomingQueue(queue);
 

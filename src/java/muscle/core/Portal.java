@@ -20,16 +20,11 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import muscle.core.ident.PortalID;
 import java.io.Serializable;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import java.math.BigDecimal;
-import javatool.DecimalMeasureTool;
 import muscle.core.ident.Identifiable;
+import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
-import muscle.utilities.parallelism.SafeThread;
 import muscle.utilities.parallelism.SafeTriggeredThread;
 
 //

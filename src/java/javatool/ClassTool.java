@@ -22,69 +22,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package javatool;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 
 /**
 additional functionality for java.lang.Class
 @author Jan Hegewald
 */
 public class ClassTool {
-
-
-	/**
-	true if a declared method of baseClass or any superclass upto (and including) lastSuperclass has the native tag<br>
-	*/
-	static public boolean isNative(Class baseClass, Class lastSuperclass) {
-	
-		if(!lastSuperclass.isAssignableFrom(baseClass))
-			throw new java.lang.IllegalArgumentException("<"+lastSuperclass+"> is not a superclass of <"+baseClass+">");
-
-		Class cls = baseClass;
-		while(lastSuperclass.isAssignableFrom(cls)) {
-			for(Method m : cls.getDeclaredMethods()) {
-				if( Modifier.isNative(m.getModifiers()) ) {
-					return true;
-				}
-			}
-
-			cls = cls.getSuperclass();
-		}
-
-		return false;
-	}
-
-
-	/**
-	returns all declared methods of this class and all superclasses upto (and including) lastSuperclass<br>
-	so if lastSuperclass is java.lang.Object.class, this method should return the same methods as Class#getMethods
-	*/
-	public static Method[] getMethodsUptoSuperclass(Class baseClass, Class lastSuperclass) {
-	
-		if(!lastSuperclass.isAssignableFrom(baseClass))
-			throw new java.lang.IllegalArgumentException("<"+lastSuperclass+"> is not a superclass of <"+baseClass+">");
-			
-		ArrayList<Method> methods = new ArrayList<Method>();
-		Class cls = baseClass;
-		
-		while(lastSuperclass.isAssignableFrom(cls)) {
-			methods.addAll(Arrays.asList(cls.getDeclaredMethods()));
-			cls = cls.getSuperclass();
-		}
-		
-		return (Method[])methods.toArray();
-	}
-
-
 	/**
 	handle primitives and array as well as the standard classes (which is the only thing the plain java.lang.Class can handle)
 	*/
 	public static Class<?> forName(String name) throws ClassNotFoundException {
-
-		
 		Class<?> cls = null;
 		
 		// try to get a primitive class for this class-name
@@ -121,12 +68,9 @@ public class ClassTool {
 	the method Class#getName often returns null, e.g. if a class has been instantiated via reflection
 	*/
 	public static String getName(Class cls) {
-
 		return cls.toString().replaceFirst("class ", "");
 	}
 	
-	
-	//
 	public static Class<?> arrayClassForName(String name) throws ClassNotFoundException {
 	
 		int index = name.indexOf("[]");
@@ -142,37 +86,6 @@ public class ClassTool {
 		throw new ClassNotFoundException("can not get array class for <"+name+">");
 	}
 	
-	
-	//
-	public static Class<?> wrapperClassForPrimitiveClass(Class<?> primitiveClass) throws ClassNotFoundException {
-
-		if(!primitiveClass.isPrimitive())
-			throw new IllegalArgumentException("no a primitive class <"+primitiveClass+">");
-		
-		if(primitiveClass.equals(boolean.class))
-			return Boolean.class;
-		else if(primitiveClass.equals(byte.class))
-			return Byte.class;
-		else if(primitiveClass.equals(char.class))
-			return Character.class;
-		else if(primitiveClass.equals(short.class))
-			return Short.class;
-		else if(primitiveClass.equals(int.class))
-			return Integer.class;
-		else if(primitiveClass.equals(long.class))
-			return Long.class;
-		else if(primitiveClass.equals(float.class))
-			return Float.class;
-		else if(primitiveClass.equals(double.class))
-			return Double.class;
-		else if(primitiveClass.equals(void.class))
-			return Void.class;
-			
-		throw new ClassNotFoundException("can not get wrapper class for <"+primitiveClass.getName()+">");
-	}
-
-
-	//
 	public static Class<?> primitiveClassForWrapperClass(Class<?> wrapperClass) throws ClassNotFoundException {
 
 		if(wrapperClass.equals(Boolean.class))
@@ -197,10 +110,7 @@ public class ClassTool {
 		throw new ClassNotFoundException("can not get primitive class for <"+wrapperClass.getName()+">");
 	}
 
-
-	//
 	public static Class<?> primitiveClassForName(String name) throws ClassNotFoundException {
-
 		if(name.equals("boolean"))
 			return boolean.class;
 		else if(name.equals("byte"))
@@ -223,8 +133,6 @@ public class ClassTool {
 		throw new ClassNotFoundException("can not get primitive class for <"+name+">");
 	}
 
-
-	//
 	public static Class<?> arrayClassForPrimitive(Class<?> primitiveClass) {
 	
 		if( !primitiveClass.isPrimitive() )
@@ -257,7 +165,6 @@ public class ClassTool {
 	// helper class to recursively construct multi dimensional array classes
 	private static class ArrayClassBuilder<T> {
 
-		//
 		public static Class<?> build(Class<?> componentClass, int dims) {
 			
 			if(dims == 0)
@@ -282,10 +189,8 @@ public class ClassTool {
 			return builder.getArrayClass();
 		}
 
-		//
 		private T[] arr;
 		
-		//
 		private ArrayClassBuilder(Class<T> cls) {
 			if( cls.isPrimitive() )
 				throw new IllegalArgumentException("class can not be a primitive type <"+cls.getName()+">");		
@@ -293,13 +198,10 @@ public class ClassTool {
 			arr = (T[])Array.newInstance(cls,0);
 		}
 		
-		//
 		private Class getArrayClass() {
 			return arr.getClass();
 		}
-		
 	}
-
 }
 
 

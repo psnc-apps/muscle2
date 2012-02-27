@@ -5,9 +5,6 @@ package muscle.core.kernel;
 
 import java.io.StringReader;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javatool.PropertiesTool;
 
 /**
  *
@@ -28,17 +25,6 @@ public class KernelArgs {
 			throw new IllegalArgumentException("can not instantiate from <" + props.toString() + ">");
 		}
 		// see if properties contains valid values
-		Boolean val = null;
-		try {
-			val = PropertiesTool.getPropertyWithType(props, "execute", Boolean.class);
-		} catch (java.lang.reflect.InvocationTargetException e) {
-			throw new IllegalArgumentException("can not instantiate from <" + props.toString() + ">");
-		}
-		if (val != null) {
-			execute = val.booleanValue();
-		} else {
-			throw new IllegalArgumentException("can not instantiate from <" + props.toString() + ">");
-		}
+		execute = Boolean.parseBoolean(props.getProperty("execute"));
 	}
-	
 }

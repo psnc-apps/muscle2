@@ -22,7 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.messaging;
 
 import java.io.Serializable;
-import muscle.core.messaging.Timestamp;
 
 /**
 container for a data message

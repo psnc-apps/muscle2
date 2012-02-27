@@ -21,33 +21,23 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import muscle.core.ident.Resolver;
-import jade.core.AID;
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import muscle.Constant;
 import muscle.core.ident.IDType;
 import muscle.core.ident.Identifier;
-import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.PortalID;
+import muscle.core.ident.Resolver;
+import utilities.MiscTool;
 import utilities.data.ArrayMap;
 import utilities.data.Env;
 import utilities.data.FastArrayList;
-import utilities.MiscTool;
 
 /**
 describes the p2p connections between kernels
@@ -98,7 +88,6 @@ public class ConnectionScheme implements Serializable {
 		LBMD2Q9Qs@a	muscle.core.conduit.LBMD2Q9Qs2LBMD2Q9Qs	LBMD2Q9Qs@b
 	*/
 	private void init() {
-
 		String connectionSchemeText = null;
 		try {
 			connectionSchemeText =  MiscTool.fileToString(new File(new URI((String)this.env.get(cs_file_uri))), Constant.Text.COMMENT_INDICATOR);
@@ -159,7 +148,7 @@ public class ConnectionScheme implements Serializable {
 	/**
 	declares a new edge (entrance->conduit->exit) of our graph
 	*/
-	public Pipeline addConnection(String entranceID, String conduitClassName, String conduitID, List<String> conduitArgs, String exitID) throws InterruptedException {
+	public void addConnection(String entranceID, String conduitClassName, String conduitID, List<String> conduitArgs, String exitID) throws InterruptedException {
 		Resolver r = Boot.getInstance().getResolver();
 		PortalID pid = (PortalID)r.getIdentifier(entranceID, IDType.port);
 		Identifier ownerID = pid.getOwnerID();
@@ -179,8 +168,6 @@ public class ConnectionScheme implements Serializable {
 		this.targetExitDescriptions.add(exit);
 
 		entrance.setConduitDescription(conduit);
-
-		return new Pipeline(entrance, conduit, exit);
 	}
 
 	public Map<String,EntranceDescription> entranceDescriptionsForIdentifier(Identifier id) {
@@ -197,80 +184,7 @@ public class ConnectionScheme implements Serializable {
 		if (map == null) return null;
 		else return map.get(id.getPortName());
 	}
-	public ExitDescription exitDescriptionForPortal(PortalID id) {
-		Map<String, ExitDescription> map = this.conduitExits.get(id.getOwnerID());
-		if (map == null) return null;
-		else return map.get(id.getPortName());
-	}
-
-	public EntranceDescription entranceDescriptionForID(String entranceID) {
-		for (ExitDescription exit : this.targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription entranceDescription = conduit.getEntranceDescription();
-
-			// see if the new entrance is in our connection scheme, otherwise we dont know how to connect this entrance
-			if(entranceDescription.getID().equals(entranceID)) {
-				return entranceDescription; // we located the new entrance in the global connection scheme
-			}
-		}
-
-		return null;
-	}
-
-	public ExitDescription exitDescriptionForID(String exitID) {
-		ExitDescription exitDescription = null;
-		for(Iterator<ExitDescription> iter = this.targetExitDescriptions.iterator(); iter.hasNext();) {
-			exitDescription = iter.next();
-			// see if the new exit is in our connection scheme, otherwise we dont know how to connect this exit
-			if(exitDescription.getID().equals(exitID)) {
-				break; // we located the new exit in the global connection scheme
-			}
-			exitDescription = null;
-		}
-
-		return exitDescription;
-	}
-
-	public List<EntranceDescription> entranceDescriptionsForControllerID(AID controllerID) {
-		LinkedList<EntranceDescription> entranceDescriptions = new LinkedList<EntranceDescription>();
-		for (ExitDescription exit : this.targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription description = conduit.getEntranceDescription();
-
-			if(description.isAvailable() && description.getID() instanceof JadeIdentifier && ((JadeIdentifier)description.getID()).getAID().equals(controllerID)) {
-				entranceDescriptions.add(description);
-			}
-		}
-		
-		return entranceDescriptions;
-	}
-
-	public List<ExitDescription> exitDescriptionsForControllerID(AID controllerID) {
-		LinkedList<ExitDescription> exitDescriptions = new LinkedList<ExitDescription>();
-		for (ExitDescription description : this.targetExitDescriptions) {
-			if(description.isAvailable() && description.getID() instanceof JadeIdentifier && ((JadeIdentifier)description.getID()).getAID().equals(controllerID)) {
-				exitDescriptions.add(description);
-			}
-		}
-
-		return exitDescriptions;
-	}
-
-	/**
-	search thru our graph for exit descriptions whose kernels are currently not registered
-	*/
-	public List<ExitDescription> unconnectedExits() {
-		LinkedList<ExitDescription> exitDescriptions = new LinkedList<ExitDescription>();
-		for (ExitDescription exit : this.targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			if( !conduit.isAvailable() ) {
-				exitDescriptions.add(exit);
-			}
-		}
-
-		return exitDescriptions;
-	}
-
+	
 	public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 		return this.targetExitDescriptions;
 	}
@@ -298,40 +212,6 @@ public class ConnectionScheme implements Serializable {
 		out.println("==========");
 
 		return writer.toString();
-	}
-
-	public String availableConnectionsToString() {
-		StringWriter writer = new StringWriter();
-		PrintWriter out = new PrintWriter(writer);
-
-		// print header
-		out.printf("\n========== current active pipelines\n  %-20s <- %-60s <- %-20s\n  ----------\n", "<exit>", "<conduit>(<id>)", "<entrance>");
-
-		for(ExitDescription exit : this.targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription entrance = conduit.getEntranceDescription();
-
-			if( exit.isAvailable() && conduit.isAvailable() && entrance.isAvailable() ) {
-				out.printf("  %-20s <- %-60s <- %-20s\n", exit.getID(), conduit.getClassName()+"("+conduit.getID()+")", entrance.getID());
-			}
-		}
-
-		out.println("==========");
-
-		return writer.toString();
-	}
-
-	public static class Pipeline {
-		public EntranceDescription entrance;
-		public ConduitDescription conduit;
-		public ExitDescription exit;
-
-		public Pipeline(EntranceDescription newEntrance, ConduitDescription newConduit, ExitDescription newExit) {
-
-			this.entrance = newEntrance;
-			this.conduit = newConduit;
-			this.exit = newExit;
-		}
 	}
 	
 	/** for otf */

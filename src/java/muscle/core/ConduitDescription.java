@@ -34,8 +34,7 @@ public class ConduitDescription implements Serializable {
 	List<String> additionalArgs;
 	private EntranceDescription entrance;
 	private ExitDescription exit;
-	private AID conduitAID;
-
+	
 	public boolean equals(Object b) {
 		return b != null && getClass().equals(b.getClass())
 				&& id.equals(((ConduitDescription)b).id);
@@ -78,13 +77,5 @@ public class ConduitDescription implements Serializable {
 
 	public ExitDescription getExitDescription() {
 		return this.exit;
-	}
-
-	public void markAvailable(AID newConduitAID) {
-		conduitAID = newConduitAID;
-	}
-
-	public boolean isAvailable() {
-		return conduitAID != null;
 	}
 }

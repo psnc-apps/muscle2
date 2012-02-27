@@ -22,6 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import utilities.jni.JNIMethod;
 import javatool.ArraysTool;
 import muscle.core.messaging.serialization.DataConverter;
@@ -42,7 +44,11 @@ public class JNIConduitEntrance<R,C extends Serializable> extends ConduitEntranc
 	}
 
 	public JNIMethod toJavaJNIMethod() {
-		return new JNIMethod(this, "toJava", ArraysTool.asArray(Object.class), ArraysTool.asArray(jniClass), null, null);
+		return new JNIMethod(this, "toJava", asArray(Object.class), asArray(jniClass), null, null);
+	}
+	
+	private static <T> T[] asArray(T item) {		
+		return Arrays.asList(item).toArray((T[])Array.newInstance(item.getClass(), 1));
 	}
 
 	public void toJava(R rawData) {

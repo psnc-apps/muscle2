@@ -31,21 +31,12 @@ public class EntranceDependency {
 	private int dtOffset;
 	
 	public EntranceDependency(ConduitExitController newExit, int newDtOffset) {
-	
 		exit = newExit;
 		if(exit == null)
 			throw new IllegalArgumentException("exit can not be null");
 		dtOffset = newDtOffset;
 		if(dtOffset > 0)
 			throw new IllegalArgumentException("entrance can not depend on an exit which will be fed in the future");
-	}
-	
-	public ConduitExitController getExit() {
-		return exit;
-	}
-	
-	public int getDtOffset() {
-		return dtOffset;
 	}
 	
 	public String toString() {

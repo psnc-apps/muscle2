@@ -30,7 +30,6 @@ stores info necessary to setup an entrance
 public class PortDescription implements Serializable {
 	private PortalID id;
 	private ConduitDescription conduit;
-	private DataTemplate dataTemplate;
 	
 	public PortDescription(PortalID newID) {
 		this.id = newID;
@@ -46,23 +45,6 @@ public class PortDescription implements Serializable {
 	
 	public void setConduitDescription(ConduitDescription description) {
 		conduit = description;
-	}
-
-	public void markAvailable(DataTemplate newDataTemplate) {
-		dataTemplate = newDataTemplate;
-	}
-
-	public DataTemplate getDataTemplate() {
-		return dataTemplate;
-	}
-
-	public boolean isAvailable() {
-		return id.isResolved();
-	}
-
-	public void markUnavailable() {
-		dataTemplate = null;
-		id.unResolve();
 	}
 	
 	public boolean equals(Object b) {

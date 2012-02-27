@@ -12,35 +12,24 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.Boot;
-import muscle.core.ConduitDescription;
-import muscle.core.PortFactory;
-import muscle.core.ConduitEntranceController;
-import muscle.core.ConduitExitController;
-import muscle.core.ConnectionScheme;
-import muscle.core.EntranceDescription;
-import muscle.core.ExitDescription;
-import muscle.core.ident.Resolver;
-import muscle.core.MultiDataAgent;
-import muscle.core.PortDescription;
+import muscle.core.*;
 import muscle.core.conduit.communication.JadeReceiver;
 import muscle.core.conduit.communication.Receiver;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
-import muscle.core.messaging.SinkObserver;
+import muscle.core.ident.Resolver;
 import muscle.core.messaging.jade.DataMessage;
-import muscle.core.messaging.jade.ObservationMessage;
-import utilities.data.FastArrayList;
+import muscle.utilities.parallelism.SafeTriggeredThread;
 import utilities.JVM;
 import utilities.MiscTool;
-import muscle.utilities.parallelism.SafeTriggeredThread;
 import utilities.Timing;
+import utilities.data.FastArrayList;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeInstanceController extends MultiDataAgent implements SinkObserver<ObservationMessage<?>>, InstanceController {
+public class JadeInstanceController extends MultiDataAgent implements InstanceController {
 	private Timing stopWatch;
 	private boolean execute = true;
 	private File infoFile;

@@ -25,26 +25,12 @@ package muscle.core.kernel;
 kernel which does nothing, usefulf for testing purposes e.g. to use the QuitMonitor with a non empty CxA
 @author Jan Hegewald
 */
-public class VoidKernel extends muscle.core.kernel.RawKernel {
-
-
-	//
-	public muscle.core.Scale getScale() {
-		javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);
-		javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);
-		return new muscle.core.Scale(dt,dx);
-	}
-
-
-	//
+public class VoidKernel extends RawKernel {
 	protected void addPortals() {
-		// no portals
+		// add no portals
 	}
 
-
-	//
 	protected void execute() {
 		// do nothing
 	}
-
 }

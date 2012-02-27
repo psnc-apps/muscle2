@@ -61,39 +61,13 @@ public class Scale implements java.io.Serializable {
 		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));
 		dx = newDx;
 	}
-
-	public muscle.core.messaging.Duration getDt() {	
-		return dt;
-	}
 	
 	public DecimalMeasure<Length> getDx(int index) {
 		return dx.get(index);
 	}
-
-	public ArrayList<DecimalMeasure<Length>> getAllDx() {
-		return dx;
-	}
 	
 	public int getDimensions() {
 		return dx.size();
-	}
-
-
-	/**
-	compare two scales, returns true if spatial scale is identical
-	*/
-	public static boolean match(Scale a, Scale b) {
-		// test number of dimensions in space
-		if(a.getDimensions() != b.getDimensions())
-			return false;
-
-		// test scale for every dimension in space
-		for(int i = 0; i < a.getDimensions(); i++) {
-			if( a.getDx(i).doubleValue(SI.METER) != b.getDx(i).doubleValue(SI.METER) )
-				return false;
-		}
-		
-		return true;		
 	}
 
 	@Override
@@ -105,16 +79,23 @@ public class Scale implements java.io.Serializable {
 	}
 	
 	public boolean equals(Object obj) {
-		if(obj instanceof Scale) {
+		if(obj != null && obj.getClass().equals(this.getClass())) {
 			Scale other = (Scale)obj;
-
-			if(!Scale.match(this, other))
+			
+			// test number of dimensions in space
+			if(getDimensions() != other.getDimensions())
 				return false;
+
+			// test scale for every dimension in space
+			for(int i = 0; i < getDimensions(); i++) {
+				if( getDx(i).doubleValue(SI.METER) != other.getDx(i).doubleValue(SI.METER) )
+					return false;
+			}
 			
 			// test timescale
 			return dt.equals(other.dt);
 		}
-		return super.equals(obj);
+		return false;
 	}
 	
 	public String toString() {

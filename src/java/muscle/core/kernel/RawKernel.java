@@ -166,6 +166,7 @@ public abstract class RawKernel {
 	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
 	javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);<br>
 	return new Scale(dt,dx);
+	* @deprecated use MML to specify this
 	 */
 	@Deprecated
 	public Scale getScale() {
@@ -174,6 +175,7 @@ public abstract class RawKernel {
 
 	/**
 	helper method to create a scale object where dt is a multiple of the kernel scale
+	* @deprecated use MML to specify this
 	 */
 	@Deprecated
 	private Scale getPortalScale(int rate) {
@@ -182,7 +184,7 @@ public abstract class RawKernel {
 
 	protected void addEntrance(ConduitEntranceController entrance) {
 		if (!acceptPortals) {
-			throw new IgnoredException("adding of porals not allowed here");
+			throw new IgnoredException("adding of portals not allowed here");
 		}
 
 		// only add if not already added
@@ -196,11 +198,9 @@ public abstract class RawKernel {
 		entrances.add(entrance);
 	}
 
-	//
 	protected void addExit(ConduitExitController exit) {
-
 		if (!acceptPortals) {
-			throw new IgnoredException("adding of porals not allowed here");
+			throw new IgnoredException("adding of portals not allowed here");
 		}
 
 		// only add if not already added
@@ -214,7 +214,7 @@ public abstract class RawKernel {
 		exits.add(exit);
 	}
 
-	//
+	
 	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
 
 		if (newRate < 1) {
@@ -228,7 +228,6 @@ public abstract class RawKernel {
 		return e;
 	}
 
-	//
 	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
@@ -243,7 +242,6 @@ public abstract class RawKernel {
 		return addJNIExit(newPortalName, newRate, newDataClass, newDataClass, newTransmuter);
 	}
 
-	//
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
@@ -253,7 +251,6 @@ public abstract class RawKernel {
 		addEntrance(ec);
 		return e;
 	}
-	//
 
 	protected <R, T extends Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
@@ -264,7 +261,6 @@ public abstract class RawKernel {
 		addEntrance(ec);
 		return e;
 	}
-	//
 
 	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
