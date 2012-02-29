@@ -425,9 +425,6 @@ if m.env['jade']
 		ks = cxa.known_agents.find_all {|a| a.kind_of?(KernelAgent)}
 		s = "#{ks.length} known kernels in CxA:\n"
 		ks.each {|k| s += "\t#{k.name}: #{k.cls}\n"}
-		as = cxa.known_agents.find_all {|a| a.kind_of?(JadeAgent)&&!a.kind_of?(KernelAgent)}
-		s += "#{as.length} known administration agents in CxA:\n"
-		as.each {|a| s += "\t#{a.name}: #{a.cls}\n"}
 		puts s
 		exit
 	else
