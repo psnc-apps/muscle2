@@ -1,41 +1,25 @@
 package muscle.net;
 
-import jade.imtp.leap.JICP.SocketFactory;
-
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.net.BindException;
-import java.net.HttpURLConnection;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class CrossSocketFactory implements SocketFactory {
+/** 
+ * 
+ * @author Mariusz Mamonski
+ */
+
+public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, SocketFactory {
 
 	public static final String PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min";
 	public static final String PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max";
@@ -110,57 +94,54 @@ public class CrossSocketFactory implements SocketFactory {
 	public ServerSocket createServerSocket(int port, int backlog,
 			InetAddress addr) throws IOException {
 		
-		if (port == magicPort)
+		if (port == magicPort) {
 			logDebug("binding socket on MAIN port and addr " + addr);
-		else if (port == 0)
+		} else if (port == 0) {
 			logDebug("binding socket on ANY port and addr " + addr);
-		else
+		} else {
 			logDebug("binding socket on port " + port + " and addr " + addr);
+			trace();
+			throw new java.net.BindException();
+		}
 
 		trace();
 
-		if (port == magicPort || port == 0) {
-			ServerSocket ss = null;
-			Exception lastEx = null;
+		ServerSocket ss = null;
+		Exception lastEx = null;
 
+		for (int i = portMin; i <= portMax; i++) {
+			try {
+				logDebug("Trying to bind on port: " + i);
+				ss = new ServerSocket(i, backlog, addr);
+				break;
+			} catch (BindException ex) {
+				logDebug("BindFailed: " + ex.getMessage());
+				lastEx = ex;
+			}
+		}
 
-			for (int i = portMin; i <= portMax; i++) {
+		if (ss != null) {
+			System.err.println("Bound to port: " + ss.getLocalPort());
+
+			if (mtoAddr != null && mtoPort != -1) {
 				try {
-					logDebug("Trying to bind on port: " + i);
-					ss = new ServerSocket(i, backlog, addr);
-					break;
-				} catch (BindException ex) {
-					logDebug("BindFailed: " + ex.getMessage());
-					lastEx = ex;
+					mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
+				} catch (IOException ex) {
+					throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
 				}
+
+				logDebug("Registered to MTO");
+			} else
+				logDebug("Missing MTO address / port. MTO will not be used.");
+
+			if (port == magicPort) {
+				putConnectionData(InetAddress.getLocalHost()
+						.getHostAddress(), ss.getLocalPort());
+
 			}
-
-			if (ss != null) {
-				System.err.println("Bound to port: " + ss.getLocalPort());
-
-				if (mtoAddr != null && mtoPort != -1) {
-					try {
-						mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
-					} catch (IOException ex) {
-						throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
-					}
-
-					logDebug("Registered to MTO");
-				} else
-					logDebug("Missing MTO address / port. MTO will not be used.");
-
-				if (port == magicPort) {
-					putConnectionData(InetAddress.getLocalHost()
-							.getHostAddress(), ss.getLocalPort());
-
-				}
-				return ss;
-			} else {
-				throw new BindException(lastEx.getMessage());
-			}
-
+			return ss;
 		} else {
-			throw new java.net.BindException();
+			throw new BindException(lastEx.getMessage());
 		}
 	}
 
@@ -168,7 +149,7 @@ public class CrossSocketFactory implements SocketFactory {
 			throws IOException {
 		String coordinatorURL = System.getenv(ENV_COORDINATOR_URL);
 		String sessionID = System.getenv(ENV_SESSION_ID);
-		StringBuffer message = new StringBuffer(4096);
+		StringBuilder message = new StringBuilder(4096);
 
 		if (coordinatorURL == null)
 			throw new IOException(ENV_COORDINATOR_URL + " env variable not set");
@@ -238,7 +219,7 @@ public class CrossSocketFactory implements SocketFactory {
 	private InetSocketAddress getConnectionData() throws IOException {
 		String coordinatorURL = System.getenv(ENV_COORDINATOR_URL);
 		String sessionID = System.getenv(ENV_SESSION_ID);
-		StringBuffer message = new StringBuffer(4096);
+		StringBuilder message = new StringBuilder(4096);
 
 		logDebug("Acquiring connection data (" + coordinatorURL + ")");
 
@@ -325,14 +306,14 @@ public class CrossSocketFactory implements SocketFactory {
 		return new CrossSocket();
 	}
 
-	public class CrossSocket extends Socket {
+	private class CrossSocket extends Socket {
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
 			logDebug("connecting to:" + endpoint);
 			InetSocketAddress processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
 
 			int port = processedEndpoint.getPort();
-			if (port <= portMax && port >= portMin) {
+			if (port >= portMin && port <= portMax) {
 				// direct connection
 				super.connect(processedEndpoint, timeout);
 			} else {
@@ -347,7 +328,7 @@ public class CrossSocketFactory implements SocketFactory {
 		}
 
 		public void connect(SocketAddress endpoint) throws IOException {
-			connect(endpoint, 0); // this is why we don't like java...
+			connect(endpoint, 0);
 		}
 
 		private SocketAddress processEndpoint(SocketAddress endpoint)
@@ -367,7 +348,7 @@ public class CrossSocketFactory implements SocketFactory {
 			// prepare & send request
 			MtoRequest req = new MtoRequest();
 			req.setSource((InetSocketAddress) getLocalSocketAddress());
-			req.setDestination((InetSocketAddress) processedEndpoint);
+			req.setDestination(processedEndpoint);
 			req.type = MtoRequest.TYPE_CONNECT;
 
 			getOutputStream().write(req.write().array());
@@ -428,9 +409,11 @@ public class CrossSocketFactory implements SocketFactory {
 		// If one tries to register a wildcard, register all known addresses
 		if(isa.getAddress().isAnyLocalAddress())
 		{
-			for( NetworkInterface interf : Collections.list(NetworkInterface.getNetworkInterfaces()))
-				for(InetAddress addr : Collections.list(interf.getInetAddresses()))
+			for( NetworkInterface interf : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+				for(InetAddress addr : Collections.list(interf.getInetAddresses())) {
 					mtoRegisterListening(new InetSocketAddress(addr, isa.getPort()));
+				}
+			}
 			return;
 		}
 		
@@ -449,96 +432,5 @@ public class CrossSocketFactory implements SocketFactory {
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
 		s.getOutputStream().write(r.write().array());
 		s.close();
-	}
-
-	public static class /* struct... */MtoRequest {
-		final static byte TYPE_REGISTER = 1;
-		final static byte TYPE_CONNECT = 2;
-		final static byte TYPE_CONNECT_RESPONSE = 3;
-
-		public byte type = 0;
-		public InetAddress srcA, dstA;
-		public short srcP = 0, dstP = 0;
-		public int sessionId = 0;
-
-		{
-			try {
-				srcA = InetAddress.getLocalHost();
-				dstA = InetAddress.getLocalHost();
-			} catch (UnknownHostException e) {
-				throw new RuntimeException("This is why we don't like Java", e);
-			}
-		}
-
-		public String toString() {
-			return "Type: "+ type + "; src: " + srcA.toString() + ":" + srcP + "; dst: " + dstA.toString() + ":" + dstP;
-		}
-
-		public void setSource(InetSocketAddress isa) {
-			srcA = isa.getAddress();
-			srcP = (short) isa.getPort();
-		}
-
-		public void setDestination(InetSocketAddress isa) {
-			dstA = isa.getAddress();
-			dstP = (short) isa.getPort();
-		}
-
-		public ByteBuffer write() {
-			try {
-				ByteBuffer buffer = ByteBuffer.allocate(17);
-				buffer.order(ByteOrder.LITTLE_ENDIAN);
-				buffer.put(type);
-				buffer.put(srcA.getAddress()[3]);
-				buffer.put(srcA.getAddress()[2]);
-				buffer.put(srcA.getAddress()[1]);
-				buffer.put(srcA.getAddress()[0]);
-				buffer.putShort(srcP);
-				buffer.put(dstA.getAddress()[3]);
-				buffer.put(dstA.getAddress()[2]);
-				buffer.put(dstA.getAddress()[1]);
-				buffer.put(dstA.getAddress()[0]);
-				buffer.putShort(dstP);
-				buffer.putInt(sessionId);
-				assert (buffer.remaining() == 0);
-				return buffer;
-			} catch (Throwable t) {
-				throw new IllegalArgumentException(
-						"Could not serialise the request", t);
-			}
-		}
-
-		public static int byteSize() {
-			return 17;
-		}
-
-		public static MtoRequest read(ByteBuffer buffer) {
-			try {
-				buffer.order(ByteOrder.LITTLE_ENDIAN);
-				MtoRequest r = new MtoRequest();
-				r.type = buffer.get();
-				byte[] addr = new byte[4];
-				addr[3] = buffer.get();
-				addr[2] = buffer.get();
-				addr[1] = buffer.get();
-				addr[0] = buffer.get();
-				r.srcA = InetAddress.getByAddress(addr);
-				r.srcP = buffer.getShort();
-				addr[3] = buffer.get();
-				addr[2] = buffer.get();
-				addr[1] = buffer.get();
-				addr[0] = buffer.get();
-				r.dstA = InetAddress.getByAddress(addr);
-				r.dstP = buffer.getShort();
-				r.sessionId = buffer.getInt();
-				return r;
-			} catch (UnknownHostException e) {
-				throw new RuntimeException("This is why we don't like Java", e);
-			} catch (Throwable t) {
-				throw new IllegalArgumentException(
-						"Could not deserialise the request", t);
-			}
-
-		}
 	}
 }
