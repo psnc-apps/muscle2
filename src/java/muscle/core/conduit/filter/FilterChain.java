@@ -6,8 +6,6 @@ package muscle.core.conduit.filter;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import muscle.core.messaging.Observation;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -16,11 +14,8 @@ import muscle.exception.MUSCLERuntimeException;
  * @author Joris Borgdorff
  */
 public abstract class FilterChain extends AbstractFilter<Observation,Observation> {
-	private boolean isProcessing;
 	
 	public void init(List<String> args) {
-		System.out.println("Filterchain args: " + args);
-		isProcessing = false;
 		if (!args.isEmpty()) {
 			QueueConsumer<Observation> qc = automaticPipeline(args, this);
 			this.setQueueConsumer(qc);

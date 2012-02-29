@@ -2,6 +2,8 @@ package muscle.core.ident;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
 import utilities.data.ArrayMap;
 import utilities.data.ArraySet;
@@ -18,6 +20,7 @@ public class DelegatingResolver implements Resolver {
 	private final Set<String> searchingNow;
 	private final Set<String> stillAlive;
 	private boolean isDone;
+	private final static Logger logger = Logger.getLogger(DelegatingResolver.class.getName());
 	
 	public DelegatingResolver(IDManipulator newDelegate, Set<String> stillAlive) {
 		delegate = newDelegate;
@@ -25,6 +28,11 @@ public class DelegatingResolver implements Resolver {
 		searchingNow = new ArraySet<String>();
 		here = delegate.getLocation();
 		this.stillAlive = stillAlive;
+		if (this.stillAlive == null) {
+			logger.fine("MUSCLE will not autoquit.");
+		} else {
+			logger.log(Level.INFO, "MUSCLE will autoquit once submodel instances {0} have finished.", stillAlive);
+		}
 		System.out.println("StillAlive: " + this.stillAlive);
 		this.isDone = false;
 	}
@@ -109,12 +117,15 @@ public class DelegatingResolver implements Resolver {
 	 */
 	public synchronized void removeIdentifier(String name, IDType type) {
 		this.idCache.remove(name(name, type));
-		if (type == IDType.instance && stillAlive != null && !this.stillAlive.isEmpty()) {
-			this.stillAlive.remove(name);
-			System.out.println("Waiting on " + stillAlive + " to kill platform.");
-		
+
+		// Remove from stillAlive and if succeeded, try to quit MUSCLE
+		if (type == IDType.instance && stillAlive != null && this.stillAlive.remove(name)) {
 			if (this.stillAlive.isEmpty()) {
+				logger.info("All submodel instances have finished; quitting MUSCLE.");
 				delegate.deletePlatform();
+			}
+			else {
+				logger.log(Level.INFO, "Waiting on submodel instances {0} to quit MUSCLE.", stillAlive);
 			}
 		}
 		
