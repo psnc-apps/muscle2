@@ -25,8 +25,8 @@ public class ConduitEntrance<T extends Serializable> {
 	private final DataConverter<T,?> serializer;
 	private Queue<Observation<T>> queue;
 	
-	public ConduitEntrance(ConduitEntranceController<T> controller) {
-		this(controller, new Timestamp(0d), new Duration(1d));
+	public ConduitEntrance(ConduitEntranceController<T> controller, Scale sc) {
+		this(controller, new Timestamp(0d), sc.getDt());
 	}
 	
 	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
@@ -53,7 +53,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 * follows statically from the temporal scale.
 	 */
 	public void send(T data, Timestamp currentTime) {
-		nextTime = nextTime.add(dt);
+		nextTime = currentTime.add(dt);
 		this.send(data, currentTime, nextTime);		
 	}
 

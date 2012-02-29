@@ -37,8 +37,8 @@ public class JNIConduitEntrance<R,C extends Serializable> extends ConduitEntranc
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 
-	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, ConduitEntranceController<C> controller) {
-		super(controller);
+	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, ConduitEntranceController<C> controller, Scale sc) {
+		super(controller, sc);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
 	}

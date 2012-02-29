@@ -23,8 +23,6 @@ package muscle.core.messaging.jade;
 import jade.lang.acl.ACLMessage;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.PortalID;
-import muscle.core.messaging.Timestamp;
-import muscle.core.messaging.Observation;
 
 /**
 @author Jan Hegewald
@@ -78,13 +76,5 @@ public class DataMessage<E> extends ACLMessage implements Cloneable {
 
 	public JadeIdentifier getRecipient() {
 		return this.sinkID;
-	}
-
-	public E getObservation() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	public Timestamp getTimestampNextEvent() {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

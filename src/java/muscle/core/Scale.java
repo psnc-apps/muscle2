@@ -21,11 +21,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import javax.measure.DecimalMeasure;
-import javax.measure.unit.SI;
-import javax.measure.quantity.Length;
 import java.util.ArrayList;
+import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
+import javax.measure.quantity.Length;
+import javax.measure.unit.SI;
 
 
 /**
@@ -60,6 +60,11 @@ public class Scale implements java.io.Serializable {
 
 		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));
 		dx = newDx;
+	}
+	
+	
+	public muscle.core.messaging.Duration getDt() {
+		return this.dt;
 	}
 	
 	public DecimalMeasure<Length> getDx(int index) {

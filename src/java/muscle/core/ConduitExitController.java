@@ -50,13 +50,16 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	protected void execute() throws InterruptedException {
 		Receiver<DataMessage<T>, ?,?,?> recv = waitForReceiver();
 		if (recv != null) {
-			DataMessage<T> msg = this.receiver.receive();
-			if (msg != null && msg instanceof Message) {
-				if (msg.getUserDefinedParameter("signal") != null) {
-					System.out.println("Signal received: " + msg.getUserDefinedParameter("signal"));
+			DataMessage<T> dmsg = this.receiver.receive();
+			if (dmsg != null && dmsg instanceof Message) {
+				if (dmsg.getUserDefinedParameter("signal") != null) {
+					System.out.println("Signal received: " + dmsg.getUserDefinedParameter("signal"));
 				}
 				else {
-					this.queue.add(((Message<T>)msg).getRawData());
+					Message<T> msg = (Message<T>)dmsg;
+					this.queue.add(msg.getRawData());
+					this.customSITime = msg.getObservation().getNextTimestamp();
+					increment();
 				}
 			}
 		}

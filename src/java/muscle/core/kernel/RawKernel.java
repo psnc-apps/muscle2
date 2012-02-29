@@ -28,19 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ConduitEntrance;
-import muscle.core.ConduitEntranceController;
-import muscle.core.ConduitExit;
-import muscle.core.ConduitExitController;
-import muscle.core.CxADescription;
-import muscle.core.DataTemplate;
-import muscle.core.EntranceDependency;
-import muscle.core.JNIConduitEntrance;
-import muscle.core.JNIConduitExit;
-import muscle.core.Portal;
-import muscle.core.ident.PortalID;
-import muscle.core.Scale;
+import muscle.core.*;
 import muscle.core.ident.Identifier;
+import muscle.core.ident.PortalID;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.PipeConverter;
@@ -57,7 +47,7 @@ A basic kernel, that all kernels must extend
 @author Jan Hegewald
  */
 public abstract class RawKernel {
-	private static final transient Logger logger = Logger.getLogger(RawKernel.class.getName());
+	private static final Logger logger = Logger.getLogger(RawKernel.class.getName());
 	private Object[] arguments;
 	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
 	List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
@@ -96,7 +86,7 @@ public abstract class RawKernel {
 
 	/**
 	currently returns true if all portals of this kernel have passed a maximum timestep given in the cxa properties
-	(this is a temporary implemantation because this mechanism is going to change anyway)
+	(this is a temporary implementation because this mechanism is going to change anyway)
 	note: if init portals are being used, they do increment their time only once!
 	do not change signature! (used from native code)
 	 */
@@ -107,11 +97,13 @@ public abstract class RawKernel {
 
 		// search for the smallest "time" in our portals
 		for (Portal p : entrances) {
+			logger.log(Level.FINE, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
 		}
 		for (Portal p : exits) {
+			logger.log(Level.FINE, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
@@ -166,9 +158,7 @@ public abstract class RawKernel {
 	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
 	javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);<br>
 	return new Scale(dt,dx);
-	* @deprecated use MML to specify this
 	 */
-	@Deprecated
 	public Scale getScale() {
 		return null;
 	}
@@ -245,7 +235,7 @@ public abstract class RawKernel {
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
-		ConduitEntrance<T> e = new ConduitEntrance<T>(ec);
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, getScale());
 		ec.setEntrance(e);
 
 		addEntrance(ec);
@@ -255,7 +245,7 @@ public abstract class RawKernel {
 	protected <R, T extends Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
 		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
 
-		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec);
+		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec, getScale());
 		ec.setEntrance(e);
 
 		addEntrance(ec);
@@ -362,5 +352,18 @@ public abstract class RawKernel {
 		}
 
 		return arguments;
+	}
+	
+	public String getProperty(String key) {
+		return CxADescription.ONLY.getProperty(key);
+	}
+	public int getIntProperty(String key) {
+		return CxADescription.ONLY.getIntProperty(key);
+	}
+	public double getDoubleProperty(String key) {
+		return CxADescription.ONLY.getDoubleProperty(key);
+	}
+	public boolean getBooleanProperty(String key) {
+		return CxADescription.ONLY.getBooleanProperty(key);
 	}
 }

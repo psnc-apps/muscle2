@@ -21,15 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import java.io.IOException;
 import com.thoughtworks.xstream.XStream;
-import java.util.logging.Level;
-import utilities.MiscTool;
-import utilities.jni.JNITool;
-import muscle.exception.MUSCLERuntimeException;
-import java.io.File;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.measure.DecimalMeasure;
+import javax.measure.quantity.Duration;
+import javax.measure.quantity.Length;
+import javax.measure.unit.SI;
+import utilities.jni.JNITool;
 
 
 /**
@@ -43,41 +44,19 @@ public class DataTemplate<T> implements Serializable {
 	// these fields might be null to indicate: any
 	private final Class<?> dataClass; // double.class for double, boolean.class for boolean, int[].class for 1D int array etc.
 	private int size = ANY_SIZE;
-	
-	public static <S, T> boolean match(DataTemplate<S> templateA, DataTemplate<T> templateB) {
-		assert !MiscTool.anyNull(templateA, templateB) : "can not compare null";
-
-		// test datatype
-		Class<S> clazzA = templateA.getDataClass();
-		return (clazzA == null || clazzA.equals(templateB.getDataClass()));
-	}
-
-	public static DataTemplate createFromResourceForExit(String name) {
-		return createInstanceFromFile(new File(MiscTool.joinPaths(CxADescription.ONLY.getPathProperty("exit_resources_path"), name+".DataTemplate")));
-	}
-
-	public static <T> DataTemplate<T> createInstanceFromFile(File file) throws ClassCastException {
-		String text = null;
-		try {
-			text = MiscTool.fileToString(file);
-		} catch (IOException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-		
-		XStream xstream = new XStream();
-		@SuppressWarnings("unchecked")
-		DataTemplate<T> dt = (DataTemplate<T>)xstream.fromXML(text);
-				
-		return new DataTemplate<T>(dt.getDataClass());
-	}
+	private final Scale scale;
 
 	public DataTemplate(Class<T> newDataClass) {
-		dataClass = replacePrimitiveClass(newDataClass);
+		this(newDataClass, new Scale(new DecimalMeasure<Duration>(BigDecimal.ONE, SI.SECOND), new DecimalMeasure<Length>(BigDecimal.ONE,SI.METER)));
 	}
 	
-	@Deprecated
 	public DataTemplate(Class<T> newDataClass, Scale newScale) {
-		this (newDataClass);
+		dataClass = replacePrimitiveClass(newDataClass);
+		this.scale = newScale;
+	}
+	
+	public Scale getScale() {
+		return this.scale;
 	}
 	
 	/**

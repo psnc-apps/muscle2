@@ -27,11 +27,12 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Timestamp;
 import muscle.utilities.parallelism.SafeTriggeredThread;
 
-//
 public abstract class Portal<T extends Serializable> extends SafeTriggeredThread implements Serializable, Identifiable {
+	public final static int LOOSE = -1;
 	protected final PortalID portalID;
-	private int usedCount;
 	protected Timestamp customSITime;
+	private final boolean loose;
+	private int usedCount;
 	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
@@ -39,7 +40,8 @@ public abstract class Portal<T extends Serializable> extends SafeTriggeredThread
 	
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
-		usedCount = 0;
+		this.loose = newRate == LOOSE;
+		this.usedCount = 0;
 	}
 
 	public String getLocalName() {
@@ -54,7 +56,10 @@ public abstract class Portal<T extends Serializable> extends SafeTriggeredThread
 	current time of this portal in SI units
 	 */
 	public Timestamp getSITime() {
-		return customSITime;
+		if (loose)
+			return new Timestamp(0d);
+		else
+			return customSITime;
 	}
 	
 	@Override

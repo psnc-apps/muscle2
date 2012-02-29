@@ -21,16 +21,17 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.PortalID;
-import java.util.Queue;
 import muscle.core.conduit.communication.Transmitter;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.conduit.filter.QueueConsumer;
+import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
-import muscle.core.messaging.signal.DetachConduitSignal;
 import muscle.core.messaging.Observation;
+import muscle.core.messaging.signal.DetachConduitSignal;
 
 /**
 this is the (remote) head of a conduit,
@@ -67,7 +68,12 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			}
 		};
 		ConnectionScheme cs = ConnectionScheme.getInstance();
-		fc.init(cs.entranceDescriptionForPortal(portalID).getConduitDescription().getArgs());
+		ConduitDescription cd = cs.entranceDescriptionForPortal(portalID).getConduitDescription();
+		List<String> args = cd.getArgs();
+		fc.init(args);
+		if (!args.isEmpty()) {
+			logger.log(Level.INFO, "In Conduit {0} the filters {1} are initialized.", new Object[] {cd, args});
+		}
 		return fc;
 	}
 
@@ -183,7 +189,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	private void send(Observation<T> msg) throws InterruptedException {
 		Transmitter<T, ?,?,?> trans = waitForTransmitter();
 		if (trans != null) {
-			this.customSITime = msg.getTimestamp();
+			this.customSITime = msg.getNextTimestamp();
 			trans.transmit(msg);
 			increment();
 		}
