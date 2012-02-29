@@ -26,7 +26,7 @@ import org.acplt.oncrpc.XdrTcpEncodingStream;
  */
 public class ManagerConnectionHandler extends XdrConnectionHandler<SimulationManager> {
 	public ManagerConnectionHandler(SimulationManager listener) throws UnknownHostException, IOException {
-		super(new LocalSocketFactory(), InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}), listener);
+		super(new LocalSocketFactory().createServerSocket(0, 10, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1})), listener);
 	} 
 
 	@Override

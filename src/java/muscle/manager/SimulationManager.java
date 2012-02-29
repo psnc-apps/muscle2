@@ -15,7 +15,7 @@ import utilities.data.ArrayMap;
 import utilities.data.ArraySet;
 
 /**
- *
+ * Keeps a registry of running submodels and stops simulation once all submodels have finished.
  * @author Joris Borgdorff
  */
 public class SimulationManager {

@@ -5,7 +5,7 @@
 package muscle.net;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import org.acplt.oncrpc.OncRpcException;
@@ -13,12 +13,17 @@ import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 /**
- *
+ * Handles connections using XDR serialization.
+ * 
+ * By overriding executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut), you can send
+ * and receive messages over a socket using XDR serialization. This function will repeatedly be called for every
+ * accepted socket, until the dispose() function is called.
+ * 
  * @author Joris Borgdorff
  */
 public abstract class XdrConnectionHandler<T> extends AbstractConnectionHandler<T> {
-	public XdrConnectionHandler(SocketFactory sf, InetAddress addr, T listener) throws IOException {
-		super(sf, addr, listener);
+	public XdrConnectionHandler(ServerSocket ss, T listener) throws IOException {
+		super(ss, listener);
 	}
 	
 	protected void executeProtocol(Socket s) {

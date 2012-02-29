@@ -13,7 +13,12 @@ import java.util.logging.Logger;
 import muscle.utilities.parallelism.SafeThread;
 
 /**
- *
+ * Handles connections over a socket.
+ * 
+ * By overriding executeProtocol(Socket), you can send
+ * and receive messages over a socket. This function will repeatedly be called for every
+ * accepted socket, until the dispose() function is called.
+ * 
  * @author Joris Borgdorff
  */
 public abstract class AbstractConnectionHandler<T> extends SafeThread {
@@ -21,8 +26,8 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	protected final T listener;
 	protected final Logger logger;
 
-	public AbstractConnectionHandler(SocketFactory sf, InetAddress addr, T listener) throws IOException {
-		this.ss = sf.createServerSocket(0, 1, addr);
+	public AbstractConnectionHandler(ServerSocket ss, T listener) {
+		this.ss = ss;
 		this.listener = listener;
 		this.logger = Logger.getLogger(this.getClass().getName());
 	}
