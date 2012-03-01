@@ -26,20 +26,23 @@ public class TcpIDManipulator implements IDManipulator {
 	private final static Logger logger = Logger.getLogger(TcpIDManipulator.class.getName());
 	private final ExecutorService executor;
 	private final SocketFactory sockets;
-	private final DelegatingResolver resolver;
+	private Resolver resolver;
 	private final SocketAddress managerAddr;
 	
-	public TcpIDManipulator(DelegatingResolver listener, SocketFactory sf, SocketAddress managerAddr) {
+	public TcpIDManipulator(SocketFactory sf, SocketAddress managerAddr) {
 		this.executor = Executors.newCachedThreadPool();
 		this.sockets = sf;
-		this.resolver = listener;
 		this.managerAddr = managerAddr;
+		this.resolver = null;
+	}
+	
+	public void setResolver(DelegatingResolver resolver) {
+		this.resolver = resolver;
 	}
 
 	@Override
 	public void propagate(Identifier id, Location loc) {
-		if (!(id instanceof InstanceID))
-			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only propagate InstanceID's.");
+		this.checkInstanceID(id);
 		if (!id.isResolved())
 			((InstanceID)id).resolve(loc);
 
@@ -49,9 +52,11 @@ public class TcpIDManipulator implements IDManipulator {
 	@Override
 	public void search(Identifier id) {
 		if (id.isResolved()) return;
-		if (!(id instanceof InstanceID))
-			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only propagate InstanceID's.");
-
+		this.checkInstanceID(id);
+		if (this.resolver == null) {
+			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
+		}
+		
 		runQuery(id, SimulationManagerProtocol.LOCATE);		
 	}
 
@@ -80,18 +85,15 @@ public class TcpIDManipulator implements IDManipulator {
 
 	@Override
 	public void delete(Identifier id) {
-		if (!(id instanceof InstanceID))
-			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only propagate InstanceID's.");
-
-		runQuery(id, SimulationManagerProtocol.DEREGISTER);
+		this.checkInstanceID(id);
+		
+		this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
 	}
 
-	// TODO: implement deletePlatform
 	@Override
 	public void deletePlatform() {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
-	
 		
 	private void runQuery(Identifier id, SimulationManagerProtocol action) {
 		try {
@@ -100,8 +102,13 @@ public class TcpIDManipulator implements IDManipulator {
 			ManagerProtocolHandler proto = new ManagerProtocolHandler(s, (InstanceID)id, action);
 			this.executor.submit(proto);
 		} catch (IOException ex) {
-			Logger.getLogger(TcpIDManipulator.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, "Could not open socket to initiate the " + action + " protocol with SimulationManager", ex);
 		}
+	}
+	
+	private void checkInstanceID(Identifier id) {
+		if (!(id instanceof InstanceID))
+			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only work with InstanceID's.");
 	}
 	
 	private class ManagerProtocolHandler extends XdrProtocolHandler<TcpIDManipulator> {
