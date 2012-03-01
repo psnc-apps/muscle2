@@ -9,7 +9,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import muscle.net.AbstractConnectionHandler;
-import muscle.net.LocalSocketFactory;
+import muscle.net.CrossSocketFactory;
 
 /**
  * Executes the server side of the SimulationManager protocol.
@@ -19,7 +19,7 @@ import muscle.net.LocalSocketFactory;
  */
 public class ManagerConnectionHandler extends AbstractConnectionHandler<SimulationManager> {
 	public ManagerConnectionHandler(SimulationManager listener) throws UnknownHostException, IOException {
-		super(new LocalSocketFactory().createServerSocket(0, 10, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1})), listener);
+		super(new CrossSocketFactory().createServerSocket(0, 10, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1})), listener);
 	}
 
 	@Override

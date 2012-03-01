@@ -23,6 +23,7 @@ public class SimulationManager {
 	private final Set<String> stillActive;
 	private boolean isDone;
 	private AbstractConnectionHandler connections;
+	private final static Logger logger = Logger.getLogger(SimulationManager.class.getName());
 	
 	private SimulationManager(Set<String> stillActive) {
 		this.stillActive = stillActive;
@@ -35,11 +36,14 @@ public class SimulationManager {
 	}
 	
 	public synchronized boolean register(Identifier id) {
+		logger.log(Level.FINE, "Registering ID {0}", id);
 		if (this.active.containsKey(id.getName())) {
+			logger.log(Level.WARNING, "Registering ID {0} failed: an ID is already registered under the same name", id);
 			return false;
 		}
 		else if (!id.isResolved()) {
-			throw new IllegalArgumentException("Identifier " +id + " is not resolved; can only register ID's that resolved.");
+			logger.log(Level.WARNING, "Registering ID {0} failed, because it is not resolved; can only register ID's that resolved.", id);
+			return false;
 		}
 		else {
 			this.active.put(id.getName(),id);
@@ -49,9 +53,17 @@ public class SimulationManager {
 	}
 	
 	public synchronized boolean deregister(Identifier id) {
+		logger.log(Level.FINE, "Deregistering ID {0}", id);
 		if (stillActive != null) {
-			stillActive.remove(id.getName());
+			if (!stillActive.remove(id.getName())) {
+				logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
+			}
+			else if (logger.isLoggable(Level.FINE) && !stillActive.isEmpty()) {
+				logger.log(Level.FINE, "Will quit MUSCLE once ID's {0} have finished computation.", stillActive);
+			}
+			
 			if (stillActive.isEmpty()) {
+				logger.info("All ID's have finished, quitting MUSCLE now.");
 				this.dispose();
 			}
 		}
@@ -59,23 +71,30 @@ public class SimulationManager {
 	}
 	
 	public synchronized void resolve(Identifier id) throws InterruptedException {
+		logger.log(Level.FINE, "Resolving location of ID {0}", id);
 		while (!id.isResolved() && !this.active.containsKey(id.getName()) && !this.isDone) {
+			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", id);
 			wait();
 		}
 		if (!isDone && !id.isResolved()) {
+			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, id.getLocation()});
 			id.resolveLike(this.active.get(id.getName()));
 		}
 	}
 	
 	public synchronized void dispose() {
 		this.isDone = true;
-		this.connections.dispose();
+		if (this.connections != null)
+			this.connections.dispose();
 		notifyAll();
 	}
 	
 	public static void main(String[] args) {
-		Set<String> stillActive = new ArraySet<String>(args.length);
-		stillActive.addAll(Arrays.asList(args));
+		Set<String> stillActive = null;
+		if (args.length > 0) {
+			stillActive = new ArraySet<String>(args.length);
+			stillActive.addAll(Arrays.asList(args));
+		}
 		
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch = null;
@@ -83,10 +102,15 @@ public class SimulationManager {
 		try {	
 			mch = new ManagerConnectionHandler(sm);
 			mch.start();
+			logger.info("Started the connection handler.");
+			sm.setConnectionHandler(mch);
+			
 		} catch (Exception ex) {
-			Logger.getLogger(SimulationManager.class.getName()).log(Level.SEVERE, "Could not start connection manager.", ex);
-			if (mch != null)
+			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
+			if (mch != null) {
+				sm.dispose();
 				mch.dispose();
+			}
 		}
 	}
 }

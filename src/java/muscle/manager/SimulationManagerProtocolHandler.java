@@ -50,7 +50,7 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 					encodeLocation(xdrOut, id.getLocation());
 				} catch (InterruptedException ex) {
 					xdrOut.xdrEncodeBoolean(false);
-					Logger.getLogger(ManagerConnectionHandler.class.getName()).log(Level.SEVERE, "Could not resolve", ex);
+					Logger.getLogger(ManagerConnectionHandler.class.getName()).log(Level.SEVERE, "Could not resolve identifier", ex);
 				}
 				break;
 			case REGISTER:

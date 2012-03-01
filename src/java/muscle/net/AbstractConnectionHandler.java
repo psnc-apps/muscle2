@@ -27,12 +27,11 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
 	private final ExecutorService executor;
-	protected final Logger logger;
+	protected final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());;
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {
 		this.ss = ss;
 		this.listener = listener;
-		this.logger = Logger.getLogger(this.getClass().getName());
 		String prop_num_connections = System.getProperty(PROP_NUM_CONNECTIONS);
 		int numConnections = prop_num_connections == null ? 10 : Integer.valueOf(prop_num_connections);
 		executor = Executors.newFixedThreadPool(numConnections);
