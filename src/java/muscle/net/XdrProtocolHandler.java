@@ -5,33 +5,42 @@
 package muscle.net;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.ident.Location;
+import muscle.core.ident.TcpLocation;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 /**
- * Handles connections using XDR serialization.
+ * Handles a protocol using XDR serialization.
  * 
  * By overriding executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut), you can send
- * and receive messages over a socket using XDR serialization. This function will repeatedly be called for every
- * accepted socket, until the dispose() function is called.
+ * and receive messages over a socket using XDR serialization. This class will repeatedly be created for every
+ * accepted socket.
  * 
  * @author Joris Borgdorff
  */
-public abstract class XdrConnectionHandler<T> extends AbstractConnectionHandler<T> {
-	public XdrConnectionHandler(ServerSocket ss, T listener) throws IOException {
-		super(ss, listener);
+public abstract class XdrProtocolHandler<T> implements Runnable {
+	protected final T listener;
+	private final Socket socket;
+	private final static Logger logger = Logger.getLogger(XdrProtocolHandler.class.getName());
+	
+	public XdrProtocolHandler(Socket s, T listener) {
+		this.listener = listener;
+		this.socket = s;
 	}
 	
-	protected void executeProtocol(Socket s) {
+	public void run() {
 		XdrTcpDecodingStream xdrIn = null;
 		XdrTcpEncodingStream xdrOut = null;
 		try {
-			xdrIn =  new XdrTcpDecodingStream(s, 64 * 1024);
-			xdrOut = new XdrTcpEncodingStream(s, 64 * 1024);
+			xdrIn =  new XdrTcpDecodingStream(socket, 64 * 1024);
+			xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
 			
 			xdrIn.beginDecoding();			
 			executeProtocol(xdrIn, xdrOut);
@@ -70,4 +79,23 @@ public abstract class XdrConnectionHandler<T> extends AbstractConnectionHandler<
 	}
 	
 	protected abstract void executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut) throws OncRpcException, IOException;
+	
+	
+	protected void encodeLocation(XdrTcpEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
+		if (!(loc instanceof TcpLocation)) {
+			throw new IllegalArgumentException("Location belonging to identity is not a TcpLocation; can only encode TcpLocation");
+		}
+		TcpLocation tcpLoc = (TcpLocation)loc;
+
+		byte[] addr = tcpLoc.getAddress().getAddress();		
+		xdrOut.xdrEncodeByteVector(addr);
+		xdrOut.xdrEncodeInt(tcpLoc.getPort());
+	}
+
+	protected Location decodeLocation(XdrTcpDecodingStream xdrIn) throws OncRpcException, IOException {
+		byte[] addr = xdrIn.xdrDecodeByteVector();
+		InetAddress inetAddr = InetAddress.getByAddress(addr);
+		int port = xdrIn.xdrDecodeInt();
+		return new TcpLocation(inetAddr, port);
+	}
 }

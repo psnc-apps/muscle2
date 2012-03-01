@@ -5,9 +5,10 @@
 package muscle.net;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.utilities.parallelism.SafeThread;
@@ -22,14 +23,19 @@ import muscle.utilities.parallelism.SafeThread;
  * @author Joris Borgdorff
  */
 public abstract class AbstractConnectionHandler<T> extends SafeThread {
+	public final static String PROP_NUM_CONNECTIONS = "muscle.net.num_connections";
 	protected final ServerSocket ss;
 	protected final T listener;
+	private final ExecutorService executor;
 	protected final Logger logger;
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {
 		this.ss = ss;
 		this.listener = listener;
 		this.logger = Logger.getLogger(this.getClass().getName());
+		String prop_num_connections = System.getProperty(PROP_NUM_CONNECTIONS);
+		int numConnections = prop_num_connections == null ? 10 : Integer.valueOf(prop_num_connections);
+		executor = Executors.newFixedThreadPool(numConnections);
 	}
 
 	@Override
@@ -43,7 +49,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		try {
 			s = this.ss.accept();
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
-			executeProtocol(s);
+			executor.submit(this.createProtocolHandler(s));
 		}
 		catch (IOException iox) {
 			logger.log(Level.SEVERE, "ConnectionHandler could not accept connection", iox);
@@ -59,5 +65,5 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		}
 	}
 	
-	protected abstract void executeProtocol(Socket s);
+	protected abstract Runnable createProtocolHandler(Socket s);
 }
