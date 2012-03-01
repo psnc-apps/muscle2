@@ -29,10 +29,16 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 	protected final T listener;
 	private final Socket socket;
 	private final static Logger logger = Logger.getLogger(XdrProtocolHandler.class.getName());
+	private final boolean closeSocket;
 	
-	public XdrProtocolHandler(Socket s, T listener) {
+	public XdrProtocolHandler(Socket s, T listener, boolean closeSocket) {
 		this.listener = listener;
 		this.socket = s;
+		this.closeSocket = closeSocket;
+	}
+
+	public XdrProtocolHandler(Socket s, T listener) {
+		this(s, listener, false);
 	}
 	
 	public void run() {
@@ -50,7 +56,6 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 				
 			logger.finest("Operation decoded.");
 			xdrIn.endDecoding();
-			
 		} catch (OncRpcException ex) {
 			logger.log(Level.SEVERE, "Could not encode/decode with XDR", ex);
 		} catch (IOException ex) {
@@ -73,6 +78,13 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 					logger.log(Level.SEVERE, "Failure to close XDR encoding", ex);
 				} catch (IOException ex) {
 					logger.log(Level.SEVERE, "Communication error in closing XDR encoding", ex);
+				}
+			}
+			if (this.closeSocket) {
+				try {
+					this.socket.close();
+				} catch (IOException ex) {
+					logger.log(Level.SEVERE, "Failure to close socket after protocol has finished", ex);
 				}
 			}
 		}

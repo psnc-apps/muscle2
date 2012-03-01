@@ -11,7 +11,7 @@ package muscle.core.ident;
 public interface IDManipulator {
 	public void propagate(Identifier id, Location loc);
 	public void search(Identifier id);
-	public Identifier create(String name, IDType iDType);
+	public Identifier create(String name, IDType idType);
 	public Location getLocation();
 	public void delete(Identifier id);
 	public void deletePlatform();
