@@ -49,8 +49,8 @@ A basic kernel, that all kernels must extend
 public abstract class RawKernel {
 	private static final Logger logger = Logger.getLogger(RawKernel.class.getName());
 	private Object[] arguments;
-	List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
-	List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
+	protected List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
+	protected List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
 

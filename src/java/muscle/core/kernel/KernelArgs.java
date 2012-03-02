@@ -22,7 +22,7 @@ public class KernelArgs {
 		try {
 			props.load(new StringReader(text));
 		} catch (java.io.IOException e) {
-			throw new IllegalArgumentException("can not instantiate from <" + props.toString() + ">");
+			throw new IllegalArgumentException("can not instantiate from <" + text + ">");
 		}
 		// see if properties contains valid values
 		execute = Boolean.parseBoolean(props.getProperty("execute"));

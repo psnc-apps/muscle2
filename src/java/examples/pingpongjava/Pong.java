@@ -19,7 +19,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package examples.simplejava;
+package examples.pingpongjava;
 
 import java.math.BigDecimal;
 
