@@ -28,4 +28,8 @@ public class Timestamp extends AbstractTime {
 	public Timestamp divide(double factor) {
 		return new Timestamp(t / factor);
 	}
+	
+	public double doubleValue() {
+		return t;
+	}
 }

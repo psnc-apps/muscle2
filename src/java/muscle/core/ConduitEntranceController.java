@@ -40,7 +40,7 @@ an entrance sends data to the conduit exit through a transmitter
  */
 public class ConduitEntranceController<T extends Serializable> extends Portal<T> implements QueueConsumer<Observation<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
-	private Transmitter<T, ?,?,?> transmitter;
+	private Transmitter<T,?,?,?> transmitter;
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	private final FilterChain filters;
 	private boolean processingMessage;

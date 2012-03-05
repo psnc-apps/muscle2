@@ -5,6 +5,8 @@
 package muscle.core.ident;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  *
@@ -17,6 +19,10 @@ public class TcpLocation implements Location {
 	public TcpLocation(InetAddress addr, int port) {
 		this.addr = addr;
 		this.port = port;
+	}
+	
+	public InetSocketAddress getSocketAddress() {
+		return InetSocketAddress.createUnresolved(addr.getHostAddress(), port);
 	}
 	
 	public InetAddress getAddress() {

@@ -8,7 +8,7 @@ import utilities.data.ArrayMap;
 import utilities.data.ArraySet;
 
 /**
- *
+ * A simple resolver that delegates the actual creation and searching of Identifiers and Locations.
  * @author Joris Borgdorff
  */
 public class SimpleDelegatingResolver implements Resolver {

@@ -6,7 +6,6 @@ package muscle.net;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +92,7 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 	protected abstract void executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut) throws OncRpcException, IOException;
 	
 	
-	protected void encodeLocation(XdrTcpEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
+	protected static void encodeLocation(XdrTcpEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
 		if (!(loc instanceof TcpLocation)) {
 			throw new IllegalArgumentException("Location belonging to identity is not a TcpLocation; can only encode TcpLocation");
 		}
@@ -104,7 +103,7 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 		xdrOut.xdrEncodeInt(tcpLoc.getPort());
 	}
 
-	protected Location decodeLocation(XdrTcpDecodingStream xdrIn) throws OncRpcException, IOException {
+	protected static Location decodeLocation(XdrTcpDecodingStream xdrIn) throws OncRpcException, IOException {
 		byte[] addr = xdrIn.xdrDecodeByteVector();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
 		int port = xdrIn.xdrDecodeInt();

@@ -1,0 +1,51 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package muscle.manager;
+
+import java.util.Set;
+import muscle.core.ident.Identifier;
+import utilities.data.ArraySet;
+
+/**
+ *
+ * @author Joris Borgdorff
+ */
+public class SimulationManager {
+	private final Set<String> stillAlive;
+	private final Set<Identifier> active;
+	
+	private SimulationManager(Set<String> stillAlive) {
+		this.stillAlive = stillAlive;
+		this.active = new ArraySet<Identifier>();
+		System.out.println("StillAlive: " + this.stillAlive);
+	}
+
+	public synchronized boolean register(Identifier id) {
+		if (!id.isResolved()) {
+			throw new IllegalArgumentException("Only ids that are resolved may be registered.");
+		}
+		if (active.contains(id)) {
+			return false;
+		}
+		
+		active.add(id);
+		this.notifyAll();
+		return true;
+	}
+	
+	public synchronized boolean deregister(Identifier id) {
+		if (!active.contains(id)) {
+			return false;
+		}
+		active.remove(id);
+		return true;
+	}
+	
+	public synchronized boolean resolveIdentifier(Identifier id) {
+		while (! active.contains(id)) {
+			
+		}
+	}
+}

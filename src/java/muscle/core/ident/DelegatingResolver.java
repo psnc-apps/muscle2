@@ -5,7 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Adds autoquit functionality to the simple delegating resolver.
  * @author Joris Borgdorff
  */
 public class DelegatingResolver extends SimpleDelegatingResolver {

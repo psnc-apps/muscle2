@@ -23,7 +23,7 @@ public class ManagerConnectionHandler extends AbstractConnectionHandler<Simulati
 	}
 
 	@Override
-	protected Runnable createProtocolHandler(Socket s) {
+	protected SimulationManagerProtocolHandler createProtocolHandler(Socket s) {
 		return new SimulationManagerProtocolHandler(s, this.listener);
 	}
 }
