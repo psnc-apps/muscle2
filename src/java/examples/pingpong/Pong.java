@@ -1,12 +1,10 @@
 package examples.pingpong;
 
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.Scale;

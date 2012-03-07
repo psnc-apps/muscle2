@@ -1,20 +1,16 @@
 package examples.pingpong;
 
 import java.math.BigDecimal;
-
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
 import muscle.core.kernel.CAController;
 
 public class Ping extends CAController {
-
-	private static final long serialVersionUID = 1L;
 	private ConduitEntrance<byte[]> entrance;
 	private ConduitExit<byte[]> exit;
 
@@ -22,120 +18,89 @@ public class Ping extends CAController {
 	protected void addPortals() {
 		entrance = addEntrance("out", 1, byte[].class);
 		exit = addExit("in", 1, byte[].class);
-
 	}
 
 	@Override
 	protected void execute() {
-
 		// How many steps for a single test
 		int steps = Integer.parseInt(getCxAProperty("steps"));
 
 		// How many steps total will be done
-		int max_timesteps = Integer.parseInt(getCxAProperty("max_timesteps"));
-
+		int max_timesteps = Integer.parseInt(getCxAProperty("max_timesteps")) + 1;
+		
+		// How many steps total will be done
+		int runs = Integer.parseInt(getCxAProperty("same_size_runs"));
+		
 		// size in B
-		int size = 0;
-
-		// step in current test
-		int stepCount = 0;
-
-		// number of the test
-		int testNumber = 0;
+		int size = getIntProperty("start_kiB_per_message")*1024;
 
 		// helper with results for a single test
-		long[] times = new long[steps];
-
-		double[] avgs = new double[max_timesteps / steps];
-		double[] stDevs = new double[max_timesteps / steps];
-
-		byte[] ba;
+		long[] totalTimes = new long[runs];
+		byte[] data = new byte[1024*1024];
 
 		// Making noise in order to give time for JVM to stabilize
-		System.out.print("Prepairing");
-		for (int i = 0; i < steps && !willStop(); ++i) {
-			ba = new byte[1024 * 1024 * 32 / (i + 1)];
-			entrance.send(ba);
+		System.out.print("Preparing");
+		for (int i = 0; i < steps && !willStop(); i++) {
+			entrance.send(data);
 			exit.receive();
 			System.out.print(".");
 		}
-		System.out.println("\n\nValues are NOT divided by 2. Each value is calculated for RTT.\n");
-
-		printHeder(steps);
-
-		ba = new byte[size];
-
-		System.out.printf("%10d", size);
-
+		System.out.println("\n\nValues are NOT divided by 2. Each value is calculated for RTT.");
+		System.out.println("Sending " + max_timesteps + " messages in total. For each data size, " + runs + " tests are performed, each sending " + steps + " messages.\n");
+		
+		System.out.printf("|=%10s|=%10s|=%10s|=%10s|=%10s|=%10s|\n","Size (kiB)","Total (ms)","Avg (ms)","StdDev(ms)","StdDev(%)","Speed (MB/s)");
+		
 		while (!willStop()) {
-
-			// The step
-			long _ = System.currentTimeMillis();
-			entrance.send(ba);
-			exit.receive();
-			_ -= System.currentTimeMillis();
-
-			// Managing results
-			times[stepCount] = -_;
-			System.out.printf(" %9d", -_);
-
-			// As the test finishes, write the results
-			if (++stepCount == steps) {
-
-				// calculate avg and std dev
-				avgs[testNumber] = average(times);
-				stDevs[testNumber] = stDev(times, avgs[testNumber]);
-				System.out.printf(" %10.3f %10.3f", avgs[testNumber],
-						stDevs[testNumber]);
-
-				// MB
-				double speed = 953.67432 * (size == 0 ? Double.NaN : size)
-						/ avgs[testNumber] / 10e6;
-
-				System.out.printf(" %4.1f %14.6f", stDevs[testNumber]
-						/ avgs[testNumber] * 100, speed);
-
-				// setting new size
-				if (size == 0)
-					size = 1024;
-				else if (size < 1024 * 1024 * 32)
-					size *= 2;
-
-				ba = new byte[size];
-
-				System.out.printf("\n%10d", size);
-
-				stepCount = 0;
-				testNumber++;
+			data = new byte[size];
+			for (int test = 0; test < runs; test++) {
+				long tAll = System.nanoTime();
+				for (int i = 0; i < steps; i++) {
+					if (willStop()) {
+						System.out.println("willStop now!");
+						return;
+					}
+					// The step
+					entrance.send(data);
+					exit.receive();
+				}
+				totalTimes[test] = System.nanoTime() - tAll;
 			}
+			double avg = average(totalTimes,steps);
+			double stdDev = stdDev(totalTimes, avg, steps);
 
+			// nano -> milli
+			avg /= 1000000d;
+			stdDev /= 1000000d;
+			// MB/s -> 2*((Bytes/1000000)/(millisec/1000)) -> 2*(Bytes/1000)/millisec -> 2*(Bytes/(millisec*1000)) ->Bytes/(millisec*500)
+			double speed = size / (avg * 500d);
+			System.out.printf("| %10d| %10d| %10.3f| %10.3f| %10.3f| %10.3f|\n", size/1024, sum(totalTimes)/1000000, avg, stdDev, 100*stdDev/avg, speed == 0 ? Double.NaN : speed);
+
+			if (size == 0) {
+				size = 1024;
+			} else if (size < Integer.MAX_VALUE / 2) {
+				size *= 2;
+			}
 		}
-		System.out.printf("\n");
 	}
 
-	private void printHeder(int steps) {
-		System.out.printf("%10s", "Size[B]");
-		for (int i = 0; i < steps; ++i)
-			System.out.printf("  t_%02d[ms]", i);
-		System.out.printf(" %10s", "Avg[ms]");
-		System.out.printf(" %10s", "StdDev[ms]");
-		System.out.printf(" %4s", "[%]");
-		System.out.printf(" %14s", "[MB/s]");
-		System.out.println();
+	private double average(long[] times, int factor) {
+		return ((double) sum(times)) / (times.length * factor);
 	}
-
-	private double average(long[] times) {
+	
+	private long sum(long[] times) {
 		long sum = 0;
-		for (long time : times)
+		for (long time : times) {
 			sum += time;
-		return ((double) sum) / times.length;
+		}
+		return sum;
 	}
 
-	private double stDev(long[] times, double avg) {
+	private double stdDev(long[] times, double avg, int factor) {
 		double dev = 0.0;
-		for (long time : times)
-			dev -= ((double) time - avg) * (avg - (double) time);
-		return Math.sqrt(dev / ((double) times.length - 1));
+		for (long time : times) {
+			dev -= (time/(double)factor - avg) * (avg - time/(double)factor);
+		}
+		return Math.sqrt(dev / (times.length - 1));
 	}
 
 	@Override
