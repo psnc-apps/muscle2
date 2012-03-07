@@ -47,6 +47,7 @@ public class JADE {
 
 		// boot jade without relying on jade.Boot.main
 		containerProfile = new ProfileImpl(jade.Boot.parseCmdLineArgs(args));
+		containerProfile.setParameter("jade_core_messaging_MessageManager_maxqueuesize","500000000");
 		isMain = containerProfile.getBooleanProperty(Profile.MAIN, false);
 		jade.core.Runtime jadeRuntime = jade.core.Runtime.instance();
 		jadeRuntime.setCloseVM(true);
