@@ -117,8 +117,9 @@ bool Options::load(int argc, char **argv)
     read_opts.erase("logFile");
   
   }
-  catch(program_options::unknown_option)
+  catch(program_options::unknown_option err)
   {
+    cerr << err.what() << endl;
     opts.print(cout);
     return false;
   }
@@ -151,8 +152,9 @@ bool Options::load(int argc, char **argv)
       read_opts.erase("logFile");
   
     }
-    catch(program_options::unknown_option)
+    catch(program_options::unknown_option err)
     {
+      cerr << err.what() << endl;
       opts.print(cout);
       return false;
     }
