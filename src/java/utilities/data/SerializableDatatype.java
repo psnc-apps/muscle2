@@ -4,7 +4,21 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- *
+ * Datatypes that are supported to serialize in a cross-platform setting.
+ * 
+ * Each datatype has a Java class associated to it. The only datatype that is
+ * not expected to work cross-platform is JAVA_BYTE_OBJECT, which will only work
+ * in Java.
+ * STRING_MAP is a mapping from strings to serializable data; COLLECTION is a list
+ * or set of serializable data.
+ * 
+ * The protocol connected to these datatypes is that first the datatype number is sent,
+ * and then the actual data. For NULL this is no data, for STRING_MAP and COLLECTION
+ * first the size is sent, and then size*STRING and datatype, or size*datatype, respectively.
+ * 
+ * The MATRIX first send a vector of data, then the dimensions X, Y.
+ * (and Z with MATRIX_3D, and Z and ZZ with MATRIX_4D).
+ * 
  * @author Joris Borgdorff
  */
 public enum SerializableDatatype {

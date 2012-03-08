@@ -5,6 +5,7 @@
 package utilities.data;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,20 +16,49 @@ import org.acplt.oncrpc.XdrDecodingStream;
 import org.acplt.oncrpc.XdrEncodingStream;
 
 /**
+ * Stores data in a way that is serializable to other platforms.
  *
+ * Aim is to support the datatypes listed in SerializableDatatype. Also serializable
+ * Java objects may be added, which will be encoded as byte strings. This is not
+ * interchangable with other languages.
+ * 
+ * At the moment, a direct interface with Xdr exists, other serialization methods
+ * could also be implemented.
+ * 
  * @author Joris Borgdorff
  */
 public class SerializableData {
 	private final SerializableDatatype type;
-	private final Object value;
+	private final Serializable value;
 	private final static SerializableDatatype[] datatypes = SerializableDatatype.values();
 	
-	public SerializableData(Object value, SerializableDatatype type) {
+	/**
+	 * Creates a new SerializableData object containing a value of with datatype type.
+	 * It will use Java byte serialization if the object does not match any predetermined type.
+	 * This will make the message incompatible with other programming languages.
+	 * @param value any Serializable object of the right datatype
+	 * @param type the type corresponding to the serializable object
+	 * @throws IllegalArgumentException if the type provided does not match the data.
+	 */
+	public SerializableData(Serializable value, SerializableDatatype type) {
+		if (type == SerializableDatatype.NULL && value != null) {
+			throw new IllegalArgumentException("A NULL datatype should be provided with null data.");
+		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT && !(value instanceof byte[])) {
+			value = new ByteJavaObjectConverter().serialize(value);
+		} else if (type.getDataClass() != null && !type.getDataClass().isInstance(value)) {
+			throw new IllegalArgumentException("Class of value '" + value.getClass() + "' does not match datatype '" + type + "'");
+		}
 		this.type = type;
 		this.value = value;
 	}
 	
-	public static SerializableData valueOf(Object value) {
+	/**
+	 * Creates a new SerializableData object containing given value, guessing
+	 * the right datatype.
+	 * @param value any Serializable object
+	 * @see SerializableData(Serializable, SerializableDatatype)
+	 */
+	public static SerializableData valueOf(Serializable value) {
 		if (value == null) {
 			return new SerializableData(null, SerializableDatatype.NULL);
 		}
@@ -37,9 +67,12 @@ public class SerializableData {
 				return new SerializableData(value, type);
 			}
 		}
-		return new SerializableData(new ByteJavaObjectConverter().serialize(value),SerializableDatatype.JAVA_BYTE_OBJECT);
+		return new SerializableData(value,SerializableDatatype.JAVA_BYTE_OBJECT);
 	}
 	
+	/**
+	 * Get the data, unserialized. 
+	 */
 	public Object getValue() {
 		if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
 			return new ByteJavaObjectConverter().deserialize((byte[])value);
@@ -49,10 +82,20 @@ public class SerializableData {
 		}
 	}
 
+	/**
+	 * Get the datatype.
+	 */
 	public SerializableDatatype getType() {
 		return type;
 	}
 	
+	/**
+	 * Parses a SerializableData from an XdrDecodingStream.
+	 * @param xdrIn an initialized XdrDecodingStream
+	 * @return a new SerializableData
+	 * @throws OncRpcException if the supplied data is not correct
+	 * @throws IOException if the connection fails
+	 */
 	public static SerializableData parseXdrData(XdrDecodingStream xdrIn) throws OncRpcException, IOException {
 		int typeNum = xdrIn.xdrDecodeInt();
 		
@@ -61,7 +104,7 @@ public class SerializableData {
 		}
 		
 		SerializableDatatype type = datatypes[typeNum];
-		Object value;
+		Serializable value;
 		int size = 0;
 		
 		switch (type) {
@@ -70,7 +113,7 @@ public class SerializableData {
 				break;
 			case STRING_MAP:
 				size = xdrIn.xdrDecodeInt();
-				Map<String,SerializableData> xdrMap = new HashMap<String,SerializableData>(size*3/2);
+				HashMap<String,SerializableData> xdrMap = new HashMap<String,SerializableData>(size*3/2);
 				
 				for (int i = 0; i < size; i++) {
 					xdrMap.put(xdrIn.xdrDecodeString(), SerializableData.parseXdrData(xdrIn));
@@ -79,7 +122,7 @@ public class SerializableData {
 				break;
 			case COLLECTION:
 				size = xdrIn.xdrDecodeInt();
-				List<SerializableData> xdrList = new ArrayList<SerializableData>(size);
+				ArrayList<SerializableData> xdrList = new ArrayList<SerializableData>(size);
 				
 				for (int i = 0; i < size; i++) {
 					xdrList.add(SerializableData.parseXdrData(xdrIn));
@@ -180,6 +223,12 @@ public class SerializableData {
 		return new SerializableData(value, type);
 	}
 	
+	/**
+	 * Encodes the data over an XdrEncodingStream.
+	 * @param xdrOut an initialized XdrEncodingStream, it is not flushed.
+	 * @throws OncRpcException if the supplied data is not correct
+	 * @throws IOException if the connection fails
+	 */
 	public void encodeXdrData(XdrEncodingStream xdrOut) throws OncRpcException, IOException {
 		xdrOut.xdrEncodeInt(type.ordinal());
 		
@@ -280,7 +329,11 @@ public class SerializableData {
 		}
 	}
 	
-	private static Object arrayToMatrix(Object value, SerializableDatatype type, int dimX, int dimY, int dimZ, int dimZZ) {
+	/**
+	 * If the given type is a matrix, it converts given array to a matrix
+	 * @throws ClassCastException if the given data is not an array of the correct type.
+	 */
+	private static Serializable arrayToMatrix(Serializable value, SerializableDatatype type, int dimX, int dimY, int dimZ, int dimZZ) {
 		switch (type) {
 			case BOOLEAN_MATRIX_2D: {
 				boolean[][] newValue = new boolean[dimX][dimY];
@@ -475,8 +528,12 @@ public class SerializableData {
 		return value;
 	}
 	
-	private Object matrixToArray() {
-		Object newValue = value;
+	/**
+	 * Gets the current data. If the datatype is a matrix, it converts it to an array first.
+	 * @throws ClassCastException if the data is not a matrix of the correct type.
+	 */
+	private Serializable matrixToArray() {
+		Serializable newValue = value;
 		
 		if (type.isMatrix()) {
 			int dimX, dimY, dimZ, dimZZ;
