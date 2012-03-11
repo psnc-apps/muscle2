@@ -16,14 +16,14 @@ import muscle.core.messaging.jade.DataMessage;
  *
  * @author Joris Borgdorff
  */
-public class JadeReceiver<T> extends AbstractCommunicatingPoint<DataMessage<T>, ACLMessage,JadeIdentifier,JadePortalID> implements Receiver<DataMessage<T>, ACLMessage,JadeIdentifier,JadePortalID> {
-	private BlockingQueue<DataMessage<T>> queue;
+public class JadeReceiver<T extends DataMessage> extends AbstractCommunicatingPoint<T, ACLMessage,JadeIdentifier,JadePortalID> implements Receiver<T, ACLMessage,JadeIdentifier,JadePortalID> {
+	private BlockingQueue<T> queue;
 	
 	public JadeReceiver() {
-		this.queue = new LinkedBlockingQueue<DataMessage<T>>();
+		this.queue = new LinkedBlockingQueue<T>();
 	}
 
-	public void put(DataMessage<T> msg) {
+	public void put(T msg) {
 		queue.add(msg);
 	}
 
@@ -35,7 +35,7 @@ public class JadeReceiver<T> extends AbstractCommunicatingPoint<DataMessage<T>, 
 	}
 
 	@Override
-	public DataMessage<T> receive() {
+	public T receive() {
 		try {
 			return queue.take();
 		} catch (InterruptedException ex) {

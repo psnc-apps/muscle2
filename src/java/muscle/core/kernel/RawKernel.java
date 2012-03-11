@@ -184,7 +184,7 @@ public abstract class RawKernel {
 			}
 		}
 
-		controller.addSink(entrance);
+		controller.addConduitEntrance(entrance);
 		entrances.add(entrance);
 	}
 
@@ -200,7 +200,7 @@ public abstract class RawKernel {
 			}
 		}
 
-		controller.addSource(exit);
+		controller.addConduitExit(exit);
 		exits.add(exit);
 	}
 

@@ -13,6 +13,6 @@ import muscle.core.ident.Identifiable;
  */
 public interface InstanceController extends Identifiable {
 	public String getLocalName();
-	public <T extends Serializable> void addSink(ConduitEntranceController<T> s);
-	public <T extends Serializable> void addSource(ConduitExitController<T> s);
+	public <T extends Serializable> void addConduitEntrance(ConduitEntranceController<T> s);
+	public <T extends Serializable> void addConduitExit(ConduitExitController<T> s);
 }

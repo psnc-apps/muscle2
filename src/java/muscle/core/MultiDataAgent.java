@@ -20,19 +20,18 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import java.util.logging.Logger;
+import jade.core.Agent;
 import muscle.core.ident.JadeAgentID;
 import muscle.core.ident.JadeLocation;
 import muscle.core.kernel.InstanceController;
-import muscle.core.messaging.jade.IncomingMessageProcessor;
+import muscle.core.messaging.jade.JadeIncomingMessageProcessor;
 
 /**
 JADE agent which filters incoming data messages and passes them to multiple message sinks
 @author Jan Hegewald
  */
-public abstract class MultiDataAgent extends jade.core.Agent implements InstanceController {
-	protected transient IncomingMessageProcessor messageProcessor;
-	private static final transient Logger logger = Logger.getLogger(MultiDataAgent.class.getName());
+public abstract class MultiDataAgent extends Agent implements InstanceController {
+	protected transient JadeIncomingMessageProcessor messageProcessor;
 
 	@Override
 	public JadeAgentID getIdentifier() {
@@ -55,7 +54,7 @@ public abstract class MultiDataAgent extends jade.core.Agent implements Instance
 	}
 
 	protected void initTransients() {
-		messageProcessor = new IncomingMessageProcessor(this);
+		messageProcessor = new JadeIncomingMessageProcessor(this);
 		this.addBehaviour(messageProcessor);
 	}
 }

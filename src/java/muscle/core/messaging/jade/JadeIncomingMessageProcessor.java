@@ -37,13 +37,13 @@ process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class IncomingMessageProcessor extends CyclicBehaviour {
+public class JadeIncomingMessageProcessor extends CyclicBehaviour {
 	private final Map<Identifier, JadeReceiver> receivers;
-	private static final Logger logger = Logger.getLogger(IncomingMessageProcessor.class.getName());
+	private static final Logger logger = Logger.getLogger(JadeIncomingMessageProcessor.class.getName());
 	private final Agent owner;
 	private final ACLConverter deserializer;
 
-	public IncomingMessageProcessor(Agent owner) {
+	public JadeIncomingMessageProcessor(Agent owner) {
 		this.receivers = new ArrayMap<Identifier, JadeReceiver>();
 		this.owner = owner;
 		this.deserializer = new ACLConverter(new ByteJavaObjectConverter());

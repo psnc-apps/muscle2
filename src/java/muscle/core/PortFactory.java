@@ -14,19 +14,18 @@ import muscle.core.ident.JadePortalID;
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.JadeInstanceController;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.Observation;
 import muscle.core.messaging.serialization.ACLConverter;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
-import muscle.core.messaging.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
 public class PortFactory {
-	public <T> Receiver<DataMessage<T>,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide) {
-		Receiver<DataMessage<T>,ACLMessage, JadeIdentifier, JadePortalID> recv = new JadeReceiver<T>();
-		recv.setDataConverter(new ACLConverter<T>(new ByteJavaObjectConverter<T>()));
+	public <T> Receiver<T,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide) {
+		Receiver<T,ACLMessage, JadeIdentifier, JadePortalID> recv = new JadeReceiver();
+		recv.setDataConverter(new ACLConverter(new ByteJavaObjectConverter()));
 		if (otherSide instanceof JadePortalID) {
 			recv.setComplementaryPort((JadePortalID)otherSide);
 		}
