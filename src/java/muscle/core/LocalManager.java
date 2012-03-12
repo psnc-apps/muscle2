@@ -12,7 +12,7 @@ import muscle.core.ident.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.core.kernel.ThreadedInstanceController;
-import muscle.net.CrossSocketFactory;
+import muscle.net.LocalSocketFactory;
 
 /**
  * @author Joris Borgdorff
@@ -23,6 +23,14 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private final LocalManagerOptions opts;
 	private SimpleDelegatingResolver res;
 	
+	public static void main(String[] args) {
+		LocalManagerOptions opts = new LocalManagerOptions(args);
+		instance = new LocalManager(opts);
+		instance.init();
+		ConnectionScheme.getInstance(instance);
+		instance.start();
+	}
+	
 	private LocalManager(LocalManagerOptions opts) {
 		this.opts = opts;
 		controllers = new ArrayList<InstanceController>(opts.getAgents().size());
@@ -31,7 +39,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	
 	private void init() {
 		Location loc = new TcpLocation(opts.getLocalSocketAddress());
-		TcpIDManipulator idManipulator = new TcpIDManipulator(new CrossSocketFactory(), opts.getManagerSocketAddress(), loc);
+		TcpIDManipulator idManipulator = new TcpIDManipulator(new LocalSocketFactory(), opts.getManagerSocketAddress(), loc);
 		res = new SimpleDelegatingResolver(idManipulator);
 		
 		for (InstanceClass name : opts.getAgents()) {
@@ -42,11 +50,12 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private void start() {
-		for (InstanceController inst : controllers) {
-			new Thread(inst).start();
+		// Run the first controller in the current thread;
+		for (int i = 1; i < controllers.size(); i++) {
+			new Thread(controllers.get(i)).start();
 		}
+		controllers.get(0).run();
 	}
-	
 	
 	@Override
 	public Resolver getResolver() {

@@ -16,11 +16,11 @@ import java.net.Socket;
 public class LocalSocketFactory implements SocketFactory {
 	@Override
 	public Socket createSocket() {
-		throw new UnsupportedOperationException("Not supported yet.");
+		return new Socket();
 	}
 
 	@Override
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress addr) throws IOException {
-		throw new UnsupportedOperationException("Not supported yet.");
+		return new ServerSocket(port, backlog, addr);
 	}
 }

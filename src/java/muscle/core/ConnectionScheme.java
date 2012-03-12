@@ -30,10 +30,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.PortalID;
-import muscle.core.ident.Resolver;
+import muscle.core.ident.*;
 import utilities.MiscTool;
 import utilities.data.ArrayMap;
 import utilities.data.Env;
@@ -50,6 +47,7 @@ public class ConnectionScheme implements Serializable {
 	private LinkedList<ExitDescription> targetExitDescriptions = new LinkedList<ExitDescription>(); // leafs of a connection chain entrance->conduit->exit
 	private static final transient Logger logger = Logger.getLogger(ConnectionScheme.class.getName());
 	protected Env env;
+	private final ResolverFactory rf;
 	public List<String> kernelList; // for otf
 	public List<String> conduitList; // for otf
 	
@@ -58,19 +56,25 @@ public class ConnectionScheme implements Serializable {
 	}
 
 	private transient final static String cs_file_uri = "cs_file_uri";
-	private static ConnectionScheme instance;
 	
-	public static synchronized ConnectionScheme getInstance() {
+	public static synchronized ConnectionScheme getInstance(ResolverFactory rf) {
 		if (instance == null) {
-			instance = new ConnectionScheme();
+			instance = new ConnectionScheme(rf);
 		}
 		return instance;
 	}
+
+	private static ConnectionScheme instance;
 	
-	private ConnectionScheme() {
-		this.init();
+	public static synchronized ConnectionScheme getInstance() {
+		return instance;
+	}
+	
+	private ConnectionScheme(ResolverFactory rf) {
+		this.rf = rf;
 		kernelList = null;
 		conduitList = null;
+		this.init();
 	}
 
 	/**
@@ -149,7 +153,7 @@ public class ConnectionScheme implements Serializable {
 	declares a new edge (entrance->conduit->exit) of our graph
 	*/
 	public void addConnection(String entranceID, String conduitClassName, String conduitID, List<String> conduitArgs, String exitID) throws InterruptedException {
-		Resolver r = Boot.getInstance().getResolver();
+		Resolver r = rf.getResolver();
 		PortalID pid = (PortalID)r.getIdentifier(entranceID, IDType.port);
 		Identifier ownerID = pid.getOwnerID();
 		EntranceDescription entrance = new EntranceDescription(pid);

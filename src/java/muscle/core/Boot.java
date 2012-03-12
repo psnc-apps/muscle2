@@ -63,7 +63,6 @@ public class Boot implements ResolverFactory {
 	public static Boot getInstance(String[] args) {
 		if (instance == null) {
 			instance = new Boot(args);
-			instance.init();
 		}
 		return instance;
 	}
@@ -170,7 +169,10 @@ public class Boot implements ResolverFactory {
 	}
 	
 	public static void main(String args[]) {
-		Boot.getInstance(args);
+		Boot boot = Boot.getInstance(args);
+		ConnectionScheme.getInstance(boot);
+		boot.init();
+
 //		jade.Boot.main(args); // forward booting to jade
 	}
 	

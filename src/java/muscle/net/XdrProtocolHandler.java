@@ -47,7 +47,7 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 			xdrIn =  new XdrTcpDecodingStream(socket, 64 * 1024);
 			xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
 			
-			xdrIn.beginDecoding();			
+			xdrIn.beginDecoding();
 			executeProtocol(xdrIn, xdrOut);
 
 			logger.finest("Flushing response");

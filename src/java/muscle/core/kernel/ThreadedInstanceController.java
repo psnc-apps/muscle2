@@ -111,12 +111,14 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		return id.getName();
 	}
 
+	// TODO more meaningful implementation
 	public <T extends Serializable> void addConduitEntrance(ConduitEntranceController<T> s) {
-		throw new UnsupportedOperationException("Can not add entrance yet.");
+		entrances.add(s);
 	}
 
+	// TODO more meaningful implementation
 	public <T extends Serializable> void addConduitExit(ConduitExitController<T> s) {
-		throw new UnsupportedOperationException("Can not add entrance yet.");
+		exits.add(s);
 	}
 
 	public void dispose() {

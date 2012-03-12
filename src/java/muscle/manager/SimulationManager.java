@@ -4,6 +4,7 @@
 
 package muscle.manager;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -11,6 +12,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.Identifier;
 import muscle.net.AbstractConnectionHandler;
+import muscle.net.LocalSocketFactory;
+import muscle.net.SocketFactory;
 import utilities.data.ArrayMap;
 import utilities.data.ArraySet;
 
@@ -99,12 +102,14 @@ public class SimulationManager {
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch = null;
 		
-		try {	
-			mch = new ManagerConnectionHandler(sm);
+		try {
+			int port = 18310;
+			InetAddress addr = InetAddress.getLocalHost();
+			SocketFactory sf = new LocalSocketFactory();
+			mch = new ManagerConnectionHandler(sm, sf.createServerSocket(port, 10, addr));
 			mch.start();
-			logger.info("Started the connection handler.");
+			logger.log(Level.INFO, "Started the connection handler, listening on address {0} on port {1}", new Object[]{addr.getHostAddress(), port});
 			sm.setConnectionHandler(mch);
-			
 		} catch (Exception ex) {
 			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
 			if (mch != null) {

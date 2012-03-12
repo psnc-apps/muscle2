@@ -47,7 +47,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		Socket s = null;
 		try {
 			s = this.ss.accept();
-			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
+			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			executor.submit(this.createProtocolHandler(s));
 		}
 		catch (IOException iox) {
