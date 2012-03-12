@@ -28,12 +28,14 @@ public class TcpIDManipulator implements IDManipulator {
 	private final SocketFactory sockets;
 	private Resolver resolver;
 	private final SocketAddress managerAddr;
+	private final Location location;
 	
-	public TcpIDManipulator(SocketFactory sf, SocketAddress managerAddr) {
+	public TcpIDManipulator(SocketFactory sf, SocketAddress managerAddr, Location loc) {
 		this.executor = Executors.newCachedThreadPool();
 		this.sockets = sf;
 		this.managerAddr = managerAddr;
 		this.resolver = null;
+		this.location = loc;
 	}
 	
 	public void setResolver(DelegatingResolver resolver) {
@@ -77,10 +79,9 @@ public class TcpIDManipulator implements IDManipulator {
 		}
 	}
 
-	// TODO: implement getLocation
 	@Override
 	public Location getLocation() {
-		throw new UnsupportedOperationException("Not supported yet.");
+		return this.location;
 	}
 
 	@Override

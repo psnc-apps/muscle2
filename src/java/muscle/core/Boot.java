@@ -21,35 +21,25 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import java.lang.management.RuntimeMXBean;
-import muscle.core.ident.Resolver;
-import java.util.Arrays;
-import muscle.core.ident.JadeAgentIDManipulator;
-import muscle.Constant;
-import utilities.MiscTool;
 import java.io.File;
 import java.io.FileWriter;
-import java.lang.management.ManagementFactory;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.management.*;
+import java.util.*;
+import muscle.Constant;
 import muscle.Version;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import muscle.core.ident.JadeAgentIDManipulator;
+import muscle.core.ident.Resolver;
+import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.JadeInstanceController;
 import utilities.JVM;
+import utilities.MiscTool;
 import utilities.data.ArraySet;
-
 
 /**
 handle booting/terminating of MUSCLE
 @author Jan Hegewald
 */
-public class Boot {
+public class Boot implements ResolverFactory {
 
 	private final List<Thread> otherHooks = new LinkedList<Thread>();
 	private final File infoFile;

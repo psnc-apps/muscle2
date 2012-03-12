@@ -1,12 +1,15 @@
 package muscle.core;
 
-import com.beust.jcommander.IParameterValidator;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.*;
 import java.io.File;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import muscle.core.ident.InstanceClass;
+import muscle.core.kernel.RawKernel;
 
 /**
  *
@@ -15,8 +18,14 @@ import java.util.List;
 public class LocalManagerOptions {
 	private JCommander jcom;
 	
-	@Parameter(description="AGENTS")
-	private List<String> agents = new ArrayList<String>();
+	@Parameter(description="INST_NAME:INST_CLASS ...",required=true,converter=AgentNameConverter.class)
+	private List<InstanceClass> agents = new ArrayList<InstanceClass>();
+	
+	@Parameter(names={"-m", "--manager"},required=true,converter=SocketAddressConverter.class)
+	private InetSocketAddress managerAddress;
+	
+	@Parameter(names={"-a", "--address"},converter=SocketAddressConverter.class)
+	private InetSocketAddress localAddress = InetSocketAddress.createUnresolved("127.0.0.1", 6872);
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);
@@ -33,8 +42,77 @@ public class LocalManagerOptions {
 		jcom.usage();
 	}
 	
-	public List<String> getAgents() {
+	public List<InstanceClass> getAgents() {
 		return this.agents;
+	}
+	
+	public SocketAddress getManagerSocketAddress() {
+		return this.managerAddress;
+	}
+	
+	public InetSocketAddress getLocalSocketAddress() {
+		return this.localAddress;
+	}
+	
+	public static class AgentNameConverter implements IStringConverter<InstanceClass> {
+		@Override
+		public InstanceClass convert(String value) {
+			String[] s = value.split(":");
+			if (s.length < 2) {
+				throw new ParameterException("An Instance should be specified by a name and a class, separated by a colon (:); argument " + value + " is not formatted as such.");
+			} else if (s.length > 2) {
+				throw new ParameterException("The name or class of an instance may not contain a colon; argument " + value + " contains too many colons.");
+			}
+			
+			Class<?> clazz;
+			
+			if (s[0].equals("")) {
+				throw new ParameterException("An Instance name may not be empty; argument " + value + " does not specify a name.");
+			}
+			
+			if (s[1].equals("")) {
+				throw new ParameterException("An Instance class may not be empty; argument " + value + " does not specify a class.");
+			} else {
+				try {
+					clazz = Class.forName(s[1]);
+				} catch (ClassNotFoundException ex) {
+					throw new ParameterException("Instance class " + s[1] + " of argument " + value + " is not found; make sure the cxa file and the class name match, and that all sources are included in the CLASSPATH.\nHINT: adjust the cxa file to include your build directory with\nm = Muscle.LAST\nm.add_classpath File.dirname(__FILE__)+\"[REL_PATH_TO_CLASSES]\"\n");
+				}
+			}
+			if (!clazz.isAssignableFrom(RawKernel.class)) {
+				throw new ParameterException("Can only instantiate classes inhereting muscle.core.kernel.RawKernel");
+			}
+			return new InstanceClass(s[0], clazz);		
+		}
+	}
+	
+	
+	public static class SocketAddressConverter implements IStringConverter<InetSocketAddress> {
+		@Override
+		public InetSocketAddress convert(String value) {
+			String[] s = value.split(":");
+			if (s.length != 2) {
+				throw new ParameterException("Location should be specified by an address and a port, separated by a colon (:); argument " + value + " is not formatted as such.");
+			}
+			
+			InetAddress addr;
+			
+			try {
+				addr = InetAddress.getByName(s[0]);
+			} catch (UnknownHostException ex) {
+				throw new ParameterException("Internet address " + s[0] + " in address " + value + " is not reachable.");
+			}
+			
+			int port;
+			
+			try {
+				port = Integer.parseInt(s[1]);
+			} catch (NumberFormatException ex) {
+				throw new ParameterException("Port " + s[0] + " in address " + value + " is not a valid number.");
+			}
+			
+			return new InetSocketAddress(addr, port);
+		}
 	}
 	
 	public static class WritableFile implements IParameterValidator {
@@ -62,6 +140,3 @@ public class LocalManagerOptions {
 		}
 	}
 }
-
-
-

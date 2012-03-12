@@ -82,7 +82,6 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 			sink.dispose();
 		}
 
-		
 		this.realController.dispose();
 		doDelete();
 	}
@@ -90,15 +89,21 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 	@Override
 	final protected void setup() {
 		super.setup();
-		
+
 		Identifier id = getIdentifier();
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		exitDescriptions = cs.exitDescriptionsForIdentifier(id);
 		entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
-
-		realController = new ThreadedInstanceController(id, Boot.getInstance().getAgentClass(this.getLocalName()), this, super.getArguments());
-		realController.setMainController(this);
-		realController.start();
+		
+		try {
+			Boot boot = Boot.getInstance();
+			Class clazz = Class.forName(boot.getAgentClass(this.getLocalName()));
+			realController = new ThreadedInstanceController(id, clazz, this, boot, super.getArguments());
+			realController.setMainController(this);
+			new Thread(realController).start();
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, "Could not load class " + Boot.getInstance().getAgentClass(this.getLocalName()) + " of instance " + getLocalName(), ex);
+		}
 	}
 
 	public String toString() {

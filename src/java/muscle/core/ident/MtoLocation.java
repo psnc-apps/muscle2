@@ -21,4 +21,19 @@ public class MtoLocation extends TcpLocation {
 	public TcpLocation getMtoTcpLocation() {
 		return mtoLoc;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || !this.getClass().equals(o.getClass())) return false;
+		
+		return super.equals(o) && mtoLoc.equals(((MtoLocation)o).mtoLoc);
+	}
+	
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 59 * hash + super.hashCode();
+		hash = 59 * hash + (mtoLoc == null ? 0 : mtoLoc.hashCode());
+		return hash;
+	}
 }

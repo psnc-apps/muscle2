@@ -6,7 +6,6 @@ package muscle.core.ident;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 /**
  *
@@ -20,6 +19,10 @@ public class TcpLocation implements Location {
 		this.addr = addr;
 		this.port = port;
 	}
+
+	public TcpLocation(InetSocketAddress localSocketAddress) {
+		this(localSocketAddress.getAddress(), localSocketAddress.getPort());
+	}
 	
 	public InetSocketAddress getSocketAddress() {
 		return InetSocketAddress.createUnresolved(addr.getHostAddress(), port);
@@ -31,5 +34,20 @@ public class TcpLocation implements Location {
 
 	public int getPort() {
 		return port;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || !this.getClass().equals(o.getClass())) return false;
+		
+		return addr.equals(((TcpLocation)o).addr) && port == ((TcpLocation)o).port;
+	}
+	
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 59 * hash + (this.addr != null ? this.addr.hashCode() : 0);
+		hash = 59 * hash + this.port;
+		return hash;
 	}
 }

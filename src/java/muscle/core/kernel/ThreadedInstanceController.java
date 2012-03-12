@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.Boot;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.Resolver;
+import muscle.core.ident.ResolverFactory;
 import utilities.JVM;
 import utilities.MiscTool;
 import utilities.Timing;
@@ -27,8 +27,8 @@ import utilities.data.FastArrayList;
  *
  * @author Joris Borgdorff
  */
-public class ThreadedInstanceController extends Thread implements InstanceController {
-	private final String instanceClassName;
+public class ThreadedInstanceController implements Runnable, InstanceController {
+	private final Class<?> instanceClass;
 	private final Identifier id;
 	private RawKernel instance;
 	private boolean execute;
@@ -41,15 +41,17 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 	private final List<ConduitEntranceController<?>> entrances = new ArrayList<ConduitEntranceController<?>>(); //these are the conduit entrances
 	private final InstanceControllerListener listener;
 	private final Object[] args;
+	private final ResolverFactory resolverFactory;
 
-	public ThreadedInstanceController(Identifier id, String instanceClassName, InstanceControllerListener listener, Object[] args) {
+	public ThreadedInstanceController(Identifier id, Class<?> instanceClass, InstanceControllerListener listener, ResolverFactory rf, Object[] args) {
 		this.id = id;
-		this.instanceClassName = instanceClassName;
+		this.instanceClass = instanceClass;
 		this.instance = null;
 		this.execute = true;
 		this.listener = listener;
 		this.args = args;
 		this.mainController = null;
+		this.resolverFactory = rf;
 	}
 	
 	public void setMainController(InstanceController ic) {
@@ -60,7 +62,7 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 	public void run() {		
 		System.out.println(getLocalName() + ": starting kernel");
 		try {
-			instance = (RawKernel) Class.forName(this.instanceClassName).newInstance();
+			instance = (RawKernel) this.instanceClass.newInstance();
 
 			instance.setInstanceController(this.mainController == null ? this : this.mainController);
 
@@ -98,11 +100,9 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 				listener.isFinished(this);
 			}
 		} catch (InstantiationException ex) {
-			logger.log(Level.SEVERE, "Could not instantiate Instance " + getLocalName() + " with class " + this.instanceClassName, ex);
+			logger.log(Level.SEVERE, "Could not instantiate Instance " + getLocalName() + " with class " + this.instanceClass.getName(), ex);
 		} catch (IllegalAccessException ex) {
-			logger.log(Level.SEVERE, "Permission denied to class " + this.instanceClassName + " of Instance " + getLocalName(), ex);
-		} catch (ClassNotFoundException ex) {
-			logger.log(Level.SEVERE, "Class " + this.instanceClassName + " of Instance " + getLocalName() + " not found", ex);
+			logger.log(Level.SEVERE, "Permission denied to class " + this.instanceClass.getName() + " of Instance " + getLocalName(), ex);
 		}
 	}
 
@@ -136,7 +136,7 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 		}
 		// Deregister with the resolver
 		try {
-			Resolver r = Boot.getInstance().getResolver();
+			Resolver r = resolverFactory.getResolver();
 			r.deregister(this.mainController == null ? this : this.mainController);
 		} catch (InterruptedException ex) {
 			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
@@ -156,7 +156,7 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 
 			writer.write("this is file <" + infoFile + "> created by <" + getClass() + ">" + nl);
 			writer.write("start date: " + (new java.util.Date()) + nl);
-			writer.write("agent name: " + getName() + nl);
+			writer.write("agent name: " + getLocalName() + nl);
 			writer.write("coarsest log level: " + logger.getLevel() + nl);
 			writer.write(nl);
 			writer.write("executing ..." + nl);
@@ -209,7 +209,7 @@ public class ThreadedInstanceController extends Thread implements InstanceContro
 	
 	private void registerPortals() {
 		try {
-			Resolver locator = Boot.getInstance().getResolver();
+			Resolver locator = resolverFactory.getResolver();
 			locator.register(this.mainController == null ? this : this.mainController);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
