@@ -4,7 +4,6 @@ import com.beust.jcommander.*;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,7 @@ public class LocalManagerOptions {
 	private InetSocketAddress managerAddress;
 	
 	@Parameter(names={"-a", "--address"},converter=SocketAddressConverter.class)
-	private InetSocketAddress localAddress = InetSocketAddress.createUnresolved("127.0.0.1", 6872);
+	private InetSocketAddress localAddress = new InetSocketAddress("127.0.0.1", 6872);
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);
@@ -46,7 +45,7 @@ public class LocalManagerOptions {
 		return this.agents;
 	}
 	
-	public SocketAddress getManagerSocketAddress() {
+	public InetSocketAddress getManagerSocketAddress() {
 		return this.managerAddress;
 	}
 	

@@ -5,8 +5,8 @@
 package muscle.core.ident;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -15,8 +15,8 @@ import muscle.manager.SimulationManagerProtocol;
 import muscle.net.SocketFactory;
 import muscle.net.XdrProtocolHandler;
 import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
+import org.acplt.oncrpc.XdrDecodingStream;
+import org.acplt.oncrpc.XdrEncodingStream;
 
 /**
  *
@@ -27,10 +27,10 @@ public class TcpIDManipulator implements IDManipulator {
 	private final ExecutorService executor;
 	private final SocketFactory sockets;
 	private Resolver resolver;
-	private final SocketAddress managerAddr;
+	private final InetSocketAddress managerAddr;
 	private final Location location;
 	
-	public TcpIDManipulator(SocketFactory sf, SocketAddress managerAddr, Location loc) {
+	public TcpIDManipulator(SocketFactory sf, InetSocketAddress managerAddr, Location loc) {
 		this.executor = Executors.newCachedThreadPool();
 		this.sockets = sf;
 		this.managerAddr = managerAddr;
@@ -129,16 +129,20 @@ public class TcpIDManipulator implements IDManipulator {
 		}
 		
 		@Override
-		protected void executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut) throws OncRpcException, IOException {
+		protected void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
 			// Send command
+			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
 			xdrOut.xdrEncodeInt(this.action.ordinal());
 			xdrOut.xdrEncodeString(this.id.getName());
 			if (action == SimulationManagerProtocol.REGISTER) {
 				encodeLocation(xdrOut, this.id.getLocation());
 			}
-			xdrOut.endEncoding(true);
+			// Flush command message
+			xdrOut.endEncoding();
+			logger.log(Level.FINEST, "Initiated protocol to perform action {0} on ID {1}: sent action code", new Object[]{action, id});
 			
 			// See if the command was understood
+			xdrIn.beginDecoding();
 			int opnum = xdrIn.xdrDecodeInt();
 			SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 			if (opnum >= protoArr.length || opnum < 0 || protoArr[opnum] == SimulationManagerProtocol.UNSUPPORTED) {

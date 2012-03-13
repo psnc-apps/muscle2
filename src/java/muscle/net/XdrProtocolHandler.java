@@ -11,9 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.Location;
 import muscle.core.ident.TcpLocation;
-import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
+import org.acplt.oncrpc.*;
 
 /**
  * Handles a protocol using XDR serialization.
@@ -40,27 +38,22 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 		this(s, listener, false);
 	}
 	
+	@Override
 	public void run() {
 		XdrTcpDecodingStream xdrIn = null;
 		XdrTcpEncodingStream xdrOut = null;
 		try {
-			xdrIn =  new XdrTcpDecodingStream(socket, 64 * 1024);
-			xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
+			xdrIn =  new XdrTcpDecodingStream(socket, 1024);
+			xdrOut = new XdrTcpEncodingStream(socket, 1024);
 			
-			xdrIn.beginDecoding();
 			executeProtocol(xdrIn, xdrOut);
-
-			logger.finest("Flushing response");
-			xdrOut.endEncoding();
-				
-			logger.finest("Operation decoded.");
-			xdrIn.endDecoding();
 		} catch (OncRpcException ex) {
-			logger.log(Level.SEVERE, "Could not encode/decode with XDR", ex);
+			logger.log(Level.SEVERE, "Could not encode/decode with XDR.", ex);
 		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error; could not encode/decode XDR from socket", ex);
-		}
-		finally {
+			logger.log(Level.SEVERE, "Communication error; could not encode/decode XDR from socket.", ex);
+		} catch (RuntimeException ex) {
+			logger.log(Level.SEVERE, "Could not finish protocol due to an error.", ex);
+		} finally {
 			if (xdrIn != null) {
 				try {
 					xdrIn.close();
@@ -89,10 +82,19 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 		}
 	}
 	
-	protected abstract void executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut) throws OncRpcException, IOException;
-	
-	
-	protected static void encodeLocation(XdrTcpEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
+	/**
+	 * Execute a protocol over an XDR stream.
+	 * It is the responsibility of the protocol handler to beginDecoding() and endEncoding(). All exceptions
+	 * are handled by XdrProtocolHandler.
+	 */
+	protected abstract void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException;
+
+	/**
+	 * Encodes a TcpLocation over an XDR stream.
+	 * @param xdrOut a stream to encode over; endEncoding() will not be called over it.
+	 * @param loc must be a TcpLocation
+	 */
+	protected static void encodeLocation(XdrEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
 		if (!(loc instanceof TcpLocation)) {
 			throw new IllegalArgumentException("Location belonging to identity is not a TcpLocation; can only encode TcpLocation");
 		}
@@ -103,7 +105,12 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 		xdrOut.xdrEncodeInt(tcpLoc.getPort());
 	}
 
-	protected static Location decodeLocation(XdrTcpDecodingStream xdrIn) throws OncRpcException, IOException {
+	/**
+	 * Decodes a TcpLocation from an XDR stream.
+	 * @param xdrIn a stream to decode from; beginEncoding() will not be called over it.
+	 * @returns the TcpLocation that was transmitted.
+	 */
+	protected static TcpLocation decodeLocation(XdrDecodingStream xdrIn) throws OncRpcException, IOException {
 		byte[] addr = xdrIn.xdrDecodeByteVector();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
 		int port = xdrIn.xdrDecodeInt();

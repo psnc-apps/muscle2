@@ -3,10 +3,7 @@
  */
 package muscle.core.messaging.serialization;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 /**
  * Deserialize an object from given byte array
@@ -23,14 +20,16 @@ public class ByteJavaObjectConverter<T> extends AbstractDataConverter<T, byte[]>
 		ObjectOutputStream out;
 		try {
 			out = new ObjectOutputStream(byteStream);
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		try {
 			// write object to the byteStream
 			out.writeObject(object);
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} catch (RuntimeException e) {
+			throw e;
 		} finally {
 			try {
 				out.close();
@@ -53,16 +52,16 @@ public class ByteJavaObjectConverter<T> extends AbstractDataConverter<T, byte[]>
 		ObjectInputStream in;
 		try {
 			in = new ObjectInputStream(byteStream);
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 
 		// read an object from the byteStream
 		try {
 			return (T) in.readObject();
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
-		} catch (java.lang.ClassNotFoundException e) {
+		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}

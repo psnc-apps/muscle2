@@ -44,23 +44,13 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	
 	@Override
 	protected final void execute() throws InterruptedException {
-		Socket s = null;
 		try {
-			s = this.ss.accept();
+			Socket s = this.ss.accept();
 			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			executor.submit(this.createProtocolHandler(s));
 		}
 		catch (IOException iox) {
 			logger.log(Level.SEVERE, "ConnectionHandler could not accept connection", iox);
-		}
-		finally {
-			if (s != null) {
-				try {
-					s.close();
-				} catch (IOException ex) {
-					logger.log(Level.WARNING, "Socket could not be closed by ConnectionHandler", ex);
-				}
-			}
 		}
 	}
 	

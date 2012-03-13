@@ -206,7 +206,7 @@ public class Boot implements ResolverFactory {
 			
 			writer.close();
 		}
-		catch (java.io.IOException e) {
+		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		finally {

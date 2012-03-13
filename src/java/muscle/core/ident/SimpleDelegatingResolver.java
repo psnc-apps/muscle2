@@ -2,6 +2,7 @@ package muscle.core.ident;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
 import utilities.data.ArrayMap;
@@ -37,9 +38,11 @@ public class SimpleDelegatingResolver implements Resolver {
 		
 		// Try cache first, not synchronized as making a new id is not expensive
 		if (idCache.containsKey(fullName)) {
+			logger.log(Level.FINER, "Returning identifier ''{0}'' of type {1} from cache", new Object[]{name, type});
 			return idCache.get(fullName);
 		}
 
+		logger.log(Level.FINE, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
 		return delegate.create(name, type);
 	}
 	
@@ -62,6 +65,7 @@ public class SimpleDelegatingResolver implements Resolver {
 		synchronized (this) {
 			// add a search only if this instance is not already searchd for
 			if (!searchingNow.contains(fullName) && !idCache.containsKey(fullName)) {
+				logger.log(Level.FINE, "Searching to resolve identifier {0}", id);
 				searchingNow.add(fullName);
 				delegate.search(id);
 			}
@@ -76,6 +80,7 @@ public class SimpleDelegatingResolver implements Resolver {
 			if (!id.isResolved()) {
 				id.resolveLike(idCache.get(fullName));
 			}
+			logger.log(Level.FINE, "Identifier {0} resolved", id);
 		}
 	}
 	
@@ -90,8 +95,12 @@ public class SimpleDelegatingResolver implements Resolver {
 	/** Registers a local InstanceController. */
 	public void register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
+		if (!id.isResolved() && id instanceof InstanceID) {
+			((InstanceID)id).resolve(here);
+		}
 		this.addResolvedIdentifier(id);
 		
+		logger.log(Level.FINE, "Registering identifier {0}", id);
 		delegate.propagate(id, here);
 	}
 	
@@ -99,6 +108,7 @@ public class SimpleDelegatingResolver implements Resolver {
 	public void deregister(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		delegate.delete(id);
+		logger.log(Level.FINE, "Deregistering identifier {0}", id);
 		removeIdentifier(id.getName(), id.getType());
 	}
 	

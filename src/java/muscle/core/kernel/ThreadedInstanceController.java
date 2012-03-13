@@ -7,6 +7,7 @@ package muscle.core.kernel;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,8 +165,10 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			writer.write("executing ..." + nl);
 
 			writer.close();
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} catch (RuntimeException e) {
+			throw e;
 		} finally {
 			if (writer != null) {
 				try {
@@ -195,8 +198,10 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			writer.write("end date: " + (new java.util.Date()) + nl);
 
 			writer.close();
-		} catch (java.io.IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} catch (RuntimeException e) {
+			throw e;
 		} finally {
 			if (writer != null) {
 				try {

@@ -203,6 +203,8 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			if (trace)
 				logDebug("Response Message: " + response);
 
+		} catch (RuntimeException e) {
+			throw e;
 		} finally {
 
 			if (osw != null)
@@ -210,7 +212,6 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 
 			if (brd != null)
 				brd.close();
-
 		}
 
 		return response.toString();

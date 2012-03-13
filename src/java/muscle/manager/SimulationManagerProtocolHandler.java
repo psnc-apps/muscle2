@@ -11,9 +11,7 @@ import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
 import muscle.net.XdrProtocolHandler;
-import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
+import org.acplt.oncrpc.*;
 
 /**
  *
@@ -27,8 +25,9 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 	}
 
 	@Override
-	protected void executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut) throws OncRpcException, IOException {
+	protected void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
 		boolean success;
+		xdrIn.beginDecoding();
 		int opnum = xdrIn.xdrDecodeInt();
 		SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 		if (opnum >= protoArr.length || opnum < 0) {
@@ -43,7 +42,7 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 			case LOCATE:
 				xdrOut.xdrEncodeInt(opnum);
 				// Flush, to indicate that we are waiting to resolve the location
-				xdrOut.endEncoding(true);
+				xdrOut.endEncoding();
 				try {
 					listener.resolve(id);
 					xdrOut.xdrEncodeBoolean(true);
@@ -70,6 +69,7 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 				xdrOut.xdrEncodeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
 				break;
 		}
+		xdrOut.endEncoding();
 	}
 	
 }
