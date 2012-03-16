@@ -50,6 +50,7 @@ public class ConnectionScheme implements Serializable {
 	private final ResolverFactory rf;
 	public List<String> kernelList; // for otf
 	public List<String> conduitList; // for otf
+	private static final Boolean instanceLock = Boolean.FALSE;
 	
 	{
 		this.env = CxADescription.ONLY.subenv(this.getClass());
@@ -57,17 +58,30 @@ public class ConnectionScheme implements Serializable {
 
 	private transient final static String cs_file_uri = "cs_file_uri";
 	
-	public static synchronized ConnectionScheme getInstance(ResolverFactory rf) {
-		if (instance == null) {
-			instance = new ConnectionScheme(rf);
+	public static ConnectionScheme getInstance(ResolverFactory rf) {
+		synchronized(instanceLock) {
+			if (instance == null) {
+				instance = new ConnectionScheme(rf);
+				instanceLock.notifyAll();
+			}
+		
+			return instance;
 		}
-		return instance;
 	}
 
 	private static ConnectionScheme instance;
 	
-	public static synchronized ConnectionScheme getInstance() {
-		return instance;
+	public static ConnectionScheme getInstance() {
+		synchronized (instanceLock) {
+			try {
+				while (instance == null) {
+					instanceLock.wait();
+				}
+			} catch (InterruptedException ex) {
+				Logger.getLogger(ConnectionScheme.class.getName()).log(Level.SEVERE, null, ex);
+			}
+			return instance;
+		}
 	}
 	
 	private ConnectionScheme(ResolverFactory rf) {

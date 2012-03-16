@@ -23,9 +23,9 @@ package muscle.core;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.ContainerController;
+import jade.wrapper.PlatformController;
 import java.util.LinkedList;
 import java.util.List;
-import jade.wrapper.PlatformController;
 
 /**
 encapsulate booting of JADE and tearing down JADE
@@ -70,6 +70,7 @@ public class JADE {
 			e.printStackTrace();
 		}
 		platformName = jadeContainer.getPlatformName();
+		System.out.println("started jade");
 	}
 
 	public ContainerController getContainerController() {

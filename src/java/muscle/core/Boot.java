@@ -79,7 +79,7 @@ public class Boot implements ResolverFactory {
 		
 		// note: it seems like loggers can not be used within shutdown hooks
 		Runtime.getRuntime().addShutdownHook(new JVMHook() );
-
+		
 		writeInitialInfo();
 		
 		this.resolver = null;
@@ -92,7 +92,7 @@ public class Boot implements ResolverFactory {
 	private String[] mapAgentsToInstances(String[] args) {
 		StringBuilder sb = new StringBuilder();
 		int agentsI = -1;
-		String port = null;
+		StringBuilder locator = new StringBuilder("locator");
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-agents")) {
 				agentsI = i+1;
@@ -101,7 +101,7 @@ public class Boot implements ResolverFactory {
 				for (String agent : agents) {
 					String[] agentInfo = agent.split(":");
 					if (agentInfo[0].equals("plumber")) {
-						//sb.append(agent).append(';');
+						// no plumber needed.
 					}
 					else if (agentInfo[0].equals("muscle.utilities.agent.QuitMonitor")) {
 						// Agents to monitor are given as an argument
@@ -112,22 +112,16 @@ public class Boot implements ResolverFactory {
 					}
 					else {
 						agentNames.put(agentInfo[0], agentInfo[1]);
+						locator.append('.').append(agentInfo[0]);
 						sb.append(agentInfo[0]).append(':').append(JadeInstanceController.class.getCanonicalName()).append(';');
 					}
-				}
-			}
-			if (args[i].equals("-local-port")) {
-				if (i + 1 < args.length) {
-					port = args[i+1];
 				}
 			}
 		}
 		
 		if (agentsI != -1) {
-			sb.append("locator");
-			if (port != null)
-				sb.append(".").append(port);
-			sb.append(':').append(JadeAgentIDManipulator.class.getCanonicalName());
+			locator.append(':').append(JadeAgentIDManipulator.class.getCanonicalName());
+			sb.append(locator);
 			args[agentsI] = sb.toString();
 		}
 
@@ -135,6 +129,7 @@ public class Boot implements ResolverFactory {
 	}
 	
 	public void init() {
+		System.out.println("initialize JADE");
 		JADE jade = new JADE(args);
 		otherHooks.addAll(jade.getShutdownHooks());
 	}
@@ -170,8 +165,8 @@ public class Boot implements ResolverFactory {
 	
 	public static void main(String args[]) {
 		Boot boot = Boot.getInstance(args);
-		ConnectionScheme.getInstance(boot);
 		boot.init();
+		ConnectionScheme.getInstance(boot);
 
 //		jade.Boot.main(args); // forward booting to jade
 	}
@@ -203,8 +198,6 @@ public class Boot implements ResolverFactory {
 			writer.write( "arguments: "+MiscTool.joinItems(runtime.getInputArguments(), System.getProperty("path.separator"))+nl );			
 			writer.write(nl);
 			writer.write( "executing ..."+nl );
-			
-			writer.close();
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -271,8 +264,6 @@ public class Boot implements ResolverFactory {
 			for(ThreadInfo ti : tInfos) {
 				writer.write(ti.toString()+nl);
 			}
-			
-			writer.close();
 		}
 		catch (java.io.IOException e) {
 			throw new RuntimeException(e);
