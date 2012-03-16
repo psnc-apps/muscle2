@@ -68,7 +68,7 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 		try {
 			XdrEncodingStream xdrOut;
 			if (obs != null) {
-				xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
+				xdrOut = new XdrTcpEncodingStream(socket, obs.getData().getSize()+256);
 				xdrOut.xdrEncodeInt(XdrDataProtocol.OBSERVATION.ordinal());
 				xdrOut.xdrEncodeString(portalID.getOwnerID().getName());
 				xdrOut.xdrEncodeString(portalID.getPortName());

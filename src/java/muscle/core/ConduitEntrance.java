@@ -11,8 +11,8 @@ import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
-import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 import muscle.core.messaging.serialization.DataConverter;
+import muscle.core.messaging.serialization.SerializableDataConverter;
 
 /**
  * Sends information over a conduit
@@ -30,7 +30,7 @@ public class ConduitEntrance<T extends Serializable> {
 	}
 	
 	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
-		this.serializer = new ByteJavaObjectConverter<T>();
+		this.serializer = new SerializableDataConverter<T>();
 		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		controller.setIncomingQueue(queue);
 

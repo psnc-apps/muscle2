@@ -41,15 +41,29 @@ public class SerializableData implements Serializable {
 	public SerializableData(Serializable value, SerializableDatatype type, int size) {
 		if (type == SerializableDatatype.NULL && value != null) {
 			throw new IllegalArgumentException("A NULL datatype should be provided with null data.");
-		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT && !(value instanceof byte[])) {
-			value = new ByteJavaObjectConverter().serialize(value);
-			size = sizeOf(value, type);
+		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
+			this.value = serialize(value, type);
+			this.size = sizeOf(value, type);
+			this.type = type;
 		} else if (type.getDataClass() != null && !type.getDataClass().isInstance(value)) {
 			throw new IllegalArgumentException("Class of value '" + value.getClass() + "' does not match datatype '" + type + "'");
+		} else if (value instanceof SerializableData) {
+			SerializableData sValue = (SerializableData)value;
+			this.value = sValue.value;
+			this.size = sValue.size;
+			this.type = sValue.type;
+		} else {
+			this.value = value;
+			this.size = size;
+			this.type = type;
 		}
-		this.type = type;
-		this.value = value;
-		this.size = size;
+	}
+	
+	private static Serializable serialize(Serializable data, SerializableDatatype type) {
+		if (type == SerializableDatatype.JAVA_BYTE_OBJECT && !(data instanceof byte[])) {
+			return new ByteJavaObjectConverter<Serializable>().serialize(data);
+		}
+		return data;
 	}
 	
 	/**
@@ -61,6 +75,8 @@ public class SerializableData implements Serializable {
 	public static SerializableData valueOf(Serializable value) {
 		if (value == null) {
 			return new SerializableData(null, SerializableDatatype.NULL, 0);
+		} else if (value instanceof SerializableData) {
+			return (SerializableData)value;
 		}
 		SerializableDatatype type = inferDatatype(value);
 		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
@@ -126,19 +142,19 @@ public class SerializableData implements Serializable {
 				break;
 			case STRING_MAP:
 				length = xdrIn.xdrDecodeInt();
-				HashMap<String,SerializableData> xdrMap = new HashMap<String,SerializableData>(length*3/2);
+				HashMap<String,Serializable> xdrMap = new HashMap<String,Serializable>(length*3/2);
 				
 				for (int i = 0; i < length; i++) {
-					xdrMap.put(xdrIn.xdrDecodeString(), SerializableData.parseXdrData(xdrIn));
+					xdrMap.put(xdrIn.xdrDecodeString(), SerializableData.parseXdrData(xdrIn).getValue());
 				}
 				value = xdrMap;
 				break;
 			case COLLECTION:
 				length = xdrIn.xdrDecodeInt();
-				ArrayList<SerializableData> xdrList = new ArrayList<SerializableData>(length);
+				ArrayList<Serializable> xdrList = new ArrayList<Serializable>(length);
 				
 				for (int i = 0; i < length; i++) {
-					xdrList.add(SerializableData.parseXdrData(xdrIn));
+					xdrList.add(SerializableData.parseXdrData(xdrIn).getValue());
 				}
 				value = xdrList;
 				break;
@@ -231,20 +247,20 @@ public class SerializableData implements Serializable {
 			case NULL:
 				break;
 			case STRING_MAP:				
-				Map<String,SerializableData> xdrMap = (Map<String,SerializableData>)newValue;
+				Map xdrMap = (Map)newValue;
 				xdrOut.xdrEncodeInt(xdrMap.size());
-
-				for (Map.Entry<String,SerializableData> entry : xdrMap.entrySet()) {
-					xdrOut.xdrEncodeString(entry.getKey());
-					entry.getValue().encodeXdrData(xdrOut);
+				for (Iterator it = xdrMap.entrySet().iterator(); it.hasNext();) {
+					Map.Entry entry = (Map.Entry)it.next();
+					xdrOut.xdrEncodeString((String)entry.getKey());
+					valueOf((Serializable)entry.getValue()).encodeXdrData(xdrOut);
 				}
 				break;
 			case COLLECTION:
-				List<SerializableData> xdrList = (List<SerializableData>)newValue;
+				Collection xdrList = (Collection)newValue;
 				xdrOut.xdrEncodeInt(xdrList.size());
 				
-				for (SerializableData data : xdrList) {
-					data.encodeXdrData(xdrOut);
+				for (Object data : xdrList) {
+					valueOf((Serializable)data).encodeXdrData(xdrOut);
 				}
 				break;
 			case STRING:
@@ -302,26 +318,28 @@ public class SerializableData implements Serializable {
 	
 	private static int sizeOf(Serializable value, SerializableDatatype type) {
 		int size = 0;
-		if (type.isArray() || type.isMatrix() && type != SerializableDatatype.STRING_ARR) {
+		if ((type.isArray() || type.isMatrix()) && type != SerializableDatatype.STRING_ARR) {
 			return deepSizeOf(value, type);
-		}
-		else switch (type.typeOf()) {
+		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
+			return deepSizeOf(serialize(value, type), type);
+		} else switch (type.typeOf()) {
 			case NULL:
 				break;
 			case STRING_MAP:				
-				Map<String,SerializableData> xdrMap = (Map<String,SerializableData>)value;
-				
-				for (Map.Entry<String,SerializableData> entry : xdrMap.entrySet()) {
-					size += entry.getKey().length()*2+4;
+				Map xdrMap = (Map)value;
+				size = 4;
+				for (Iterator it = xdrMap.entrySet().iterator(); it.hasNext();) {
+					Map.Entry entry = (Map.Entry)it.next();
+					size += ((String)entry.getKey()).length()*2+4;
 					size += 4;
-					size += sizeOf(entry.getValue().value, entry.getValue().type);
+					size += sizeOf((Serializable)entry.getValue(), inferDatatype((Serializable)entry.getValue()));
 				}
 				break;
 			case COLLECTION:
-				List<SerializableData> xdrList = (List<SerializableData>)value;
-				
-				for (SerializableData data : xdrList) {
-					size += sizeOf(data.value, data.type);
+				Collection xdrList = (Collection)value;
+				size = 4;
+				for (Object data : xdrList) {
+					size += sizeOf((Serializable)data, inferDatatype((Serializable)data));
 				}
 				break;
 			case STRING:
@@ -416,55 +434,56 @@ public class SerializableData implements Serializable {
 	 */
 	private static Serializable arrayToMatrix(Serializable value, SerializableDatatype type, int dimX, int dimY, int dimZ, int dimZZ) {
 		int count = 0;
+		Serializable matrixValue = value;
 		switch (type) {
 			case BOOLEAN_MATRIX_2D: {
 				boolean[][] newValue = new boolean[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case BYTE_MATRIX_2D: {
 				byte[][] newValue = new byte[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case SHORT_MATRIX_2D: {
 				short[][] newValue = new short[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case INT_MATRIX_2D: {
 				int[][] newValue = new int[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case LONG_MATRIX_2D: {
 				long[][] newValue = new long[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case FLOAT_MATRIX_2D: {
 				float[][] newValue = new float[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case DOUBLE_MATRIX_2D: {
 				double[][] newValue = new double[dimX][dimY];
 				for (int i = 0; i < dimX; i++) {
 					System.arraycopy(value, i*dimY, newValue[i], 0, dimY);
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case BOOLEAN_MATRIX_3D: {
 				boolean[][][] newValue = new boolean[dimX][dimY][dimZ];
@@ -474,7 +493,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case BYTE_MATRIX_3D: {
 				byte[][][] newValue = new byte[dimX][dimY][dimZ];
@@ -484,7 +503,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case SHORT_MATRIX_3D: {
 				short[][][] newValue = new short[dimX][dimY][dimZ];
@@ -494,7 +513,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case INT_MATRIX_3D: {
 				int[][][] newValue = new int[dimX][dimY][dimZ];
@@ -504,7 +523,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case LONG_MATRIX_3D: {
 				long[][][] newValue = new long[dimX][dimY][dimZ];
@@ -514,7 +533,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case FLOAT_MATRIX_3D: {
 				float[][][] newValue = new float[dimX][dimY][dimZ];
@@ -524,7 +543,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case DOUBLE_MATRIX_3D: {
 				double[][][] newValue = new double[dimX][dimY][dimZ];
@@ -534,7 +553,7 @@ public class SerializableData implements Serializable {
 						count += dimZ;
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case BOOLEAN_MATRIX_4D: {
 				boolean[][][][] newValue = new boolean[dimX][dimY][dimZ][dimZZ];
@@ -546,7 +565,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case BYTE_MATRIX_4D: {
 				byte[][][][] newValue = new byte[dimX][dimY][dimZ][dimZZ];
@@ -558,7 +577,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case SHORT_MATRIX_4D: {
 				short[][][][] newValue = new short[dimX][dimY][dimZ][dimZZ];
@@ -570,7 +589,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case INT_MATRIX_4D: {
 				int[][][][] newValue = new int[dimX][dimY][dimZ][dimZZ];
@@ -582,7 +601,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case LONG_MATRIX_4D: {
 				long[][][][] newValue = new long[dimX][dimY][dimZ][dimZZ];
@@ -594,7 +613,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case FLOAT_MATRIX_4D: {
 				float[][][][] newValue = new float[dimX][dimY][dimZ][dimZZ];
@@ -606,7 +625,7 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 			case DOUBLE_MATRIX_4D: {
 				double[][][][] newValue = new double[dimX][dimY][dimZ][dimZZ];
@@ -618,10 +637,10 @@ public class SerializableData implements Serializable {
 						}
 					}
 				}
-				value = newValue; }
+				matrixValue = newValue; }
 				break;
 		}
-		return value;
+		return matrixValue;
 	}
 	
 	/**
@@ -864,7 +883,11 @@ public class SerializableData implements Serializable {
 		return newValue;
 	}
 	
-	public static Serializable createIndependent(Serializable value) {
+	public static <T extends Serializable> T createIndependent(T value) {
+		if (value instanceof SerializableData) {
+			SerializableData sValue = (SerializableData)value;
+			return (T)new SerializableData(createIndependent(sValue.getValue()), sValue.type, sValue.size);
+		}
 		Serializable copyValue;
 		int dimX, dimY, dimZ, dimZZ;
 		SerializableDatatype type = inferDatatype(value);
@@ -875,17 +898,20 @@ public class SerializableData implements Serializable {
 				break;
 			case STRING_MAP: {
 				int len = ((Map)value).size();
-				copyValue = new HashMap<String,Serializable>(len*3/2);
-				for (Map.Entry<String,?> entry : ((Map<String,?>)value).entrySet()) {
-					((Map<String,Serializable>)copyValue).put(entry.getKey(),createIndependent((Serializable)entry.getValue()));
+				HashMap<String,Serializable> map = new HashMap<String,Serializable>(len*3/2);
+				for (Iterator it = ((Map)value).entrySet().iterator(); it.hasNext();) {
+					Map.Entry entry = (Map.Entry)it.next();
+					map.put((String)entry.getKey(),createIndependent((Serializable)entry.getValue()));
 				}
+				copyValue = map;
 			} break;
 			case COLLECTION: {
 				int len = ((Collection)value).size();
-				copyValue = new ArrayList(len);
+				ArrayList<Serializable> list = new ArrayList<Serializable>(len);
 				for (Object o : ((Collection)value)) {
-					((Collection)copyValue).add(createIndependent((Serializable)o));
+					list.add(createIndependent((Serializable)o));
 				}
+				copyValue = list;
 			} break;
 			case JAVA_BYTE_OBJECT:
 				copyValue = new SerializableData(value, type, -1).getValue();
@@ -896,33 +922,33 @@ public class SerializableData implements Serializable {
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case BYTE_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((byte[])value).length;
+				copyValue = new byte[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case SHORT_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((short[])value).length;
+				copyValue = new short[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case INT_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((int[])value).length;
+				copyValue = new int[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case LONG_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((long[])value).length;
+				copyValue = new long[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case FLOAT_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((float[])value).length;
+				copyValue = new float[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case DOUBLE_ARR: {
-				int len = ((boolean[])value).length;
-				copyValue = new boolean[len];
+				int len = ((double[])value).length;
+				copyValue = new double[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
 			case BOOLEAN_MATRIX_2D: {
@@ -1159,6 +1185,6 @@ public class SerializableData implements Serializable {
 			default:
 				throw new IllegalArgumentException("Serializable type not recognized");
 		}
-		return copyValue;
+		return (T)copyValue;
 	}
 }
