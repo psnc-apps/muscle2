@@ -6,10 +6,7 @@ package utilities.data;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrDecodingStream;
@@ -27,9 +24,10 @@ import org.acplt.oncrpc.XdrEncodingStream;
  * 
  * @author Joris Borgdorff
  */
-public class SerializableData {
+public class SerializableData implements Serializable {
 	private final SerializableDatatype type;
 	private final Serializable value;
+	private final int size;
 	private final static SerializableDatatype[] datatypes = SerializableDatatype.values();
 	
 	/**
@@ -40,16 +38,18 @@ public class SerializableData {
 	 * @param type the type corresponding to the serializable object
 	 * @throws IllegalArgumentException if the type provided does not match the data.
 	 */
-	public SerializableData(Serializable value, SerializableDatatype type) {
+	public SerializableData(Serializable value, SerializableDatatype type, int size) {
 		if (type == SerializableDatatype.NULL && value != null) {
 			throw new IllegalArgumentException("A NULL datatype should be provided with null data.");
 		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT && !(value instanceof byte[])) {
 			value = new ByteJavaObjectConverter().serialize(value);
+			size = sizeOf(value, type);
 		} else if (type.getDataClass() != null && !type.getDataClass().isInstance(value)) {
 			throw new IllegalArgumentException("Class of value '" + value.getClass() + "' does not match datatype '" + type + "'");
 		}
 		this.type = type;
 		this.value = value;
+		this.size = size;
 	}
 	
 	/**
@@ -60,22 +60,31 @@ public class SerializableData {
 	 */
 	public static SerializableData valueOf(Serializable value) {
 		if (value == null) {
-			return new SerializableData(null, SerializableDatatype.NULL);
+			return new SerializableData(null, SerializableDatatype.NULL, 0);
+		}
+		SerializableDatatype type = inferDatatype(value);
+		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
+		return new SerializableData(value, type, size);
+	}
+	
+	private static SerializableDatatype inferDatatype(Serializable value) {
+		if (value == null) {
+			return SerializableDatatype.NULL;
 		}
 		for (SerializableDatatype type : SerializableDatatype.values()) {
 			if (type.getDataClass() != null && type.getDataClass().isInstance(value)) {
-				return new SerializableData(value, type);
+				return type;
 			}
 		}
-		return new SerializableData(value,SerializableDatatype.JAVA_BYTE_OBJECT);
+		return SerializableDatatype.JAVA_BYTE_OBJECT;
 	}
 	
 	/**
 	 * Get the data, unserialized. 
 	 */
-	public Object getValue() {
+	public Serializable getValue() {
 		if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
-			return new ByteJavaObjectConverter().deserialize((byte[])value);
+			return (Serializable)new ByteJavaObjectConverter().deserialize((byte[])value);
 		}
 		else {
 			return value;
@@ -87,6 +96,10 @@ public class SerializableData {
 	 */
 	public SerializableDatatype getType() {
 		return type;
+	}
+	
+	public int getSize() {
+		return size;
 	}
 	
 	/**
@@ -105,26 +118,26 @@ public class SerializableData {
 		
 		SerializableDatatype type = datatypes[typeNum];
 		Serializable value;
-		int size = 0;
+		int length = 0;
 		
-		switch (type) {
+		switch (type.typeOf()) {
 			case NULL:
 				value = null;
 				break;
 			case STRING_MAP:
-				size = xdrIn.xdrDecodeInt();
-				HashMap<String,SerializableData> xdrMap = new HashMap<String,SerializableData>(size*3/2);
+				length = xdrIn.xdrDecodeInt();
+				HashMap<String,SerializableData> xdrMap = new HashMap<String,SerializableData>(length*3/2);
 				
-				for (int i = 0; i < size; i++) {
+				for (int i = 0; i < length; i++) {
 					xdrMap.put(xdrIn.xdrDecodeString(), SerializableData.parseXdrData(xdrIn));
 				}
 				value = xdrMap;
 				break;
 			case COLLECTION:
-				size = xdrIn.xdrDecodeInt();
-				ArrayList<SerializableData> xdrList = new ArrayList<SerializableData>(size);
+				length = xdrIn.xdrDecodeInt();
+				ArrayList<SerializableData> xdrList = new ArrayList<SerializableData>(length);
 				
-				for (int i = 0; i < size; i++) {
+				for (int i = 0; i < length; i++) {
 					xdrList.add(SerializableData.parseXdrData(xdrIn));
 				}
 				value = xdrList;
@@ -139,88 +152,68 @@ public class SerializableData {
 				value = xdrIn.xdrDecodeBoolean();
 				break;
 			case BOOLEAN_ARR:
-			case BOOLEAN_MATRIX_2D:
-			case BOOLEAN_MATRIX_3D:
-			case BOOLEAN_MATRIX_4D:
 				value = xdrIn.xdrDecodeBooleanVector();
-				size = ((boolean[])value).length;
+				length = ((boolean[])value).length;
 				break;
 			case BYTE:
 				value = xdrIn.xdrDecodeByte();
 				break;
-			case JAVA_BYTE_OBJECT:
 			case BYTE_ARR:
-			case BYTE_MATRIX_2D:
-			case BYTE_MATRIX_3D:
-			case BYTE_MATRIX_4D:
 				value = xdrIn.xdrDecodeByteVector();
-				size = ((byte[])value).length;
+				length = ((byte[])value).length;
 				break;
 			case SHORT:
 				value = xdrIn.xdrDecodeShort();
 				break;
 			case SHORT_ARR:
-			case SHORT_MATRIX_2D:
-			case SHORT_MATRIX_3D:
-			case SHORT_MATRIX_4D:
 				value = xdrIn.xdrDecodeShortVector();
-				size = ((short[])value).length;
+				length = ((short[])value).length;
 				break;
 			case INT:
 				value = xdrIn.xdrDecodeInt();
 				break;
 			case INT_ARR:
-			case INT_MATRIX_2D:
-			case INT_MATRIX_3D:
-			case INT_MATRIX_4D:
 				value = xdrIn.xdrDecodeIntVector();
-				size = ((int[])value).length;
+				length = ((int[])value).length;
 				break;
 			case LONG:
 				value = xdrIn.xdrDecodeLong();
 				break;
 			case LONG_ARR:
-			case LONG_MATRIX_2D:
-			case LONG_MATRIX_3D:
-			case LONG_MATRIX_4D:
 				value = xdrIn.xdrDecodeLongVector();
-				size = ((long[])value).length;
+				length = ((long[])value).length;
 				break;
 			case FLOAT:
 				value = xdrIn.xdrDecodeFloat();
 				break;
 			case FLOAT_ARR:
-			case FLOAT_MATRIX_2D:
-			case FLOAT_MATRIX_3D:
-			case FLOAT_MATRIX_4D:
 				value = xdrIn.xdrDecodeFloatVector();
-				size = ((float[])value).length;
+				length = ((float[])value).length;
 				break;
 			case DOUBLE:
 				value = xdrIn.xdrDecodeDouble();
 				break;
 			case DOUBLE_ARR:
-			case DOUBLE_MATRIX_2D:
-			case DOUBLE_MATRIX_3D:
-			case DOUBLE_MATRIX_4D:
 				value = xdrIn.xdrDecodeDoubleVector();
-				size = ((double[])value).length;
+				length = ((double[])value).length;
 				break;
 			default:
 				throw new OncRpcException("Datatype " + type + " not recognized");
 		}
 		
+		int size = sizeOf(value, type);
+		
 		if (type.isMatrix()) {
 			int dimX, dimY, dimZ, dimZZ;
 			dimX = xdrIn.xdrDecodeInt();
-			dimY = type.isMatrix2D() ? size / dimX : xdrIn.xdrDecodeInt();
-			dimZ = type.isMatrix4D() ? xdrIn.xdrDecodeInt() : size / (dimX*dimY);
-			dimZZ = type.isMatrix4D() ? size / (dimX*dimY*dimZ) : 1;
+			dimY = type.isMatrix2D() ? length / dimX : xdrIn.xdrDecodeInt();
+			dimZ = type.isMatrix4D() ? xdrIn.xdrDecodeInt() : length / (dimX*dimY);
+			dimZZ = type.isMatrix4D() ? length / (dimX*dimY*dimZ) : 1;
 		
 			value = arrayToMatrix(value, type, dimX, dimY, dimZ, dimZZ);
 		}
 		
-		return new SerializableData(value, type);
+		return new SerializableData(value, type, size);
 	}
 	
 	/**
@@ -234,13 +227,13 @@ public class SerializableData {
 		
 		Object newValue = matrixToArray();
 		
-		switch (type) {
+		switch (type.typeOf()) {
 			case NULL:
 				break;
 			case STRING_MAP:				
 				Map<String,SerializableData> xdrMap = (Map<String,SerializableData>)newValue;
 				xdrOut.xdrEncodeInt(xdrMap.size());
-				
+
 				for (Map.Entry<String,SerializableData> entry : xdrMap.entrySet()) {
 					xdrOut.xdrEncodeString(entry.getKey());
 					entry.getValue().encodeXdrData(xdrOut);
@@ -264,68 +257,156 @@ public class SerializableData {
 				xdrOut.xdrEncodeBoolean((Boolean)newValue);
 				break;
 			case BOOLEAN_ARR:
-			case BOOLEAN_MATRIX_2D:
-			case BOOLEAN_MATRIX_3D:
-			case BOOLEAN_MATRIX_4D:
 				xdrOut.xdrEncodeBooleanVector((boolean[])newValue);
 				break;
 			case BYTE:
 				xdrOut.xdrEncodeByte((Byte)newValue);
 				break;
 			case BYTE_ARR:
-			case BYTE_MATRIX_2D:
-			case BYTE_MATRIX_3D:
-			case BYTE_MATRIX_4D:
-			case JAVA_BYTE_OBJECT:
 				xdrOut.xdrEncodeByteVector((byte[])newValue);
 				break;
 			case SHORT:
 				xdrOut.xdrEncodeShort((Short)newValue);
 				break;
 			case SHORT_ARR:
-			case SHORT_MATRIX_2D:
-			case SHORT_MATRIX_3D:
-			case SHORT_MATRIX_4D:
 				xdrOut.xdrEncodeShortVector((short[])newValue);
 				break;
 			case INT:
 				xdrOut.xdrEncodeInt((Integer)newValue);
 				break;
 			case INT_ARR:
-			case INT_MATRIX_2D:
-			case INT_MATRIX_3D:
-			case INT_MATRIX_4D:
 				xdrOut.xdrEncodeIntVector((int[])newValue);
 				break;
 			case LONG:
 				xdrOut.xdrEncodeLong((Long)newValue);
 				break;
 			case LONG_ARR:
-			case LONG_MATRIX_2D:
-			case LONG_MATRIX_3D:
-			case LONG_MATRIX_4D:
 				xdrOut.xdrEncodeLongVector((long[])newValue);
 				break;
 			case FLOAT:
 				xdrOut.xdrEncodeFloat((Float)newValue);
 				break;
 			case FLOAT_ARR:
-			case FLOAT_MATRIX_2D:
-			case FLOAT_MATRIX_3D:
-			case FLOAT_MATRIX_4D:
 				xdrOut.xdrEncodeFloatVector((float[])newValue);
 				break;
 			case DOUBLE:
 				xdrOut.xdrEncodeDouble((Double)newValue);
 				break;
 			case DOUBLE_ARR:
-			case DOUBLE_MATRIX_2D:
-			case DOUBLE_MATRIX_3D:
-			case DOUBLE_MATRIX_4D:
 				xdrOut.xdrEncodeDoubleVector((double[])newValue);
 				break;
 			default:
 				throw new OncRpcException("Datatype " + type + " not recognized");
+		}
+	}
+	
+	private static int sizeOf(Serializable value, SerializableDatatype type) {
+		int size = 0;
+		if (type.isArray() || type.isMatrix() && type != SerializableDatatype.STRING_ARR) {
+			return deepSizeOf(value, type);
+		}
+		else switch (type.typeOf()) {
+			case NULL:
+				break;
+			case STRING_MAP:				
+				Map<String,SerializableData> xdrMap = (Map<String,SerializableData>)value;
+				
+				for (Map.Entry<String,SerializableData> entry : xdrMap.entrySet()) {
+					size += entry.getKey().length()*2+4;
+					size += 4;
+					size += sizeOf(entry.getValue().value, entry.getValue().type);
+				}
+				break;
+			case COLLECTION:
+				List<SerializableData> xdrList = (List<SerializableData>)value;
+				
+				for (SerializableData data : xdrList) {
+					size += sizeOf(data.value, data.type);
+				}
+				break;
+			case STRING:
+				size = 4 + ((String)value).length()*2;
+				break;
+			case STRING_ARR:
+				size = 4;
+				for (String s : (String[])value) {
+					size += 4 + s.length()*2;
+				}
+				break;
+			case BOOLEAN:
+				size = 1;
+				break;
+			case BYTE:
+				size = 1;
+				break;
+			case SHORT:
+				size = 2;
+				break;
+			case INT:
+				size = 4;
+				break;
+			case LONG:
+				size = 8;
+				break;
+			case FLOAT:
+				size = 4;
+				break;
+			case DOUBLE:
+				size = 8;
+				break;
+			default:
+				throw new IllegalArgumentException("Datatype " + type + " not recognized");
+		}
+		
+		return size;
+	}
+	
+	private static int deepSizeOf(Object value, SerializableDatatype type) {
+		int size = type.getDimensions()*4;
+
+		switch (type.typeOf()) {
+			case BOOLEAN_ARR:
+				size += lengthOfMatrix(value, type)/8;
+				break;
+			case BYTE_ARR:
+				size += lengthOfMatrix(value, type);
+				break;
+			case SHORT_ARR:
+				size += lengthOfMatrix(value, type)*2;
+				break;
+			case INT_ARR: case FLOAT_ARR:
+				size += lengthOfMatrix(value, type)*4;
+				break;
+			case LONG_ARR: case DOUBLE_ARR:
+				size += lengthOfMatrix(value, type)*8;
+				break;
+		}
+		return size;
+	}
+	
+	private static int lengthOfMatrix(Object value, SerializableDatatype type) {
+		if (value instanceof Object[]) {
+			return ((Object[])value).length * lengthOfMatrix(((Object[])value)[0], type);
+		}
+		else {
+			switch (type.typeOf()) {
+				case BOOLEAN_ARR:
+					return ((boolean[])value).length;
+				case BYTE_ARR:
+					return ((byte[])value).length;
+				case SHORT_ARR:
+					return ((short[])value).length;
+				case INT_ARR:
+					return ((int[])value).length;
+				case LONG_ARR:
+					return ((long[])value).length;
+				case FLOAT_ARR:
+					return ((float[])value).length;
+				case DOUBLE_ARR:
+					return ((double[])value).length;
+				default:
+					throw new IllegalArgumentException("Can only compute the length of arrays");
+			}
 		}
 	}
 	
@@ -334,6 +415,7 @@ public class SerializableData {
 	 * @throws ClassCastException if the given data is not an array of the correct type.
 	 */
 	private static Serializable arrayToMatrix(Serializable value, SerializableDatatype type, int dimX, int dimY, int dimZ, int dimZZ) {
+		int count = 0;
 		switch (type) {
 			case BOOLEAN_MATRIX_2D: {
 				boolean[][] newValue = new boolean[dimX][dimY];
@@ -388,7 +470,8 @@ public class SerializableData {
 				boolean[][][] newValue = new boolean[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -397,7 +480,8 @@ public class SerializableData {
 				byte[][][] newValue = new byte[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -406,7 +490,8 @@ public class SerializableData {
 				short[][][] newValue = new short[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -415,7 +500,8 @@ public class SerializableData {
 				int[][][] newValue = new int[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -424,7 +510,8 @@ public class SerializableData {
 				long[][][] newValue = new long[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -433,7 +520,8 @@ public class SerializableData {
 				float[][][] newValue = new float[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -442,7 +530,8 @@ public class SerializableData {
 				double[][][] newValue = new double[dimX][dimY][dimZ];
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
-						System.arraycopy(value, i*dimY*dimZ+j*dimZ, newValue[i][j], 0, dimZ);
+						System.arraycopy(value, count, newValue[i][j], 0, dimZ);
+						count += dimZ;
 					}
 				}
 				value = newValue; }
@@ -452,7 +541,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -463,7 +553,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -474,7 +565,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -485,7 +577,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -496,7 +589,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -507,7 +601,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -518,7 +613,8 @@ public class SerializableData {
 				for (int i = 0; i < dimX; i++) {
 					for (int j = 0; j < dimY; j++) {
 						for (int k = 0; k < dimZ; k++) {
-							System.arraycopy(value, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, newValue[i][j][k], 0, dimZZ);
+							System.arraycopy(value, count, newValue[i][j][k], 0, dimZZ);
+							count += dimZZ;
 						}
 					}
 				}
@@ -536,7 +632,7 @@ public class SerializableData {
 		Serializable newValue = value;
 		
 		if (type.isMatrix()) {
-			int dimX, dimY, dimZ, dimZZ;
+			int dimX, dimY, dimZ, dimZZ, count = 0;
 			switch (type) {
 				case BOOLEAN_MATRIX_2D: {
 					boolean[][] oldValue = (boolean[][])value;
@@ -600,7 +696,8 @@ public class SerializableData {
 					newValue = new boolean[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -610,7 +707,8 @@ public class SerializableData {
 					newValue = new byte[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -620,7 +718,8 @@ public class SerializableData {
 					newValue = new short[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -630,7 +729,8 @@ public class SerializableData {
 					newValue = new int[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -640,7 +740,8 @@ public class SerializableData {
 					newValue = new long[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -650,7 +751,8 @@ public class SerializableData {
 					newValue = new float[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -660,7 +762,8 @@ public class SerializableData {
 					newValue = new double[dimX*dimY*dimZ];
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
-							System.arraycopy(oldValue[i][j], 0, newValue, i*dimY*dimZ+j*dimZ, dimZ);
+							System.arraycopy(oldValue[i][j], 0, newValue, count, dimZ);
+							count += dimZ;
 						}
 					}
 					} break;
@@ -671,7 +774,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -683,7 +787,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -695,7 +800,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -707,7 +813,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -719,7 +826,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -731,7 +839,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -743,7 +852,8 @@ public class SerializableData {
 					for (int i = 0; i < dimX; i++) {
 						for (int j = 0; j < dimY; j++) {
 							for (int k = 0; k < dimZ; k++) {
-								System.arraycopy(oldValue[i][j][k], 0, newValue, i*dimY*dimZ*dimZZ+j*dimZ*dimZZ+k*dimZZ, dimZZ);
+								System.arraycopy(oldValue[i][j][k], 0, newValue, count, dimZZ);
+								count += dimZZ;
 							}
 						}
 					}
@@ -752,5 +862,303 @@ public class SerializableData {
 		}
 		
 		return newValue;
+	}
+	
+	public static Serializable createIndependent(Serializable value) {
+		Serializable copyValue;
+		int dimX, dimY, dimZ, dimZZ;
+		SerializableDatatype type = inferDatatype(value);
+		switch (type) {
+			// Immutable
+			case NULL: case STRING: case BOOLEAN: case BYTE: case SHORT: case INT: case LONG: case FLOAT: case DOUBLE:
+				copyValue = value;
+				break;
+			case STRING_MAP: {
+				int len = ((Map)value).size();
+				copyValue = new HashMap<String,Serializable>(len*3/2);
+				for (Map.Entry<String,?> entry : ((Map<String,?>)value).entrySet()) {
+					((Map<String,Serializable>)copyValue).put(entry.getKey(),createIndependent((Serializable)entry.getValue()));
+				}
+			} break;
+			case COLLECTION: {
+				int len = ((Collection)value).size();
+				copyValue = new ArrayList(len);
+				for (Object o : ((Collection)value)) {
+					((Collection)copyValue).add(createIndependent((Serializable)o));
+				}
+			} break;
+			case JAVA_BYTE_OBJECT:
+				copyValue = new SerializableData(value, type, -1).getValue();
+				break;
+			case BOOLEAN_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case BYTE_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case SHORT_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case INT_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case LONG_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case FLOAT_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case DOUBLE_ARR: {
+				int len = ((boolean[])value).length;
+				copyValue = new boolean[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
+			case BOOLEAN_MATRIX_2D: {
+				boolean[][] oldValue = (boolean[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				boolean[][] newValue = new boolean[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case BYTE_MATRIX_2D: {
+				byte[][] oldValue = (byte[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				byte[][] newValue = new byte[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case SHORT_MATRIX_2D: {
+				short[][] oldValue = (short[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				short[][] newValue = new short[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case INT_MATRIX_2D: {
+				int[][] oldValue = (int[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				int[][] newValue = new int[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case LONG_MATRIX_2D: {
+				long[][] oldValue = (long[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				long[][] newValue = new long[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case FLOAT_MATRIX_2D: {
+				float[][] oldValue = (float[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				float[][] newValue = new float[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case DOUBLE_MATRIX_2D: {
+				double[][] oldValue = (double[][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length;
+				double[][] newValue = new double[dimX][dimY];
+				for (int i = 0; i < dimX; i++) {
+					System.arraycopy(oldValue[i], 0, newValue[i], 0, dimY);
+				}
+				copyValue = newValue;
+				} break;
+			case BOOLEAN_MATRIX_3D: {
+				boolean[][][] oldValue = (boolean[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				boolean[][][] newValue = new boolean[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case BYTE_MATRIX_3D: {
+				byte[][][] oldValue = (byte[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				byte[][][] newValue = new byte[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case SHORT_MATRIX_3D: {
+				short[][][] oldValue = (short[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				short[][][] newValue = new short[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case INT_MATRIX_3D: {
+				int[][][] oldValue = (int[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				int[][][] newValue = new int[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case LONG_MATRIX_3D: {
+				long[][][] oldValue = (long[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				long[][][] newValue = new long[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case FLOAT_MATRIX_3D: {
+				float[][][] oldValue = (float[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				float[][][] newValue = new float[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case DOUBLE_MATRIX_3D: {
+				double[][][] oldValue = (double[][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length;
+				double[][][] newValue = new double[dimX][dimY][dimZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						System.arraycopy(oldValue[i][j], 0, newValue[i][j], 0, dimZ);
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case BOOLEAN_MATRIX_4D: {
+				boolean[][][][] oldValue = (boolean[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				boolean[][][][] newValue = new boolean[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case BYTE_MATRIX_4D: {
+				byte[][][][] oldValue = (byte[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				byte[][][][] newValue = new byte[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case SHORT_MATRIX_4D: {
+				short[][][][] oldValue = (short[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				short[][][][] newValue = new short[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case INT_MATRIX_4D: {
+				int[][][][] oldValue = (int[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				int[][][][] newValue = new int[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case LONG_MATRIX_4D: {
+				long[][][][] oldValue = (long[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				long[][][][] newValue = new long[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case FLOAT_MATRIX_4D: {
+				float[][][][] oldValue = (float[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				float[][][][] newValue = new float[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			case DOUBLE_MATRIX_4D: {
+				double[][][][] oldValue = (double[][][][])value;
+				dimX = oldValue.length; dimY = oldValue[0].length; dimZ = oldValue[0][0].length; dimZZ = oldValue[0][0][0].length;
+				double[][][][] newValue = new double[dimX][dimY][dimZ][dimZZ];
+				for (int i = 0; i < dimX; i++) {
+					for (int j = 0; j < dimY; j++) {
+						for (int k = 0; k < dimZ; k++) {
+							System.arraycopy(oldValue[i][j][k], 0, newValue[i][j][k], 0, dimZZ);
+						}
+					}
+				}
+				copyValue = newValue;
+				} break;
+			default:
+				throw new IllegalArgumentException("Serializable type not recognized");
+		}
+		return copyValue;
 	}
 }

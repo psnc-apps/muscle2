@@ -9,7 +9,7 @@ import muscle.core.kernel.InstanceController;
 public interface Resolver {
 	/** Whether given ID is local to the current execution. */
 	public boolean isLocal(Identifier id);
-	/** Get an identifier non-blocking, unresolved */
+	/** Get an identifier non-blocking, unresolved. */
 	public Identifier getIdentifier(String name, IDType type);
 	/** removes blocks */
 	public void addResolvedIdentifier(Identifier id);

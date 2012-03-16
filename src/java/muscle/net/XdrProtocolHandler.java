@@ -7,6 +7,7 @@ package muscle.net;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.Location;
@@ -22,7 +23,7 @@ import org.acplt.oncrpc.*;
  * 
  * @author Joris Borgdorff
  */
-public abstract class XdrProtocolHandler<T> implements Runnable {
+public abstract class XdrProtocolHandler<S,T> implements Callable<S> {
 	protected final T listener;
 	private final Socket socket;
 	private final static Logger logger = Logger.getLogger(XdrProtocolHandler.class.getName());
@@ -39,14 +40,15 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 	}
 	
 	@Override
-	public void run() {
+	public S call() {
 		XdrTcpDecodingStream xdrIn = null;
 		XdrTcpEncodingStream xdrOut = null;
+		S ret = null;
 		try {
 			xdrIn =  new XdrTcpDecodingStream(socket, 1024);
 			xdrOut = new XdrTcpEncodingStream(socket, 1024);
 			
-			executeProtocol(xdrIn, xdrOut);
+			ret = executeProtocol(xdrIn, xdrOut);
 		} catch (OncRpcException ex) {
 			logger.log(Level.SEVERE, "Could not encode/decode with XDR.", ex);
 		} catch (IOException ex) {
@@ -80,6 +82,7 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 				}
 			}
 		}
+		return ret;
 	}
 	
 	/**
@@ -87,7 +90,7 @@ public abstract class XdrProtocolHandler<T> implements Runnable {
 	 * It is the responsibility of the protocol handler to beginDecoding() and endEncoding(). All exceptions
 	 * are handled by XdrProtocolHandler.
 	 */
-	protected abstract void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException;
+	protected abstract S executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException;
 
 	/**
 	 * Encodes a TcpLocation over an XDR stream.

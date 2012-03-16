@@ -7,6 +7,7 @@ package muscle.net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -54,5 +55,5 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		}
 	}
 	
-	protected abstract Runnable createProtocolHandler(Socket s);
+	protected abstract Callable<?> createProtocolHandler(Socket s);
 }

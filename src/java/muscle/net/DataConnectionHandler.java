@@ -4,19 +4,12 @@
  */
 package muscle.net;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
-import muscle.core.conduit.communication.Receiver;
+import java.util.concurrent.Callable;
 import muscle.core.conduit.communication.TcpReceiver;
 import muscle.core.ident.Identifier;
-import muscle.core.ident.InstanceID;
-import muscle.core.ident.PortalID;
-import muscle.core.messaging.Message;
-import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 /**
  *
@@ -29,7 +22,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 	}
 	
 	@Override
-	protected Runnable createProtocolHandler(Socket s) {
+	protected Callable<?> createProtocolHandler(Socket s) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	

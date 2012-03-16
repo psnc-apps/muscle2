@@ -11,13 +11,15 @@ import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
 import muscle.net.XdrProtocolHandler;
-import org.acplt.oncrpc.*;
+import org.acplt.oncrpc.OncRpcException;
+import org.acplt.oncrpc.XdrDecodingStream;
+import org.acplt.oncrpc.XdrEncodingStream;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class SimulationManagerProtocolHandler extends XdrProtocolHandler<SimulationManager> {
+public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Boolean,SimulationManager> {
 	private final static Logger logger = Logger.getLogger(SimulationManagerProtocolHandler.class.getName());
 
 	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener) {
@@ -25,15 +27,15 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 	}
 
 	@Override
-	protected void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
-		boolean success;
+	protected Boolean executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
+		boolean success = false;
 		xdrIn.beginDecoding();
 		int opnum = xdrIn.xdrDecodeInt();
 		SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 		if (opnum >= protoArr.length || opnum < 0) {
 			xdrOut.xdrEncodeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
 			logger.log(Level.WARNING, "Unsupported operation number {0} requested", opnum);
-			return;
+			return Boolean.FALSE;
 		}
 		SimulationManagerProtocol proto = protoArr[opnum];
 		String name = xdrIn.xdrDecodeString();
@@ -45,6 +47,7 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 				xdrOut.endEncoding();
 				try {
 					listener.resolve(id);
+					success = true;
 					xdrOut.xdrEncodeBoolean(true);
 					encodeLocation(xdrOut, id.getLocation());
 				} catch (InterruptedException ex) {
@@ -70,6 +73,7 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Simulat
 				break;
 		}
 		xdrOut.endEncoding();
+		return success;
 	}
 	
 }

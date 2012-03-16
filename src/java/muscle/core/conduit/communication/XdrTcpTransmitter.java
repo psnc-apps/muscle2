@@ -12,19 +12,21 @@ import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
 import muscle.core.ident.PortalID;
 import muscle.core.ident.TcpLocation;
-import muscle.core.messaging.signal.Signal;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.signal.DetachConduitSignal;
+import muscle.core.messaging.signal.Signal;
 import muscle.core.messaging.signal.SignalEnum;
 import muscle.net.SocketFactory;
 import org.acplt.oncrpc.OncRpcException;
+import org.acplt.oncrpc.XdrEncodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
+import utilities.data.SerializableData;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<byte[]>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<byte[]>,InstanceID,PortalID<InstanceID>> {
+public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<SerializableData>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<SerializableData>,InstanceID,PortalID<InstanceID>> {
 	private final SocketFactory sockets;
 	private Socket socket;
 	private final static Logger logger = Logger.getLogger(XdrTcpTransmitter.class.getName());
@@ -50,7 +52,7 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 			sendMessage(null, sig);
 	}
 	
-	private void sendMessage(Observation<byte[]> obs, SignalEnum signal) {
+	private void sendMessage(Observation<SerializableData> obs, SignalEnum signal) {
 		if (socket == null) {
 			socket = sockets.createSocket();
 			Location loc = portalID.getLocation();
@@ -63,23 +65,28 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 			}
 		}
 		
-		XdrTcpEncodingStream xdrOut = null;
 		try {
-			xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
-			
+			XdrEncodingStream xdrOut;
 			if (obs != null) {
+				xdrOut = new XdrTcpEncodingStream(socket, 64 * 1024);
 				xdrOut.xdrEncodeInt(XdrDataProtocol.OBSERVATION.ordinal());
+				xdrOut.xdrEncodeString(portalID.getOwnerID().getName());
+				xdrOut.xdrEncodeString(portalID.getPortName());
 				xdrOut.xdrEncodeDouble(obs.getTimestamp().doubleValue());
 				xdrOut.xdrEncodeDouble(obs.getNextTimestamp().doubleValue());
-				xdrOut.xdrEncodeByteVector(obs.getData());
+				obs.getData().encodeXdrData(xdrOut);
+				xdrOut.endEncoding();
 			}
 			else if (signal != null) {
+				xdrOut = new XdrTcpEncodingStream(socket, 1024);
+			
 				xdrOut.xdrEncodeInt(XdrDataProtocol.SIGNAL.ordinal());
+				xdrOut.xdrEncodeString(portalID.getOwnerID().getName());
 				xdrOut.xdrEncodeInt(signal.ordinal());
+				xdrOut.endEncoding();
 			}
 			
 			logger.finest("Sending response");
-			xdrOut.endEncoding();
 		} catch (OncRpcException ex) {
 			Logger.getLogger(XdrTcpTransmitter.class.getName()).log(Level.SEVERE, null, ex);
 		} catch (IOException ex) {

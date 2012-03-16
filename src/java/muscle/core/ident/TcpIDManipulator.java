@@ -7,8 +7,7 @@ package muscle.core.ident;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.manager.SimulationManagerProtocol;
@@ -48,7 +47,17 @@ public class TcpIDManipulator implements IDManipulator {
 		if (!id.isResolved())
 			((InstanceID)id).resolve(loc);
 
-		runQuery(id, SimulationManagerProtocol.REGISTER);
+		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.REGISTER);
+		try {
+			Boolean success = f.get();
+			if (success == null || !success) {
+				throw new RejectedExecutionException("Instance " + id.getName() + " already registered to be running in MUSCLE.");
+			}
+		} catch (InterruptedException ex) {
+			throw new RejectedExecutionException("Registration of instance " + id.getName() + " was interrupted, and can not be executed.", ex);
+		} catch (ExecutionException ex) {
+			throw new RejectedExecutionException("Registration of instance " + id.getName() + " could not be done.", ex);
+		}
 	}
 
 	@Override
@@ -96,14 +105,15 @@ public class TcpIDManipulator implements IDManipulator {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 		
-	private void runQuery(Identifier id, SimulationManagerProtocol action) {
+	private Future<Boolean> runQuery(Identifier id, SimulationManagerProtocol action) {
 		try {
 			Socket s = this.sockets.createSocket();
 			s.connect(managerAddr);
 			ManagerProtocolHandler proto = new ManagerProtocolHandler(s, (InstanceID)id, action);
-			this.executor.submit(proto);
+			return this.executor.submit(proto);
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Could not open socket to initiate the " + action + " protocol with SimulationManager", ex);
+			return null;
 		}
 	}
 	
@@ -112,9 +122,10 @@ public class TcpIDManipulator implements IDManipulator {
 			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only work with InstanceID's.");
 	}
 	
-	private class ManagerProtocolHandler extends XdrProtocolHandler<TcpIDManipulator> {
+	private class ManagerProtocolHandler extends XdrProtocolHandler<Boolean,TcpIDManipulator> {
 		private final SimulationManagerProtocol action;
 		private final InstanceID id;
+		private Boolean successful;
 
 		ManagerProtocolHandler(Socket s, InstanceID id, SimulationManagerProtocol action) {
 			super(s, TcpIDManipulator.this, true);
@@ -126,10 +137,11 @@ public class TcpIDManipulator implements IDManipulator {
 			if (this.action == SimulationManagerProtocol.LOCATE && this.id.isResolved()) {
 				throw new IllegalArgumentException("ID " + id + " is already resolved, so no need to search it.");
 			}
+			successful = null;
 		}
 		
 		@Override
-		protected void executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
+		protected Boolean executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
 			// Send command
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
 			xdrOut.xdrEncodeInt(this.action.ordinal());
@@ -147,7 +159,7 @@ public class TcpIDManipulator implements IDManipulator {
 			SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 			if (opnum >= protoArr.length || opnum < 0 || protoArr[opnum] == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
-				return;
+				return Boolean.FALSE;
 			}
 
 			boolean success = xdrIn.xdrDecodeBoolean();
@@ -162,6 +174,11 @@ public class TcpIDManipulator implements IDManipulator {
 			else {
 				logger.log(Level.WARNING, "Failed to finish the {0} protocol for ID {1}", new Object[]{action, id});
 			}
+			return success;
+		}
+		
+		Boolean wasSuccessful() {
+			return successful;
 		}
 	}
 }

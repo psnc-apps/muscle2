@@ -25,20 +25,25 @@ public enum SerializableDatatype {
 	NULL(null), STRING_MAP(Map.class), COLLECTION(Collection.class),
 	STRING(String.class),     BOOLEAN(Boolean.class),     BYTE(Byte.class),     SHORT(Short.class),     INT(Integer.class),     LONG(Long.class),     FLOAT(Float.class),     DOUBLE(Double.class),
 	STRING_ARR(String[].class, 1), BOOLEAN_ARR(boolean[].class, 1), BYTE_ARR(byte[].class, 1), SHORT_ARR(short[].class, 1), INT_ARR(int[].class, 1), LONG_ARR(long[].class, 1), FLOAT_ARR(float[].class, 1), DOUBLE_ARR(double[].class, 1),
-	BOOLEAN_MATRIX_2D(boolean[][].class, 2), BYTE_MATRIX_2D(byte[][].class, 2), SHORT_MATRIX_2D(short[][].class, 2), INT_MATRIX_2D(int[][].class, 2), LONG_MATRIX_2D(long[][].class, 2), FLOAT_MATRIX_2D(float[][].class, 2), DOUBLE_MATRIX_2D(double[][].class, 2),
-	BOOLEAN_MATRIX_3D(boolean[][][].class, 3), BYTE_MATRIX_3D(byte[][][].class, 3), SHORT_MATRIX_3D(short[][][].class, 3), INT_MATRIX_3D(int[][][].class, 3), LONG_MATRIX_3D(long[][][].class, 3), FLOAT_MATRIX_3D(float[][][].class, 3), DOUBLE_MATRIX_3D(double[][][].class, 3),
-	BOOLEAN_MATRIX_4D(boolean[][][][].class, 4), BYTE_MATRIX_4D(byte[][][][].class, 4), SHORT_MATRIX_4D(short[][][][].class, 4), INT_MATRIX_4D(int[][][][].class, 4), LONG_MATRIX_4D(long[][][][].class, 4), FLOAT_MATRIX_4D(float[][][][].class, 4), DOUBLE_MATRIX_4D(double[][][][].class, 4),
-	JAVA_BYTE_OBJECT(null);
+	BOOLEAN_MATRIX_2D(boolean[][].class, 2, BOOLEAN_ARR), BYTE_MATRIX_2D(byte[][].class, 2, BYTE_ARR), SHORT_MATRIX_2D(short[][].class, 2, SHORT_ARR), INT_MATRIX_2D(int[][].class, 2, INT_ARR), LONG_MATRIX_2D(long[][].class, 2, LONG_ARR), FLOAT_MATRIX_2D(float[][].class, 2, FLOAT_ARR), DOUBLE_MATRIX_2D(double[][].class, 2, DOUBLE_ARR),
+	BOOLEAN_MATRIX_3D(boolean[][][].class, 3, BOOLEAN_ARR), BYTE_MATRIX_3D(byte[][][].class, 3, BYTE_ARR), SHORT_MATRIX_3D(short[][][].class, 3, SHORT_ARR), INT_MATRIX_3D(int[][][].class, 3, INT_ARR), LONG_MATRIX_3D(long[][][].class, 3, LONG_ARR), FLOAT_MATRIX_3D(float[][][].class, 3, FLOAT_ARR), DOUBLE_MATRIX_3D(double[][][].class, 3, DOUBLE_ARR),
+	BOOLEAN_MATRIX_4D(boolean[][][][].class, 4, BOOLEAN_ARR), BYTE_MATRIX_4D(byte[][][][].class, 4, BYTE_ARR), SHORT_MATRIX_4D(short[][][][].class, 4, SHORT_ARR), INT_MATRIX_4D(int[][][][].class, 4, INT_ARR), LONG_MATRIX_4D(long[][][][].class, 4, LONG_ARR), FLOAT_MATRIX_4D(float[][][][].class, 4, FLOAT_ARR), DOUBLE_MATRIX_4D(double[][][][].class, 4, DOUBLE_ARR),
+	JAVA_BYTE_OBJECT(null, 0, BYTE_ARR);
 	
 	private final int dimensions;
 	private final Class<?> clazz;
+	private final SerializableDatatype typeOf;
 	
-	SerializableDatatype(Class<?> clazz, int dim) {
+	SerializableDatatype(Class<?> clazz, int dim, SerializableDatatype typeOf) {
 		this.clazz = clazz;
 		this.dimensions = dim;
+		this.typeOf = typeOf;
+	}
+	SerializableDatatype(Class<?> clazz, int dim) {
+		this(clazz, dim, null);
 	}
 	SerializableDatatype(Class<?> clazz) {
-		this(clazz, 0);
+		this(clazz, 0, null);
 	}
 	
 	public boolean isArray() {
@@ -67,5 +72,12 @@ public enum SerializableDatatype {
 	
 	public Class<?> getDataClass() {
 		return clazz;
+	}
+	
+	public SerializableDatatype typeOf() {
+		if (typeOf == null) {
+			return this;
+		}
+		return typeOf;
 	}
 }
