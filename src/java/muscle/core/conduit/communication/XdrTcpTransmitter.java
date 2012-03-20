@@ -70,8 +70,8 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 			if (obs != null) {
 				xdrOut = new XdrTcpEncodingStream(socket, obs.getData().getSize()+256);
 				xdrOut.xdrEncodeInt(XdrDataProtocol.OBSERVATION.ordinal());
-				xdrOut.xdrEncodeString(portalID.getOwnerID().getName());
-				xdrOut.xdrEncodeString(portalID.getPortName());
+				xdrOut.xdrEncodeString(portalID.getName());
+				xdrOut.xdrEncodeInt(portalID.getType().ordinal());
 				xdrOut.xdrEncodeDouble(obs.getTimestamp().doubleValue());
 				xdrOut.xdrEncodeDouble(obs.getNextTimestamp().doubleValue());
 				obs.getData().encodeXdrData(xdrOut);
@@ -81,7 +81,8 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 				xdrOut = new XdrTcpEncodingStream(socket, 1024);
 			
 				xdrOut.xdrEncodeInt(XdrDataProtocol.SIGNAL.ordinal());
-				xdrOut.xdrEncodeString(portalID.getOwnerID().getName());
+				xdrOut.xdrEncodeString(portalID.getName());
+				xdrOut.xdrEncodeInt(portalID.getType().ordinal());
 				xdrOut.xdrEncodeInt(signal.ordinal());
 				xdrOut.endEncoding();
 			}
