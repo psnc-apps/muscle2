@@ -1,56 +1,77 @@
 package muscle.core.standalone;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
 import muscle.core.CxADescription;
-import muscle.core.JNIConduitEntrance;
-import muscle.core.JNIConduitExit;
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
+import muscle.exception.MUSCLERuntimeException;
 
 
-public class NativeKernel extends CAController  implements NativeGateway.CallListener {
+public abstract class NativeKernel extends CAController  implements NativeGateway.CallListener {
 	
-	protected List<JNIConduitEntrance> entrances = new ArrayList<JNIConduitEntrance>();
-	protected List<JNIConduitExit> exits = new ArrayList<JNIConduitExit>();
+	/**
+	 * Default serial version UID
+	 */
+	private static final long serialVersionUID = 1L;
+	/*
+	@SuppressWarnings("rawtypes")
+	protected Map<String, ConduitEntrance> entrances =  new HashMap<String, ConduitEntrance>();
+	@SuppressWarnings("rawtypes")
+	protected Map<String, ConduitExit> exits = new HashMap<String, ConduitExit>();
+	*/
+	
+	@SuppressWarnings("unchecked")
+	public synchronized void sendDouble(String entranceName, double data[]) {
+	/*		for (int i=0; i < entrances.size(); i++) {
+			if (entrances.get(i).getEntrance().getPortalID().getName().split("@")[0].equals(entranceName)) {
+				entrances.get(i).send(data);
+				return;
+			}
+		}
+	*/	
+		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName);
+	}
+	
+	public synchronized double[] receiveDouble(String exitName) {
+	/*	for (int i=0; i < exits.size(); i++) {
+			if (exits.get(i).getExit().getPortalID().getName().split("@")[0].equals(exitName)) {
+				return (double[])exits.get(i).receive();
+			}
+		}
+	*/	
+		throw new MUSCLERuntimeException("Unknown exit: " + exitName);
+	}
 
-
-	public int addEntrance(String name, int rate, int type) {
-		entrances.add(addJNIEntrance(name, rate, double[].class)); /* TODO select class based on the type */
-		return entrances.size() - 1;
+	public synchronized String getKernelName() {
+		return getLocalName();
 	}
 	
-	public int addExit(String name, int rate, int type) {
-		exits.add(addJNIExit(name, rate, double[].class)); /* TODO select class based on the type */
-		return exits.size() - 1;
-	}
-	
-	public void send(int entranceId, double data[]) {
-		entrances.get(entranceId).send(data);
-	}
-	
-	public double[] receive(int exitId) {
-		return (double[])exits.get(exitId).receive();
-	}
-	
-	public String getKernelName() {
-		return controller.getLocalName();
-	}
-	
-	public String getProperty(String name) {
+	public synchronized String getProperty(String name) {
 		return CxADescription.ONLY.getProperty(name);
 	}
-
-	@Override
-	protected void addPortals() {
-		/* portals are added in the NativeGateway.CallListener calls */
+	
+	public synchronized String getProperties() {
+		return CxADescription.ONLY.getLegacyProperties();
+	}
+	
+	public synchronized String getTmpPath() {
+		return CxADescription.ONLY.getTmpRootPath();
+	}
+	
+	protected void buildCommand(List<String> command) {
+		if (CxADescription.ONLY.containsKey(getLocalName() + ":debugger"))
+			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":debugger"));
+		
+		if (CxADescription.ONLY.containsKey(getLocalName() + ":command"))
+			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":command"));
+		else
+			throw new IllegalArgumentException("Missing property: " + getLocalName() + ":command" );
+		
+		if (CxADescription.ONLY.containsKey(getLocalName() + ":args")) {
+			String args[] = CxADescription.ONLY.getProperty(getLocalName() + ":args").split(" ");
+			command.addAll(Arrays.asList(args));
+		}
 	}
 
 	@Override
@@ -58,44 +79,39 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		
 		try {
 			NativeGateway gateway = new NativeGateway(this);
-		
-			ProcessBuilder pb = new ProcessBuilder(
-				CxADescription.ONLY.getProperty(controller.getLocalName() + ":command"));
+			gateway.start();
 			
-			if (CxADescription.ONLY.containsKey(controller.getLocalName() + ":arg"))
-				pb.command().add(CxADescription.ONLY.getProperty(controller.getLocalName() + ":arg"));
+			//TODO: check if exitst
+			ProcessBuilder pb = new ProcessBuilder();
+			
+			buildCommand(pb.command());
+
 		
-			pb.environment().put("MUSCLE_GATEWAY", gateway.getContactInformation());
-		
-			getLogger().info("Spawning standalone kernel: " + pb.command().get(0));
+			pb.environment().put("MUSCLE_GATEWAY_PORT", gateway.getContactInformation());
+			
+			getLogger().info("Spawning standalone kernel: " + pb.command());
+			getLogger().fine("Contact information: " + gateway.getContactInformation());
 			
 			Process child = pb.start();
 			
-			StreamRipper stdoutR =  new StreamRipper(System.out, child.getInputStream());
-			StreamRipper stderrR =  new StreamRipper(System.err, child.getErrorStream());
+			StreamRipper stdoutR = new StreamRipper(System.out, child.getInputStream());
+			StreamRipper stderrR = new StreamRipper(System.err, child.getErrorStream());
 			
 			stdoutR.start();
 			stderrR.start();
 			
 			int exitCode = child.waitFor();
 			
-			getLogger().info("Command " + pb.toString() + " finished with exit code " + exitCode);
+			if (exitCode == 0)
+				getLogger().info("Command " + pb.command() + " finished with exit code " + exitCode);
+			else
+				getLogger().info("Command " + pb.command() + " finished with exit code " + exitCode);
 
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
-	}
-
-	@Override
-	public Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal( CxADescription.ONLY.getDoubleProperty(controller.getLocalName() +  ":timeScale")), SI.SECOND);
-		
-		
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER); /* not used anywhere so can be hardcoded by now. TODO provide information about scale in native code */
-		
-		return new Scale(dt,dx);
 	}
 
 }

@@ -14,16 +14,18 @@ import muscle.core.Scale;
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.ptr.DoubleByReference;
 
 public class LHC extends muscle.core.kernel.CAController {
 	
 	private ConduitExit<double[]> pipeInput;
 
   	public interface MPIRING extends Library {
-		public void Ring_Init(String ringName, double deltaE, double energyThreshold);
-		public double insertProton(double initialEnergy, EnergyCallback energyCallback);
+		public void Ring_Init(String ringName);
+		public void Ring_Broadcast_Params(DoubleByReference deltaE, DoubleByReference maxE);
+		public double insertProton(double initialEnergy, double energyThreshold, EnergyCallback energyCallback);
 		public boolean  isMasterNode();
-		public void accelerateProtons();
+		public void accelerateProtons( double deltaE, double energyThreshold);
 		public void Ring_Cleanup();
    	}
 
@@ -53,20 +55,30 @@ public class LHC extends muscle.core.kernel.CAController {
 		pipeInput = addExit("pipe", 1, double[].class);
 	}
 	
-	static double DELTA_E = CxADescription.ONLY.getDoubleProperty("LHC:DeltaEnergy");
-	static double MAX_E_THRESHOLD = CxADescription.ONLY.getDoubleProperty("LHC:MaxEnergy");
 
 	protected void execute() {
 	
-		ring.Ring_Init("LHC", DELTA_E, MAX_E_THRESHOLD);
+		ring.Ring_Init("LHC");
 
         if (ring.isMasterNode()) {
+        	double deltaEnergy = CxADescription.ONLY.getDoubleProperty("LHC:DeltaEnergy");
+        	double maxEnergy = CxADescription.ONLY.getDoubleProperty("LHC:MaxEnergy");
+        	
+        	ring.Ring_Broadcast_Params(new DoubleByReference(deltaEnergy), new DoubleByReference(maxEnergy));
+        	
         	double initialEnergy = pipeInput.receive()[0];
         	System.err.println("LHC: Received proton from PSB: " +  initialEnergy);
-        	double finalEnergy = ring.insertProton(initialEnergy, energyCallback);
+        	
+        	double finalEnergy = ring.insertProton(initialEnergy, maxEnergy, energyCallback);
         	System.err.println("LHC: Final energy: " +  finalEnergy);
-        } else
-            ring.accelerateProtons();
+        } else {
+        	DoubleByReference deltaEnergy = new DoubleByReference();
+        	DoubleByReference maxEnergy = new DoubleByReference();
+        	
+        	ring.Ring_Broadcast_Params(deltaEnergy, maxEnergy);
+
+            ring.accelerateProtons(deltaEnergy.getValue(), maxEnergy.getValue());
+        }
 
         ring.Ring_Cleanup();
 	}	

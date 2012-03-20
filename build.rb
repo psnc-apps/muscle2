@@ -127,12 +127,12 @@ module Targets
 	# cmake, make
 	def Targets.cpp
 		flags = %w()
-		
+	        #  MM: If one want to force such build then he should force it using -c option
 		# configure for 64bit build on a mac
-		require 'rbconfig'
-		if (Config::CONFIG['host_os'] =~ /darwin/) != nil
-			flags << "-DCMAKE_OSX_ARCHITECTURES:STRING=x86_64"
-		end
+		#require 'rbconfig'
+		#if (Config::CONFIG['host_os'] =~ /darwin/) != nil
+		#	flags << "-DCMAKE_OSX_ARCHITECTURES:STRING=x86_64"
+		#end
 		
 		cmake_dst = "#{$env[:muscle_dir]}/build/intermediate/cmake"	
 		mkdir_p cmake_dst # make sure dir exists

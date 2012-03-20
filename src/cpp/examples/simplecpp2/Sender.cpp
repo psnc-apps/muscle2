@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 #include <iostream>
 
-#include <MuscleCPP.hpp>
+#include <cppmuscle.hpp>
 
 using namespace muscle;
 using namespace std;
@@ -36,13 +36,12 @@ int main(int argc, char **argv)
 
 	try
 	{
-		MUSCLE::Init();
+		muscle::env::init();
 
-		Entrance *entrance = MUSCLE::AddEntrance("data", 1, MUSCLE_Double_Type);
+		cout << "c++: begin "<< argv[0] <<endl;
+		cout << "Kernel Name: " << muscle::cxa::kernel_name() << endl;
 
-		cout<<"c++: begin "<<__FILE__<<endl;
-
-		for(int time = 0; !MUSCLE::WillStop(); time ++) {
+		for(int time = 0; !muscle::env::will_stop(); time ++) {
 								
 			// process data
 			for(int i = 0; i < 5; i++) {
@@ -50,11 +49,10 @@ int main(int argc, char **argv)
 			}
 						
 			// dump to our portals
-			entrance->Send(dataA, 5);
+			muscle::env::send("data", dataA, 5, MUSCLE_DOUBLE);
 		}
 
-		MUSCLE::Cleanup();
-
+		muscle::env::finalize();
 	}
 	catch(...)
 	{

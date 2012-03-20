@@ -10,4 +10,5 @@ add_subdirectory( src/cpp/examples/simplecpp ${${CMAKE_PROJECT_NAME}_BINARY_DIR}
 add_subdirectory( src/cpp/examples/simplecpp2 ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/simplecpp2 )
 add_subdirectory( src/cpp/examples/mpiring   ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/mpiring )
 add_subdirectory( src/cpp/examples/transmutable ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/transmutable )
+add_subdirectory( src/cpp/examples/transmutable2 ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/transmutable2 )
 add_subdirectory( src/cpp/mto ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/mto )
