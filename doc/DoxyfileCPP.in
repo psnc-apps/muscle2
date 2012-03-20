@@ -1,0 +1,10 @@
+PROJECT_NAME     = Muscle
+OUTPUT_DIRECTORY = @MUSCLE_CPP_API@
+WARNINGS         = NO
+INPUT 		 = @PROJECT_SOURCE_DIR@/../src/
+FILE_PATTERNS    = *.c *.h *.cpp *.hpp
+RECURSIVE        = YES
+SEARCHENGINE     = YES
+GENERATE_LATEX   = NO
+
+

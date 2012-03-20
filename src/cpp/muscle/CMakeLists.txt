@@ -1,30 +1,27 @@
 cmake_minimum_required(VERSION 2.6)
-GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-PROJECT(muscle CXX)
+PROJECT(musclecpp CXX)
+
+SET(MUSCLECPP_VERSION "1.0")
 
 # load our includes
-INCLUDE(includes.cmake)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/includes.cmake)
 
-FILE( GLOB ALL_SOURCES
+FILE(GLOB ALL_SOURCES
 	*.h *.cpp *.c *.hpp
 	access/*.h access/*.cpp	
 	logging/*.h logging/*.cpp	
 	)
 
+FILE (GLOB THIS_HEADERS *.h *.hpp)
+FILE (GLOB ACCESS_HEADERS access/*.h)
+FILE (GLOB LOGGING_HEADERS logging/*.h)
+
 # create our library
-SET(LIB_NAME muscle CACHE STRING "name for the library to be built")
-add_library(${LIB_NAME} SHARED ${ALL_SOURCES})
+add_library(${MUSCLE_LIB} SHARED ${ALL_SOURCES})
+set_target_properties(${MUSCLE_LIB} PROPERTIES VERSION ${MUSCLECPP_VERSION})
 
-
-# install
-FIND_FILE(INSTALL_DIR build
-	${PARENT_DIR}/../../../
-)
-SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
-IF(INSTALL_DIR)
-	install(
-		TARGETS ${LIB_NAME}
-		DESTINATION ${INSTALL_DIR}
-	)
-ENDIF()
+install(TARGETS ${MUSCLE_LIB} DESTINATION lib)
+install(FILES ${THIS_HEADERS} DESTINATION include)
+install(FILES ${ACCESS_HEADERS} DESTINATION include/access)
+install(FILES ${LOGGING_HEADERS} DESTINATION include/logging)

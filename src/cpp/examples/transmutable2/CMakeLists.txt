@@ -1,18 +1,15 @@
 cmake_minimum_required(VERSION 2.6)
 GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-project(transmutable2 CXX)
+project(example_transmutable2 CXX)
 
-include_directories(../../muscle2)
-link_directories(../../../../build)
+set(CMAKE_BUILD_TYPE Debug)
+find_library(MUSCLE2_LIBRARY ${MUSCLE2_LIB} NO_DEFAULT_PATH)
 
-add_executable(transmutable2 Kernel.cpp)
-target_link_libraries (transmutable2 muscle2)
-  
-SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
-IF(INSTALL_DIR)
-install(
-    TARGETS transmutable2
-    DESTINATION ${INSTALL_DIR}
-)
-ENDIF()
+if (NOT ${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")
+	add_executable(${PROJECT_NAME} Kernel.cpp)
+	include_directories(${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
+	target_link_libraries(${PROJECT_NAME} ${MUSCLE2_LIB})
+
+	install(TARGETS ${PROJECT_NAME} DESTINATION share/muscle/examples/transmutable2)
+endif (NOT ${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")

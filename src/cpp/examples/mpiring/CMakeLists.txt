@@ -1,69 +1,60 @@
-cmake_minimum_required(VERSION 2.6)
-GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+cmake_minimum_required (VERSION 2.6)
 
-PROJECT(mpiring C)
+project (example_mpiring C)
+set(MPIRING example_mpiring_lib)
+set(LHC example_LHC)
+set(PSB example_PSB)
 
-# find the muscle project, do not add pure relative paths
-FIND_PATH(MUSCLE_SOURCE JNITool.h
-	${PARENT_DIR}/../../../cpp/muscle
-)
-
-IF(NOT MPI_COMPILER)
-	MESSAGE( STATUS "Searching for available MPI implementations" )
-	FIND_PACKAGE(MPI)
-ELSE()
-	MESSAGE( STATUS "Using provided MPI Compiler: " ${MPI_COMPILER} )
-	SET(MPI_FOUND TRUE)
-ENDIF()
+if (NOT MPI_COMPILER)
+	message ( STATUS "Searching for available MPI implementations" )
+	find_package (MPI)
+	message (STATUS "Found MPI Compiler: " ${MPI_COMPILER} )
+else()
+	message (STATUS "Using provided MPI Compiler: " ${MPI_COMPILER} )
+	set (MPI_FOUND TRUE)
+endif()
 	
-
-IF(NOT MPI_FOUND)
-	message( "MPI has not been found")
-ELSE()
-	SET(CMAKE_C_COMPILER ${MPI_COMPILER})
-
-	#
-	SET(MUSCLE_LIB_NAME muscle CACHE STRING "base name of the muscle core lib")
-	SET(EXTERNAL_MUSCLE_LIB ON CACHE BOOL "link to an already compiled muscle lib, else build it within this project")
-	IF(EXTERNAL_MUSCLE_LIB)
-		FIND_FILE(MUSCLE_LIB_DIR build
-			${PARENT_DIR}/../../../../
-		)
-		FIND_LIBRARY(MUSCLE_LIB_NAME ${MUSCLE_LIB_NAME}
-			PATHS ${MUSCLE_LIB_DIR}
-		)
-	ELSE()
-		SET( MUSCLE_LIB_DIR ${${CMAKE_PROJECT_NAME}_BINARY_DIR})
-		# also compile the muscle core
-		add_subdirectory (${MUSCLE_SOURCE} ${MUSCLE_LIB_DIR})
-	ENDIF()
-
-	# load include dirs for muscle and jni
-	INCLUDE(${MUSCLE_SOURCE}/includes.cmake)
-
-	# make sure the linker can find the muscle library once it is built
-	link_directories (${MUSCLE_LIB_DIR})
+if (NOT MPI_FOUND)
+	message ("MPI has not been found")
+	return()
+endif (NOT MPI_FOUND)
+	
+find_library(MUSCLE2_LIBRARY ${MUSCLE2_LIB} NO_DEFAULT_PATH)
+if (${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")
+	return()
+endif (${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")
 
 
-	# add our library that is built from the source files
-	SET(LIB_NAME ${PROJECT_NAME})
-	add_library (${LIB_NAME} SHARED mpiring.c)
-	SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES LINKER_LANGUAGE C)
-	IF(DEFINED MPI_FLAGS)
-		MESSAGE( "Using custom MPI_FLAGS: " ${MPI_FLAGS})
-		SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES COMPILE_FLAGS ${MPI_FLAGS})
-		SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES LINK_FLAGS ${MPI_FLAGS})
-	ENDIF()
-	# link the executable to the muscle library.
-	target_link_libraries (${LIB_NAME} ${MUSCLE_LIB_NAME})
-	target_link_libraries(${LIB_NAME} ${MPI_LIBRARIES}) 
+set (CMAKE_C_COMPILER ${MPI_COMPILER})
 
-	#
-	SET(INSTALL_DIR ${MUSCLE_LIB_DIR} CACHE STRING "target dir where to put compiled results")
-	IF(INSTALL_DIR)
-		install(
-			TARGETS ${LIB_NAME}
-			DESTINATION ${INSTALL_DIR}
-		)
-	ENDIF()
-ENDIF()
+# load include dirs for muscle and jni
+include_directories(${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
+
+# add our library that is built from the source files
+add_library (${MPIRING} SHARED mpiringlib.c mpiringlib.h)
+add_executable(${LHC} LHC.c mpiringlib.c mpiringlib.h)
+add_executable(${PSB} PSB.c mpiringlib.c mpiringlib.h)
+
+target_link_libraries (${MPIRING} ${MUSCLE2_LIB})
+target_link_libraries (${LHC} ${MUSCLE2_LIB})
+target_link_libraries (${PSB} ${MUSCLE2_LIB})
+
+target_link_libraries(${MPIRING} ${MPI_LIBRARIES}) 
+target_link_libraries(${LHC} ${MPI_LIBRARIES}) 
+target_link_libraries(${PSB} ${MPI_LIBRARIES}) 
+
+set_target_properties (${MPIRING} PROPERTIES LINKER_LANGUAGE C)
+#set_target_properties (LHC PROPERTIES LINKER_LANGUAGE C)
+
+if (MPI_FLAGS)
+	message ( "Using custom MPI_FLAGS: " ${MPI_FLAGS})
+	set_target_properties (${MPIRING} PROPERTIES COMPILE_FLAGS ${MPI_FLAGS})
+	set_target_properties (${MPIRING} PROPERTIES LINK_FLAGS ${MPI_FLAGS})
+	set_target_properties (${LHC} PROPERTIES COMPILE_FLAGS ${MPI_FLAGS})
+	set_target_properties (${LHC} PROPERTIES LINK_FLAGS ${MPI_FLAGS})
+	set_target_properties (${PSB} PROPERTIES COMPILE_FLAGS ${MPI_FLAGS})
+	set_target_properties (${PSB} PROPERTIES LINK_FLAGS ${MPI_FLAGS})
+endif()	
+
+install(TARGETS ${MPIRING} ${LHC} ${PSB} DESTINATION share/muscle/examples/mpiring)
+

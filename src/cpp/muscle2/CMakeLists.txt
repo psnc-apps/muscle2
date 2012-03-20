@@ -1,38 +1,38 @@
 cmake_minimum_required(VERSION 2.6)
 
-PROJECT(muscle2)
+PROJECT(muscle2-cpp CXX C)
 
-set(Boost_USE_STATIC_LIBS        ON)
+set(MUSCLE2CPP_VERSION "1.0")
+
+find_package(Threads)
+
+set(Boost_USE_STATIC_LIBS        OFF)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
 
-find_package(Boost COMPONENTS system)
-find_package(Threads)
+set (Boost_DIR "" CACHE PATH "Location of the directory with CMake config for Boost")
+
+if (Boost_DIR STREQUAL "") # if we don't specify Boost CMakeConfig file location we are looking for the Boost newer than 1.36
+    message(STATUS "Boost search based on CMake Modules")
+    set(Boost_NO_BOOST_CMAKE ON)
+    find_package(Boost 1.36 COMPONENTS system)
+else (Boost_DIR STREQUAL "") # otherwise we use specific CMakeConfig file and don't worry about version
+    message(STATUS "Boost search based on CMake config provided in ${Boost_DIR}")
+    find_package(Boost COMPONENTS system NO_MODULE)
+endif(Boost_DIR STREQUAL "")
 
 if(NOT Boost_FOUND)
-    message("Boost has not been found! MUSCLE C++ will not be built")
-elseif (${Boost_MINOR_VERSION} LESS 34)
-    message("Boost version ${Boost_VERSION} found is too old! MTO will not be built")
-else(NOT Boost_FOUND)
-	message("Building MUSCLE C/C++ API")
-	set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -g -Wall -fPIC")
-	add_library(${PROJECT_NAME} SHARED cmuscle.cpp cmuscle.h cppmuscle.cpp cppmuscle.hpp muscle_types.h)
-	include_directories(${Boost_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} )
-	target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} )
-	
-	# install
-	GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+    message(WARNING "Boost has not been found! MUSCLE C++ will not be built")
+    unset(Boost_INCLUDE_DIR CACHE)
 
-	FIND_FILE(INSTALL_DIR build
-		${PARENT_DIR}/../../../
-	)
-
-	SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
-	IF(INSTALL_DIR)
-		install(
-			TARGETS ${PROJECT_NAME}
-			DESTINATION ${INSTALL_DIR})
-	ENDIF(INSTALL_DIR)
-
+else (NOT Boost_FOUND)
+    FILE (GLOB THIS_HEADERS *.h *.hpp)
+    set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -g -Wall")
+    add_library(${MUSCLE2_LIB} SHARED cmuscle.cpp cmuscle.h cppmuscle.cpp cppmuscle.hpp muscle_types.h)
+    include_directories(${Boost_INCLUDE_DIRS})
+    target_link_libraries(${MUSCLE2_LIB} ${Boost_LIBRARIES} )
+    target_link_libraries(${MUSCLE2_LIB} ${CMAKE_THREAD_LIBS_INIT} )	
+    set_target_properties(${MUSCLE2_LIB} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
+    install(TARGETS ${MUSCLE2_LIB} DESTINATION lib)
+    install(FILES ${THIS_HEADERS} DESTINATION include)
 endif(NOT Boost_FOUND)

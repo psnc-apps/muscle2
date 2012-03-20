@@ -1,38 +1,44 @@
 cmake_minimum_required(VERSION 2.6)
 
-project(proxy)
+project(mto)
 
-set(Boost_USE_STATIC_LIBS        ON)
+set(MTO mto)
+set(TESTER mto_tester)
+
+set(Boost_USE_STATIC_LIBS        OFF)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
 
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
-find_package(Boost COMPONENTS system program_options regex )
 find_package(Threads)
 
-if(NOT Boost_FOUND)
-    message("Boost has not been found! MTO will not be built")
-elseif (${Boost_MINOR_VERSION} LESS 36)
-    message("Boost version ${Boost_VERSION} found is too old! MTO will not be built")
-else(NOT Boost_FOUND)
+set (Boost_DIR "" CACHE PATH "Location of the directory with CMake config for Boost")
 
+if (Boost_DIR STREQUAL "") # if we don't specify Boost CMakeConfig file location we are looking for the Boost newer than 1.36
+	message(STATUS "Boost search based on CMake Modules")
+	set(Boost_NO_BOOST_CMAKE ON)
+	find_package(Boost 1.36 COMPONENTS system program_options regex)
+else (Boost_DIR STREQUAL "") # otherwise we use specific CMakeConfig file and don't worry about version
+	message(STATUS "Boost search based on CMake config provided in ${Boost_DIR}")
+	find_package(Boost COMPONENTS system program_options regex NO_MODULE)
+endif(Boost_DIR STREQUAL "")
+
+if(NOT Boost_FOUND)
+    message(WARNING "Boost has not been found! MTO will not be built")
+    unset(Boost_INCLUDE_DIR CACHE)
+else(NOT Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(mto logger.cpp peerconnectionhandler.cpp connection.cpp options.cpp messages.cpp main.cpp topology.cpp)
-    target_link_libraries(mto ${Boost_LIBRARIES} )
-    target_link_libraries(mto ${CMAKE_THREAD_LIBS_INIT} )
+    add_executable(${MTO} logger.cpp peerconnectionhandler.cpp connection.cpp options.cpp messages.cpp main.cpp topology.cpp)
+    target_link_libraries(${MTO} ${Boost_LIBRARIES} )
+    target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
     # Tester for the MTO 
-    add_executable(tester messages.cpp tester.cpp)
-    target_link_libraries(tester ${Boost_LIBRARIES} )
-    target_link_libraries(tester ${CMAKE_THREAD_LIBS_INIT} )
+    add_executable(${TESTER} messages.cpp tester.cpp)
+    target_link_libraries(${TESTER} ${Boost_LIBRARIES} )
+    target_link_libraries(${TESTER} ${CMAKE_THREAD_LIBS_INIT} )
 
-    SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
-    IF(INSTALL_DIR)
-        install(
-            TARGETS mto
-            DESTINATION ${INSTALL_DIR}
-        )
-    ENDIF()
+    install(TARGETS ${MTO} DESTINATION bin)
+    install(TARGETS ${TESTER} DESTINATION share/muscle/examples/mto)
 
 endif(NOT Boost_FOUND)

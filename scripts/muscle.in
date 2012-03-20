@@ -2,7 +2,7 @@
 
 
 if [[ -z $MUSCLE_HOME ]] ; then
-	MUSCLE_HOME=_PREFIX_
+	MUSCLE_HOME=@MUSCLE_PREFIX@
 fi
 
 export MUSCLE_HOME

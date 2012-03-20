@@ -1,23 +1,15 @@
 cmake_minimum_required(VERSION 2.6)
-
-project(simplecpp2 CXX)
+project(example_simplecpp2 CXX)
 
 set(CMAKE_BUILD_TYPE Debug)
 
+find_library(MUSCLE2_LIBRARY ${MUSCLE2_LIB} NO_DEFAULT_PATH)
 
+if (NOT ${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")
+	add_executable(${PROJECT_NAME} Sender.cpp)
+	include_directories(${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
+	target_link_libraries (${PROJECT_NAME} ${MUSCLE2_LIB})
 
-include_directories(../../muscle2)
-link_directories(../../../../build)
-
-add_executable(simplecpp2 Sender.cpp)
-target_link_libraries (simplecpp2 muscle2)
-
-  
-SET(INSTALL_DIR ${INSTALL_DIR} CACHE STRING "target dir where to put compiled results")
-IF(INSTALL_DIR)
-install(
-    TARGETS simplecpp2
-    DESTINATION ${INSTALL_DIR}
-)
-ENDIF()
+	install(TARGETS ${PROJECT_NAME} DESTINATION share/muscle/examples/simplecpp2)
+endif (NOT ${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")
 
