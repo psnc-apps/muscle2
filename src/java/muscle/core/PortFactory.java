@@ -22,35 +22,23 @@ import muscle.core.messaging.serialization.ByteJavaObjectConverter;
  *
  * @author Joris Borgdorff
  */
-public class PortFactory {
-	public <T> Receiver<T,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide) {
-		Receiver<T,ACLMessage, JadeIdentifier, JadePortalID> recv = new JadeReceiver();
-		recv.setDataConverter(new ACLConverter(new ByteJavaObjectConverter()));
-		if (otherSide instanceof JadePortalID) {
-			recv.setComplementaryPort((JadePortalID)otherSide);
-		}
-		else {
-			throw new IllegalArgumentException("Only JADE portals are currently created.");
-		}
-		return recv;
-	}
+public abstract class PortFactory {	
 	
-	public <T extends Serializable> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide) {
-		Transmitter<T,byte[],JadeIdentifier, JadePortalID> trans = new JadeTransmitter<T>((JadeInstanceController)localInstance);
-		trans.setDataConverter(new ByteJavaObjectConverter<Observation<T>>());
-		if (otherSide instanceof JadePortalID) {
-			trans.setComplementaryPort((JadePortalID)otherSide);
-		}
-		else {
-			throw new IllegalArgumentException("Only JADE portals are currently created.");
-		}
-		return trans;
-	}
+	public abstract <T extends Serializable> Receiver<T,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide);
+	
+	public abstract <T extends Serializable> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide);
 	
 	// Singleton pattern
 	protected PortFactory() {}
-	private static PortFactory instance = new PortFactory();
+	private static PortFactory instance = null;
 	public static PortFactory getInstance() {
+		if (instance == null) {
+			throw new IllegalStateException("PortFactory implementation could not be determined.");
+		}
 		return instance;
+	}
+	
+	static void setImpl(PortFactory factory) {
+		instance = factory;
 	}
 }

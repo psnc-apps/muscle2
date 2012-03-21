@@ -8,6 +8,7 @@ package muscle.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import muscle.core.conduit.communication.TcpPortFactoryImpl;
 import muscle.core.ident.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
@@ -38,7 +39,10 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private void init() {
-		Location loc = new TcpLocation(opts.getLocalSocketAddress());
+		TcpLocation loc = new TcpLocation(opts.getLocalSocketAddress());
+		
+		PortFactory.setImpl(new TcpPortFactoryImpl(new LocalSocketFactory()));
+		
 		TcpIDManipulator idManipulator = new TcpIDManipulator(new LocalSocketFactory(), opts.getManagerSocketAddress(), loc);
 		res = new SimpleDelegatingResolver(idManipulator);
 		

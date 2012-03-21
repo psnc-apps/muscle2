@@ -5,9 +5,11 @@ package muscle.core.conduit.communication;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.LocalManager;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
 import muscle.core.ident.PortalID;
@@ -35,7 +37,7 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 		this.sockets = sf;
 		this.socket = null;
 	}
-	
+
 	public void transmit(Observation<T> obs) {
 		if (converter == null) {
 			throw new IllegalStateException("Can not send message without serialization");
@@ -44,15 +46,10 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 	}
 
 	public void signal(Signal signal) {
-		SignalEnum sig = null;
-		if (signal instanceof DetachConduitSignal) {
-			sig = SignalEnum.DETACH_CONDUIT;
-		}
-		if (sig != null)
-			sendMessage(null, sig);
+		sendMessage(null, signal);
 	}
 	
-	private void sendMessage(Observation<SerializableData> obs, SignalEnum signal) {
+	private void sendMessage(Observation<SerializableData> obs, Signal signal) {
 		if (socket == null) {
 			socket = sockets.createSocket();
 			Location loc = portalID.getLocation();
@@ -78,12 +75,19 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 				xdrOut.endEncoding();
 			}
 			else if (signal != null) {
+				SignalEnum sig;
+				if (signal instanceof DetachConduitSignal) {
+					sig = SignalEnum.DETACH_CONDUIT;
+				} else {
+					return;
+				}
+
 				xdrOut = new XdrTcpEncodingStream(socket, 1024);
 			
 				xdrOut.xdrEncodeInt(XdrDataProtocol.SIGNAL.ordinal());
 				xdrOut.xdrEncodeString(portalID.getName());
 				xdrOut.xdrEncodeInt(portalID.getType().ordinal());
-				xdrOut.xdrEncodeInt(signal.ordinal());
+				xdrOut.xdrEncodeInt(sig.ordinal());
 				xdrOut.endEncoding();
 			}
 			

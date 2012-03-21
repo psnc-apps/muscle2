@@ -130,7 +130,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			sink.dispose();
 		}
 		
-		logger.log(Level.INFO, "kernel tmp dir: {0}", instance.getTmpPath());
+		if (instance != null)
+			logger.log(Level.INFO, "kernel tmp dir: {0}", instance.getTmpPath());
 		logger.info("bye");
 
 		if (stopWatch != null && stopWatch.isCounting()) {

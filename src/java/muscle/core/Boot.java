@@ -27,6 +27,7 @@ import java.lang.management.*;
 import java.util.*;
 import muscle.Constant;
 import muscle.Version;
+import muscle.core.conduit.communication.JadePortFactoryImpl;
 import muscle.core.ident.JadeAgentIDManipulator;
 import muscle.core.ident.Resolver;
 import muscle.core.ident.ResolverFactory;
@@ -165,6 +166,7 @@ public class Boot implements ResolverFactory {
 	
 	public static void main(String args[]) {
 		Boot boot = Boot.getInstance(args);
+		PortFactory.setImpl(new JadePortFactoryImpl());
 		boot.init();
 		ConnectionScheme.getInstance(boot);
 

@@ -82,7 +82,8 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 			sink.dispose();
 		}
 
-		this.realController.dispose();
+		if (this.realController != null)
+			this.realController.dispose();
 		doDelete();
 	}
 	

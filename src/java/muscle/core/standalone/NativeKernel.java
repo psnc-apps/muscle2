@@ -2,7 +2,6 @@ package muscle.core.standalone;
 
 import java.util.Arrays;
 import java.util.List;
-
 import muscle.core.CxADescription;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;
@@ -21,7 +20,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	protected Map<String, ConduitExit> exits = new HashMap<String, ConduitExit>();
 	*/
 	
-	@SuppressWarnings("unchecked")
+	@Deprecated
 	public synchronized void sendDouble(String entranceName, double data[]) {
 	/*		for (int i=0; i < entrances.size(); i++) {
 			if (entrances.get(i).getEntrance().getPortalID().getName().split("@")[0].equals(entranceName)) {
@@ -33,6 +32,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName);
 	}
 	
+	@Deprecated
 	public synchronized double[] receiveDouble(String exitName) {
 	/*	for (int i=0; i < exits.size(); i++) {
 			if (exits.get(i).getExit().getPortalID().getName().split("@")[0].equals(exitName)) {
@@ -113,5 +113,4 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		}
 		
 	}
-
 }
