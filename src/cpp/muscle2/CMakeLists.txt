@@ -23,8 +23,8 @@ endif(Boost_DIR STREQUAL "")
 
 if(NOT Boost_FOUND)
     message(WARNING "Boost has not been found! MUSCLE C++ will not be built")
-    unset(Boost_INCLUDE_DIR CACHE)
-
+    set(Boost_INCLUDE_DIR "" CACHE STRING "Boost include directory" FORCE) 
+#    unset(Boost_INCLUDE_DIR CACHE)
 else (NOT Boost_FOUND)
     FILE (GLOB THIS_HEADERS *.h *.hpp)
     set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -g -Wall")
