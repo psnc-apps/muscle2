@@ -28,48 +28,67 @@ import utilities.data.SerializableData;
  *
  * @author Joris Borgdorff
  */
-public class XdrIncomingMessageHandler extends XdrProtocolHandler<Boolean,Map<Identifier,TcpReceiver<?>>> {
+public class XdrIncomingMessageHandler extends XdrProtocolHandler<Boolean,Map<Identifier,Receiver>> {
 	private final Resolver resolver;
 	private final static Logger logger = Logger.getLogger(XdrIncomingMessageHandler.class.getName());
+	private final static SignalEnum[] signals = SignalEnum.values();
+	private final static XdrDataProtocol[] msgType = XdrDataProtocol.values();
 	
-	public XdrIncomingMessageHandler(Socket s, Map<Identifier,TcpReceiver<?>> receivers, ResolverFactory rf) throws InterruptedException {
+	public XdrIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, ResolverFactory rf) throws InterruptedException {
 		super(s, receivers);
 		this.resolver = rf.getResolver();
 	}
 	
 	@Override
 	protected Boolean executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
-		xdrIn.beginDecoding();
-		XdrDataProtocol proto = XdrDataProtocol.values()[xdrIn.xdrDecodeInt()];
-		String owner_name = xdrIn.xdrDecodeString();
-		IDType idType = IDType.values()[xdrIn.xdrDecodeInt()];
-		Identifier recipient = this.resolver.getIdentifier(owner_name, idType);
+		boolean success = false;
 
-		switch (proto) {
-			case OBSERVATION: {
-				Timestamp time = new Timestamp(xdrIn.xdrDecodeDouble());
-				Timestamp nextTime = new Timestamp(xdrIn.xdrDecodeDouble());
-				SerializableData data = SerializableData.parseXdrData(xdrIn);
-				BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
-				logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
-				
-				listener.get(recipient).put(msg);
-			} break;
-			case SIGNAL: {
-				SignalEnum sigEnum = SignalEnum.values()[xdrIn.xdrDecodeInt()];
-				Signal sig = null;
-				switch (sigEnum) {
-					case DETACH_CONDUIT:
-						sig = new DetachConduitSignal();
-						break;
-					default:
-						logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{sigEnum, recipient});
-				}
-				listener.get(recipient).putSignal(sig);
-			} break;
-			default:
-				return Boolean.FALSE;
+		xdrIn.beginDecoding();
+		int protoNum = xdrIn.xdrDecodeInt();
+		if (protoNum < 0 || protoNum >= msgType.length) {
+			logger.log(Level.WARNING, "Unrecognized message type number {0} received.", protoNum);
+		} else {
+			XdrDataProtocol proto = msgType[protoNum];
+			String owner_name = xdrIn.xdrDecodeString();
+			IDType idType = IDType.values()[xdrIn.xdrDecodeInt()];
+			Identifier recipient = this.resolver.getIdentifier(owner_name, idType);
+
+			switch (proto) {
+				case OBSERVATION: {
+					Timestamp time = new Timestamp(xdrIn.xdrDecodeDouble());
+					Timestamp nextTime = new Timestamp(xdrIn.xdrDecodeDouble());
+					SerializableData data = SerializableData.parseXdrData(xdrIn);
+					BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
+					logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
+
+					listener.get(recipient).put(msg);
+					success = true;
+				} break;
+				case SIGNAL: {
+					int sigNum = xdrIn.xdrDecodeInt();
+					Signal sig = null;
+					if (sigNum < 0 || sigNum >= signals.length) {
+							logger.log(Level.WARNING, "Unrecognized signal number {0} received for {1}.", new Object[]{sigNum, recipient});
+					} else {
+						SignalEnum sigEnum = signals[sigNum];
+						switch (sigEnum) {
+							case DETACH_CONDUIT:
+								sig = new DetachConduitSignal();
+								break;
+							default:
+								logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{sigEnum, recipient});
+						}
+						listener.get(recipient).putSignal(sig);
+					}
+					success = (sig != null);
+				} break;
+				default:
+					break;
+			}
 		}
-		return Boolean.TRUE;
+		xdrOut.xdrEncodeBoolean(success);
+		xdrOut.endEncoding();
+		
+		return success;
 	}
 }

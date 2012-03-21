@@ -26,7 +26,9 @@ import jade.lang.acl.ACLMessage;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.conduit.communication.IncomingMessageProcessor;
 import muscle.core.conduit.communication.JadeReceiver;
+import muscle.core.conduit.communication.Receiver;
 import muscle.core.ident.Identifier;
 import muscle.core.messaging.serialization.ACLConverter;
 import muscle.core.messaging.serialization.ByteJavaObjectConverter;
@@ -37,7 +39,7 @@ process the agent message queue from a sub-thread of the agents main thread
 this allows us to actively push messages to their individual sinks
 @author Jan Hegewald
  */
-public class JadeIncomingMessageProcessor extends CyclicBehaviour {
+public class JadeIncomingMessageProcessor extends CyclicBehaviour implements IncomingMessageProcessor {
 	private final Map<Identifier, JadeReceiver> receivers;
 	private static final Logger logger = Logger.getLogger(JadeIncomingMessageProcessor.class.getName());
 	private final Agent owner;
@@ -49,8 +51,8 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour {
 		this.deserializer = new ACLConverter(new ByteJavaObjectConverter());
 	}
 	
-	public void addReceiver(Identifier id, JadeReceiver recv) {
-		this.receivers.put(id, recv);
+	public void addReceiver(Identifier id, Receiver recv) {
+		this.receivers.put(id, (JadeReceiver)recv);
 	}
 	
 	/** Deserialize, process, and send message to receiver*/
@@ -66,7 +68,7 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour {
 						logger.log(Level.INFO, "signal intended for removed agent {0} received: {1}", new Object[] {id, msg.getUserDefinedParameter("signal")});
 					}
 					else {
-						logger.log(Level.SEVERE, "no source for <{0}> found, dropping data message", id);
+						logger.log(Level.SEVERE, "no destination receiver for <{0}> found, dropping data message", id);
 					}
 				}
 				else {

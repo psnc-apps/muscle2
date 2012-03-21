@@ -15,6 +15,9 @@ public interface Receiver<E, F, Q extends Identifier, P extends PortalID<Q>> ext
 	/** Receives a message. Will return null if no more messages can be received */
 	public E receive();
 	
+	void put(F msg);
+	void putSignal(Signal s);
+	
 	public boolean hasSignal();
 	public Signal getSignal();
 }

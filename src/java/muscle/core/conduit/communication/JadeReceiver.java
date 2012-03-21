@@ -3,7 +3,6 @@
  */
 package muscle.core.conduit.communication;
 
-import jade.lang.acl.ACLMessage;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -17,7 +16,7 @@ import muscle.core.messaging.signal.Signal;
  *
  * @author Joris Borgdorff
  */
-public class JadeReceiver<T extends DataMessage> extends AbstractCommunicatingPoint<T, ACLMessage,JadeIdentifier,JadePortalID> implements Receiver<T, ACLMessage,JadeIdentifier,JadePortalID> {
+public class JadeReceiver<T extends DataMessage> extends AbstractCommunicatingPoint<T,T,JadeIdentifier,JadePortalID> implements Receiver<T,T,JadeIdentifier,JadePortalID> {
 	private BlockingQueue<T> queue;
 	private BlockingQueue<Signal> sigQueue;
 
@@ -28,6 +27,10 @@ public class JadeReceiver<T extends DataMessage> extends AbstractCommunicatingPo
 
 	public void put(T msg) {
 		queue.add(msg);
+	}
+	
+	public void putSignal(Signal s) {
+		this.sigQueue.add(s);
 	}
 
 	@Override

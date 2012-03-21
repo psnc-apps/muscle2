@@ -11,12 +11,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.ConduitEntranceController;
-import muscle.core.ConduitExitController;
+import muscle.core.*;
 import muscle.core.ident.Identifier;
+import muscle.core.ident.PortalID;
 import muscle.core.ident.Resolver;
 import muscle.core.ident.ResolverFactory;
 import utilities.JVM;
@@ -29,22 +30,29 @@ import utilities.data.FastArrayList;
  * @author Joris Borgdorff
  */
 public class ThreadedInstanceController implements Runnable, InstanceController {
+	private final static Logger logger = Logger.getLogger(ThreadedInstanceController.class.getName());
+	private final static boolean ENTRANCE = true;
+	private final static boolean EXIT = false;
+	
 	private final Class<?> instanceClass;
 	private final Identifier id;
-	private RawKernel instance;
-	private boolean execute;
-	private Timing stopWatch;
-	private File infoFile;
-	private final static Logger logger = Logger.getLogger(ThreadedInstanceController.class.getName());
-	private InstanceController mainController;
-	
 	private final List<ConduitExitController<?>> exits = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
 	private final List<ConduitEntranceController<?>> entrances = new ArrayList<ConduitEntranceController<?>>(); //these are the conduit entrances
 	private final InstanceControllerListener listener;
 	private final Object[] args;
 	private final ResolverFactory resolverFactory;
+	private final PortFactory portFactory;
+	
+	private RawKernel instance;
+	private boolean execute;
+	private Timing stopWatch;
+	private File infoFile;
+	private InstanceController mainController;
+	
+	private Map<String, ExitDescription> exitDescriptions;
+	private Map<String, EntranceDescription> entranceDescriptions;
 
-	public ThreadedInstanceController(Identifier id, Class<?> instanceClass, InstanceControllerListener listener, ResolverFactory rf, Object[] args) {
+	public ThreadedInstanceController(Identifier id, Class<?> instanceClass, InstanceControllerListener listener, ResolverFactory rf, Object[] args, PortFactory portFactory) {
 		this.id = id;
 		this.instanceClass = instanceClass;
 		this.instance = null;
@@ -53,6 +61,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		this.args = args;
 		this.mainController = null;
 		this.resolverFactory = rf;
+		this.portFactory = portFactory;
 	}
 	
 	public void setMainController(InstanceController ic) {
@@ -62,10 +71,15 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	@Override
 	public void run() {		
 		System.out.println(getLocalName() + ": starting kernel");
+		
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
+		this.entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
+		
 		try {
 			instance = (RawKernel) this.instanceClass.newInstance();
 
-			instance.setInstanceController(this.mainController == null ? this : this.mainController);
+			instance.setInstanceController(this);
 
 			instance.beforeSetup();
 
@@ -112,14 +126,36 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		return id.getName();
 	}
 
-	// TODO more meaningful implementation
-	public <T extends Serializable> void addConduitEntrance(ConduitEntranceController<T> s) {
-		entrances.add(s);
+	public <T extends Serializable> void addConduitExit(ConduitExitController<T> s) {
+		PortalID other = getPortalID(s.getIdentifier(), exitDescriptions, EXIT);
+		portFactory.<T>getReceiver(s, other);
+		exits.add(s);
 	}
 
-	// TODO more meaningful implementation
-	public <T extends Serializable> void addConduitExit(ConduitExitController<T> s) {
-		exits.add(s);
+	public <T extends Serializable> void addConduitEntrance(ConduitEntranceController<T> s) {
+		PortalID other = getPortalID(s.getIdentifier(), entranceDescriptions, ENTRANCE);
+		portFactory.<T>getTransmitter(this.mainController == null ? this : this.mainController, s, other);
+		entrances.add(s);
+	}
+	
+	private PortalID getPortalID(PortalID id, Map<String,? extends PortDescription> descriptions, boolean entrance) {
+		ConduitDescription desc = null;
+		if (descriptions != null)
+			desc = descriptions.get(id.getPortName()).getConduitDescription();
+		if (desc == null)
+			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
+
+		PortalID other = entrance ? desc.getExitDescription().getID() : desc.getExitDescription().getID();
+		if (!other.isResolved()) {
+			try {
+				Resolver r = Boot.getInstance().getResolver();
+				r.resolveIdentifier(other);
+				if (!other.isResolved()) return null;
+			} catch (InterruptedException ex) {
+				logger.log(Level.SEVERE, "Resolving port interrupted", ex);
+			}
+		}
+		return other;
 	}
 
 	public void dispose() {

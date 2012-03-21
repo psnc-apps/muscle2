@@ -3,33 +3,49 @@
  */
 package muscle.core;
 
-import jade.lang.acl.ACLMessage;
 import java.io.Serializable;
-import muscle.core.conduit.communication.JadeReceiver;
-import muscle.core.conduit.communication.JadeTransmitter;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.conduit.communication.IncomingMessageProcessor;
 import muscle.core.conduit.communication.Receiver;
 import muscle.core.conduit.communication.Transmitter;
-import muscle.core.ident.JadeIdentifier;
-import muscle.core.ident.JadePortalID;
 import muscle.core.ident.PortalID;
+import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
-import muscle.core.kernel.JadeInstanceController;
-import muscle.core.messaging.Observation;
-import muscle.core.messaging.serialization.ACLConverter;
-import muscle.core.messaging.serialization.ByteJavaObjectConverter;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public abstract class PortFactory {	
+public abstract class PortFactory extends Thread {
+	protected final ExecutorService executor;
+	protected final ResolverFactory resolverFactory;
+	protected final IncomingMessageProcessor messageProcessor;
+	private final static Logger logger = Logger.getLogger(PortFactory.class.getName());
 	
-	public abstract <T extends Serializable> Receiver<T,?,?,?> getReceiver(InstanceController localInstance, PortalID otherSide);
+	public <T extends Serializable> Future<Receiver<T,?,?,?>> getReceiver(ConduitExitController localInstance, PortalID otherSide) {
+		return executor.submit(this.<T>getReceiverTask(localInstance, otherSide));
+	}
 	
-	public abstract <T extends Serializable> Transmitter<T,?,?,?> getTransmitter(InstanceController localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> Callable<Receiver<T,?,?,?>> getReceiverTask(ConduitExitController localInstance, PortalID otherSide);
+	
+	public <T extends Serializable> Future<Transmitter<T,?,?,?>> getTransmitter(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide) {
+		return executor.submit(this.<T>getTransmitterTask(ic, localInstance, otherSide));
+	}
+
+	protected abstract <T extends Serializable> Callable<Transmitter<T,?,?,?>> getTransmitterTask(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide);
 	
 	// Singleton pattern
-	protected PortFactory() {}
+	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
+		this.executor = Executors.newCachedThreadPool();
+		this.resolverFactory = rf;
+		this.messageProcessor = msgProcessor;
+	}
+	
 	private static PortFactory instance = null;
 	public static PortFactory getInstance() {
 		if (instance == null) {
@@ -40,5 +56,20 @@ public abstract class PortFactory {
 	
 	static void setImpl(PortFactory factory) {
 		instance = factory;
+		factory.setDaemon(true);
+		factory.start();
+	}
+	
+	protected boolean resolvePort(PortalID port) {
+		if (!port.isResolved()) {
+			try {
+				resolverFactory.getResolver().resolveIdentifier(port);
+				if (!port.isResolved()) return false;
+			} catch (InterruptedException ex) {
+				logger.log(Level.SEVERE, "Resolving port interrupted", ex);
+				return false;
+			}
+		}
+		return true;
 	}
 }
