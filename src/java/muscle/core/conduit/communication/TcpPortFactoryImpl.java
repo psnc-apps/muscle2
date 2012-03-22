@@ -13,13 +13,10 @@ import muscle.core.PortFactory;
 import muscle.core.ident.PortalID;
 import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
-import muscle.core.messaging.Observation;
 import muscle.core.messaging.serialization.BasicMessageConverter;
-import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.ObservationConverter;
 import muscle.core.messaging.serialization.SerializableDataConverter;
 import muscle.net.SocketFactory;
-import utilities.data.SerializableData;
 
 /**
  *
@@ -59,11 +56,11 @@ public class TcpPortFactoryImpl extends PortFactory {
 				entrance.start();
 				resolvePort(port);
 				Transmitter trans;
-				if (TcpPortFactoryImpl.this.resolverFactory.getResolver().isLocal(port)) {
-					trans = new LocalTransmitter();
-				} else {
+//				if (TcpPortFactoryImpl.this.resolverFactory.getResolver().isLocal(port)) {
+//					trans = new LocalTransmitter();
+//				} else {
 					trans = new XdrTcpTransmitter(socketFactory);
-				}
+//				}
 			
 				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
 				trans.setComplementaryPort(port);
