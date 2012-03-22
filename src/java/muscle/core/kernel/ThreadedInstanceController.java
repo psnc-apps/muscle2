@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.core.*;
+import muscle.core.conduit.communication.IncomingMessageProcessor;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
 import muscle.core.ident.Resolver;
@@ -106,7 +107,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 					}
 					// TODO find out why this timeout is necessary for SimpleExample to succeed consistently
 					// Otherwise, w will quit before the agent can send all messages.
-					Thread.sleep(1000);
+					// It seems that the new way of updating the customSITime in ConduitExit/Entrance solved the problem.
+					// Thread.sleep(1000);
 				} catch (InterruptedException ex) {
 					logger.log(Level.SEVERE, "After executing " + getLocalName() + ", waiting for conduit was interrupted", ex);
 				}
@@ -145,21 +147,17 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		if (desc == null)
 			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
 
-		PortalID other = entrance ? desc.getExitDescription().getID() : desc.getExitDescription().getID();
-		if (!other.isResolved()) {
-			try {
-				Resolver r = Boot.getInstance().getResolver();
-				r.resolveIdentifier(other);
-				if (!other.isResolved()) return null;
-			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, "Resolving port interrupted", ex);
-			}
+		if (entrance) {
+			return desc.getExitDescription().getID();
+		} else {
+			return desc.getExitDescription().getID();
 		}
-		return other;
 	}
 
 	public void dispose() {
+		IncomingMessageProcessor msgProcessor = portFactory.getMessageProcessor();
 		for (ConduitExitController<?> source : exits) {
+			msgProcessor.removeReceiver(source.getIdentifier());
 			source.dispose();
 		}
 		for (ConduitEntranceController<?> sink : entrances) {

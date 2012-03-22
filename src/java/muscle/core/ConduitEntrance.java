@@ -7,7 +7,6 @@ package muscle.core;
 import java.io.Serializable;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
-import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
@@ -19,7 +18,7 @@ import muscle.core.messaging.serialization.SerializableDataConverter;
  * @author Joris Borgdorff
  */
 public class ConduitEntrance<T extends Serializable> {
-	private final QueueConsumer<Observation<T>> consumer;
+	private final ConduitEntranceController<T> consumer;
 	protected Timestamp nextTime;
 	protected final Duration dt;
 	private final DataConverter<T,?> serializer;
@@ -29,7 +28,7 @@ public class ConduitEntrance<T extends Serializable> {
 		this(controller, new Timestamp(0d), sc.getDt());
 	}
 	
-	public ConduitEntrance(QueueConsumer<Observation<T>> controller, Timestamp origin, Duration timeStep) {
+	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Duration timeStep) {
 		this.serializer = new SerializableDataConverter<T>();
 		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		controller.setIncomingQueue(queue);
@@ -71,6 +70,9 @@ public class ConduitEntrance<T extends Serializable> {
 	/** Send an observation. */
 	private void send(Observation<T> msg) {
 		this.queue.add(msg);
+		
+		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
+		this.consumer.setNextTimestamp(msg.getNextTimestamp());
 		this.consumer.apply();
 	}
 }

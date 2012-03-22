@@ -21,13 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplejava;
 
-import muscle.core.ConduitExit;
-import muscle.core.Scale;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.ConduitExit;
+import muscle.core.Scale;
 
 
 /**
@@ -38,61 +38,38 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 
 	private static final int INTERNAL_DT = 1;
 
-	// external dt's for out portals
-	private static final int DT_READ_A = 1;
-	private static final int dtWriteA = 1;
-
 	private ConduitExit<double[]> readerA;
 
-	private int time; // cxa time
-
-
-	//
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
 		return new Scale(dt,dx);
 	}
 
-
-	//
-	protected void addPortals() {
-	
-		readerA = addExit("data", DT_READ_A, double[].class);
+	protected void addPortals() {	
+		readerA = addExit("data", 1, double[].class);
 	}
-		
 
-	//
 	protected void execute() {
-
-		startAutomaton();
-	}
-	
-	
-	//
-	private void startAutomaton() {
-	
-		double[] dataA = null;
-		
-		// loop stepping with INTERNAL_DT
-		for(time = 0; time < 4; time += INTERNAL_DT) {
-		
-			// read from our portals at designated frequency
-			if(time % DT_READ_A == 0)
-				dataA = readerA.receive();
+		while (!this.willStop()) {
+			// read from our portals
+			double[] dataA = readerA.receive();
 						
 			// process data
 			for(int i = 0; i < dataA.length; i++) {
+				doSomething(dataA);
 			}
 						
 			// dump to our portals at designated frequency
 			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			if(time % dtWriteA == 0) {
-				for(int i = 0; i < dataA.length; i++)
-					System.out.println("got: "+dataA[i]);
-				System.out.println();
+			for(int i = 0; i < dataA.length; i++) {
+				System.out.println("got: "+dataA[i]);
 			}
+			System.out.println();
 		}
 	}
 
+	private void doSomething(double[] dataA) {
+		// Do something
+	}
 }

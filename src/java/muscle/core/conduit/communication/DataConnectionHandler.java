@@ -50,4 +50,9 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 			recv.dispose();
 		}
 	}
+
+	@Override
+	public void removeReceiver(Identifier id) {
+		this.listener.remove(id);
+	}
 }

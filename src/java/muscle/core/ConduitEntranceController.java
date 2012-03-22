@@ -31,6 +31,7 @@ import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Observation;
+import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.signal.DetachConduitSignal;
 
 /**
@@ -189,7 +190,6 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	private void send(Observation<T> msg) throws InterruptedException {
 		Transmitter<T, ?,?,?> trans = waitForTransmitter();
 		if (trans != null) {
-			this.customSITime = msg.getNextTimestamp();
 			trans.transmit(msg);
 			increment();
 		}

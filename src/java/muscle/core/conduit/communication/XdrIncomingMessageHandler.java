@@ -78,7 +78,7 @@ public class XdrIncomingMessageHandler extends XdrProtocolHandler<Boolean,Map<Id
 							default:
 								logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{sigEnum, recipient});
 						}
-						listener.get(recipient).putSignal(sig);
+						listener.get(recipient).put(new BasicMessage<SerializableData>(sig,recipient));
 					}
 					success = (sig != null);
 				} break;

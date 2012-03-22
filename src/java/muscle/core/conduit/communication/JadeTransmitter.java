@@ -37,9 +37,9 @@ public class JadeTransmitter<T extends Serializable> extends AbstractCommunicati
 	}
 
 	public void signal(Signal signal) {
-		DataMessage<Signal> dmsg = new DataMessage<Signal>();
+		ObservationMessage<T> dmsg = new ObservationMessage<T>();
 		dmsg.setRecipient(portalID.getOwnerID());
-		dmsg.addUserDefinedParameter("signal", signal.getClass().toString());
+		dmsg.setSignal(signal);
 		senderAgent.send(dmsg);
 	}
 }

@@ -58,8 +58,15 @@ public abstract class Portal<T extends Serializable> extends SafeTriggeredThread
 	public Timestamp getSITime() {
 		if (loose)
 			return new Timestamp(0d);
-		else
-			return customSITime;
+		else {
+			synchronized (this) {
+				return customSITime;
+			}
+		}
+	}
+	
+	public synchronized void setNextTimestamp(Timestamp t) {
+		this.customSITime = t;
 	}
 	
 	@Override

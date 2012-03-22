@@ -51,7 +51,7 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 			realController.setMainController(this);
 			new Thread(realController).start();
 		} catch (ClassNotFoundException ex) {
-			logger.log(Level.SEVERE, "Could not load class " + Boot.getInstance().getAgentClass(this.getLocalName()) + " of instance " + getLocalName(), ex);
+			logger.log(Level.SEVERE, "Could not find class " + Boot.getInstance().getAgentClass(this.getLocalName()) + " of instance " + getLocalName() + " in classpath.", ex);
 		}
 	}
 

@@ -5,7 +5,6 @@ package muscle.core.conduit.communication;
 
 import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
-import muscle.core.messaging.signal.Signal;
 
 /**
  *
@@ -16,8 +15,4 @@ public interface Receiver<E, F, Q extends Identifier, P extends PortalID<Q>> ext
 	public E receive();
 	
 	void put(F msg);
-	void putSignal(Signal s);
-	
-	public boolean hasSignal();
-	public Signal getSignal();
 }

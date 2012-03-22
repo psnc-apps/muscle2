@@ -72,4 +72,8 @@ public abstract class PortFactory extends Thread {
 		}
 		return true;
 	}
+	
+	public IncomingMessageProcessor getMessageProcessor() {
+		return this.messageProcessor;
+	}
 }

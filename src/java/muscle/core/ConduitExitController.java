@@ -12,26 +12,26 @@ import muscle.core.conduit.communication.Receiver;
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Message;
-import muscle.core.messaging.jade.DataMessage;
+import muscle.core.messaging.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
 public class ConduitExitController<T extends Serializable> extends Portal<T> {
-	private Receiver<DataMessage<T>, ?,?,?> receiver;
+	private Receiver<Message<T>, ?,?,?> receiver;
 	private ConduitExit<T> conduitExit;
-	private final BlockingQueue<T> queue;
+	private final BlockingQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ConduitExitController.class.getName());
 
 	public ConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-		this.queue = new LinkedBlockingQueue<T>();
+		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		this.receiver = null;
 		this.conduitExit = null;
 	}
 	
-	public synchronized void setReceiver(Receiver<DataMessage<T>, ?,?,?> recv) {
+	public synchronized void setReceiver(Receiver<Message<T>, ?,?,?> recv) {
 		this.receiver = recv;
 		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
 
@@ -48,24 +48,22 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 
 	@Override
 	protected void execute() throws InterruptedException {
-		Receiver<DataMessage<T>, ?,?,?> recv = waitForReceiver();
+		Receiver<Message<T>, ?,?,?> recv = waitForReceiver();
 		if (recv != null) {
-			DataMessage<T> dmsg = this.receiver.receive();
-			if (dmsg != null && dmsg instanceof Message) {
-				if (dmsg.getUserDefinedParameter("signal") != null) {
-					System.out.println("Signal received: " + dmsg.getUserDefinedParameter("signal"));
+			Message<T> dmsg = this.receiver.receive();
+			if (dmsg != null) {
+				if (dmsg.isSignal()) {
+					System.out.println("Signal received: " + dmsg.getSignal());
 				}
 				else {
-					Message<T> msg = (Message<T>)dmsg;
-					this.queue.add(msg.getRawData());
-					this.customSITime = msg.getObservation().getNextTimestamp();
+					this.queue.add(dmsg.getObservation());
 					increment();
 				}
 			}
 		}
 	}
 	
-	private synchronized Receiver<DataMessage<T>, ?,?,?> waitForReceiver() throws InterruptedException {
+	private synchronized Receiver<Message<T>, ?,?,?> waitForReceiver() throws InterruptedException {
 		while (!isDone && this.receiver == null) {
 			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
 			wait(WAIT_FOR_ATTACHMENT_MILLIS);
@@ -90,7 +88,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 		return !isDone;
 	}
 	
-	BlockingQueue<T> getQueue() {
+	BlockingQueue<Observation<T>> getQueue() {
 		return this.queue;
 	}
 

@@ -38,30 +38,20 @@ public class Sender extends muscle.core.kernel.CAController {
 
 	private ConduitEntrance<double[]> entrance;
 	
-	private int time;
-
-
-	//
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
 		return new Scale(dt,dx);
 	}
 
-
-	//
 	protected void addPortals() {
-	
 		entrance = addEntrance("data", 1, double[].class);
 	}
 
-
-	//
 	protected void execute() {
-
 		double[] dataA = new double[5];
 		
-		for(time = 0; time < 4; time ++) {
+		while (!this.willStop()) {
 								
 			// process data
 			for(int i = 0; i < dataA.length; i++) {

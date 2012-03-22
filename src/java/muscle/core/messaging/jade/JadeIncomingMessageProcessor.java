@@ -51,8 +51,14 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour implements Inc
 		this.deserializer = new ACLConverter(new ByteJavaObjectConverter());
 	}
 	
+	@Override
 	public void addReceiver(Identifier id, Receiver recv) {
 		this.receivers.put(id, (JadeReceiver)recv);
+	}
+	
+	@Override
+	public void removeReceiver(Identifier id) {
+		this.receivers.remove(id);
 	}
 	
 	/** Deserialize, process, and send message to receiver*/

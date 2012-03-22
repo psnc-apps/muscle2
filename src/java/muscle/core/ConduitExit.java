@@ -23,6 +23,9 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.core.messaging.Observation;
 
 /**
 this is the (remote) tail of a conduit,
@@ -30,10 +33,13 @@ an exit receives data from the conduit agent
 @author Jan Hegewald
 */
 public class ConduitExit<T extends Serializable> { // generic T will be the underlying unwrapped data, e.g. double[]
-	private final BlockingQueue<T> queue;
+	private final BlockingQueue<Observation<T>> queue;
+	private final ConduitExitController<T> controller;
+	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
 
 	public ConduitExit(ConduitExitController<T> control) {
 		this.queue = control.getQueue();
+		this.controller = control;
 	}
 
 	/**
@@ -41,8 +47,13 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	*/
 	public T receive() {
 		try {
-			return this.queue.take();
+			Observation<T> obs = this.queue.take();
+			
+			// Update the willStop timestamp only when the message is received by the Instance.
+			controller.setNextTimestamp(obs.getNextTimestamp());
+			return obs.getData();
 		} catch (InterruptedException ex) {
+			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
 			return null;
 		}
 	}

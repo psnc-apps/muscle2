@@ -13,4 +13,5 @@ import muscle.core.ident.Identifier;
  */
 public interface IncomingMessageProcessor {
 	public void addReceiver(Identifier id, Receiver recv);
+	public void removeReceiver(Identifier id);
 }

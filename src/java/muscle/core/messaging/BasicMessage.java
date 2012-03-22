@@ -5,6 +5,7 @@ package muscle.core.messaging;
 
 import java.io.Serializable;
 import muscle.core.ident.Identifier;
+import muscle.core.messaging.signal.Signal;
 
 /**
  *
@@ -13,6 +14,13 @@ import muscle.core.ident.Identifier;
 public class BasicMessage<E extends Serializable> implements Message<E>, Serializable {
 	private final Observation<E> obs;
 	private final Identifier recv;
+	private final Signal signal;
+	
+	public BasicMessage(Signal s, Identifier recipient) {
+		this.signal = s;
+		this.recv = recipient;
+		this.obs = null;
+	}
 	
 	public BasicMessage(E data, Timestamp time, Timestamp nextTime, Identifier recipient) {
 		this (new Observation<E>(data, time, nextTime), recipient);
@@ -21,17 +29,28 @@ public class BasicMessage<E extends Serializable> implements Message<E>, Seriali
 	public BasicMessage(Observation<E> obs, Identifier recipient) {
 		this.obs = obs;
 		this.recv = recipient;
+		this.signal = null;
 	}
 
 	public E getRawData() {
-		return obs.getData();
+		return this.obs.getData();
 	}
 
 	public Observation<E> getObservation() {
-		return obs;
+		return this.obs;
 	}
 
 	public Identifier getRecipient() {
 		return this.recv;
+	}
+
+	@Override
+	public boolean isSignal() {
+		return this.signal != null;
+	}
+
+	@Override
+	public Signal getSignal() {
+		return this.signal;
 	}
 }
