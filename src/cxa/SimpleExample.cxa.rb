@@ -29,7 +29,7 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 # configure cxa properties
 cxa = Cxa.LAST
 
-cxa.env["max_timesteps"] = 2
+cxa.env["max_timesteps"] = 4
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels
