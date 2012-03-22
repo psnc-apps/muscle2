@@ -14,6 +14,7 @@ import muscle.core.ident.PortalID;
 import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Observation;
+import muscle.core.messaging.serialization.BasicMessageConverter;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.ObservationConverter;
 import muscle.core.messaging.serialization.SerializableDataConverter;
@@ -25,7 +26,6 @@ import utilities.data.SerializableData;
  * @author Joris Borgdorff
  */
 public class TcpPortFactoryImpl extends PortFactory {
-	private final DataConverter<Observation<?>,Observation<SerializableData>> converter = new ObservationConverter(new SerializableDataConverter());
 	private final SocketFactory socketFactory;
 		
 	public TcpPortFactoryImpl(ResolverFactory rf, SocketFactory sf, IncomingMessageProcessor msgProcessor) {
@@ -41,7 +41,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 				resolvePort(port);
 			
 				TcpReceiver recv = new TcpReceiver();
-				recv.setDataConverter(converter);
+				recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
 				recv.setComplementaryPort(port);
 				exit.setReceiver(recv);
 			
@@ -60,7 +60,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 				resolvePort(port);
 			
 				XdrTcpTransmitter trans = new XdrTcpTransmitter(socketFactory);
-				trans.setDataConverter(converter);
+				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
 				trans.setComplementaryPort(port);
 				entrance.setTransmitter(trans);
 				return trans;

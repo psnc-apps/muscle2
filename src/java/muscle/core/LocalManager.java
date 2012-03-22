@@ -6,6 +6,9 @@
 package muscle.core;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -103,7 +106,12 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		if (controllers.isEmpty()) {
 			if (factory != null) factory.dispose();
 			if (idManipulator != null) idManipulator.dispose();
-			if (connectionHandler != null) connectionHandler.dispose();			
+			if (connectionHandler != null) connectionHandler.dispose();
+		}
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
 	

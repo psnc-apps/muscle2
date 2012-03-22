@@ -7,6 +7,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.ident.InstanceClass;
 import muscle.core.kernel.RawKernel;
 
@@ -24,7 +26,7 @@ public class LocalManagerOptions {
 	private InetSocketAddress managerAddress;
 	
 	@Parameter(names={"-a", "--address"},converter=SocketAddressConverter.class)
-	private InetSocketAddress localAddress = new InetSocketAddress("127.0.0.1", 6872);
+	private InetSocketAddress localAddress = getLocalAddress(6783);
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);
@@ -111,6 +113,15 @@ public class LocalManagerOptions {
 			}
 			
 			return new InetSocketAddress(addr, port);
+		}
+	}
+	
+	private static InetSocketAddress getLocalAddress(int port) {
+		try {
+			return new InetSocketAddress(InetAddress.getLocalHost(), port);
+		} catch (UnknownHostException ex) {
+			Logger.getLogger(LocalManagerOptions.class.getName()).log(Level.SEVERE, "Could not resolve localhost, to start listening for connections.", ex);
+			return null;
 		}
 	}
 	

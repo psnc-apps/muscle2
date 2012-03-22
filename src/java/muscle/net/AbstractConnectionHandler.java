@@ -28,7 +28,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
 	private final ExecutorService executor;
-	protected final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());;
+	private final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {
 		this.ss = ss;
@@ -39,8 +39,12 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	}
 
 	@Override
-	protected final void handleInterruption(InterruptedException ex) {
-		logger.log(Level.WARNING, "ConnectionHandler interrupted", ex);
+	protected final synchronized void handleInterruption(InterruptedException ex) {
+		if (isDone) {
+			logger.log(Level.FINE, "ConnectionHandler {0} finished.", this.getClass());		 
+		} else {
+			logger.log(Level.WARNING, "ConnectionHandler interrupted", ex);
+		}
 	}
 	
 	@Override
@@ -49,16 +53,22 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 			Socket s = this.ss.accept();
 			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			executor.submit(this.createProtocolHandler(s));
-		}
-		catch (IOException iox) {
-			logger.log(Level.SEVERE, "ConnectionHandler could not accept connection", iox);
+		} catch (IOException iox) {
+			if (!isDone)
+				logger.log(Level.SEVERE, "ConnectionHandler could not accept connection.", iox);
+			// Else, we're closing the serversocket ourselves.
 		}
 	}
 	
 	protected abstract Callable<?> createProtocolHandler(Socket s);
 	
-	public void dispose() {
+	public synchronized void dispose() {
 		super.dispose();
+		try {
+			this.ss.close();
+		} catch (IOException ex) {
+			logger.log(Level.SEVERE, "ServerSocket could not be closed.", ex);
+		}
 		executor.shutdown();
 	}
 }

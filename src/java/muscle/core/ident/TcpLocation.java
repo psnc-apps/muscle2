@@ -25,7 +25,7 @@ public class TcpLocation implements Location {
 	}
 	
 	public InetSocketAddress getSocketAddress() {
-		return InetSocketAddress.createUnresolved(addr.getHostAddress(), port);
+		return new InetSocketAddress(addr.getHostAddress(), port);
 	}
 	
 	public InetAddress getAddress() {

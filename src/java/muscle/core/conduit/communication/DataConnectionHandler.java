@@ -21,10 +21,11 @@ import muscle.net.AbstractConnectionHandler;
  */
 public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identifier,Receiver>> implements IncomingMessageProcessor {
 	private final ResolverFactory resolverFactory;
+	private final static Logger logger = Logger.getLogger(DataConnectionHandler.class.getName());
 
 	public DataConnectionHandler(ServerSocket ss, ResolverFactory rf) {
 		super(ss, new ConcurrentHashMap<Identifier,Receiver>());
-		
+		logger.log(Level.INFO, "Listening for data connections on {0}.", ss);
 		this.resolverFactory = rf;
 	}
 	
@@ -33,7 +34,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 		try {
 			return new XdrIncomingMessageHandler(s, listener, resolverFactory);
 		} catch (InterruptedException ex) {
-			Logger.getLogger(DataConnectionHandler.class.getName()).log(Level.SEVERE, "Could not handle incoming data message; no resolver was found.", ex);
+			logger.log(Level.SEVERE, "Could not handle incoming data message; no resolver was found.", ex);
 			return null;
 		}
 	}

@@ -97,11 +97,19 @@ public class XdrTcpTransmitter<T extends Serializable> extends AbstractCommunica
 			} else {
 				logger.log(Level.SEVERE, "Message unsuccesfully sent to {0}.", portalID);
 			}
-			
 		} catch (OncRpcException ex) {
 			logger.log(Level.SEVERE, "XDR failure to send message to {0}: {1}", new Object[]{portalID, ex});
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "I/O failure to send message to {0}: {1}", new Object[]{portalID, ex});
+		} catch (Exception ex) {
+			logger.log(Level.SEVERE, "Unexpected failure to send message to {0}: {1}", new Object[]{portalID, ex});
+		} finally {
+			try {
+				socket.close();
+			} catch (IOException ex) {
+				Logger.getLogger(XdrTcpTransmitter.class.getName()).log(Level.SEVERE, "Socket could not be closed.", ex);
+			}
+			socket = null;
 		}
 	}
 	

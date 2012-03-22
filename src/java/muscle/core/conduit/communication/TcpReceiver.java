@@ -11,17 +11,18 @@ import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.PortalID;
 import muscle.core.messaging.BasicMessage;
+import muscle.core.messaging.Message;
 import utilities.data.SerializableData;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<BasicMessage<T>,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> implements Receiver<BasicMessage<T>,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> {
-	private BlockingQueue<BasicMessage<T>> queue;
+public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> {
+	private BlockingQueue<Message<T>> queue;
 	
 	public TcpReceiver() {
-		this.queue = new LinkedBlockingQueue<BasicMessage<T>>();
+		this.queue = new LinkedBlockingQueue<Message<T>>();
 	}
 
 	
@@ -38,11 +39,11 @@ public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPo
 	}
 
 	@Override
-	public BasicMessage<T> receive() {
+	public Message<T> receive() {
 		try {
 			return queue.take();
 		} catch (InterruptedException ex) {
-			Logger.getLogger(TcpReceiver.class.getName()).log(Level.INFO, "Receiver stopped", ex);
+			Logger.getLogger(TcpReceiver.class.getName()).log(Level.FINE, "Receiver stopped.");
 			return null;
 		}
 	}

@@ -60,9 +60,13 @@ public class XdrIncomingMessageHandler extends XdrProtocolHandler<Boolean,Map<Id
 					SerializableData data = SerializableData.parseXdrData(xdrIn);
 					BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
 					logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
-
-					listener.get(recipient).put(msg);
-					success = true;
+					Receiver recv = listener.get(recipient);
+					if (recv == null) {
+						logger.log(Level.SEVERE, "No receiver registered for message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});	
+					} else {
+						recv.put(msg);
+						success = true;					
+					}
 				} break;
 				case SIGNAL: {
 					int sigNum = xdrIn.xdrDecodeInt();
@@ -78,9 +82,16 @@ public class XdrIncomingMessageHandler extends XdrProtocolHandler<Boolean,Map<Id
 							default:
 								logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{sigEnum, recipient});
 						}
-						listener.get(recipient).put(new BasicMessage<SerializableData>(sig,recipient));
+						if (sig != null) {
+							Receiver recv = listener.get(recipient);
+							if (recv == null) {
+								logger.log(Level.SEVERE, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+							} else {
+								recv.put(new BasicMessage<SerializableData>(sig,recipient));
+								success = true;					
+							}
+						}
 					}
-					success = (sig != null);
 				} break;
 				default:
 					break;

@@ -42,6 +42,7 @@ public abstract class SafeThread extends Thread {
 	 */
 	public synchronized void dispose() {
 		this.isDone = true;
+		this.interrupt();
 		this.notifyAll();
 	}
 	

@@ -19,7 +19,7 @@ import muscle.core.messaging.Observation;
  * @author Joris Borgdorff
  */
 public class ConduitExitController<T extends Serializable> extends Portal<T> {
-	private Receiver<Message<T>, ?,?,?> receiver;
+	private Receiver<T, ?,?,?> receiver;
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ConduitExitController.class.getName());
@@ -31,7 +31,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 		this.conduitExit = null;
 	}
 	
-	public synchronized void setReceiver(Receiver<Message<T>, ?,?,?> recv) {
+	public synchronized void setReceiver(Receiver<T, ?,?,?> recv) {
 		this.receiver = recv;
 		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
 
@@ -48,7 +48,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 
 	@Override
 	protected void execute() throws InterruptedException {
-		Receiver<Message<T>, ?,?,?> recv = waitForReceiver();
+		Receiver<T, ?,?,?> recv = waitForReceiver();
 		if (recv != null) {
 			Message<T> dmsg = this.receiver.receive();
 			if (dmsg != null) {
@@ -63,7 +63,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 		}
 	}
 	
-	private synchronized Receiver<Message<T>, ?,?,?> waitForReceiver() throws InterruptedException {
+	private synchronized Receiver<T, ?,?,?> waitForReceiver() throws InterruptedException {
 		while (!isDone && this.receiver == null) {
 			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
 			wait(WAIT_FOR_ATTACHMENT_MILLIS);

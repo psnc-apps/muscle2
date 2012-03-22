@@ -114,6 +114,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 				}
 				afterExecute();
 				System.out.println(getLocalName() + ": finished");
+				dispose();
 				listener.isFinished(this);
 			}
 		} catch (InstantiationException ex) {
