@@ -112,13 +112,10 @@ public abstract class RawKernel {
 		return portalTime.compareTo(maxTime) > -1;
 	}
 
-	//
 	public JNIMethod stopJNIMethod() {
-
 		return new JNIMethod(this, "willStop");
 	}
 
-	//
 	public KernelBootInfo getKernelBootInfo() {
 		return new KernelBootInfo(controller.getLocalName(), getClass());
 	}

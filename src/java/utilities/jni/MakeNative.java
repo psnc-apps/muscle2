@@ -21,10 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.jni;
 
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import utilities.jni.JNITool;
-import java.io.StringWriter;
 import utilities.CodeWriter;
 
 /**
@@ -143,11 +142,11 @@ public class MakeNative {
 		String callArgs = ""; // e.g. "muscle::VABEGIN::FIRST, A0, A1"
 		int argID = 0;
 		for(Class<?> t : m.getParameterTypes()) {
-			if(callArgsSignature == "")
+			if("".equals(callArgsSignature))
 				callArgsSignature = JNITool.toCppTypename(t)+" A"+argID;
 			else
 				callArgsSignature += ", "+JNITool.toCppTypename(t)+" A"+argID;
-			if(callArgs == "")
+			if("".equals(callArgs))
 				callArgs = "A"+argID;
 			else
 				callArgs += ", A"+argID;
@@ -201,8 +200,8 @@ public class MakeNative {
 		code.end();
 
 		// return a muscle::MethodCaller for this method (requires a JNIEnv and jobject)
-		String returnText = null;
-		String clsText = null;
+		String returnText;
+		String clsText;
 		if(isStatic) {
 			clsText = "jclass cls = env->FindClass(_CLASSNAME().c_str());"+nl
 						+"muscle::JNITool::catchJREException(env, __FILE__, __LINE__);";

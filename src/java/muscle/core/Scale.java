@@ -55,7 +55,7 @@ public class Scale implements java.io.Serializable {
 	}
 
 	public Scale(DecimalMeasure<Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
-		if(newDx.size() < 1)
+		if(newDx.size() <= 0)
 			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.size()+">");		
 
 		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));

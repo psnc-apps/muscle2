@@ -18,7 +18,8 @@ import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
 
 /**
- *
+ * Assigns Receivers and Transmitters to Portals.
+ * 
  * @author Joris Borgdorff
  */
 public abstract class PortFactory {
@@ -27,37 +28,47 @@ public abstract class PortFactory {
 	protected final IncomingMessageProcessor messageProcessor;
 	private final static Logger logger = Logger.getLogger(PortFactory.class.getName());
 	
+	/**
+	 * Assigns a Receiver to a ConduitExitController in a Thread.
+	 * 
+	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned receiver was.
+	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
+	 */
 	public <T extends Serializable> Future<Receiver<T,?,?,?>> getReceiver(ConduitExitController localInstance, PortalID otherSide) {
 		return executor.submit(this.<T>getReceiverTask(localInstance, otherSide));
 	}
 	
-	protected abstract <T extends Serializable> Callable<Receiver<T,?,?,?>> getReceiverTask(ConduitExitController localInstance, PortalID otherSide);
-	
+	/**
+	 * Assigns a Transmitter to a ConduitEntranceController in a Thread.
+	 * 
+	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned transmitter was.
+	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
+	 */
 	public <T extends Serializable> Future<Transmitter<T,?,?,?>> getTransmitter(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide) {
 		return executor.submit(this.<T>getTransmitterTask(ic, localInstance, otherSide));
 	}
 
+	/**
+	 * Creates a task that will assign a receiver to a ConduitExitController.
+	 * 
+	 * In this task, the receiver must also be added to the messageProcessor, and the otherSide might have to be resolved.
+	 */
+	protected abstract <T extends Serializable> Callable<Receiver<T,?,?,?>> getReceiverTask(ConduitExitController localInstance, PortalID otherSide);
+	
+	/**
+	 * Creates a task that will assign a transmitter to a ConduitEntranceController.
+	 * 
+	 * In this task, the otherSide might have to be resolved.
+	 */
 	protected abstract <T extends Serializable> Callable<Transmitter<T,?,?,?>> getTransmitterTask(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide);
 	
-	// Singleton pattern
 	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
 		this.executor = Executors.newCachedThreadPool();
 		this.resolverFactory = rf;
 		this.messageProcessor = msgProcessor;
 	}
 	
-	private static PortFactory instance = null;
-	public static PortFactory getInstance() {
-		if (instance == null) {
-			throw new IllegalStateException("PortFactory implementation could not be determined.");
-		}
-		return instance;
-	}
-	
-	static void setImpl(PortFactory factory) {
-		instance = factory;
-	}
-	
+	/** Resolves a PortalID, if not already done. */
 	protected boolean resolvePort(PortalID port) {
 		if (!port.isResolved()) {
 			try {
@@ -75,6 +86,7 @@ public abstract class PortFactory {
 		return this.messageProcessor;
 	}
 	
+	/** Frees all resources attached to the PortFactory. After this call, getReceiver() and getTransmitter() can not be called anymore. */
 	public void dispose() {
 		executor.shutdown();
 	}

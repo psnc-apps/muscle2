@@ -34,9 +34,10 @@ JADE agent to wrap a kernel (e.g. CA or MABS)
 */
 public abstract class CAController extends RawKernel {
 	/**
-	returns path to the directory which contains CxA specific files<br>
-	do not change signature! (used from native code)
-	*/
+	 * Returns path to the directory which contains CxA specific files.
+	 * 
+	 * Do not change signature! (used from native code)
+	 */
 	@Deprecated
 	static public String getCxAPath() {
 		
@@ -47,9 +48,10 @@ public abstract class CAController extends RawKernel {
 
 
 	/**
-	returns path to the directory which contains a class<br>
-	returns an empty string if the class is bundled in a jar file
-	*/
+	 * Returns path to the directory which contains a class.
+	 *
+	 * If the class is bundled in a jar file an empty string is returned. 
+	 */
 	@Deprecated
 	static public String getKernelPath(Class<?> cls) {
 

@@ -21,7 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package utilities.jni;
 
-import utilities.MiscTool;
 import javatool.ClassTool;
 
 /**
