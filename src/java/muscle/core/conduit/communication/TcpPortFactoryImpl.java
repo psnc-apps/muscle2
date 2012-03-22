@@ -58,8 +58,13 @@ public class TcpPortFactoryImpl extends PortFactory {
 			public Transmitter<T, ?, ?, ?> call() throws Exception {
 				entrance.start();
 				resolvePort(port);
+				Transmitter trans;
+				if (TcpPortFactoryImpl.this.resolverFactory.getResolver().isLocal(port)) {
+					trans = new LocalTransmitter();
+				} else {
+					trans = new XdrTcpTransmitter(socketFactory);
+				}
 			
-				XdrTcpTransmitter trans = new XdrTcpTransmitter(socketFactory);
 				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
 				trans.setComplementaryPort(port);
 				entrance.setTransmitter(trans);
