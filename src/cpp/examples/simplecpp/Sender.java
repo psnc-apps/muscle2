@@ -21,13 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplecpp;
 
-import muscle.core.Scale;
-import muscle.core.JNIConduitEntrance;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.JNIConduitEntrance;
+import muscle.core.Scale;
 import muscle.core.kernel.CAController;
 
 
@@ -36,39 +36,25 @@ example of a kernel which is using native code to send and receive data
 @author Jan Hegewald
 */
 public class Sender extends CAController {
-
-	//
 	static {
-		System.loadLibrary("simplecpp_lib");
+		System.loadLibrary("example_simplecpp_lib");
 	}
-
 
 	private JNIConduitEntrance<double[],double[]> entrance;
 
-	private int time;
-	
-	private native void callNative(JNIConduitEntrance entranceJref);
-	
+	private native void callNative(JNIConduitEntrance entranceJref);	
 
-	//
 	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
+		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(BigDecimal.ONE, SI.SECOND);
+		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(BigDecimal.ONE, SI.METER);
 		return new Scale(dt,dx);
 	}
 
-	
-	//
 	public void addPortals() {
-	
 		entrance = addJNIEntrance("data", 1, double[].class);
 	}
 
-
-	//
 	protected void execute() {
-
 		callNative(entrance);	
-	}	
-
+	}
 }

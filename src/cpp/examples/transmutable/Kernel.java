@@ -21,14 +21,14 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.transmutable;
 
-import muscle.core.Scale;
-import muscle.core.JNIConduitEntrance;
-import muscle.core.JNIConduitExit;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.JNIConduitEntrance;
+import muscle.core.JNIConduitExit;
+import muscle.core.Scale;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.DoubleStringConverter;
 
@@ -40,28 +40,21 @@ this example uses a Transmutable to map cpp data to a Java class
 */
 public class Kernel extends muscle.core.kernel.CAController {
 
-	//
 	static {
-		System.loadLibrary("transmutable_lib");
+		System.loadLibrary("example_transmutable_lib");
 	}
-
 
 	private JNIConduitEntrance<double[],String> entrance;
 	private JNIConduitExit<String,double[]> exit;
 	
-
 	private native void callNative(int length, JNIConduitExit exitJref, JNIConduitEntrance entranceJref);
 	
-
-	//
 	public muscle.core.Scale getScale() {
 		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
 		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
 		return new Scale(dt,dx);
 	}
 
-	
-	//
 	public void addPortals() {
 		DataConverter<double[], String> dc = new DoubleStringConverter();
 		entrance = addJNIEntrance("writer", 1, double[].class, String.class, dc);
@@ -69,18 +62,14 @@ public class Kernel extends muscle.core.kernel.CAController {
 		exit = addJNIExit("reader", 1, String.class, double[].class, dc);
 	}
 
-	//
 	protected void execute() {
+		Object[] args = getArguments();
+		if(args.length > 0) {
+			System.out.println("first kernel arg: "+(String)args[0]);
+		}
 
-	Object[] args = getArguments();
-	if(args.length > 0) {
-		System.out.println("first kernel arg: "+(String)args[0]);
-	}
-
-	
 		int length = 4;
 
 		callNative(length, exit, entrance);	
-	}	
-
+	}
 }
