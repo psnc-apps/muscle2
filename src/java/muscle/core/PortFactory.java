@@ -21,7 +21,7 @@ import muscle.core.kernel.InstanceController;
  *
  * @author Joris Borgdorff
  */
-public abstract class PortFactory extends Thread {
+public abstract class PortFactory {
 	protected final ExecutorService executor;
 	protected final ResolverFactory resolverFactory;
 	protected final IncomingMessageProcessor messageProcessor;
@@ -56,8 +56,6 @@ public abstract class PortFactory extends Thread {
 	
 	static void setImpl(PortFactory factory) {
 		instance = factory;
-		factory.setDaemon(true);
-		factory.start();
 	}
 	
 	protected boolean resolvePort(PortalID port) {
@@ -75,5 +73,9 @@ public abstract class PortFactory extends Thread {
 	
 	public IncomingMessageProcessor getMessageProcessor() {
 		return this.messageProcessor;
+	}
+	
+	public void dispose() {
+		executor.shutdown();
 	}
 }

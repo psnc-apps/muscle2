@@ -40,6 +40,10 @@ public class TcpIDManipulator implements IDManipulator {
 	public void setResolver(DelegatingResolver resolver) {
 		this.resolver = resolver;
 	}
+	
+	public void dispose() {
+		executor.shutdown();
+	}
 
 	@Override
 	public void propagate(Identifier id, Location loc) {

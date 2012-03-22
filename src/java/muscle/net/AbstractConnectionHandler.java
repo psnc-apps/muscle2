@@ -56,4 +56,9 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	}
 	
 	protected abstract Callable<?> createProtocolHandler(Socket s);
+	
+	public void dispose() {
+		super.dispose();
+		executor.shutdown();
+	}
 }
