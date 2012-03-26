@@ -32,12 +32,16 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 	@Override
 	protected Callable<?> createProtocolHandler(Socket s) {
 		try {
-			return new XdrIncomingMessageHandler(s, listener, resolverFactory);
+			return new TcpIncomingMessageHandler(s, listener, resolverFactory, this);
 		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "Could not handle incoming data message; no resolver was found.", ex);
+			Logger.getLogger(DataConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
 			return null;
 		}
 	}
+	
+	void resubmit(TcpIncomingMessageHandler c) {
+		executor.submit(c);
+	} 
 
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {

@@ -12,7 +12,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.Location;
 import muscle.core.ident.TcpLocation;
-import org.acplt.oncrpc.*;
+import muscle.core.messaging.serialization.ConverterWrapperFactory;
+import muscle.core.messaging.serialization.DeserializerWrapper;
+import muscle.core.messaging.serialization.SerializerWrapper;
 
 /**
  * Handles a protocol using XDR serialization.
@@ -23,57 +25,46 @@ import org.acplt.oncrpc.*;
  * 
  * @author Joris Borgdorff
  */
-public abstract class XdrProtocolHandler<S,T> implements Callable<S> {
+public abstract class ProtocolHandler<S,T> implements Callable<S> {
 	protected final T listener;
-	private final Socket socket;
-	private final static Logger logger = Logger.getLogger(XdrProtocolHandler.class.getName());
+	protected final Socket socket;
+	private final static Logger logger = Logger.getLogger(ProtocolHandler.class.getName());
 	private final boolean closeSocket;
+	private DeserializerWrapper in;
+	private SerializerWrapper out;
+	public final static int SIZE_BUFFER_IN = 1024*1024*10;
+	public final static int SIZE_BUFFER_OUT = 1024;
 	
-	public XdrProtocolHandler(Socket s, T listener, boolean closeSocket) {
+	
+	public ProtocolHandler(Socket s, T listener, boolean closeSocket) {
 		this.listener = listener;
 		this.socket = s;
 		this.closeSocket = closeSocket;
+		this.in = null;
+		this.out = null;
 	}
 
-	public XdrProtocolHandler(Socket s, T listener) {
+	public ProtocolHandler(Socket s, T listener) {
 		this(s, listener, false);
 	}
 	
 	@Override
 	public S call() {
-		XdrTcpDecodingStream xdrIn = null;
-		XdrTcpEncodingStream xdrOut = null;
 		S ret = null;
 		try {
-			xdrIn =  new XdrTcpDecodingStream(socket, 1024);
-			xdrOut = new XdrTcpEncodingStream(socket, 1024);
+			if (in == null) {
+				in = ConverterWrapperFactory.getControlDeserializer(socket);
+			}
+			if (out == null) {
+				out = ConverterWrapperFactory.getDataSerializer(socket);
+			}
 			
-			ret = executeProtocol(xdrIn, xdrOut);
-		} catch (OncRpcException ex) {
-			logger.log(Level.SEVERE, "Could not encode/decode with XDR.", ex);
+			ret = executeProtocol(in, out);
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Communication error; could not encode/decode XDR from socket.", ex);
 		} catch (RuntimeException ex) {
 			logger.log(Level.SEVERE, "Could not finish protocol due to an error.", ex);
 		} finally {
-			if (xdrIn != null) {
-				try {
-					xdrIn.close();
-				} catch (OncRpcException ex) {
-					logger.log(Level.SEVERE, "Failure to close XDR decoding", ex);
-				} catch (IOException ex) {
-					logger.log(Level.SEVERE, "Communication error in closing XDR decoding", ex);
-				}
-			}
-			if (xdrOut != null) {
-				try {
-					xdrOut.close();
-				} catch (OncRpcException ex) {
-					logger.log(Level.SEVERE, "Failure to close XDR encoding", ex);
-				} catch (IOException ex) {
-					logger.log(Level.SEVERE, "Communication error in closing XDR encoding", ex);
-				}
-			}
 			if (this.closeSocket) {
 				try {
 					this.socket.close();
@@ -90,22 +81,22 @@ public abstract class XdrProtocolHandler<S,T> implements Callable<S> {
 	 * It is the responsibility of the protocol handler to beginDecoding() and endEncoding(). All exceptions
 	 * are handled by XdrProtocolHandler.
 	 */
-	protected abstract S executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException;
+	protected abstract S executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException;
 
 	/**
 	 * Encodes a TcpLocation over an XDR stream.
 	 * @param xdrOut a stream to encode over; endEncoding() will not be called over it.
 	 * @param loc must be a TcpLocation
 	 */
-	protected static void encodeLocation(XdrEncodingStream xdrOut, Location loc) throws OncRpcException, IOException {
+	protected static void encodeLocation(SerializerWrapper out, Location loc) throws IOException {
 		if (!(loc instanceof TcpLocation)) {
 			throw new IllegalArgumentException("Location belonging to identity is not a TcpLocation; can only encode TcpLocation");
 		}
 		TcpLocation tcpLoc = (TcpLocation)loc;
 
 		byte[] addr = tcpLoc.getAddress().getAddress();		
-		xdrOut.xdrEncodeByteVector(addr);
-		xdrOut.xdrEncodeInt(tcpLoc.getPort());
+		out.writeByteArray(addr);
+		out.writeInt(tcpLoc.getPort());
 	}
 
 	/**
@@ -113,10 +104,10 @@ public abstract class XdrProtocolHandler<S,T> implements Callable<S> {
 	 * @param xdrIn a stream to decode from; beginEncoding() will not be called over it.
 	 * @returns the TcpLocation that was transmitted.
 	 */
-	protected static TcpLocation decodeLocation(XdrDecodingStream xdrIn) throws OncRpcException, IOException {
-		byte[] addr = xdrIn.xdrDecodeByteVector();
+	protected static TcpLocation decodeLocation(DeserializerWrapper in) throws IOException {
+		byte[] addr = in.readByteArray();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
-		int port = xdrIn.xdrDecodeInt();
+		int port = in.readInt();
 		return new TcpLocation(inetAddr, port);
 	}
 }

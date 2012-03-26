@@ -7,6 +7,8 @@ package muscle.core.conduit.communication;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.PortFactory;
@@ -35,7 +37,9 @@ public class TcpPortFactoryImpl extends PortFactory {
 		return new Callable<Receiver<T,?,?,?>>() {
 			public Receiver<T, ?, ?, ?> call() throws Exception {
 				exit.start();
-				resolvePort(port);
+				if (!resolvePort(port)) {
+					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, exit});
+				}
 			
 				TcpReceiver recv = new TcpReceiver();
 				recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
@@ -54,16 +58,18 @@ public class TcpPortFactoryImpl extends PortFactory {
 		return new Callable<Transmitter<T,?,?,?>>() {
 			public Transmitter<T, ?, ?, ?> call() throws Exception {
 				entrance.start();
-				resolvePort(port);
-				Transmitter trans;
-//				if (TcpPortFactoryImpl.this.resolverFactory.getResolver().isLocal(port)) {
-//					trans = new LocalTransmitter();
-//				} else {
-					trans = new XdrTcpTransmitter(socketFactory);
-//				}
-			
+				System.out.println("Trying to resolve port");
+				if (!resolvePort(port)) {
+					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, entrance});
+				}
+		
+				System.out.println("Trying to create transmitter");
+				Transmitter trans = new TcpTransmitter(socketFactory);
+				System.out.println("Trying to set transmitter dataconverter");
 				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
+				System.out.println("Trying to set complementary port");
 				trans.setComplementaryPort(port);
+				System.out.println("Set complementary port.");
 				entrance.setTransmitter(trans);
 				return trans;
 			}

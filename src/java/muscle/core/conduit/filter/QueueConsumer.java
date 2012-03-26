@@ -1,6 +1,6 @@
 package muscle.core.conduit.filter;
 
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Reads messages from an incoming queue. May be implemented synchronously or asynchronously.
@@ -11,7 +11,7 @@ public interface QueueConsumer<E> {
 	 * 
 	 * Unless apply() is called after a message has been added to the queue, it is not guaranteed to be read.
 	 */
-	public void setIncomingQueue(Queue<E> queue);
+	public void setIncomingQueue(BlockingQueue<E> queue);
 	
 	/** Indicate that the incoming queue is non-empty. */
 	public void apply();

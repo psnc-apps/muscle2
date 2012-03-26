@@ -5,7 +5,6 @@ package muscle.core.conduit.communication;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
@@ -13,6 +12,7 @@ import muscle.core.ident.PortalID;
 import muscle.core.messaging.BasicMessage;
 import muscle.core.messaging.Message;
 import utilities.data.SerializableData;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
@@ -22,12 +22,16 @@ public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPo
 	private BlockingQueue<Message<T>> queue;
 	
 	public TcpReceiver() {
-		this.queue = new LinkedBlockingQueue<Message<T>>();
+		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>(1024);
 	}
 
 	
 	public void put(BasicMessage<SerializableData> msg) {
-		queue.add(converter.deserialize(msg));
+		try {
+			queue.put(converter.deserialize(msg));
+		} catch (InterruptedException ex) {
+			Logger.getLogger(TcpReceiver.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 
 	@Override

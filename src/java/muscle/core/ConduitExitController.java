@@ -5,7 +5,6 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.conduit.communication.Receiver;
@@ -13,6 +12,7 @@ import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.Observation;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
@@ -26,7 +26,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 
 	public ConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-		this.queue = new LinkedBlockingQueue<Observation<T>>();
+		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>(1024);
 		this.receiver = null;
 		this.conduitExit = null;
 	}
@@ -56,7 +56,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 					System.out.println("Signal received: " + dmsg.getSignal());
 				}
 				else {
-					this.queue.add(dmsg.getObservation());
+					this.queue.put(dmsg.getObservation());
 					increment();
 				}
 			}

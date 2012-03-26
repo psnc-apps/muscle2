@@ -22,7 +22,7 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.conduit.communication.Transmitter;
@@ -31,7 +31,6 @@ import muscle.core.conduit.filter.QueueConsumer;
 import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Observation;
-import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.signal.DetachConduitSignal;
 
 /**
@@ -39,14 +38,14 @@ this is the (remote) head of a conduit,
 an entrance sends data to the conduit exit through a transmitter
 @author Jan Hegewald
  */
-public class ConduitEntranceController<T extends Serializable> extends Portal<T> implements QueueConsumer<Observation<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
+public class ConduitEntranceController<T extends Serializable> extends Portal<T>  implements QueueConsumer<Observation<T>> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
 	private Transmitter<T,?,?,?> transmitter;
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	private final FilterChain filters;
 	private boolean processingMessage;
 	private boolean processingNextMessage;
-	private Queue<Observation<T>> queue;
+	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
@@ -148,9 +147,10 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	}
 	
 	@Override
-	public void setIncomingQueue(Queue<Observation<T>> queue) {
+	public void setIncomingQueue(BlockingQueue<Observation<T>> queue) {
 		this.queue = queue;
 	}
+	
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
 		logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
@@ -162,7 +162,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			if (logger.isLoggable(Level.FINE)) {
 				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
 				if (queue != null) {
-					msg += queue.size() + " messages ";
+					msg += (1 + queue.size()) + " messages ";
 				}
 				msg += "over.";
 				logger.fine(msg);

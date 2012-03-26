@@ -27,7 +27,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	public final static String PROP_NUM_CONNECTIONS = "muscle.net.num_connections";
 	protected final ServerSocket ss;
 	protected final T listener;
-	private final ExecutorService executor;
+	protected final ExecutorService executor;
 	private final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {

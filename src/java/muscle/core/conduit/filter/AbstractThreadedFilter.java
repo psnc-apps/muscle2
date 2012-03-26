@@ -3,21 +3,22 @@
  */
 package muscle.core.conduit.filter;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.utilities.parallelism.SafeQueueConsumerThread;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
  * @author Joris Borgdorff
  */
 public abstract class AbstractThreadedFilter<E,F> extends SafeQueueConsumerThread<E> implements Filter<E,F> {
-	protected final Queue<F> outgoingQueue;
+	protected final BlockingQueue<F> outgoingQueue;
 	protected QueueConsumer<F> consumer;
 	
 	protected AbstractThreadedFilter() {
-		this.outgoingQueue = new LinkedBlockingQueue<F>();
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 	}
 	
 	public AbstractThreadedFilter(QueueConsumer<F> qc) {
@@ -34,7 +35,11 @@ public abstract class AbstractThreadedFilter<E,F> extends SafeQueueConsumerThrea
 	}
 	
 	protected void put(F message) {
-		this.outgoingQueue.add(message);
+		try {
+			this.outgoingQueue.put(message);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(AbstractThreadedFilter.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 	
 	/**

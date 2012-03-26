@@ -5,13 +5,13 @@
 package muscle.core;
 
 import java.io.Serializable;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import muscle.core.messaging.Duration;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.SerializableDataConverter;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  * Sends information over a conduit
@@ -22,7 +22,7 @@ public class ConduitEntrance<T extends Serializable> {
 	protected Timestamp nextTime;
 	protected final Duration dt;
 	private final DataConverter<T,?> serializer;
-	private Queue<Observation<T>> queue;
+	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Scale sc) {
 		this(controller, new Timestamp(0d), sc.getDt());
@@ -30,7 +30,7 @@ public class ConduitEntrance<T extends Serializable> {
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Duration timeStep) {
 		this.serializer = new SerializableDataConverter<T>();
-		this.queue = new LinkedBlockingQueue<Observation<T>>();
+		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>(1024);
 		controller.setIncomingQueue(queue);
 
 		this.nextTime = origin;
@@ -69,7 +69,11 @@ public class ConduitEntrance<T extends Serializable> {
 	
 	/** Send an observation. */
 	private void send(Observation<T> msg) {
-		this.queue.add(msg);
+		try {
+			this.queue.put(msg);
+		} catch (InterruptedException ex) {
+			throw new IllegalStateException("Can not send message", ex);
+		}
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
 		this.consumer.setNextTimestamp(msg.getNextTimestamp());

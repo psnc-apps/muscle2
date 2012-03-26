@@ -80,8 +80,9 @@ public class SimulationManager {
 			wait();
 		}
 		if (!isDone && !id.isResolved()) {
-			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, id.getLocation()});
-			id.resolveLike(this.active.get(id.getName()));
+			Identifier resolvedId = this.active.get(id.getName());
+			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
+			id.resolveLike(resolvedId);
 		}
 	}
 	

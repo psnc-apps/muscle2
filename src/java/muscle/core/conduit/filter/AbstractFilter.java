@@ -21,19 +21,21 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
 @author Jan Hegewald
 */
 public abstract class AbstractFilter<E,F> implements Filter<E,F> {
-	protected Queue<E> incomingQueue;
-	protected final Queue<F> outgoingQueue;
+	protected BlockingQueue<E> incomingQueue;
+	protected final BlockingQueue<F> outgoingQueue;
 	protected QueueConsumer<F> consumer;
 	
 	protected AbstractFilter() {
-		this.outgoingQueue = new LinkedBlockingQueue<F>();
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 	}
 	
 	public AbstractFilter(QueueConsumer<F> qc) {
@@ -54,7 +56,11 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	}
 	
 	protected void put(F message) {
-		this.outgoingQueue.add(message);
+		try {
+			this.outgoingQueue.put(message);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(AbstractFilter.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 	
 	/**
@@ -69,7 +75,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 		this.consumer.setIncomingQueue(this.outgoingQueue);
 	}
 
-	public void setIncomingQueue(Queue<E> queue) {
+	public void setIncomingQueue(BlockingQueue<E> queue) {
 		this.incomingQueue = queue;
 	}
 }

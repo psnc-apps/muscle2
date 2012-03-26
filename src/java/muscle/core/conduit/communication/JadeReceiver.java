@@ -5,13 +5,13 @@ package muscle.core.conduit.communication;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.JadeIdentifier;
 import muscle.core.ident.JadePortalID;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.jade.DataMessage;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
@@ -21,11 +21,15 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 	private BlockingQueue<Message<T>> queue;
 
 	public JadeReceiver() {
-		this.queue = new LinkedBlockingQueue<Message<T>>();
+		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>(10);
 	}
 
 	public void put(DataMessage<T> msg) {
-		queue.add(this.converter.deserialize(msg));
+		try {
+			queue.put(this.converter.deserialize(msg));
+		} catch (InterruptedException ex) {
+			Logger.getLogger(JadeReceiver.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 
 	@Override

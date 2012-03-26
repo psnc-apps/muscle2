@@ -10,16 +10,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
-import muscle.net.XdrProtocolHandler;
-import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrDecodingStream;
-import org.acplt.oncrpc.XdrEncodingStream;
+import muscle.core.messaging.serialization.DeserializerWrapper;
+import muscle.core.messaging.serialization.SerializerWrapper;
+import muscle.net.ProtocolHandler;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Boolean,SimulationManager> {
+public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,SimulationManager> {
 	private final static Logger logger = Logger.getLogger(SimulationManagerProtocolHandler.class.getName());
 
 	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener) {
@@ -27,52 +26,52 @@ public class SimulationManagerProtocolHandler extends XdrProtocolHandler<Boolean
 	}
 
 	@Override
-	protected Boolean executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
+	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
-		xdrIn.beginDecoding();
-		int opnum = xdrIn.xdrDecodeInt();
+		in.refresh();
+		int opnum = in.readInt();
 		SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 		if (opnum >= protoArr.length || opnum < 0) {
-			xdrOut.xdrEncodeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
+			out.writeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
 			logger.log(Level.WARNING, "Unsupported operation number {0} requested", opnum);
 			return Boolean.FALSE;
 		}
 		SimulationManagerProtocol proto = protoArr[opnum];
-		String name = xdrIn.xdrDecodeString();
+		String name = in.readString();
 		InstanceID id = new InstanceID(name);
 		switch (proto) {
 			case LOCATE:
-				xdrOut.xdrEncodeInt(opnum);
+				out.writeInt(opnum);
 				// Flush, to indicate that we are waiting to resolve the location
-				xdrOut.endEncoding();
+				out.flush();
 				try {
 					listener.resolve(id);
 					success = true;
-					xdrOut.xdrEncodeBoolean(true);
-					encodeLocation(xdrOut, id.getLocation());
+					out.writeBoolean(true);
+					encodeLocation(out, id.getLocation());
 				} catch (InterruptedException ex) {
-					xdrOut.xdrEncodeBoolean(false);
+					out.writeBoolean(false);
 					logger.log(Level.SEVERE, "Could not resolve identifier", ex);
 				}
 				break;
 			case REGISTER:
-				xdrOut.xdrEncodeInt(opnum);
-				Location loc = decodeLocation(xdrIn);
+				out.writeInt(opnum);
+				Location loc = decodeLocation(in);
 				id.resolve(loc);
 				success = listener.register(id);
-				xdrOut.xdrEncodeBoolean(success);
+				out.writeBoolean(success);
 				break;
 			case DEREGISTER:
-				xdrOut.xdrEncodeInt(opnum);
+				out.writeInt(opnum);
 				success = listener.deregister(id);
-				xdrOut.xdrEncodeBoolean(success);
+				out.writeBoolean(success);
 				break;
 			default:
 				logger.log(Level.WARNING, "Unsupported operation {0} requested", proto);
-				xdrOut.xdrEncodeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
+				out.writeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
 				break;
 		}
-		xdrOut.endEncoding();
+		out.flush();
 		return success;
 	}
 	

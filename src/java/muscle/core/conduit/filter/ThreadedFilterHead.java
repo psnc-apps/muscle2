@@ -5,10 +5,11 @@
 package muscle.core.conduit.filter;
 
 import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.utilities.parallelism.SafeTriggeredThread;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
@@ -16,16 +17,20 @@ import muscle.utilities.parallelism.SafeTriggeredThread;
  */
 public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueProducer<F> {
 	private QueueConsumer<F> consumer;
-	private final Queue<F> outgoingQueue;
+	private final BlockingQueue<F> outgoingQueue;
 	
 	public ThreadedFilterHead(QueueConsumer<F> consumer) {
-		this.outgoingQueue = new LinkedBlockingQueue<F>();
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 		this.setQueueConsumer(consumer);
 	}
 	
 	public void put(F data) {
-		outgoingQueue.add(data);
-		apply();
+		try {
+			outgoingQueue.put(data);
+			apply();
+		} catch (InterruptedException ex) {
+			Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 	
 	private void apply() {

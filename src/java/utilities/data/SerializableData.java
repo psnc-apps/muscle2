@@ -7,10 +7,12 @@ package utilities.data;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.core.messaging.serialization.*;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrDecodingStream;
 import org.acplt.oncrpc.XdrEncodingStream;
+import org.msgpack.packer.Packer;
+import org.msgpack.unpacker.Unpacker;
 
 /**
  * Stores data in a way that is serializable to other platforms.
@@ -118,112 +120,76 @@ public class SerializableData implements Serializable {
 		return size;
 	}
 	
-	/**
-	 * Parses a SerializableData from an XdrDecodingStream.
-	 * @param xdrIn an initialized XdrDecodingStream
-	 * @return a new SerializableData
-	 * @throws OncRpcException if the supplied data is not correct
-	 * @throws IOException if the connection fails
-	 */
-	public static SerializableData parseXdrData(XdrDecodingStream xdrIn) throws OncRpcException, IOException {
-		int typeNum = xdrIn.xdrDecodeInt();
+	public static SerializableData parseData(DeserializerWrapper in) throws IOException {
+		int typeNum = in.readInt();
 		
 		if (typeNum < 0 || typeNum >= datatypes.length) {
-			throw new OncRpcException("Datatype with number " + typeNum + " not recognized");
+			throw new IllegalStateException("Datatype with number " + typeNum + " not recognized");
 		}
-		
 		SerializableDatatype type = datatypes[typeNum];
-		Serializable value;
-		int length = 0;
-		
+
+		Serializable value = null;
+		int len;
+
 		switch (type.typeOf()) {
 			case NULL:
-				value = null;
-				break;
+				return new SerializableData(null, type, 0);
 			case STRING_MAP:
-				length = xdrIn.xdrDecodeInt();
-				HashMap<String,Serializable> xdrMap = new HashMap<String,Serializable>(length*3/2);
+				len = in.readInt();
+				HashMap<Serializable,Serializable> xdrMap = new HashMap<Serializable,Serializable>(len*3/2);
 				
-				for (int i = 0; i < length; i++) {
-					xdrMap.put(xdrIn.xdrDecodeString(), SerializableData.parseXdrData(xdrIn).getValue());
+				for (int i = 0; i < len; i++) {
+					xdrMap.put(SerializableData.parseData(in).getValue(), SerializableData.parseData(in).getValue());
 				}
 				value = xdrMap;
 				break;
 			case COLLECTION:
-				length = xdrIn.xdrDecodeInt();
-				ArrayList<Serializable> xdrList = new ArrayList<Serializable>(length);
+				len = in.readInt();
+				ArrayList<Serializable> xdrList = new ArrayList<Serializable>(len);
 				
-				for (int i = 0; i < length; i++) {
-					xdrList.add(SerializableData.parseXdrData(xdrIn).getValue());
+				for (int i = 0; i < len; i++) {
+					xdrList.add(SerializableData.parseData(in).getValue());
 				}
 				value = xdrList;
 				break;
 			case STRING:
-				value = xdrIn.xdrDecodeString();
-				break;
-			case STRING_ARR:
-				value = xdrIn.xdrDecodeStringVector();
+				value = in.readString();
 				break;
 			case BOOLEAN:
-				value = xdrIn.xdrDecodeBoolean();
-				break;
-			case BOOLEAN_ARR:
-				value = xdrIn.xdrDecodeBooleanVector();
-				length = ((boolean[])value).length;
-				break;
-			case BYTE:
-				value = xdrIn.xdrDecodeByte();
+				value = in.readBoolean();
 				break;
 			case BYTE_ARR:
-				value = xdrIn.xdrDecodeByteVector();
-				length = ((byte[])value).length;
-				break;
-			case SHORT:
-				value = xdrIn.xdrDecodeShort();
-				break;
-			case SHORT_ARR:
-				value = xdrIn.xdrDecodeShortVector();
-				length = ((short[])value).length;
+				value = in.readByteArray();
 				break;
 			case INT:
-				value = xdrIn.xdrDecodeInt();
-				break;
-			case INT_ARR:
-				value = xdrIn.xdrDecodeIntVector();
-				length = ((int[])value).length;
-				break;
-			case LONG:
-				value = xdrIn.xdrDecodeLong();
-				break;
-			case LONG_ARR:
-				value = xdrIn.xdrDecodeLongVector();
-				length = ((long[])value).length;
-				break;
-			case FLOAT:
-				value = xdrIn.xdrDecodeFloat();
-				break;
-			case FLOAT_ARR:
-				value = xdrIn.xdrDecodeFloatVector();
-				length = ((float[])value).length;
+				value = in.readInt();
 				break;
 			case DOUBLE:
-				value = xdrIn.xdrDecodeDouble();
+				value = in.readDouble();
 				break;
-			case DOUBLE_ARR:
-				value = xdrIn.xdrDecodeDoubleVector();
-				length = ((double[])value).length;
-				break;
-			default:
-				throw new OncRpcException("Datatype " + type + " not recognized");
+		}
+				
+		if (value == null) {
+			if (in instanceof XdrDeserializerWrapper) {
+				try {
+					XdrDecodingStream xdrIn = ((XdrDeserializerWrapper)in).getXdrDecodingStream();
+					value = parseXdrData(xdrIn, type);
+				} catch (OncRpcException ex) {
+					throw new IllegalStateException("Could not parse data", ex);
+				}
+			} else {
+				throw new IllegalArgumentException("Can not parse data from wrapper " + in.getClass().getName());
+			}
 		}
 		
-		int size = sizeOf(value, type);
-		
+		int size = sizeOf(value, type);		
 		if (type.isMatrix()) {
+			int length = lengthOfMatrix(value, type);
+			
 			int dimX, dimY, dimZ, dimZZ;
-			dimX = xdrIn.xdrDecodeInt();
-			dimY = type.isMatrix2D() ? length / dimX : xdrIn.xdrDecodeInt();
-			dimZ = type.isMatrix4D() ? xdrIn.xdrDecodeInt() : length / (dimX*dimY);
+			dimX = in.readInt();
+			dimY = type.isMatrix2D() ? length / dimX : in.readInt();
+			dimZ = type.isMatrix4D() ? in.readInt() : length / (dimX*dimY);
 			dimZZ = type.isMatrix4D() ? length / (dimX*dimY*dimZ) : 1;
 		
 			value = arrayToMatrix(value, type, dimX, dimY, dimZ, dimZZ);
@@ -232,45 +198,237 @@ public class SerializableData implements Serializable {
 		return new SerializableData(value, type, size);
 	}
 	
+	public static Serializable parseMsgPackData(Unpacker unpacker, SerializableDatatype type) throws IOException {
+		Serializable value = null;
+		int len = 0;
+		if (type.typeOf().isArray()) {
+			len = unpacker.readArrayBegin();
+		}
+		
+		switch (type.typeOf()) {
+			case BYTE:
+				value = unpacker.readByte();
+				break;
+			case SHORT:
+				value = unpacker.readShort();
+				break;
+			case LONG:
+				value = unpacker.readLong();
+				break;
+			case FLOAT:
+				value = unpacker.readFloat();
+				break;
+			case STRING_ARR:
+				value = new String[len];
+				for (int i = 0; i < len; i++) {
+					((String[])value)[i] = unpacker.readString();
+				}
+				break;
+			case BOOLEAN_ARR:
+				value = new boolean[len];
+				for (int i = 0; i < len; i++) {
+					((boolean[])value)[i] = unpacker.readBoolean();
+				}
+				break;
+			case SHORT_ARR:
+				value = new short[len];
+				for (int i = 0; i < len; i++) {
+					((short[])value)[i] = unpacker.readShort();
+				}
+				break;
+			case INT_ARR:
+				value = new int[len];
+				for (int i = 0; i < len; i++) {
+					((int[])value)[i] = unpacker.readInt();
+				}
+				break;
+			case LONG_ARR:
+				value = new long[len];
+				for (int i = 0; i < len; i++) {
+					((long[])value)[i] = unpacker.readLong();
+				}
+				break;
+			case FLOAT_ARR:
+				value = new float[len];
+				for (int i = 0; i < len; i++) {
+					((float[])value)[i] = unpacker.readFloat();
+				}
+				break;
+			case DOUBLE_ARR:
+				value = new double[len];
+				for (int i = 0; i < len; i++) {
+					((double[])value)[i] = unpacker.readDouble();
+				}
+				break;
+		}
+		if (type.typeOf().isArray()) {
+			unpacker.readArrayEnd();
+		}
+				
+		return value;
+	}
+	
 	/**
-	 * Encodes the data over an XdrEncodingStream.
-	 * @param xdrOut an initialized XdrEncodingStream, it is not flushed.
+	 * Parses a SerializableData from an XdrDecodingStream.
+	 * @param xdrIn an initialized XdrDecodingStream
+	 * @return a new SerializableData
 	 * @throws OncRpcException if the supplied data is not correct
 	 * @throws IOException if the connection fails
 	 */
-	public void encodeXdrData(XdrEncodingStream xdrOut) throws OncRpcException, IOException {
-		xdrOut.xdrEncodeInt(type.ordinal());
+	private static Serializable parseXdrData(XdrDecodingStream xdrIn, SerializableDatatype type) throws OncRpcException, IOException {		
+		Serializable value = null;
+		
+		switch (type.typeOf()) {
+			case STRING_ARR:
+				value = xdrIn.xdrDecodeStringVector();
+				break;
+			case BOOLEAN_ARR:
+				value = xdrIn.xdrDecodeBooleanVector();
+				break;
+			case BYTE:
+				value = xdrIn.xdrDecodeByte();
+				break;
+			case SHORT:
+				value = xdrIn.xdrDecodeShort();
+				break;
+			case SHORT_ARR:
+				value = xdrIn.xdrDecodeShortVector();
+				break;
+			case INT_ARR:
+				value = xdrIn.xdrDecodeIntVector();
+				break;
+			case LONG:
+				value = xdrIn.xdrDecodeLong();
+				break;
+			case LONG_ARR:
+				value = xdrIn.xdrDecodeLongVector();
+				break;
+			case FLOAT:
+				value = xdrIn.xdrDecodeFloat();
+				break;
+			case FLOAT_ARR:
+				value = xdrIn.xdrDecodeFloatVector();
+				break;
+			case DOUBLE_ARR:
+				value = xdrIn.xdrDecodeDoubleVector();
+				break;
+		}
+		
+		return value;
+	}
+	
+	public void encodeData(SerializerWrapper out) throws IOException {
+		out.writeInt(type.ordinal());
 		
 		Object newValue = matrixToArray();
 		
 		switch (type.typeOf()) {
 			case NULL:
 				break;
-			case STRING_MAP:				
+			case STRING_MAP:
 				Map xdrMap = (Map)newValue;
-				xdrOut.xdrEncodeInt(xdrMap.size());
+				out.writeInt(xdrMap.size());
 				for (Iterator it = xdrMap.entrySet().iterator(); it.hasNext();) {
 					Map.Entry entry = (Map.Entry)it.next();
-					xdrOut.xdrEncodeString((String)entry.getKey());
-					valueOf((Serializable)entry.getValue()).encodeXdrData(xdrOut);
+					valueOf((Serializable)entry.getKey()).encodeData(out);
+					valueOf((Serializable)entry.getValue()).encodeData(out);
 				}
 				break;
 			case COLLECTION:
 				Collection xdrList = (Collection)newValue;
-				xdrOut.xdrEncodeInt(xdrList.size());
+				out.writeInt(xdrList.size());
 				
 				for (Object data : xdrList) {
-					valueOf((Serializable)data).encodeXdrData(xdrOut);
+					valueOf((Serializable)data).encodeData(out);
 				}
 				break;
 			case STRING:
-				xdrOut.xdrEncodeString((String)newValue);
-				break;
-			case STRING_ARR:
-				xdrOut.xdrEncodeStringVector((String[])newValue);
+				out.writeString((String)newValue);
 				break;
 			case BOOLEAN:
-				xdrOut.xdrEncodeBoolean((Boolean)newValue);
+				out.writeBoolean((Boolean)newValue);
+				break;
+			case BYTE_ARR:
+				out.writeByteArray((byte[])newValue);
+				break;
+			case INT:
+				out.writeInt((Integer)newValue);
+				break;
+			case DOUBLE:
+				out.writeDouble((Double)newValue);
+				break;
+			default:
+				if (out instanceof XdrSerializerWrapper) {
+					try {
+						encodeXdrData(((XdrSerializerWrapper)out).getXdrEncodingStream(), newValue);
+					} catch (OncRpcException ex) {
+						throw new IllegalStateException("Could not parse data", ex);
+					}
+				} else if (out instanceof PackerWrapper) {
+					encodePackerData(((PackerWrapper)out).getPacker(), newValue);
+				} else {
+					throw new IllegalArgumentException("Can not parse data from wrapper " + out.getClass().getName());
+				}
+		}	
+	}
+	
+	private void encodePackerData(Packer packer, Object newValue) throws IOException {
+//		int len = 0;
+//		if (type.typeOf().isArray()) {
+//			int len = lengthOfMatrix(newValue, type);
+//			packer.writeArrayBegin(len);
+//		}
+//		switch (type.typeOf()) {
+//			case BYTE:
+//				xdrOut.xdrEncodeByte((Byte)newValue);
+//				break;
+//			case SHORT:
+//				xdrOut.xdrEncodeShort((Short)newValue);
+//				break;
+//			case FLOAT:
+//				xdrOut.xdrEncodeFloat((Float)newValue);
+//				break;
+//			case LONG:
+//				xdrOut.xdrEncodeLong((Long)newValue);
+//				break;
+//			case STRING_ARR:
+//				xdrOut.xdrEncodeStringVector((String[])newValue);
+//				break;
+//			case BOOLEAN_ARR:
+//				xdrOut.xdrEncodeBooleanVector((boolean[])newValue);
+//				break;
+//			case SHORT_ARR:
+//				xdrOut.xdrEncodeShortVector((short[])newValue);
+//				break;
+//			case INT_ARR:
+//				xdrOut.xdrEncodeIntVector((int[])newValue);
+//				break;
+//			case LONG_ARR:
+//				xdrOut.xdrEncodeLongVector((long[])newValue);
+//				break;
+//			case FLOAT_ARR:
+//				xdrOut.xdrEncodeFloatVector((float[])newValue);
+//				break;
+//			case DOUBLE_ARR:
+//				xdrOut.xdrEncodeDoubleVector((double[])newValue);
+//				break;
+//		}
+//		
+//		if (type.typeOf().isArray()) {
+//			packer.writeArrayEnd();
+//		}
+	}
+	
+	/**
+	 * Encodes the data over an XdrEncodingStream.
+	 * @param xdrOut an initialized XdrEncodingStream, it is not flushed.
+	 * @throws OncRpcException if the supplied data is not correct
+	 * @throws IOException if the connection fails
+	 */
+	private void encodeXdrData(XdrEncodingStream xdrOut, Object newValue) throws OncRpcException, IOException {
+		switch (type.typeOf()) {
+			case STRING_ARR:
+				xdrOut.xdrEncodeStringVector((String[])newValue);
 				break;
 			case BOOLEAN_ARR:
 				xdrOut.xdrEncodeBooleanVector((boolean[])newValue);
@@ -278,17 +436,11 @@ public class SerializableData implements Serializable {
 			case BYTE:
 				xdrOut.xdrEncodeByte((Byte)newValue);
 				break;
-			case BYTE_ARR:
-				xdrOut.xdrEncodeByteVector((byte[])newValue);
-				break;
 			case SHORT:
 				xdrOut.xdrEncodeShort((Short)newValue);
 				break;
 			case SHORT_ARR:
 				xdrOut.xdrEncodeShortVector((short[])newValue);
-				break;
-			case INT:
-				xdrOut.xdrEncodeInt((Integer)newValue);
 				break;
 			case INT_ARR:
 				xdrOut.xdrEncodeIntVector((int[])newValue);
@@ -304,9 +456,6 @@ public class SerializableData implements Serializable {
 				break;
 			case FLOAT_ARR:
 				xdrOut.xdrEncodeFloatVector((float[])newValue);
-				break;
-			case DOUBLE:
-				xdrOut.xdrEncodeDouble((Double)newValue);
 				break;
 			case DOUBLE_ARR:
 				xdrOut.xdrEncodeDoubleVector((double[])newValue);

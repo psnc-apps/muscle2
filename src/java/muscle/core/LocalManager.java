@@ -72,6 +72,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
 		res = new SimpleDelegatingResolver(idManipulator);
+		idManipulator.setResolver(res);
 		
 		// Initialize the InstanceControllers
 		for (InstanceClass name : opts.getAgents()) {

@@ -8,6 +8,6 @@ package muscle.core.conduit.communication;
  *
  * @author bobby
  */
-public enum XdrDataProtocol {
-	OBSERVATION, SIGNAL;
+public enum TcpDataProtocol {
+	OBSERVATION, SIGNAL, KEEPALIVE, FINISHED;
 }

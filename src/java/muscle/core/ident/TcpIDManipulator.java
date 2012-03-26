@@ -10,9 +10,11 @@ import java.net.Socket;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.messaging.serialization.DeserializerWrapper;
+import muscle.core.messaging.serialization.SerializerWrapper;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.SocketFactory;
-import muscle.net.XdrProtocolHandler;
+import muscle.net.ProtocolHandler;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrDecodingStream;
 import org.acplt.oncrpc.XdrEncodingStream;
@@ -37,7 +39,7 @@ public class TcpIDManipulator implements IDManipulator {
 		this.location = loc;
 	}
 	
-	public void setResolver(DelegatingResolver resolver) {
+	public void setResolver(Resolver resolver) {
 		this.resolver = resolver;
 	}
 	
@@ -53,8 +55,7 @@ public class TcpIDManipulator implements IDManipulator {
 
 		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.REGISTER);
 		try {
-			Boolean success = f.get();
-			if (success == null || !success) {
+			if (f == null || f.get() != Boolean.TRUE) {
 				throw new RejectedExecutionException("Instance " + id.getName() + " already registered to be running in MUSCLE.");
 			}
 		} catch (InterruptedException ex) {
@@ -72,7 +73,7 @@ public class TcpIDManipulator implements IDManipulator {
 			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
 		}
 		
-		runQuery(id, SimulationManagerProtocol.LOCATE);		
+		runQuery(id, SimulationManagerProtocol.LOCATE);
 	}
 
 	@Override
@@ -126,7 +127,7 @@ public class TcpIDManipulator implements IDManipulator {
 			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only work with InstanceID's.");
 	}
 	
-	private class ManagerProtocolHandler extends XdrProtocolHandler<Boolean,TcpIDManipulator> {
+	private class ManagerProtocolHandler extends ProtocolHandler<Boolean,TcpIDManipulator> {
 		private final SimulationManagerProtocol action;
 		private final InstanceID id;
 		private Boolean successful;
@@ -145,32 +146,35 @@ public class TcpIDManipulator implements IDManipulator {
 		}
 		
 		@Override
-		protected Boolean executeProtocol(XdrDecodingStream xdrIn, XdrEncodingStream xdrOut) throws OncRpcException, IOException {
+		protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 			// Send command
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
-			xdrOut.xdrEncodeInt(this.action.ordinal());
-			xdrOut.xdrEncodeString(this.id.getName());
+			out.writeInt(this.action.ordinal());
+			out.writeString(this.id.getName());
 			if (action == SimulationManagerProtocol.REGISTER) {
-				encodeLocation(xdrOut, this.id.getLocation());
+				encodeLocation(out, this.id.getLocation());
 			}
-			// Flush command message
-			xdrOut.endEncoding();
+			out.flush();
 			logger.log(Level.FINEST, "Initiated protocol to perform action {0} on ID {1}: sent action code", new Object[]{action, id});
 			
 			// See if the command was understood
-			xdrIn.beginDecoding();
-			int opnum = xdrIn.xdrDecodeInt();
+			in.refresh();
+			int opnum = in.readInt();
 			SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 			if (opnum >= protoArr.length || opnum < 0 || protoArr[opnum] == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
 				return Boolean.FALSE;
 			}
 
-			boolean success = xdrIn.xdrDecodeBoolean();
+			// Wait for the resolver to resolve
+			if (action == SimulationManagerProtocol.LOCATE) {
+				in.refresh();
+			}
+			boolean success = in.readBoolean();
 			
 			if (success) {
 				if (action == SimulationManagerProtocol.LOCATE) {
-					this.id.resolve(decodeLocation(xdrIn));
+					this.id.resolve(decodeLocation(in));
 					resolver.addResolvedIdentifier(id);
 				}
 				logger.log(Level.FINE, "Successfully finished the {0} protocol for ID {1}", new Object[]{action, id});

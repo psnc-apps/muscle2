@@ -21,8 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
 entry point for a filter chain used within conduits
@@ -31,19 +33,23 @@ entry point for a filter chain used within conduits
 public class FilterHead<F> implements QueueProducer<F> {
 
 	private QueueConsumer<F> consumer;
-	private final Queue<F> outgoingQueue;
+	private final BlockingQueue<F> outgoingQueue;
 	
 	public FilterHead(QueueConsumer<F> qc) {
-		 outgoingQueue = new LinkedBlockingQueue<F>();
+		 outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 		 consumer = qc;
 		 consumer.setIncomingQueue(outgoingQueue);
 	}
 
 	// feed filter chain with data
 	public void put(F inData) {
-		// feed filter chain
-		outgoingQueue.add(inData);
-		consumer.apply();
+		try {
+			// feed filter chain
+			outgoingQueue.put(inData);
+			consumer.apply();
+		} catch (InterruptedException ex) {
+			Logger.getLogger(FilterHead.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 	
 	public void setQueueConsumer(QueueConsumer<F> qc) {
