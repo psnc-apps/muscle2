@@ -23,7 +23,7 @@ import org.msgpack.unpacker.Unpacker;
 public class ConverterWrapperFactory {
 	private final static int DATA_BUFFER_SIZE = 1024*1024;
 	private final static int CONTROL_BUFFER_SIZE = 1024;
-	private final static boolean isXdr = false;
+	private final static boolean isXdr = System.getProperty("muscle.core.serialization.method") != null && System.getProperty("muscle.core.serialization.method").equals("XDR");
 	
 	public static SerializerWrapper getDataSerializer(Socket s) throws IOException {
 		if (isXdr) {
