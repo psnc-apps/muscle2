@@ -20,6 +20,7 @@ FILE (GLOB LOGGING_HEADERS logging/*.h)
 # create our library
 add_library(${MUSCLE_LIB} SHARED ${ALL_SOURCES})
 set_target_properties(${MUSCLE_LIB} PROPERTIES VERSION ${MUSCLECPP_VERSION})
+set_target_properties(${MUSCLE_LIB} PROPERTIES OUTPUT_NAME muscle)
 
 install(TARGETS ${MUSCLE_LIB} DESTINATION lib)
 install(FILES ${THIS_HEADERS} DESTINATION include)

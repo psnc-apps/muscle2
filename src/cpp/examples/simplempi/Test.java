@@ -10,7 +10,7 @@ import javax.measure.unit.SI;
 public class Test extends muscle.core.kernel.CAController {
 
 	static {
-		System.loadLibrary("simplempi_lib");
+		System.loadLibrary("example_simplempi");
 	}
 
 	private int time;

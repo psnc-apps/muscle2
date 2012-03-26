@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 project (example_mpiring C)
-set(MPIRING example_mpiring_lib)
+set(MPIRING example_mpiring)
 set(LHC example_LHC)
 set(PSB example_PSB)
 
@@ -39,9 +39,9 @@ target_link_libraries (${MPIRING} ${MUSCLE2_LIB})
 target_link_libraries (${LHC} ${MUSCLE2_LIB})
 target_link_libraries (${PSB} ${MUSCLE2_LIB})
 
-target_link_libraries(${MPIRING} ${MPI_LIBRARIES}) 
-target_link_libraries(${LHC} ${MPI_LIBRARIES}) 
-target_link_libraries(${PSB} ${MPI_LIBRARIES}) 
+target_link_libraries(${MPIRING} ${MPI_LIBRARY}) 
+target_link_libraries(${LHC} ${MPI_LIBRARY}) 
+target_link_libraries(${PSB} ${MPI_LIBRARY}) 
 
 set_target_properties (${MPIRING} PROPERTIES LINKER_LANGUAGE C)
 #set_target_properties (LHC PROPERTIES LINKER_LANGUAGE C)

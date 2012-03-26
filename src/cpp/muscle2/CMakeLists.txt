@@ -33,6 +33,8 @@ else (NOT Boost_FOUND)
     target_link_libraries(${MUSCLE2_LIB} ${Boost_LIBRARIES} )
     target_link_libraries(${MUSCLE2_LIB} ${CMAKE_THREAD_LIBS_INIT} )	
     set_target_properties(${MUSCLE2_LIB} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
+    set_target_properties(${MUSCLE2_LIB} PROPERTIES OUTPUT_NAME muscle2)
+
     install(TARGETS ${MUSCLE2_LIB} DESTINATION lib)
     install(FILES ${THIS_HEADERS} DESTINATION include)
 endif(NOT Boost_FOUND)
