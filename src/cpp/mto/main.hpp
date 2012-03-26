@@ -9,7 +9,7 @@ struct Header;
 class PeerConnectionHandler;
 
 /** Gets MTO that handles this port. Returns 0 if no such MTO exists. */
-PeerConnectionHandler * getPeer(unsigned short port);
+PeerConnectionHandler * getPeer(Header header);
 
 /** Handles properly information about new MTO available via the receiver */
 void helloReceived(Header h, PeerConnectionHandler * receiver);

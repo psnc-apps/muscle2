@@ -42,8 +42,8 @@ void startConnectingToPeer(boost::asio::ip::tcp::endpoint where);
 
 void writeHellos(tcp::socket * sock);
 
-/** Parses the Hello from newly connected MTO and forwards it to all */
-void parseHello(const MtoHello & hello, PeerConnectionHandler * handler);
+/** Parses the Hello and returns if this hello should be forwarded to others */
+bool parseHello(const MtoHello & hello, PeerConnectionHandler * handler);
 
 PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hellos);
 
@@ -71,9 +71,9 @@ map<unsigned short, MtoPeer> peers;
 /** Information about an MTO peer */
 struct MtoPeer
 {
-  unsigned short min;                       ///< Lower bound for the port range
-  PeerConnectionHandler * peerConnection;   ///< Where to send messages to the MTO
-  MtoHello bestHello;                       ///< The Hello for this MTO
+  unsigned short min;                               ///< Lower bound for the port range
+  vector<PeerConnectionHandler *> peerConnection;   ///< Where to send messages to the MTO
+  MtoHello bestHello;                               ///< The Hello for this MTO
 };
 
 /** Helper to delete data on completion of the operation */
@@ -369,22 +369,42 @@ void ExternalAcceptor::operator()(const boost::system::error_code& ec)
 
 // // // // //         Free functions         // // // // //
 
-PeerConnectionHandler * getPeer(unsigned short port)
+PeerConnectionHandler * getPeer(Header header)
 {
-  map< unsigned short, MtoPeer >::iterator it = peers.lower_bound(port);
+  map< unsigned short, MtoPeer >::iterator it = peers.lower_bound(header.dstPort);
   if(it == peers.end())
     return 0;
   MtoPeer & candidate = it->second;
-  if(port < candidate.min)
+  if(header.dstPort < candidate.min)
     return 0;
-  return candidate.peerConnection;
+  
+  int pos = header.dstAddress % candidate.peerConnection.size();
+  
+  return candidate.peerConnection[pos];
 }
 
 void peerDied(PeerConnectionHandler* handler, bool reconnect)
 {
   for(map< unsigned short, MtoPeer >::iterator it = peers.begin(); it != peers.end(); ++it)
-    if(it->second.peerConnection==handler)
-      peers.erase(it);
+  {
+    int pos = -1;
+    for(int i = 0; i < it->second.peerConnection.size(); ++i)
+      if (it->second.peerConnection[i] == handler)
+      {
+        pos=i;
+        break;
+      }
+      
+    if(pos!=-1)
+    {
+      if(it->second.peerConnection.size()==1)
+        peers.erase(it);
+      else
+      {
+        it->second.peerConnection.erase(it->second.peerConnection.begin()+pos);
+      } 
+    }
+  }
   
   unordered_map< Identifier, Connection* > rcc(remoteConnections);
   for(unordered_map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
@@ -426,66 +446,113 @@ void writeHellos(tcp::socket * sock)
   async_write(*sock, buffer(data, MtoHello::getSize()), Bufferfreeer(data));
 }
 
-void parseHello(const MtoHello & hello, PeerConnectionHandler * handler)
+bool parseHello(const MtoHello & hello, PeerConnectionHandler * handler)
 {
   Logger::debug(Logger::MsgType_PeerConn|Logger::MsgType_ClientConn,
                 "Parsing hello: %s", hello.str().c_str()
                );
   if(peers.find(hello.portHigh)!=peers.end())
-    { // already known
-      MtoPeer & peer = peers[hello.portHigh];
-      if(peer.min!=hello.portLow)
-      {
-        Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                      "Port ranges %s and %s overlap. Ignoring second.",
-                      peer.bestHello.str().c_str(), hello.str().c_str()
-                );
-        return;
-      }
-      if(peer.bestHello.distance > hello.distance)
-      {
-        peer.bestHello = hello;
-        peer.peerConnection = handler;
-      }
+  { // already known
+    MtoPeer & peer = peers[hello.portHigh];
+    if(peer.min!=hello.portLow)
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                    "Port ranges %s and %s overlap. Ignoring second.",
+                    peer.bestHello.str().c_str(), hello.str().c_str()
+              );
+      return false;
     }
-    else
-    { // new
-      if(peers.size())
-      {
-        map<unsigned short, MtoPeer >::iterator itH = peers.lower_bound(hello.portHigh), itL = peers.lower_bound(hello.portLow);
-        if(itH != peers.end() && itH->second.min < hello.portLow)
-        {
-          Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                        "Port ranges %s and %s overlap. Ignoring second.",
-                        itH->second.bestHello.str().c_str(), hello.str().c_str()
-                  );
-          return;
-        }
-        if ( itL != itH )
-        {
-          Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                        "Port ranges %s and %s overlap. Ignoring second.",
-                        itL->second.bestHello.str().c_str(), hello.str().c_str()
-                  );
-          return;
-        }
-      }
-      MtoPeer peer;
+    if(peer.bestHello.distance > hello.distance)
+    {
+      peer.peerConnection.clear();
       peer.bestHello=hello;
-      peer.min = hello.portLow;
-      peer.peerConnection = handler;
-      peers[hello.portHigh] = peer;
+      peer.peerConnection.push_back(handler);
+      return true;
+    } 
+    if(peer.bestHello.distance == hello.distance) {
+      peer.peerConnection.push_back(handler);
     }
+    return false;
+  }
+  
+  string myName = Options::getInstance().getMyName();
+  int myH = Options::getInstance().getLocalPortHigh();
+  int myL = Options::getInstance().getLocalPortLow();
+  
+  // rebounce of mine hello?
+  if(myH==hello.portHigh && myL==hello.portLow)
+    return false;
+  
+  // overapping with myself?
+  if(myH>hello.portHigh)
+  {
+    if(myL<=hello.portHigh)
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                    "My port range and %s overlap. Ignoring second.",
+                    hello.str().c_str()
+              );
+      return false;
+    }
+  }
+  else
+  {
+    if(myH >= hello.portLow)
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                    "My port range and %s overlap. Ignoring second.",
+                    hello.str().c_str()
+              );
+      return false;
+    } 
+  }
+  
+  // new
+  if(peers.size())
+  {
+    map<unsigned short, MtoPeer >::iterator itH = peers.lower_bound(hello.portHigh), itL = peers.lower_bound(hello.portLow);
+    if(itH != peers.end() && itH->second.min < hello.portLow)
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                    "Port ranges %s and %s overlap. Ignoring second.",
+                    itH->second.bestHello.str().c_str(), hello.str().c_str()
+              );
+      return false;
+    }
+    if ( itL != itH )
+    {
+      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
+                    "Port ranges %s and %s overlap. Ignoring second.",
+                    itL->second.bestHello.str().c_str(), hello.str().c_str()
+              );
+      return false;
+    }
+  }
+  MtoPeer peer;
+  peer.min = hello.portLow;
+  peer.bestHello=hello;
+  peer.peerConnection.push_back(handler);
+  peers[hello.portHigh] = peer;
+  return true;
 }
 
 PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hellos) {
   PeerConnectionHandler * handler = new PeerConnectionHandler(sock);
   
-  for(map<unsigned short, MtoPeer>::const_iterator it = peers.begin(); it!=peers.end(); ++it)
-    it->second.peerConnection->propagateHellos(hellos);
+  set<PeerConnectionHandler *> allPeers;
   
-  foreach(MtoHello hello, hellos)
-    parseHello(hello, handler);
+  for(map<unsigned short, MtoPeer>::const_iterator it = peers.begin(); it!=peers.end(); ++it)
+    foreach(PeerConnectionHandler * h , it->second.peerConnection)
+      allPeers.insert(h); 
+    
+  vector<MtoHello> directNeighbours;
+  foreach(MtoHello & hello, hellos)
+    if(parseHello(hello, handler) && hello.distance==0)
+      directNeighbours.push_back(hello);
+    
+  if(!directNeighbours.empty())
+  foreach(PeerConnectionHandler * peer, allPeers)
+    peer->propagateHellos(directNeighbours);
   
   handler->connectionEstablished();
   
@@ -498,13 +565,19 @@ void helloReceived(Header h, PeerConnectionHandler* receiver)
   hello.portLow = h.srcPort;
   hello.portHigh = h.dstPort;
   hello.distance=h.length;
-  parseHello(hello, receiver);
+  if(!parseHello(hello, receiver))
+    // if hello is invalid or already known
+    return;
   
-  h.length++;
+  if(hello.distance!=0)
+    return;
+  
+  hello.distance++;
   
   set<PeerConnectionHandler* > toUpdate;
   for(map< unsigned short, MtoPeer >::iterator it = peers.begin(); it != peers.end(); ++it)
-    toUpdate.insert(it->second.peerConnection);
+    foreach(PeerConnectionHandler * h , it->second.peerConnection)
+      toUpdate.insert(h);
   toUpdate.erase(receiver);
   
   foreach(PeerConnectionHandler * handler, toUpdate)
@@ -519,31 +592,30 @@ void startConnectingToPeer(tcp::endpoint where)
 
 void startConnectingToPeers()
 {
-  const vector<string> & connects =  mtoConfigs[Options::getInstance().getMyName()].connectsTo;
-  
   tcp::resolver rslvr(ioService);
+  error_code e;
   
-  foreach(string mto, connects)
-  {
-    error_code e;
-    tcp::resolver::iterator it = rslvr.resolve(tcp::resolver::query(mtoConfigs[mto].address, mtoConfigs[mto].port), e);
-    if(e)
+  for(map<string, mto_config>::const_iterator it = mtoConfigs.begin(); it!= mtoConfigs.end(); ++it)
+    if(!it->second.port.empty() && it->first!=Options::getInstance().getMyName())
     {
-      Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config, 
-                    "Cannot resolve %s:%s (error %s). Ignoring %s MTO.",
-                    mtoConfigs[mto].address.c_str(), mtoConfigs[mto].port.c_str(),
-                    e.message().c_str(), mto.c_str()
-                   );
-      continue;
+      tcp::resolver::iterator resIt = rslvr.resolve(tcp::resolver::query(it->second.address, it->second.port), e);
+      if(e)
+      {
+        Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config, 
+                      "Cannot resolve %s:%s (error %s). Ignoring %s MTO.",
+                      it->second.address.c_str(), it->second.port.c_str(),
+                      e.message().c_str(), it->first.c_str()
+                    );
+        continue;
+      }
+      
+      tcp::endpoint where = *resIt;
+    
+      startConnectingToPeer(where);
     }
-    
-    tcp::endpoint where = *it;
-    
-    startConnectingToPeer(where);
-  }
 }
 
-// Reaction on signal - currantyl sigint
+// Reaction on signal - currently sigint
 void signalReceived(int signum)
 {
   Logger::info(-1, "Received %s, exiting...", (signum==SIGINT?"SIGINT":"unknown signal(?)"));
@@ -574,17 +646,7 @@ int main(int argc, char **argv)
   
   error_code e;
   
-  bool anyoneConnectsToMe = false;
-  for(map<string, mto_config>::const_iterator it = mtoConfigs.begin(); it != mtoConfigs.end(); ++it)
-    foreach(const string & s, it->second.connectsTo)
-      if(s==myName)
-      {
-        anyoneConnectsToMe = true;
-        goto doubleLoopBreak;
-      }
-  doubleLoopBreak:
-
-  if(anyoneConnectsToMe) 
+  if(!mtoConfigs[myName].port.empty()) 
   {
     tcp::resolver::iterator it = tcp::resolver(ioService).resolve(tcp::resolver::query(mtoConfigs[myName].address, mtoConfigs[myName].port), e);
     if(e)
@@ -604,7 +666,7 @@ int main(int argc, char **argv)
     ExternalAcceptor * exAcc = new ExternalAcceptor(peerAcceptor);
     exAcc->startAccepting();
   } else {
-    Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn, "External acceptor unnecessary, not starting one");
+    Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn, "No external port provided, not starting external acceptor");
   }
   
   startConnectingToPeers();

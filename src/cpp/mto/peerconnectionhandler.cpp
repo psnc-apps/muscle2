@@ -85,10 +85,10 @@ void PeerConnectionHandler::handleConnect(Header h)
 {
   startReadHeader();
   
-  if(getPeer(h.dstPort))
-  {
-    PeerConnectionHandler * fwdTarget = getPeer(h.dstPort);
-    
+  PeerConnectionHandler * fwdTarget = getPeer(h);
+  
+  if(fwdTarget)
+  { 
     Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Forwarding connection %s:%hu - %s:%hu from %s to %s",
                   ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                   ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,

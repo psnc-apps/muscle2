@@ -3,27 +3,9 @@
 
 # host definiton
 # <name> <address> [<port>]
-# port may be omitted if noone connects to this MTO
+# if port is ommited, this MTO will not listen for incomming connections
 
 A localhost
 B localhost 5100
-
-# Connection definiton
-# <nameConnect> -> <nameListen>
-# Defines who reaches whom.
-# Connection must form loop-free topology,
-# i.e. it's not allowed to form
-# A -> B & B -> A
-# or
-# A -> B
-# |    |
-# v    v
-# C -> D
-
-A -> B
-
 C localhost
 D localhost 5300
-
-C -> B
-B -> D

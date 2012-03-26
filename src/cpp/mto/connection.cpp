@@ -95,7 +95,7 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
       }
       else
       { // local to remote
-        secondMto = getPeer(request.dstPort);
+        secondMto = getPeer(request);
         if(!secondMto)
         {
           Logger::error(Logger::MsgType_ClientConn, "Requested connection to port out of range %s:%hu from %s:%hu",
