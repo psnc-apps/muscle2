@@ -14,7 +14,8 @@ struct Request
     ConnectResponse = 3,  ///< Proxy responds if the Connect suceeded
     Data = 4,             ///< One proxy sends client data to the other proxy 
     Close = 5,            ///< A client closed the connection on one end
-    PortRangeInfo = 6     ///< Proxy tells what ports it owns
+    PortRangeInfo = 6,    ///< Proxy tells what ports it owns
+    PeerClose = 7         ///< Iddle connection gets closed, don't print an error, just close.
   };
   
   /** Converts the Type value ot it's textual representation */
@@ -109,10 +110,15 @@ struct MtoHello
   /** Deserializes the MtoHello from the given buffer */
   static MtoHello deserialize(char * buf);
   
+  /** Cerates a dummy MtoHello to tell other MTO that it's reconnect and no exchange needs to be done */
+  static MtoHello getDummyHello();
+  
   /** Serializes the MtoHello to an existing char* of size at least of getSize */
   void serialize(char* buf) const;
   
   std::string str() const;
+  
+  bool operator==(const MtoHello & o);
 };
 
 #endif // MESSAGES_H

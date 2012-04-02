@@ -12,7 +12,8 @@ using namespace boost;
 using namespace boost::asio;
 
 PeerConnectionHandler::PeerConnectionHandler(tcp::socket * _socket) 
-  : socket(_socket) , reconnect(false), pendingOperatons(0), closing(false), sender(Sender(this))
+  : socket(_socket) , reconnect(false), pendingOperatons(0), closing(false), sender(Sender(this)), autoClose(false),
+  recreateSocketTimer(ioService), iddleTimer(ioService), ready(true)
 {
   socketEndpt = socket->remote_endpoint();
 }
@@ -47,17 +48,26 @@ void PeerConnectionHandler::startReadHeader()
 void PeerConnectionHandler::readHeader(const error_code& e, size_t len)
 {
   pendingOperatons--;
+  
   if(closing) errorOcured(e);
+  
+  // if iddle socket has been closed socket closed
+  if(!ready && e == error::operation_aborted)
+    return;
+  
   if(e)
   {
     errorOcured(e, "Reading header failed");
     return;
   }
   
+  updateLastOperationTimer();
+  
   assert( len == Header::getSize() );
   
   Header h = Header::deserialize(dataBufffer);
   delete [] dataBufffer;
+  dataBufffer = 0;
   switch(h.type)
   {
     case Header::Connect:
@@ -75,6 +85,9 @@ void PeerConnectionHandler::readHeader(const error_code& e, size_t len)
     case Header::PortRangeInfo:
       handleHello(h);
     break;
+    case Header::PeerClose:
+      errorOcured(error_code(), "PeerClose");
+    break;
     default:
       errorOcured(error_code(), "Unknown message: " + Request::typeToString((Request::Type)h.type) + "!");
       return;
@@ -84,6 +97,9 @@ void PeerConnectionHandler::readHeader(const error_code& e, size_t len)
 void PeerConnectionHandler::handleConnect(Header h)
 {
   startReadHeader();
+  
+  if(autoClose)
+    Logger::debug(Logger::MsgType_PeerConn, "Peer %s is using the wrong connection handler!", socketEndpt.address().to_string().c_str());
   
   PeerConnectionHandler * fwdTarget = getPeer(h);
   
@@ -170,7 +186,7 @@ void PeerConnectionHandler::HandleConnected::operator () (const error_code& e)
   
   
   t->send(buf, h.getSize());
-  Connection * c = new Connection(h, s,  t);
+  Connection * c = new Connection(h, s,  getPeer(t));
   
 }
   
@@ -209,6 +225,9 @@ void PeerConnectionHandler::handleData(Header h)
                   ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
                   socketEndpt.address().to_string().c_str()
           );
+
+  if(autoClose)
+    Logger::debug(Logger::MsgType_PeerConn, "Peer %s is using the wrong connection handler!", socketEndpt.address().to_string().c_str());
   
   char * data = new char[h.length];
   pendingOperatons++;
@@ -260,6 +279,9 @@ void PeerConnectionHandler::handleClose(Header h)
                   socketEndpt.address().to_string().c_str()
           );
   
+  if(autoClose)
+    Logger::debug(Logger::MsgType_PeerConn, "Peer %s is using the wrong connection handler!", socketEndpt.address().to_string().c_str());
+  
 
   Identifier id(h);
   
@@ -286,7 +308,8 @@ void PeerConnectionHandler::forward(const Header & h, int dataLen, const char * 
   char * newdata = new char[size];
   h.serialize(newdata);
   if(dataLen) memcpy(newdata+Header::getSize(), data, dataLen);
-  
+
+  updateLastOperationTimer();
   
   Logger::trace(Logger::MsgType_PeerConn, "Forwarding '%s' to %s", 
                 Header::typeToString((Request::Type)h.type).c_str(), socketEndpt.address().to_string().c_str());
@@ -347,13 +370,22 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   
   closing = true;
   
-  Logger::error(Logger::MsgType_PeerConn, "Peer connection error: '%s' error msg: '%s'. Closing peer connection to %s:%hu",
-                message.c_str(), ec.message().c_str(), 
-               socketEndpt.address().to_string().c_str(),
-               socketEndpt.port()
-          );
+  if(message!="PeerClose")
+  {
+    Logger::error(Logger::MsgType_PeerConn, "Peer connection error: '%s' error msg: '%s'. Closing peer connection to %s:%hu",
+                  message.c_str(), ec.message().c_str(), 
+                  socketEndpt.address().to_string().c_str(),
+                  socketEndpt.port()
+                 );
+  }
+  else
+  {
+    Logger::info(Logger::MsgType_PeerConn, "Peer %s closed it's iddle connection",
+                  socketEndpt.address().to_string().c_str()
+                 );
+  }
   
-  peerDied(this, reconnect);
+  ::peerDied(this, reconnect);
   
   for(unordered_map<Identifier, PeerConnectionHandler*>::const_iterator it =  fwdMap.begin(); it!=fwdMap.end(); ++it)
   {
@@ -368,8 +400,14 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
     it->second->fwdMap.erase(it->first);
   }
   
-  socket->close();
-  delete socket;
+  iddleTimer.cancel();
+  recreateSocketTimer.cancel();
+  
+  if(socket)
+  {
+    socket->close();
+    delete socket;
+  }
   delete [] dataBufffer;
   if(pendingOperatons==0)
     delete this;
@@ -387,6 +425,13 @@ void PeerConnectionHandler::Sender::send(char * data, size_t len)
 
 void PeerConnectionHandler::Sender::send(char * _data, size_t len, function< void (const error_code &, size_t) > callback)
 {
+  if(!parent->ready){
+    parent->recreateSocket(bind(&PeerConnectionHandler::Sender::send, this, _data, len, callback));
+    return;
+  }
+  
+  parent->updateLastOperationTimer();
+  
   if(currentlyWriting){
     Logger::trace(Logger::MsgType_PeerConn, "Qeueing %u bytes on %s. Already %d messages in queue", len, 
 	parent->remoteEndpoint().address().to_string().c_str(), 
@@ -433,6 +478,8 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
     return;
   }
 
+  parent->updateLastOperationTimer();
+  
   data = sendQueue.front().first.first;
   size_t newlen = sendQueue.front().first.second;
   currentCallback = sendQueue.front().second;
@@ -441,7 +488,193 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
   async_write(*(parent->socket), buffer(data,newlen), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
 }
 
+void PeerConnectionHandler::replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to)
+{
+  for (unordered_map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
+    if(it->second == from)
+      it->second = to;
+  }
+}
+
+void PeerConnectionHandler::peerDied(PeerConnectionHandler* handler)
+{
+  for (unordered_map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
+    if(it->second == handler){
+      Header h;
+      h.dstAddress=it->first.dstAddress;
+      h.srcAddress=it->first.srcAddress;
+      h.dstPort=it->first.dstPort;
+      h.srcPort=it->first.srcPort;
+      PeerConnectionHandler * newHandler = getPeer(h);
+      if(newHandler)
+        it->second = newHandler;
+      else
+        fwdMap.erase(it);
+    }
+  }
+}
 
 
+void PeerConnectionHandler::enableAutoClose(bool on)
+{
+  assert( reconnect );
+  
+  Logger::trace(Logger::MsgType_PeerConn, "PeerConnHandler to %s set to auto close mode", socketEndpt.address().to_string().c_str());
+  
+  autoClose = on;
+  updateLastOperationTimer();
+  
+  iddleTimer.expires_from_now(lastOperation + Options::getInstance().getSockAutoCloseTimeout() - boost::posix_time::second_clock::universal_time());
+  iddleTimer.async_wait(bind(&PeerConnectionHandler::iddleTimerFired, this, _1));
+}
+
+void PeerConnectionHandler::updateLastOperationTimer()
+{
+  lastOperation = boost::posix_time::second_clock::universal_time();
+}
+
+void PeerConnectionHandler::iddleTimerFired(const error_code& ec)
+{
+  // closing - ignore.
+  if(ec == error::operation_aborted)
+    return;
+  
+  if(ec){
+    errorOcured(ec);
+    return;
+  }
+  
+  ptime timeout = lastOperation + Options::getInstance().getSockAutoCloseTimeout();
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Checking if connection to %s is iddle, last access at %s, next check %s",
+                socketEndpt.address().to_string().c_str(),
+                to_simple_string(lastOperation.time_of_day()).c_str(),
+                to_simple_string(timeout.time_of_day()).c_str()
+               );
+  
+  if(boost::posix_time::second_clock::universal_time() >= timeout)
+  {
+    Logger::info(Logger::MsgType_PeerConn, "Connection to %s is iddle, closing socket",
+                 socketEndpt.address().to_string().c_str()
+                );
+    
+    Header h;
+    h.type=Header::PeerClose;
+    char * buf = new char[Header::getSize()];
+    h.serialize(buf);
+    // To do: There is a slight chance that between the line below and iddleSocketClose something bad will happen
+    send(buf, Header::getSize(), bind(&PeerConnectionHandler::iddleSocketClose, this));
+  }
+  else
+  {
+    iddleTimer.expires_from_now(timeout - boost::posix_time::second_clock::universal_time());
+    iddleTimer.async_wait(bind(&PeerConnectionHandler::iddleTimerFired, this, _1));
+  }
+}
+
+void PeerConnectionHandler::iddleSocketClose()
+{
+    ready = false;
+    socket->cancel();
+    socket->close();
+    delete socket;
+    socket = 0;
+
+    Logger::trace(Logger::MsgType_PeerConn, "Connection to %s closed",
+                  socketEndpt.address().to_string().c_str()
+                 );
+}
 
 
+void PeerConnectionHandler::recreateSocket(function< void() > func)
+{
+  recreateSocketPending.push_back(func);
+ 
+  // already recreating socket
+  if(socket)
+    return;
+  
+  Logger::info(Logger::MsgType_PeerConn, "Recreating socket to %s:%hu",
+               socketEndpt.address().to_string().c_str(), socketEndpt.port()
+              );
+  
+  socket = new tcp::socket(ioService);
+  recreateSocketTimer.expires_from_now(seconds(10));
+  
+  recreateSocketTimer.async_wait(bind(&PeerConnectionHandler::recreateSocketTimedOut, this, _1, 0));
+  socket->async_connect(socketEndpt, bind(&PeerConnectionHandler::recreateSocketFired, this, _1));
+}
+
+void PeerConnectionHandler::recreateSocketFired(const error_code& ec)
+{
+  // timeout or close
+  if(ec == error::operation_aborted)
+    return;
+  
+  recreateSocketTimer.cancel();
+  
+  if(ec == error::connection_refused)
+  {
+    // be unhappy and kill peerconnectionhandler
+    Logger::error(Logger::MsgType_PeerConn, "Failed to recreating socket to %s:%hu - connection refused!",
+                  socketEndpt.address().to_string().c_str(), socketEndpt.port()
+                 );
+    errorOcured(ec);
+    return;
+  }
+  
+  Logger::info(Logger::MsgType_PeerConn, "onnection successfuly recreated to %s:%hu",
+                  socketEndpt.address().to_string().c_str(), socketEndpt.port()
+                 );
+  
+  // hello xchange....
+  
+  char * data = new char[MtoHello::getSize()];
+  MtoHello::getDummyHello().serialize(data);
+  async_write(*socket, buffer(data, MtoHello::getSize()), bind(&PeerConnectionHandler::recreateSocketSentHello, this, _1, data));
+}
+
+void PeerConnectionHandler::recreateSocketSentHello(const error_code& ec, char* data)
+{ 
+  delete [] data;
+  
+  ready = true;
+  startReadHeader();
+  
+  vector<function<void()> > ops(recreateSocketPending);
+  recreateSocketPending.clear();
+ 
+  for (int i = 0; i < ops.size(); ++i) {
+    ops[i]();
+  }
+  
+  updateLastOperationTimer();
+  
+  iddleTimer.expires_at(lastOperation + Options::getInstance().getSockAutoCloseTimeout());
+  iddleTimer.async_wait(bind(&PeerConnectionHandler::iddleTimerFired, this, _1));
+}
+
+void PeerConnectionHandler::recreateSocketTimedOut(const error_code& ec, int retryCount)
+{ 
+  // connect fired or timeout
+  if(ec == error::operation_aborted)
+    return;
+  
+  if(retryCount>2){
+    // be unhappy and kill peerconnectionhandler
+    Logger::error(Logger::MsgType_PeerConn, "Failed to recreating socket to %s:%hu - timed out!",
+                  socketEndpt.address().to_string().c_str(), socketEndpt.port()
+                 );
+    errorOcured(ec);
+    return;
+  }
+  
+  Logger::trace(Logger::MsgType_PeerConn, "Recreating socket to %s:%hu timed out, retrying...",
+                  socketEndpt.address().to_string().c_str(), socketEndpt.port()
+                 );
+  
+  socket->cancel();
+  recreateSocketTimer.expires_from_now(seconds(20));
+  recreateSocketTimer.async_wait(bind(&PeerConnectionHandler::recreateSocketTimedOut, this, _1, retryCount+1));
+  socket->async_connect(socketEndpt, bind(&PeerConnectionHandler::recreateSocketFired, this, _1));
+}

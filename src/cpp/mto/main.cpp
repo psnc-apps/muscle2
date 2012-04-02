@@ -47,6 +47,9 @@ bool parseHello(const MtoHello & hello, PeerConnectionHandler * handler);
 
 PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hellos);
 
+/** Once the second connection ouf of incomming/outgoing is formed, this method is called */
+void newConnectionPairFormed(unsigned short portHigh);
+
 
 // // // // //           Varialbles           // // // // //
 
@@ -61,10 +64,18 @@ unordered_set<pair<unsigned int, unsigned short> > availablePorts;
 unordered_map<Identifier, Connection*> remoteConnections;
 
 map<string, mto_config> mtoConfigs;
-// bimap<string, unsigned short> mtoIdToName;
 
 /** Maps port range max to a peer connection */
 map<unsigned short, MtoPeer> peers; 
+
+/** Direct connections from other MTO's to this MTO */
+map<unsigned short, PeerConnectionHandler *> connectionsIncomming;
+
+/** Direct connections to other MTO's from this MTO */
+map<unsigned short, PeerConnectionHandler *> connectionsOutgoing;
+
+/** Keeps pairs of connections from and to MTO for fast loopup of proper connection to be used */
+map<PeerConnectionHandler *, PeerConnectionHandler *> connectionsIncToOut;
 
 // // // // //        Classes & Structs       // // // // //
 
@@ -281,9 +292,11 @@ void StubbornConnecter::allHellosRead(const boost::system::error_code& ec)
 {
   PeerConnectionHandler * h = parseHellos(sock, hellos);
   h->setReconnect(true);
-//     Logger::trace(Logger::MsgType_PeerConn, "Connection to peer  %s:%hu succeeded!",
-//         where.address().to_string().c_str(), where.port()
-//       );
+  
+  unsigned short hiPort = hellos.back().portHigh;
+  connectionsOutgoing[hiPort] = h;
+  if(connectionsIncomming.find(hiPort)!=connectionsIncomming.end())
+    newConnectionPairFormed(hiPort);
   delete this;
 }
 
@@ -324,8 +337,20 @@ void InitPeerConnection::allHellosReceived(error_code ec)
     delete this;
     return;
   }
-  writeHellos(sock);  
-  parseHellos(sock, hellos);
+  
+  if(hellos.size()==1 && hellos[0] == MtoHello::getDummyHello())
+    // reconnect of an iddle connection
+    hellos.clear();
+  else
+    // new connection
+    writeHellos(sock);  
+  
+  PeerConnectionHandler * h = parseHellos(sock, hellos);
+  
+  unsigned short hiPort = hellos.back().portHigh;
+  connectionsIncomming[hiPort] = h;
+  if(connectionsOutgoing.find(hiPort)!=connectionsOutgoing.end())
+    newConnectionPairFormed(hiPort);
   delete this;
 }
 
@@ -380,7 +405,50 @@ PeerConnectionHandler * getPeer(Header header)
   
   int pos = header.dstAddress % candidate.peerConnection.size();
   
-  return candidate.peerConnection[pos];
+  return getPeer(candidate.peerConnection[pos]);
+}
+
+PeerConnectionHandler * getPeer(PeerConnectionHandler * peer){
+  if(connectionsIncToOut.find(peer)!=connectionsIncToOut.end())
+    return connectionsIncToOut[peer];
+  return peer;
+}
+
+void newConnectionPairFormed(unsigned short portHigh){
+  PeerConnectionHandler* inc = connectionsIncomming[portHigh];
+  PeerConnectionHandler* out = connectionsOutgoing[portHigh];
+  
+  for (unordered_map<Identifier, Connection*>::iterator it = remoteConnections.begin(); it != remoteConnections.end(); ++it) {
+    it->second->replacePeer(inc, out);
+  }
+  
+  set<PeerConnectionHandler*> allHandlers;
+  for (map<unsigned short, MtoPeer>::iterator it = peers.begin(); it != peers.end(); ++it)
+    foreach(PeerConnectionHandler * h , it->second.peerConnection)
+      allHandlers.insert(h);
+  
+  allHandlers.erase(inc);
+  allHandlers.erase(out);
+  
+  foreach(PeerConnectionHandler * h , allHandlers)
+    h->replacePeer(inc, out);
+  
+  // new connections will use proper PeerConnectionHandler
+  connectionsIncToOut[inc] = out;
+  
+  out->enableAutoClose(true);
+}
+
+template <typename M, typename V> bool removeFirstKeyFromMap (M m, V v)
+{
+  for(typename M::iterator it = m.begin(); it != m.end(); ++it)
+  {
+    if(v == it->second){
+      m.erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 void peerDied(PeerConnectionHandler* handler, bool reconnect)
@@ -405,6 +473,11 @@ void peerDied(PeerConnectionHandler* handler, bool reconnect)
       } 
     }
   }
+  
+  removeFirstKeyFromMap(connectionsIncomming, handler);
+  removeFirstKeyFromMap(connectionsOutgoing, handler);
+  
+  connectionsIncToOut.erase(handler);
   
   unordered_map< Identifier, Connection* > rcc(remoteConnections);
   for(unordered_map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
@@ -541,19 +614,21 @@ PeerConnectionHandler * parseHellos(tcp::socket * sock, vector<MtoHello> & hello
   
   set<PeerConnectionHandler *> allPeers;
   
-  for(map<unsigned short, MtoPeer>::const_iterator it = peers.begin(); it!=peers.end(); ++it)
-    foreach(PeerConnectionHandler * h , it->second.peerConnection)
-      allPeers.insert(h); 
-    
   vector<MtoHello> directNeighbours;
   foreach(MtoHello & hello, hellos)
     if(parseHello(hello, handler) && hello.distance==0)
       directNeighbours.push_back(hello);
     
   if(!directNeighbours.empty())
-  foreach(PeerConnectionHandler * peer, allPeers)
-    peer->propagateHellos(directNeighbours);
-  
+  {
+    for(map<unsigned short, MtoPeer>::const_iterator it = peers.begin(); it!=peers.end(); ++it)
+      foreach(PeerConnectionHandler * h , it->second.peerConnection)
+        allPeers.insert(h); 
+    
+    foreach(PeerConnectionHandler * peer, allPeers)
+      peer->propagateHellos(directNeighbours);
+  }
+    
   handler->connectionEstablished();
   
   return handler;

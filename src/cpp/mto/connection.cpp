@@ -306,9 +306,19 @@ void Connection::peerDied(PeerConnectionHandler* handler)
 {
   if(secondMto != handler)
     return;
-  secondMto = 0;
-  clean();
+  
+  secondMto = getPeer(header);
+  
+  if(secondMto == 0)
+    clean();
 }
+
+void Connection::replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to)
+{
+  if(secondMto == from)
+    secondMto = to;
+}
+
 
 void Connection::Bufferfreeer::operator ()(const error_code& e, size_t)
 {

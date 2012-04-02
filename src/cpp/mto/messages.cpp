@@ -178,7 +178,29 @@ void MtoHello::serialize(char * buf) const
 #endif
 }
 
- std::string MtoHello::str() const
+MtoHello MtoHello::getDummyHello()
+{
+  MtoHello h;
+  h.isLastMtoHello = true;
+  h.portHigh = 0;
+  h.portLow = 0;
+  h.distance = 0;
+  return h;
+}
+
+bool MtoHello::operator==(const MtoHello& o)
+{
+  if(o.portHigh!=portHigh)
+    return false;
+  if(o.distance!=distance)
+    return false;
+  if(o.portLow!=portLow)
+    return false;
+  return o.isLastMtoHello==isLastMtoHello;
+}
+
+
+std::string MtoHello::str() const
 {
     std::stringstream ss;
     ss << portLow << "-" << portHigh;

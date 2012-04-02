@@ -109,6 +109,9 @@ public:
   /** Once a peer becomes unavailable, this is called. If this connection uses the peer, it closes. */
   void peerDied(PeerConnectionHandler * handler);
   
+  /** Requests replacing one PeerConnectionHandler to another */
+  void replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to);
+  
   /** Called when remote peer closed */
   void remoteClosed();
 };

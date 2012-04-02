@@ -5,11 +5,13 @@
 #include <fstream>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace std;
 using namespace boost;
 using namespace boost::asio::ip;
 using namespace boost::system;
+using namespace boost::posix_time;
 
 /** Default name for the file with options */
 #define CONFIG_FILE_NAMEPATH "mto-config.cfg"
@@ -28,12 +30,13 @@ private:
   tcp::endpoint internalEndpoint;             ///< Address and port for listening to clients
   string myName;                              ///< Name as in config file
   bool daemonize;                             ///< If the MTO should go to background
-
+  time_duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
+  
   string topologyFilePath;                    ///< Location of the topology
   
   static Options * instance;
   
-  Options() : daemonize(false){}
+  Options() : daemonize(false), sockAutoCloseTimeout(seconds(30)){}
   
 public:
   static Options & getInstance(){if(instance) return *instance; instance = new Options; return *instance;}
@@ -53,6 +56,7 @@ public:
   string getMyName() const {return myName;}
   bool getDaemonize() const {return daemonize;}
   string getTopologyFilePath() const {return topologyFilePath;}
+  time_duration getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
   
 private:
   bool setLogFile(string path);

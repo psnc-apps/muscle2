@@ -7,6 +7,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/date_time.hpp>
+#include <boost/asio/deadline_timer.hpp>
 
 #include "messages.hpp"
 #include "connection.hpp"
@@ -39,9 +41,6 @@ public:
   
   /** If set, after connection loss the connection will be reestablished. */
   void setReconnect(bool ifReconnect);
-
-  /** Returns underlying peer socket */
-  tcp::socket * getSocket() { return socket; }
   
   /** Informs peer about MTO reachable via me */
   void propagateHello(const MtoHello & hello);
@@ -58,6 +57,14 @@ public:
   void send(char * data, size_t len) {sender.send(data,len);}
   
   void send(char * data, size_t len, function<void (const error_code &, size_t)> callback){sender.send(data,len,callback);}
+  
+  /** Once a peer becomes unavailable, this is called. If the peer is on fwd list, fwd list is updated */
+  void peerDied(PeerConnectionHandler * handler);
+  
+  /** Requests replacing one peer to other in fwd tables */
+  void replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to);
+  
+  void enableAutoClose(bool on);
   
 protected:
   class Sender {
@@ -81,13 +88,16 @@ protected:
   bool closing;
   Sender sender;
   
+  bool autoClose;
+  bool ready; ///< indicates that socket is open and can be used w/o problems
+  
   /** Keeps information about connections forwarded by this MTO */
   unordered_map<Identifier, PeerConnectionHandler*> fwdMap;
   
   /** Ptr to this inter-proxy socket */
   tcp::socket * socket;
   
-  /** Remote endpoint for the socket, needed for loging after connection crash */
+  /** Remote endpoint for the socket, needed for loging after connection crash and sock recteation by autoClose*/
   tcp::endpoint socketEndpt;
   
   char * dataBufffer;
@@ -141,6 +151,27 @@ protected:
   /* ====== Close ====== */
   
   void handleClose(Header h);
+  
+  
+  /* ====== Reconnect issues ====== */
+  
+  void recreateSocket(function<void(void)> func);
+  
+  vector<function<void(void)> > recreateSocketPending;
+  
+  void recreateSocketFired(const error_code& ec);
+  void recreateSocketSentHello(const error_code& ec, char * data);
+  void recreateSocketTimedOut(const error_code& ec, int retryCount);
+  
+  boost::asio::deadline_timer recreateSocketTimer;
+  
+  /* ====== Iddle issues ====== */
+  
+  boost::asio::deadline_timer iddleTimer;
+  void iddleTimerFired(const error_code & ec);
+  void iddleSocketClose();
+  boost::posix_time::ptime lastOperation;
+  void updateLastOperationTimer();
 };
 
 #endif // PEERCONNECTIONHANDLER_H
