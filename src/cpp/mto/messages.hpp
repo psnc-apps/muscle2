@@ -110,9 +110,6 @@ struct MtoHello
   /** Deserializes the MtoHello from the given buffer */
   static MtoHello deserialize(char * buf);
   
-  /** Cerates a dummy MtoHello to tell other MTO that it's reconnect and no exchange needs to be done */
-  static MtoHello getDummyHello();
-  
   /** Serializes the MtoHello to an existing char* of size at least of getSize */
   void serialize(char* buf) const;
   

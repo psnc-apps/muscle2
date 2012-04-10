@@ -178,15 +178,6 @@ void MtoHello::serialize(char * buf) const
 #endif
 }
 
-MtoHello MtoHello::getDummyHello()
-{
-  MtoHello h;
-  h.isLastMtoHello = true;
-  h.portHigh = 0;
-  h.portLow = 0;
-  h.distance = 0;
-  return h;
-}
 
 bool MtoHello::operator==(const MtoHello& o)
 {

@@ -97,6 +97,8 @@ bool Options::load(int argc, char **argv)
     ("logLevel", program_options::value<string>(), "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)")
     ("logMsgTypes", program_options::value<string>(), "Allows filtering log msgs (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
     ("logFile", program_options::value<string>(), "Path to the log file (default behaviour - logging to stderr)")
+    
+    ("sockAutoCloseTimeout", program_options::value<unsigned>(), "Time in seconds after which iddle connection is closed")
   ;
   
   program_options::variables_map read_opts;
@@ -201,6 +203,13 @@ bool Options::load(int argc, char **argv)
 	  setLogFile(muscle_home + "/log/muscle/mto.log");
   }
   read_opts.erase("debug");
+  
+  if(read_opts.find("sockAutoCloseTimeout")!=read_opts.end())
+  {
+    sockAutoCloseTimeout = seconds(read_opts["sockAutoCloseTimeout"].as<unsigned>());
+  }
+  Logger::debug(Logger::MsgType_Config, "Auto close timeout: %s", to_simple_string(sockAutoCloseTimeout).c_str());
+  read_opts.erase("sockAutoCloseTimeout");
   
   // Remove optional opts
   read_opts.erase("config");

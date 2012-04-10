@@ -546,10 +546,9 @@ void PeerConnectionHandler::iddleTimerFired(const error_code& ec)
   
   ptime timeout = lastOperation + Options::getInstance().getSockAutoCloseTimeout();
   
-  Logger::trace(Logger::MsgType_PeerConn, "Checking if connection to %s is iddle, last access at %s, next check %s",
+  Logger::trace(Logger::MsgType_PeerConn, "Checking if connection to %s is iddle, last access at %s",
                 socketEndpt.address().to_string().c_str(),
-                to_simple_string(lastOperation.time_of_day()).c_str(),
-                to_simple_string(timeout.time_of_day()).c_str()
+                to_simple_string(lastOperation.time_of_day()).c_str()
                );
   
   if(boost::posix_time::second_clock::universal_time() >= timeout)
@@ -623,19 +622,42 @@ void PeerConnectionHandler::recreateSocketFired(const error_code& ec)
     return;
   }
   
-  Logger::info(Logger::MsgType_PeerConn, "onnection successfuly recreated to %s:%hu",
+  Logger::info(Logger::MsgType_PeerConn, "Connection successfuly recreated to %s:%hu",
                   socketEndpt.address().to_string().c_str(), socketEndpt.port()
                  );
   
   // hello xchange....
   
   char * data = new char[MtoHello::getSize()];
-  MtoHello::getDummyHello().serialize(data);
+  MtoHello myHello;
+  myHello.distance=0;
+  myHello.isLastMtoHello=true;
+  myHello.portLow=Options::getInstance().getLocalPortLow();
+  myHello.portHigh=Options::getInstance().getLocalPortHigh();
+  myHello.serialize(data);
   async_write(*socket, buffer(data, MtoHello::getSize()), bind(&PeerConnectionHandler::recreateSocketSentHello, this, _1, data));
 }
 
 void PeerConnectionHandler::recreateSocketSentHello(const error_code& ec, char* data)
 { 
+  async_read(*socket, buffer(data, MtoHello::getSize()), bind(&PeerConnectionHandler::recreateSocketReadHello, this, _1, data));
+}
+
+void PeerConnectionHandler::recreateSocketReadHello(const error_code& ec, char* data)
+{
+  if(ec) {
+    delete [] data;
+    errorOcured(ec);
+    return;
+  }
+  
+  MtoHello hello = MtoHello::deserialize(data);
+  
+  if(!hello.isLastMtoHello) {
+    async_read(*socket, buffer(data, MtoHello::getSize()), bind(&PeerConnectionHandler::recreateSocketReadHello, this, _1, data));
+    return;
+  }
+  
   delete [] data;
   
   ready = true;
@@ -653,6 +675,7 @@ void PeerConnectionHandler::recreateSocketSentHello(const error_code& ec, char* 
   iddleTimer.expires_at(lastOperation + Options::getInstance().getSockAutoCloseTimeout());
   iddleTimer.async_wait(bind(&PeerConnectionHandler::iddleTimerFired, this, _1));
 }
+
 
 void PeerConnectionHandler::recreateSocketTimedOut(const error_code& ec, int retryCount)
 { 

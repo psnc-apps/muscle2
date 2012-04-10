@@ -338,12 +338,7 @@ void InitPeerConnection::allHellosReceived(error_code ec)
     return;
   }
   
-  if(hellos.size()==1 && hellos[0] == MtoHello::getDummyHello())
-    // reconnect of an iddle connection
-    hellos.clear();
-  else
-    // new connection
-    writeHellos(sock);  
+  writeHellos(sock);  
   
   PeerConnectionHandler * h = parseHellos(sock, hellos);
   
@@ -477,12 +472,12 @@ void peerDied(PeerConnectionHandler* handler, bool reconnect)
   removeFirstKeyFromMap(connectionsIncomming, handler);
   removeFirstKeyFromMap(connectionsOutgoing, handler);
   
-  connectionsIncToOut.erase(handler);
-  
   unordered_map< Identifier, Connection* > rcc(remoteConnections);
   for(unordered_map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
     it->second->peerDied(handler);
-    
+  
+  connectionsIncToOut.erase(handler);
+  
   if(reconnect)
     startConnectingToPeer(handler->remoteEndpoint());
 }

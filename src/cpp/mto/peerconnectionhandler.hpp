@@ -161,6 +161,7 @@ protected:
   
   void recreateSocketFired(const error_code& ec);
   void recreateSocketSentHello(const error_code& ec, char * data);
+  void recreateSocketReadHello(const error_code& ec, char * data);
   void recreateSocketTimedOut(const error_code& ec, int retryCount);
   
   boost::asio::deadline_timer recreateSocketTimer;
