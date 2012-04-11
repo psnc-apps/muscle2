@@ -262,6 +262,7 @@ public class FastArrayList<T> implements List<T> {
 		@Override
 		public void remove() {
 			FastArrayList.this.remove(i);
+			i--;
 		}
 		
 		void reset() {
