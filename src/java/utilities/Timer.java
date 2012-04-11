@@ -15,7 +15,6 @@ public class Timer {
 	private long pauseTime;
 	private Timer pauseTimer;
 	private boolean paused;
-	private final static double MULTIPLIER = 1000000; // Nanosecond precision
 	private final static DecimalFormat doubleFormat = new DecimalFormat("#.#### s");
 
 	public Timer() {
@@ -78,7 +77,7 @@ public class Timer {
 	 * Returns a string representation of a given number of nanoseconds.
 	 */
 	public static String toString(long diff) {
-		return doubleFormat.format(diff / MULTIPLIER);
+		return doubleFormat.format((diff / 100000)/10000.d);
 	}
 
 	/**
@@ -91,7 +90,7 @@ public class Timer {
 
 	/** The current time of the timer in milliseconds. */
 	public long millisec() {
-		return nanosec() / 1000;
+		return nanosec() / 1000000;
 	}
 
 	/** The current time of the timer in nanoseconds. */
