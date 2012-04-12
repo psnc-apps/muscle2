@@ -17,7 +17,7 @@ import muscle.core.messaging.serialization.DeserializerWrapper;
 import muscle.core.messaging.serialization.SerializerWrapper;
 
 /**
- * Handles a protocol using XDR serialization.
+ * Handles a protocol using serialization.
  * 
  * By overriding executeProtocol(XdrTcpDecodingStream xdrIn, XdrTcpEncodingStream xdrOut), you can send
  * and receive messages over a socket using XDR serialization. This class will repeatedly be created for every
@@ -61,7 +61,7 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 			
 			ret = executeProtocol(in, out);
 		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error; could not encode/decode XDR from socket.", ex);
+			logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket.", ex);
 		} catch (RuntimeException ex) {
 			logger.log(Level.SEVERE, "Could not finish protocol due to an error.", ex);
 		} finally {
@@ -77,15 +77,15 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 	}
 	
 	/**
-	 * Execute a protocol over an XDR stream.
-	 * It is the responsibility of the protocol handler to beginDecoding() and endEncoding(). All exceptions
-	 * are handled by XdrProtocolHandler.
+	 * Execute a protocol over a serialized stream.
+	 * It is the responsibility of the protocol handler to perform in.refresh() and out.flush(). All exceptions
+	 * are handled by ProtocolHandler.
 	 */
 	protected abstract S executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException;
 
 	/**
-	 * Encodes a TcpLocation over an XDR stream.
-	 * @param xdrOut a stream to encode over; endEncoding() will not be called over it.
+	 * Encodes a TcpLocation over a serialized stream.
+	 * @param out a stream to encode over; flush() will not be called over it.
 	 * @param loc must be a TcpLocation
 	 */
 	protected static void encodeLocation(SerializerWrapper out, Location loc) throws IOException {
@@ -100,8 +100,8 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 	}
 
 	/**
-	 * Decodes a TcpLocation from an XDR stream.
-	 * @param xdrIn a stream to decode from; beginEncoding() will not be called over it.
+	 * Decodes a TcpLocation from a serialized stream.
+	 * @param in a stream to decode from; refresh() will not be called over it.
 	 * @returns the TcpLocation that was transmitted.
 	 */
 	protected static TcpLocation decodeLocation(DeserializerWrapper in) throws IOException {

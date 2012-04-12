@@ -32,20 +32,20 @@ public class JadePortFactoryImpl extends PortFactory {
 	}
 	
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(ConduitExitController localInstance, PortalID otherSide) {
+	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(ConduitExitController<T> localInstance, PortalID otherSide) {
 		return new ReceiverTask<T>(localInstance, otherSide);
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide) {
+	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceController<T> localInstance, PortalID otherSide) {
 		return new TransmitterTask<T>(ic, localInstance, otherSide);
 	}
 	
 	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?,?,?>> {
 		private final JadePortalID port;
-		private final ConduitExitController exit;
+		private final ConduitExitController<T> exit;
 
-		public ReceiverTask(ConduitExitController exit, PortalID other) {
+		public ReceiverTask(ConduitExitController<T> exit, PortalID other) {
 			this.exit = exit;
 			if (other instanceof JadePortalID) {
 				this.port = (JadePortalID) other;
@@ -54,11 +54,13 @@ public class JadePortFactoryImpl extends PortFactory {
 			}
 		}
 		@Override
+		@SuppressWarnings("unchecked")
 		public Receiver<T, ?, ?, ?> call() throws Exception {
 			exit.start();
 			
 			resolvePort(port);
 			
+			@SuppressWarnings("unchecked")
 			Receiver<T,T, JadeIdentifier, JadePortalID> recv = new JadeReceiver();
 			recv.setDataConverter(new PipeConverter());
 			recv.setComplementaryPort(port);
@@ -74,9 +76,9 @@ public class JadePortFactoryImpl extends PortFactory {
 	private class TransmitterTask<T extends Serializable> implements Callable<Transmitter<T,?,?,?>> {
 		private final JadePortalID port;
 		private final JadeInstanceController instance;
-		private final ConduitEntranceController entrance;
+		private final ConduitEntranceController<T> entrance;
 
-		public TransmitterTask(InstanceController inst, ConduitEntranceController entrance, PortalID other) {
+		public TransmitterTask(InstanceController inst, ConduitEntranceController<T> entrance, PortalID other) {
 			if (inst instanceof JadeInstanceController) {
 				this.instance = (JadeInstanceController)inst;
 			} else {

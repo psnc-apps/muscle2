@@ -22,6 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.messaging.Observation;
 import muscle.core.messaging.Timestamp;
 
@@ -31,6 +33,7 @@ ignores data after a given timestep, only recommended for debugging purposes
 */
 public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
 	private final Timestamp maxTime;
+	private final static Logger logger = Logger.getLogger(BlockAfterTimeFilter.class.getName());
 
 	/** @param newMaxTime seconds after which the filter blocks */
 	public BlockAfterTimeFilter(int newMaxTime) {
@@ -42,6 +45,6 @@ public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObserv
 		if(subject.getTimestamp().compareTo(maxTime) < 1)
 			put(subject);
 		else
-			System.out.println("warning: blocking data for time <"+subject.getTimestamp()+">");
+			logger.log(Level.WARNING, "blocking data for time <{0}>", subject.getTimestamp());
 	}
 }

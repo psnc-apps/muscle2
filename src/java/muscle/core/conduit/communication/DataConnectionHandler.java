@@ -46,6 +46,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {
 		listener.put(id, recv);
+		logger.log(Level.FINER, "Added receiver {0} to receivers", id);
 	}
 	
 	@Override

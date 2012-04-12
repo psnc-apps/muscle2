@@ -151,7 +151,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		if (entrance) {
 			return desc.getExitDescription().getID();
 		} else {
-			return desc.getExitDescription().getID();
+			return desc.getEntranceDescription().getID();
 		}
 	}
 

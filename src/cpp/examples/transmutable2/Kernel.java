@@ -21,31 +21,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.transmutable2;
 
-import muscle.core.DataTemplate;
-import muscle.core.Scale;
-import jade.core.AID;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
-import muscle.core.ConduitEntrance;
-import muscle.core.ConduitExit;
-import muscle.core.JNIConduitEntrance;
-import muscle.core.JNIConduitExit;
-import muscle.core.EntranceDependency;
-import muscle.core.CxADescription;
-import muscle.core.ident.PortalID;
-import muscle.core.standalone.NativeKernel;
-import muscle.exception.MUSCLERuntimeException;
-import utilities.jni.JNIMethod;
-import utilities.MiscTool;
-import javatool.ArraysTool;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.JNIConduitEntrance;
+import muscle.core.JNIConduitExit;
+import muscle.core.Scale;
 import muscle.core.messaging.serialization.DataConverter;
 import muscle.core.messaging.serialization.DoubleStringConverter;
+import muscle.core.standalone.NativeKernel;
 
 
 /**

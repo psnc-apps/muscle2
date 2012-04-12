@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.PortFactory;
+import muscle.core.ident.InstanceID;
 import muscle.core.ident.PortalID;
 import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
@@ -33,17 +34,21 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(final ConduitExitController exit, final PortalID port) {
+	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(final ConduitExitController<T> exit, final PortalID port) {
 		return new Callable<Receiver<T,?,?,?>>() {
+			@SuppressWarnings("unchecked")
 			public Receiver<T, ?, ?, ?> call() throws Exception {
 				exit.start();
 				if (!resolvePort(port)) {
 					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, exit});
 				}
 			
-				TcpReceiver recv = new TcpReceiver();
+				@SuppressWarnings("unchecked")
+				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
+				
+				TcpReceiver<T> recv = new TcpReceiver<T>();
 				recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
-				recv.setComplementaryPort(port);
+				recv.setComplementaryPort(instancePort);
 				exit.setReceiver(recv);
 			
 				messageProcessor.addReceiver(exit.getIdentifier(), recv);
@@ -54,22 +59,20 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceController entrance, final PortalID port) {
+	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceController<T> entrance, final PortalID port) {
 		return new Callable<Transmitter<T,?,?,?>>() {
+			@SuppressWarnings("unchecked")
 			public Transmitter<T, ?, ?, ?> call() throws Exception {
 				entrance.start();
-				System.out.println("Trying to resolve port");
 				if (!resolvePort(port)) {
 					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, entrance});
 				}
-		
-				System.out.println("Trying to create transmitter");
-				Transmitter trans = new TcpTransmitter(socketFactory);
-				System.out.println("Trying to set transmitter dataconverter");
+				@SuppressWarnings("unchecked")
+				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
+				
+				TcpTransmitter<T> trans = new TcpTransmitter<T>(socketFactory);
 				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
-				System.out.println("Trying to set complementary port");
-				trans.setComplementaryPort(port);
-				System.out.println("Set complementary port.");
+				trans.setComplementaryPort(instancePort);
 				entrance.setTransmitter(trans);
 				return trans;
 			}

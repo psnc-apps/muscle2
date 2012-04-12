@@ -22,6 +22,8 @@ package utilities;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.util.Set;
+import utilities.data.ArraySet;
 
 /**
 singleton class which provides access to global (JVM wide) settings
@@ -31,6 +33,7 @@ public class JVM implements java.io.Serializable {
 	// be careful to init all other static fields we may use here before our singleton
 	public final static JVM ONLY = new JVM(); // handle for the singleton
 	private File tmpDir;
+	private Set<String> libraries;
 
 	public static boolean is64bitJVM() {
 		return System.getProperty("sun.arch.data.model").indexOf("64") != -1;
@@ -38,6 +41,7 @@ public class JVM implements java.io.Serializable {
 
 	public JVM() {
 		tmpDir = mkTmpDir();
+		libraries = new ArraySet<String>();
 	}
 
 	/**
@@ -69,5 +73,12 @@ public class JVM implements java.io.Serializable {
 		}
 
 		return td;
+	}
+	
+	public synchronized void loadLibrary(String name) {
+		if (!libraries.contains(name)) {
+			libraries.add(name);
+			System.loadLibrary(name);
+		}
 	}
 }

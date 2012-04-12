@@ -43,7 +43,9 @@ target_link_libraries(${MPIRING} ${MPI_LIBRARY})
 target_link_libraries(${LHC} ${MPI_LIBRARY}) 
 target_link_libraries(${PSB} ${MPI_LIBRARY}) 
 
-set_target_properties (${MPIRING} PROPERTIES LINKER_LANGUAGE C)
+#set_target_properties (${MPIRING} PROPERTIES LINKER_LANGUAGE C)
+#set_target_properties (${LHC} PROPERTIES LINKER_LANGUAGE C)
+#set_target_properties (${PSB} PROPERTIES LINKER_LANGUAGE C)
 #set_target_properties (LHC PROPERTIES LINKER_LANGUAGE C)
 
 if (MPI_FLAGS)

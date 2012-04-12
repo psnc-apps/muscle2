@@ -34,7 +34,7 @@ public abstract class PortFactory {
 	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned receiver was.
 	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
 	 */
-	public <T extends Serializable> Future<Receiver<T,?,?,?>> getReceiver(ConduitExitController localInstance, PortalID otherSide) {
+	public <T extends Serializable> Future<Receiver<T,?,?,?>> getReceiver(ConduitExitController<T> localInstance, PortalID otherSide) {
 		return executor.submit(this.<T>getReceiverTask(localInstance, otherSide));
 	}
 	
@@ -44,7 +44,7 @@ public abstract class PortFactory {
 	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned transmitter was.
 	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
 	 */
-	public <T extends Serializable> Future<Transmitter<T,?,?,?>> getTransmitter(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide) {
+	public <T extends Serializable> Future<Transmitter<T,?,?,?>> getTransmitter(InstanceController ic, ConduitEntranceController<T> localInstance, PortalID otherSide) {
 		return executor.submit(this.<T>getTransmitterTask(ic, localInstance, otherSide));
 	}
 
@@ -53,14 +53,14 @@ public abstract class PortFactory {
 	 * 
 	 * In this task, the receiver must also be added to the messageProcessor, and the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> Callable<Receiver<T,?,?,?>> getReceiverTask(ConduitExitController localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> Callable<Receiver<T,?,?,?>> getReceiverTask(ConduitExitController<T> localInstance, PortalID otherSide);
 	
 	/**
 	 * Creates a task that will assign a transmitter to a ConduitEntranceController.
 	 * 
 	 * In this task, the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> Callable<Transmitter<T,?,?,?>> getTransmitterTask(InstanceController ic, ConduitEntranceController localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> Callable<Transmitter<T,?,?,?>> getTransmitterTask(InstanceController ic, ConduitEntranceController<T> localInstance, PortalID otherSide);
 	
 	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
 		this.executor = Executors.newCachedThreadPool();
