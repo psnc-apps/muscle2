@@ -35,7 +35,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	private final Resolver resolver;
 	
 	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, ResolverFactory rf, DataConnectionHandler handler) throws InterruptedException {
-		super(s, receivers);
+		super(s, receivers, false, true);
 		this.resolver = rf.getResolver();
 		this.connectionHandler = handler;
 	}

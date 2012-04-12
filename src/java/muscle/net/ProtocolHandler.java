@@ -32,20 +32,21 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 	private final boolean closeSocket;
 	private DeserializerWrapper in;
 	private SerializerWrapper out;
-	public final static int SIZE_BUFFER_IN = 1024*1024*10;
-	public final static int SIZE_BUFFER_OUT = 1024;
+	private final boolean outIsControl;
+	private final boolean inIsControl;
 	
-	
-	public ProtocolHandler(Socket s, T listener, boolean closeSocket) {
+	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl, boolean closeSocket) {
 		this.listener = listener;
 		this.socket = s;
 		this.closeSocket = closeSocket;
 		this.in = null;
 		this.out = null;
+		this.inIsControl = inIsControl;
+		this.outIsControl = outIsControl;
 	}
 
-	public ProtocolHandler(Socket s, T listener) {
-		this(s, listener, false);
+	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl) {
+		this(s, listener, inIsControl, outIsControl, false);
 	}
 	
 	@Override
@@ -53,10 +54,18 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 		S ret = null;
 		try {
 			if (in == null) {
-				in = ConverterWrapperFactory.getControlDeserializer(socket);
+				if (inIsControl) {
+					in = ConverterWrapperFactory.getControlDeserializer(socket);
+				} else {
+					in = ConverterWrapperFactory.getDataDeserializer(socket);
+				}
 			}
 			if (out == null) {
-				out = ConverterWrapperFactory.getDataSerializer(socket);
+				if (outIsControl) {
+					out = ConverterWrapperFactory.getControlSerializer(socket);
+				} else {
+					out = ConverterWrapperFactory.getDataSerializer(socket);
+				}
 			}
 			
 			ret = executeProtocol(in, out);

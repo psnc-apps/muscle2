@@ -22,7 +22,8 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 	private final static Logger logger = Logger.getLogger(SimulationManagerProtocolHandler.class.getName());
 
 	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener) {
-		super(s, listener);
+		// Use control for in and out
+		super(s, listener, true, true);
 	}
 
 	@Override

@@ -54,6 +54,10 @@ public class ConverterWrapperFactory {
 		} else {
 			MessagePack msgPack = new MessagePack();
 			Unpacker unpacker = msgPack.createUnpacker(new BufferedInputStream(s.getInputStream(), DATA_BUFFER_SIZE));
+			unpacker.setArraySizeLimit(DATA_BUFFER_SIZE);
+			unpacker.setMapSizeLimit(DATA_BUFFER_SIZE);
+			// 2 GB
+			unpacker.setRawSizeLimit(Integer.MAX_VALUE);
 			return new UnpackerWrapper(unpacker);
 		}
 	}

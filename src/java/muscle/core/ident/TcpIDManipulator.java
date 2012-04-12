@@ -133,7 +133,7 @@ public class TcpIDManipulator implements IDManipulator {
 		private Boolean successful;
 
 		ManagerProtocolHandler(Socket s, InstanceID id, SimulationManagerProtocol action) {
-			super(s, TcpIDManipulator.this, true);
+			super(s, TcpIDManipulator.this, true, true, true);
 			this.action = action;
 			this.id = id;
 			if (this.action == SimulationManagerProtocol.REGISTER && !this.id.isResolved()) {

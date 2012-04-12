@@ -50,4 +50,9 @@ public class TcpLocation implements Location {
 		hash = 59 * hash + this.port;
 		return hash;
 	}
+	
+	@Override
+	public String toString() {
+		return "TcpLocation[" + this.addr + ":" + this.port + "]";
+	}
 }
