@@ -15,7 +15,8 @@ public abstract class SafeThread extends Thread {
 	 */
 	protected boolean isDone;
 	
-	public SafeThread() {
+	public SafeThread(String name) {
+		super(name);
 		this.isDone = false;
 	}
 	

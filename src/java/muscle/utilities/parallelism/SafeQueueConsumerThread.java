@@ -13,6 +13,11 @@ import muscle.core.conduit.filter.QueueConsumer;
 public abstract class SafeQueueConsumerThread<T> extends SafeThread implements QueueConsumer<T> {
 	private Queue<T> queue;
 	
+	public SafeQueueConsumerThread(String name) {
+		super(name);
+		this.queue = null;
+	}
+	
 	protected synchronized boolean continueComputation() throws InterruptedException {
 		while (!isDone && (queue == null || queue.isEmpty())) {
 			wait();

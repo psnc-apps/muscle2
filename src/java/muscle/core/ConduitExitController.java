@@ -12,6 +12,7 @@ import muscle.core.ident.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.messaging.Message;
 import muscle.core.messaging.Observation;
+import muscle.core.messaging.signal.DetachConduitSignal;
 import utilities.data.SingleProducerConsumerBlockingQueue;
 
 /**
@@ -53,9 +54,12 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 			Message<T> dmsg = this.receiver.receive();
 			if (dmsg != null) {
 				if (dmsg.isSignal()) {
-					System.out.println("Signal received: " + dmsg.getSignal());
-				}
-				else {
+					if (dmsg.getSignal() instanceof DetachConduitSignal) {
+						// Feeding last (empty) message
+						this.queue.put(null);
+						this.dispose();
+					}
+				} else {
 					this.queue.put(dmsg.getObservation());
 					increment();
 				}

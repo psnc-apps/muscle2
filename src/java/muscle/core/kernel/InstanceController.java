@@ -15,4 +15,6 @@ public interface InstanceController extends Identifiable, Runnable {
 	public String getLocalName();
 	public <T extends Serializable> void addConduitEntrance(ConduitEntranceController<T> s);
 	public <T extends Serializable> void addConduitExit(ConduitExitController<T> s);
+	public void dispose();
+	public boolean isExecuting();
 }

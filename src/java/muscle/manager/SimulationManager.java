@@ -62,8 +62,14 @@ public class SimulationManager {
 			if (!stillActive.remove(id.getName())) {
 				logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
 			}
-			else if (logger.isLoggable(Level.FINE) && !stillActive.isEmpty()) {
-				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once IDs {1} have finished computation.", new Object[] {id, stillActive});
+			else if (logger.isLoggable(Level.INFO) && !stillActive.isEmpty()) {
+				String mult;
+				if (stillActive.size() == 1) {
+					mult = "'" + stillActive.iterator().next() + "' has";
+				} else {
+					mult = stillActive + " have";
+				}
+				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once {1} finished computation.", new Object[] {id, mult});
 			}
 			
 			if (stillActive.isEmpty()) {

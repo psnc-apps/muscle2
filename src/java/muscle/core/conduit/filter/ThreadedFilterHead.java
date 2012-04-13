@@ -20,6 +20,7 @@ public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueP
 	private final BlockingQueue<F> outgoingQueue;
 	
 	public ThreadedFilterHead(QueueConsumer<F> consumer) {
+		super("FilterHead");
 		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 		this.setQueueConsumer(consumer);
 	}

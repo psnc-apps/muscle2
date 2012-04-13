@@ -6,9 +6,6 @@
 package muscle.core;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -83,6 +80,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private void start() {
+		Runtime.getRuntime().addShutdownHook(new DisposeOfControllersHook());
+		
 		// Start listening for connections
 		connectionHandler.start();
 		
@@ -101,18 +100,21 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	
 	@Override
 	public void isFinished(InstanceController ic) {
-		logger.log(Level.INFO, "Instance {0} registered as being finished.", ic.getLocalName());
-		controllers.remove(ic);
+		logger.log(Level.FINE, "Instance {0} is no longer running.", ic.getLocalName());
+		synchronized (controllers) {
+			controllers.remove(ic);
 		
-		if (controllers.isEmpty()) {
-			if (factory != null) factory.dispose();
-			if (idManipulator != null) idManipulator.dispose();
-			if (connectionHandler != null) connectionHandler.dispose();
+			if (controllers.isEmpty()) {
+				logger.log(Level.INFO, "All local submodels have finished; exiting.");
+				if (factory != null) factory.dispose();
+				if (idManipulator != null) idManipulator.dispose();
+				if (connectionHandler != null) connectionHandler.dispose();
+			}
 		}
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException ex) {
-			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 		}
 	}
 	
@@ -120,5 +122,23 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 
 	public static LocalManager getInstance() {
 		return instance;
+	}
+	
+	private class DisposeOfControllersHook extends Thread {
+		public void run() {
+			if (!controllers.isEmpty()) {
+				System.out.println();
+				System.out.println("MUSCLE is locally shutting down; deregistering local submodels");
+			}
+			while (!controllers.isEmpty()) {
+				InstanceController ic = null;
+				synchronized (controllers) {
+					if (!controllers.isEmpty()) {
+						ic = controllers.remove(0);
+					}
+				}
+				if (ic != null) ic.dispose();
+			}
+		}
 	}
 }

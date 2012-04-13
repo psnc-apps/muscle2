@@ -10,7 +10,8 @@ package muscle.utilities.parallelism;
 public abstract class SafeTriggeredThread extends SafeThread {
 	protected boolean triggered;
 	
-	public SafeTriggeredThread() {
+	public SafeTriggeredThread(String name) {
+		super(name);
 		this.triggered = false;
 	}
 	

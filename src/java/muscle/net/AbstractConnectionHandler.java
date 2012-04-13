@@ -31,6 +31,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	private final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {
+		super("ConnectionHandler-" + ss);
 		this.ss = ss;
 		this.listener = listener;
 		String prop_num_connections = System.getProperty(PROP_NUM_CONNECTIONS);

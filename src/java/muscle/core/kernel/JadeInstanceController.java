@@ -59,8 +59,17 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 		return getClass().getSimpleName() + "[" + getIdentifier() + "]";
 	}
 
+	public void dispose() {
+		takeDown();
+	}
+	
 	@Override
 	public void isFinished(InstanceController ic) {
 		takeDown();
+	}
+
+	@Override
+	public boolean isExecuting() {
+		return this.realController.isExecuting();
 	}
 }

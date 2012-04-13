@@ -21,8 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -39,7 +37,7 @@ public class MuscleFormatter extends SimpleFormatter {
 
 	public synchronized String format(LogRecord record) {
 		String loggerName = record.getLoggerName();
-		String pkg = null, clazz = null;
+		String pkg, clazz;
 		if (loggerName == null) {
 			clazz = pkg = "?";
 		} else {
@@ -75,17 +73,18 @@ public class MuscleFormatter extends SimpleFormatter {
 		if(thrown == null) {
 			err = "";
 		} else {
-			try {
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				pw.print("[================== TRACE ===================] ");
-				thrown.printStackTrace(pw);
-				pw.println("[================ END TRACE =================]");
-				pw.close();
-				err = sw.toString();
-			} catch (Exception ex) {
-				err = "";
-			}
+//			try {
+//				StringWriter sw = new StringWriter();
+//				PrintWriter pw = new PrintWriter(sw);
+//				pw.println("[================== ERROR ===================] " + thrown.getClass().getName() + ": " + thrown.getMessage());
+				err = "                                                      (" + thrown.getClass().getName() + ": " + thrown.getMessage() + ")\n";
+//				thrown.printStackTrace(pw);
+//				pw.println("[================ END TRACE =================]");
+//				pw.close();
+//				err = sw.toString();
+//			} catch (Exception ex) {
+//				err = "";
+//			}
 		}
 		
 		return String.format(format, System.currentTimeMillis(), pkg, clazz, method, level, msg, err);

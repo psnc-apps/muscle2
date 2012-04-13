@@ -36,6 +36,7 @@ public class AliveSocket extends SafeTriggeredThread {
 	 * @param keepAlivePing milliseconds before you send a stillAlive message
 	 */
 	public AliveSocket(SocketFactory sf, InetSocketAddress addr, long keepAlive) {
+		super("AliveSocket-" + addr);
 		this.socketFactory = sf;
 		this.address = addr;
 		this.socket = null;

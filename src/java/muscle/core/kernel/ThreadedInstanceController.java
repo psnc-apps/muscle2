@@ -46,9 +46,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	
 	private RawKernel instance;
 	private boolean execute;
-	private Timing stopWatch;
 	private File infoFile;
 	private InstanceController mainController;
+	private boolean isDone, isExecuting;
 	
 	private Map<String, ExitDescription> exitDescriptions;
 	private Map<String, EntranceDescription> entranceDescriptions;
@@ -62,11 +62,17 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		this.args = args;
 		this.mainController = null;
 		this.resolverFactory = rf;
+		this.isDone = false;
 		this.portFactory = portFactory;
+		this.isExecuting = false;
 	}
 	
 	public void setMainController(InstanceController ic) {
 		this.mainController = ic;
+	}
+	
+	public boolean isExecuting() {
+		return this.isExecuting;
 	}
 	
 	@Override
@@ -88,7 +94,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 			if (!register()) {
 				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered, so execution is aborted", getLocalName());
-				this.dispose();
+				this.disposeNoDeregister();
+				listener.isFinished(this);
 				return;
 			}
 			instance.connectPortals();
@@ -109,10 +116,6 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 							logger.log(Level.WARNING, "After executing {0}, waiting for conduit {1}  was ended prematurely", new Object[]{getLocalName(), ec.getLocalName()});
 						}
 					}
-					// TODO find out why this timeout is necessary for SimpleExample to succeed consistently
-					// Otherwise, w will quit before the agent can send all messages.
-					// It seems that the new way of updating the customSITime in ConduitExit/Entrance solved the problem.
-					// Thread.sleep(1000);
 				} catch (InterruptedException ex) {
 					logger.log(Level.SEVERE, "After executing " + getLocalName() + ", waiting for conduit was interrupted", ex);
 				}
@@ -159,23 +162,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	public void dispose() {
-		IncomingMessageProcessor msgProcessor = portFactory.getMessageProcessor();
-		for (ConduitExitController<?> source : exits) {
-			msgProcessor.removeReceiver(source.getIdentifier());
-			source.dispose();
-		}
-		for (ConduitEntranceController<?> sink : entrances) {
-			sink.dispose();
-		}
+		this.disposeNoDeregister();
 		
-		if (instance != null)
-			logger.log(Level.INFO, "kernel tmp dir: {0}", instance.getTmpPath());
-		logger.info("bye");
-
-		if (stopWatch != null && stopWatch.isCounting()) {
-			// probably the agent has been killed and did not call its afterExecute
-			afterExecute();
-		}
 		// Deregister with the resolver
 		try {
 			Resolver r = resolverFactory.getResolver();
@@ -186,10 +174,34 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		
 		listener.isFinished(this);
 	}
+	
+	private void disposeNoDeregister() {
+		synchronized (this) {
+			if (isDone) {
+				return;
+			} else {
+				isDone = true;
+			}
+		}
+		IncomingMessageProcessor msgProcessor = portFactory.getMessageProcessor();
+		for (ConduitExitController<?> source : exits) {
+			msgProcessor.removeReceiver(source.getIdentifier());
+			source.dispose();
+		}
+		for (ConduitEntranceController<?> sink : entrances) {
+			sink.dispose();
+		}
+		
+		if (instance != null)
+			System.out.println("Files of " + getLocalName() + " are located in " + instance.getTmpPath());
+		
+		if (this.isExecuting()) {
+			// probably the agent has been killed and did not call its afterExecute
+			afterExecute();
+		}
+	}
 		
 	private void beforeExecute() {
-		logger.info("begin execute");
-		stopWatch = new Timing();
 		// write info file
 		infoFile = new File(MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX));
 
@@ -219,12 +231,17 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 				}
 			}
 		}
-
+		
+		synchronized (this) {
+			this.isExecuting = true;
+		}
 	}
 
 	public void afterExecute() {
-		stopWatch.stop();
-		logger.log(Level.INFO, "end execute <{0}>", stopWatch);
+		synchronized (this) {
+			this.isExecuting = false;
+		}
+
 		// write info file
 		assert infoFile != null;
 		String nl = System.getProperty("line.separator");
@@ -235,7 +252,6 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			writer.write(nl);
 			writer.write("... done" + nl);
 			writer.write(nl);
-			writer.write("duration: " + stopWatch + nl);
 			writer.write("end date: " + (new java.util.Date()) + nl);
 
 			writer.close();

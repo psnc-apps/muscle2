@@ -49,6 +49,9 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		try {
 			Observation<T> obs = this.queue.take();
 			
+			if (obs == null)
+				return null;
+			
 			// Update the willStop timestamp only when the message is received by the Instance.
 			controller.setNextTimestamp(obs.getNextTimestamp());
 			return obs.getData();

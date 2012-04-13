@@ -18,6 +18,7 @@ public abstract class AbstractThreadedFilter<E,F> extends SafeQueueConsumerThrea
 	protected QueueConsumer<F> consumer;
 	
 	protected AbstractThreadedFilter() {
+		super("Filter");
 		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
 	}
 	

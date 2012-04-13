@@ -36,6 +36,7 @@ public abstract class Portal<T extends Serializable> extends SafeTriggeredThread
 	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
 	
 	Portal(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
+		super(newPortalID.toString());
 		portalID = newPortalID;
 	
 		// set custom time to 0
