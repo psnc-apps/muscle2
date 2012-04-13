@@ -48,20 +48,18 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 
 	@Override
-	public void propagate(Identifier id, Location loc) {
+	public boolean propagate(Identifier id, Location loc) {
 		this.checkInstanceID(id);
 		if (!id.isResolved())
 			((InstanceID)id).resolve(loc);
 
 		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.REGISTER);
 		try {
-			if (f == null || f.get() != Boolean.TRUE) {
-				throw new RejectedExecutionException("Instance " + id.getName() + " already registered to be running in MUSCLE.");
-			}
+			return (f != null && Boolean.TRUE.equals(f.get()));
 		} catch (InterruptedException ex) {
-			throw new RejectedExecutionException("Registration of instance " + id.getName() + " was interrupted, and can not be executed.", ex);
+			return false;
 		} catch (ExecutionException ex) {
-			throw new RejectedExecutionException("Registration of instance " + id.getName() + " could not be done.", ex);
+			return false;
 		}
 	}
 
@@ -99,10 +97,17 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 
 	@Override
-	public void delete(Identifier id) {
+	public boolean delete(Identifier id) {
 		this.checkInstanceID(id);
 		
-		this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
+		Future<Boolean> f = this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
+		try {
+			return (f != null && Boolean.TRUE.equals(f.get()));
+		} catch (InterruptedException ex) {
+			return false;
+		} catch (ExecutionException ex) {
+			return false;
+		}
 	}
 
 	@Override

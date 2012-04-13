@@ -86,7 +86,11 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 			instance.setArguments(initFromArgs(args));
 
-			registerPortals();
+			if (!register()) {
+				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered, so execution is aborted", getLocalName());
+				this.dispose();
+				return;
+			}
 			instance.connectPortals();
 
 			// log info about this controller
@@ -115,7 +119,6 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 				afterExecute();
 				System.out.println(getLocalName() + ": finished");
 				dispose();
-				listener.isFinished(this);
 			}
 		} catch (InstantiationException ex) {
 			logger.log(Level.SEVERE, "Could not instantiate Instance " + getLocalName() + " with class " + this.instanceClass.getName(), ex);
@@ -180,6 +183,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		} catch (InterruptedException ex) {
 			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
 		}
+		
+		listener.isFinished(this);
 	}
 		
 	private void beforeExecute() {
@@ -250,12 +255,15 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 	}
 	
-	private void registerPortals() {
+	private boolean register() {
 		try {
 			Resolver locator = resolverFactory.getResolver();
-			locator.register(this.mainController == null ? this : this.mainController);
+			return locator.register(this.mainController == null ? this : this.mainController);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+			return false;
+		} catch (Exception ex) {
+			return false;
 		}
 	}
 	

@@ -19,7 +19,7 @@ public interface Resolver {
 	public void resolveIdentifier(Identifier id) throws InterruptedException;
 	
 	/** At current location */
-	public void register(InstanceController id);
+	public boolean register(InstanceController id);
 	/** At current location */
-	public void deregister(InstanceController id);
+	public boolean deregister(InstanceController id);
 }

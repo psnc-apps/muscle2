@@ -2,6 +2,7 @@ package muscle.core.ident;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
@@ -15,6 +16,7 @@ import utilities.data.ArraySet;
 public class SimpleDelegatingResolver implements Resolver {
 	protected final IDManipulator delegate;
 	/** Stores all resolved IDs */
+	private final Map<String,Identifier> resolvedIdCache;
 	private final Map<String,Identifier> idCache;
 	private Location here;
 	private final Set<String> searchingNow;
@@ -23,7 +25,8 @@ public class SimpleDelegatingResolver implements Resolver {
 	
 	public SimpleDelegatingResolver(IDManipulator newDelegate) {
 		delegate = newDelegate;
-		idCache = new ArrayMap<String,Identifier>();
+		resolvedIdCache = new ArrayMap<String,Identifier>();
+		idCache = new ConcurrentHashMap<String,Identifier>();
 		searchingNow = new ArraySet<String>();
 		here = delegate.getLocation();
 		this.isDone = false;
@@ -37,13 +40,18 @@ public class SimpleDelegatingResolver implements Resolver {
 		String fullName = name(name, type);
 		
 		// Try cache first, not synchronized as making a new id is not expensive
-		if (idCache.containsKey(fullName)) {
+		if (resolvedIdCache.containsKey(fullName)) {
 			logger.log(Level.FINER, "Returning identifier ''{0}'' of type {1} from cache", new Object[]{name, type});
-			return idCache.get(fullName);
+			return resolvedIdCache.get(fullName);
+		} else {
+			Identifier id = idCache.get(fullName);
+			if (id == null) {
+				logger.log(Level.FINE, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
+				id = delegate.create(name, type);
+				idCache.put(fullName, id);
+			}
+			return id;
 		}
-
-		logger.log(Level.FINE, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
-		return delegate.create(name, type);
 	}
 	
 	/**
@@ -64,13 +72,13 @@ public class SimpleDelegatingResolver implements Resolver {
 				
 		synchronized (this) {
 			// add a search only if this instance is not already searchd for
-			if (!searchingNow.contains(fullName) && !idCache.containsKey(fullName)) {
+			if (!searchingNow.contains(fullName) && !resolvedIdCache.containsKey(fullName)) {
 				logger.log(Level.FINE, "Searching to resolve identifier {0}", id);
 				searchingNow.add(fullName);
 				delegate.search(id);
 			}
 			// Whether a new search was conducted or not, there is a search going
-			while (!isDone && !id.isResolved() && !idCache.containsKey(fullName)) {
+			while (!isDone && !id.isResolved() && !resolvedIdCache.containsKey(fullName)) {
 				wait();
 			}
 			
@@ -78,7 +86,7 @@ public class SimpleDelegatingResolver implements Resolver {
 				throw new InterruptedException("Resolver interrupted");
 			}
 			if (!id.isResolved()) {
-				id.resolveLike(idCache.get(fullName));
+				id.resolveLike(resolvedIdCache.get(fullName));
 			}
 			logger.log(Level.FINE, "Identifier {0} resolved", id);
 		}
@@ -93,7 +101,7 @@ public class SimpleDelegatingResolver implements Resolver {
 	}
 
 	/** Registers a local InstanceController. */
-	public void register(InstanceController controller) {
+	public boolean register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		if (!id.isResolved() && id instanceof InstanceID) {
 			((InstanceID)id).resolve(here);
@@ -101,23 +109,22 @@ public class SimpleDelegatingResolver implements Resolver {
 		this.addResolvedIdentifier(id);
 		
 		logger.log(Level.FINE, "Registering identifier {0}", id);
-		delegate.propagate(id, here);
+		return delegate.propagate(id, here);
 	}
 	
 	/** Deregisters a local InstanceController. */
-	public void deregister(InstanceController controller) {
+	public boolean deregister(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
-		delegate.delete(id);
 		logger.log(Level.FINE, "Deregistering identifier {0}", id);
 		removeIdentifier(id.getName(), id.getType());
+		return delegate.delete(id);
 	}
 	
 	/**
-	 * Removes the identifier with given name and type from the resolver. If this
-	 * is the last id that was alive, and autoquit is active, it kills the platform.
+	 * Removes the identifier with given name and type from the resolver.
 	 */
 	public synchronized void removeIdentifier(String name, IDType type) {
-		this.idCache.remove(name(name, type));
+		this.resolvedIdCache.remove(name(name, type));
 	}
 	
 	/** Add an identifier to the resolver. This also removes it from any 
@@ -127,7 +134,7 @@ public class SimpleDelegatingResolver implements Resolver {
 		if (!id.isResolved()) throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
 		
 		String fullName = name(id.getName(), id.getType());
-		idCache.put(fullName, id);
+		resolvedIdCache.put(fullName, id);
 		searchingNow.remove(fullName);
 		
 		notifyAll();

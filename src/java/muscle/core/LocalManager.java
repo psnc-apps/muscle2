@@ -88,7 +88,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Start all instances but the first in a new thread
 		for (int i = 1; i < controllers.size(); i++) {
-			new Thread(controllers.get(i)).start();
+			new Thread(controllers.get(i), controllers.get(i).getLocalName()).start();
 		}
 		// Run the first instance in the current thread
 		controllers.get(0).run();

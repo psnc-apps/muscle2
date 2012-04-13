@@ -57,7 +57,7 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		}
 	}
 	
-	public void delete(Identifier id) {
+	public boolean delete(Identifier id) {
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(((JadeIdentifier)id).getAID());
 
@@ -70,12 +70,13 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		// register
 		try {
 			DFService.modify(this, agentDescription);
+			return true;
 		} catch (FIPAException e) {
-			throw new RuntimeException(e);
+			return false;
 		}
 	}
 
-	public void propagate(Identifier id, Location loc) {
+	public boolean propagate(Identifier id, Location loc) {
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(((JadeIdentifier)id).getAID());
 
@@ -91,8 +92,9 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		// register
 		try {
 			DFService.register(this, agentDescription);
+			return true;
 		} catch (FIPAException e) {
-			throw new RuntimeException(e);
+			return false;
 		}
 	}
 

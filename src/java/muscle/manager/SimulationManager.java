@@ -49,6 +49,7 @@ public class SimulationManager {
 			return false;
 		}
 		else {
+			logger.log(Level.INFO, "Registered ID {0}", id);
 			this.active.put(id.getName(),id);
 			this.notifyAll();
 			return true;
@@ -62,7 +63,7 @@ public class SimulationManager {
 				logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
 			}
 			else if (logger.isLoggable(Level.FINE) && !stillActive.isEmpty()) {
-				logger.log(Level.FINE, "Will quit MUSCLE once IDs {0} have finished computation.", stillActive);
+				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once IDs {1} have finished computation.", new Object[] {id, stillActive});
 			}
 			
 			if (stillActive.isEmpty()) {

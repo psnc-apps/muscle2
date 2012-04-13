@@ -97,13 +97,13 @@ public abstract class RawKernel {
 
 		// search for the smallest "time" in our portals
 		for (Portal p : entrances) {
-			logger.log(Level.FINE, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
+			logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
 		}
 		for (Portal p : exits) {
-			logger.log(Level.FINE, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
+			logger.log(Level.FINER, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}

@@ -9,10 +9,10 @@ package muscle.core.ident;
  * @author Joris Borgdorff
  */
 public interface IDManipulator {
-	public void propagate(Identifier id, Location loc);
+	public boolean propagate(Identifier id, Location loc);
 	public void search(Identifier id);
 	public Identifier create(String name, IDType idType);
 	public Location getLocation();
-	public void delete(Identifier id);
+	public boolean delete(Identifier id);
 	public void deletePlatform();
 }
