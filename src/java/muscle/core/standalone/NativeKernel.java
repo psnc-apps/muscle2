@@ -2,6 +2,8 @@ package muscle.core.standalone;
 
 import java.util.Arrays;
 import java.util.List;
+
+import muscle.core.ConduitEntrance;
 import muscle.core.CxADescription;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;
@@ -24,26 +26,26 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		super();
 	}
 	
-	@Deprecated
 	public synchronized void sendDouble(String entranceName, double data[]) {
-	/*		for (int i=0; i < entrances.size(); i++) {
-			if (entrances.get(i).getEntrance().getPortalID().getName().split("@")[0].equals(entranceName)) {
-				entrances.get(i).send(data);
+		for (int i=0; i < entrances.size(); i++) {
+
+			if (entrances.get(i).getLocalName().split("@")[0]
+					.equals(entranceName)) {
+				entrances.get(i).getEntrance().send(data);
 				return;
 			}
 		}
-	*/	
+		
 		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName);
 	}
 	
-	@Deprecated
 	public synchronized double[] receiveDouble(String exitName) {
-	/*	for (int i=0; i < exits.size(); i++) {
-			if (exits.get(i).getExit().getPortalID().getName().split("@")[0].equals(exitName)) {
-				return (double[])exits.get(i).receive();
+		for (int i=0; i < exits.size(); i++) {
+			if (exits.get(i).getLocalName().split("@")[0].equals(exitName)) {
+				return (double[])exits.get(i).getExit().receive();
 			}
 		}
-	*/	
+		
 		throw new MUSCLERuntimeException("Unknown exit: " + exitName);
 	}
 
