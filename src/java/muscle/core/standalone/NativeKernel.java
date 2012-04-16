@@ -20,6 +20,10 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	protected Map<String, ConduitExit> exits = new HashMap<String, ConduitExit>();
 	*/
 	
+	public NativeKernel() {
+		super();
+	}
+	
 	@Deprecated
 	public synchronized void sendDouble(String entranceName, double data[]) {
 	/*		for (int i=0; i < entrances.size(); i++) {

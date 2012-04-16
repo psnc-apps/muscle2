@@ -25,7 +25,6 @@ public class NativeGateway  extends Thread {
 		setDaemon(true);
 	}
 	
-	
 	public interface CallListener {
 		
 		/* OPCODE = 1 */

@@ -31,11 +31,10 @@ cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 2
 cxa.env["cxa_path"] = File.dirname(__FILE__)
-cxa.env["w:command"] = "simplecpp2"
-cxa.env["w:timescale"] = 1
+cxa.env["w:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplecpp2/simplecpp2"
 
 # declare kernels
-cxa.add_kernel('w', 'muscle.core.standalone.NativeKernel')
+cxa.add_kernel('w', 'examples.simplecpp2.Sender')
 cxa.add_kernel('r', 'examples.simplejava.ConsoleWriter')
 
 # configure connection scheme

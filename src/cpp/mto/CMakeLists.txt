@@ -18,7 +18,7 @@ set (Boost_DIR "" CACHE PATH "Location of the directory with CMake config for Bo
 if (Boost_DIR STREQUAL "") # if we don't specify Boost CMakeConfig file location we are looking for the Boost newer than 1.36
 	message(STATUS "Boost search based on CMake Modules")
 	set(Boost_NO_BOOST_CMAKE ON)
-	find_package(Boost 1.36 COMPONENTS system program_options regex)
+	find_package(Boost 1.35 COMPONENTS system program_options regex)
 else (Boost_DIR STREQUAL "") # otherwise we use specific CMakeConfig file and don't worry about version
 	message(STATUS "Boost search based on CMake config provided in ${Boost_DIR}")
 	find_package(Boost COMPONENTS system program_options regex NO_MODULE)
