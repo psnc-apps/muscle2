@@ -1,9 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 
 project (example_mpiring C)
-set(MPIRING example_mpiring)
-set(LHC example_LHC)
-set(PSB example_PSB)
+set(MPIRING mpiring)
+set(LHC LHC)
+set(PSB PSB)
 
 if (NOT MPI_COMPILER)
 	message ( STATUS "Searching for available MPI implementations" )

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 PROJECT(example_simplecpp CXX)
 
+SET(LIB_NAME simplecpp)
 # find the muscle project, do not add pure relative paths
 set (MUSCLE_SOURCE ${CMAKE_SOURCE_DIR}/src/cpp/muscle)
 
@@ -12,7 +13,6 @@ INCLUDE(${MUSCLE_SOURCE}/includes.cmake)
 link_directories (${MUSCLE_LIB_DIR})
 
 # add our library that is built from the source files
-SET(LIB_NAME ${PROJECT_NAME})
 add_library (${LIB_NAME} SHARED Sender.cpp)
 SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES LINKER_LANGUAGE CXX INSTALL_NAME_DIR "")
 # link the executable to the muscle library.

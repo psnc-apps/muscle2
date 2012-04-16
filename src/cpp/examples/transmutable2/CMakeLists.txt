@@ -9,6 +9,6 @@ project(example_transmutable2 CXX)
 	add_executable(${PROJECT_NAME} Kernel.cpp)
 	include_directories(${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
 	target_link_libraries(${PROJECT_NAME} ${MUSCLE2_LIB})
-
+	set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME transmutable2)
 	install(TARGETS ${PROJECT_NAME} DESTINATION share/muscle/examples/transmutable2)
 #endif (NOT ${MUSCLE2_LIBRARY} STREQUAL "MUSCLE2_LIBRARY-NOTFOUND")

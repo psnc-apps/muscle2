@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 GET_FILENAME_COMPONENT(PARENT_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
 
-#PROJECT(simplempi CXX)
+PROJECT(example_simplempi CXX)
 
 # find the muscle project, do not add pure relative paths
 FIND_PATH(MUSCLE_SOURCE JNITool.h
@@ -48,7 +48,7 @@ ELSE()
 
 
 	# add our library that is built from the source files
-	SET(LIB_NAME ${PROJECT_NAME}_lib)
+	SET(LIB_NAME simplempi)
 	add_library (${LIB_NAME} SHARED Test.cpp)
 	SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 	# link the executable to the muscle library.

@@ -12,7 +12,7 @@ INCLUDE(${MUSCLE_SOURCE}/includes.cmake)
 link_directories (${MUSCLE_LIB_DIR})
 
 # add our library that is built from the source files
-SET(LIB_NAME ${PROJECT_NAME})
+SET(LIB_NAME transmutable)
 add_library (${LIB_NAME} SHARED Kernel.cpp)
 SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES LINKER_LANGUAGE CXX INSTALL_NAME_DIR "")
 # link the executable to the muscle library.
