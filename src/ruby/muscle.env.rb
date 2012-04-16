@@ -78,6 +78,7 @@ e = {
 'print_env' => false,
 # configure java logging
 'logging_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.properties"),
+'logging_quiet_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.quiet.properties"),
 'tmp_path' => mkJVMTmpPath,
 'muscle_src_root' => find_src_root,
 }

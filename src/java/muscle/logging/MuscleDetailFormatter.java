@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -29,18 +31,31 @@ import java.util.logging.SimpleFormatter;
 formats log messages
 @author Jan Hegewald
 */
-public class MuscleFormatter extends SimpleFormatter {
-	private final static String format = "[%tT %6.6s] %s%s\n";
+public class MuscleDetailFormatter extends SimpleFormatter {
+	private final static String format = "[%tF %tT %15.15s: %25.25s.%-20.20s] %s%s\n";
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
 
 	public synchronized String format(LogRecord record) {
-		String pkg = record.getLoggerName();
-		if (pkg == null) {
-			pkg = "?";
+		String loggerName = record.getLoggerName();
+		String pkg, clazz;
+		if (loggerName == null) {
+			clazz = pkg = "?";
+		} else {
+			int classIndex = loggerName.lastIndexOf('.');
+			if (classIndex == -1) {
+				clazz = loggerName;
+				pkg = "";
+			} else {
+				 clazz = loggerName.substring(classIndex + 1);
+				 pkg = loggerName.substring(0, Math.min(15, classIndex));
+			}
 		}
 		
+		String method = record.getSourceMethodName();
+		if (method == null) method = "?";
+
 		int intLevel = record.getLevel().intValue();
 		String level;
 		if (intLevel >= SEVERE) {
@@ -60,9 +75,19 @@ public class MuscleFormatter extends SimpleFormatter {
 		if(thrown == null) {
 			err = "";
 		} else {
-			err = "                         (" + thrown.getClass().getName() + ": " + thrown.getMessage() + ")\n";
+			try {
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				pw.println("\n[================== ERROR ===================] " + thrown.getClass().getName() + ": " + thrown.getMessage());
+				thrown.printStackTrace(pw);
+				pw.print("[================ END TRACE =================]");
+				pw.close();
+				err = sw.toString();
+			} catch (Exception ex) {
+				err = "";
+			}
 		}
-		
-		return String.format(format, System.currentTimeMillis(), pkg, level, msg, err);
+		Long time = System.currentTimeMillis();
+		return String.format(format, time, time, pkg, clazz, method, msg, err);
 	}
 }

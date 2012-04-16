@@ -58,6 +58,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	/** Create a filter chain from the given arguments */
 	private FilterChain createFilterChain() {
 		FilterChain fc = new FilterChain() {
+			@SuppressWarnings("unchecked")
 			protected void apply(Observation subject) {
 				try {
 					ConduitEntranceController.this.send(subject);
@@ -72,7 +73,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 		List<String> args = cd.getArgs();
 		fc.init(args);
 		if (!args.isEmpty()) {
-			logger.log(Level.INFO, "In Conduit {0} the filters {1} are initialized.", new Object[] {cd, args});
+			logger.log(Level.INFO, "The conduit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
 		}
 		return fc;
 	}

@@ -28,7 +28,7 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 		try {
 			queue.put(this.converter.deserialize(msg));
 		} catch (InterruptedException ex) {
-			Logger.getLogger(JadeReceiver.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(JadeReceiver.class.getName()).log(Level.WARNING, "Receiver stopped; could not process received message.", ex);
 		}
 	}
 
@@ -45,7 +45,7 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 		try {
 			return queue.take();
 		} catch (InterruptedException ex) {
-			Logger.getLogger(JadeReceiver.class.getName()).log(Level.INFO, "Receiver stopped", ex);
+			Logger.getLogger(JadeReceiver.class.getName()).log(Level.FINE, "Receiver stopped; not passing more messages.");
 			return null;
 		}
 	}

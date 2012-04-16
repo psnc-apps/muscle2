@@ -30,7 +30,7 @@ public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPo
 		try {
 			queue.put(converter.deserialize(msg));
 		} catch (InterruptedException ex) {
-			Logger.getLogger(TcpReceiver.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(TcpReceiver.class.getName()).log(Level.WARNING, "Receiver stopped; could not process received message", ex);
 		}
 	}
 
@@ -47,7 +47,7 @@ public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPo
 		try {
 			return queue.take();
 		} catch (InterruptedException ex) {
-			Logger.getLogger(TcpReceiver.class.getName()).log(Level.FINE, "Receiver stopped.");
+			Logger.getLogger(TcpReceiver.class.getName()).log(Level.FINE, "Receiver stopped; not passing more messages.");
 			return null;
 		}
 	}

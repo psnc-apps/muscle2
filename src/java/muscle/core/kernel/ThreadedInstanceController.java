@@ -23,7 +23,6 @@ import muscle.core.ident.Resolver;
 import muscle.core.ident.ResolverFactory;
 import utilities.JVM;
 import utilities.MiscTool;
-import utilities.Timing;
 import utilities.data.FastArrayList;
 
 /**
@@ -77,7 +76,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	
 	@Override
 	public void run() {		
-		System.out.println(getLocalName() + ": starting kernel");
+		logger.log(Level.INFO, "{0}: starting kernel", getLocalName());
 		
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
@@ -109,7 +108,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 			if (execute) {
 				beforeExecute();
-				System.out.println(getLocalName() + ": executing");
+				logger.log(Level.INFO, "{0}: executing", getLocalName());
 				instance.execute();
 				try {
 					for (ConduitEntranceController ec : entrances) {
@@ -121,7 +120,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 					logger.log(Level.SEVERE, "After executing " + getLocalName() + ", waiting for conduit was interrupted", ex);
 				}
 				afterExecute();
-				System.out.println(getLocalName() + ": finished");
+				logger.log(Level.INFO, "{0}: finished", getLocalName());
 				dispose();
 			}
 		} catch (InstantiationException ex) {
@@ -196,9 +195,6 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		for (ConduitEntranceController<?> sink : entrances) {
 			sink.dispose();
 		}
-		
-		if (instance != null)
-			System.out.println("Files of " + getLocalName() + " are located in " + instance.getTmpPath());
 		
 		if (this.isExecuting()) {
 			// probably the agent has been killed and did not call its afterExecute

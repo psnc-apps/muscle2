@@ -39,15 +39,17 @@ class JVM
 		if env['quiet']
 			# do not use the specified java.util.logging.config.file,
 			# but create a temporary one which will omit any logging
-			tmpLoggingConfig = Tempfile.new('muscle_logging_configuration')
-			tmpLoggingConfig.puts "handlers = java.util.logging.ConsoleHandler"
-			tmpLoggingConfig.puts ".level = OFF"
-			tmpLoggingConfig.close
-			command << "-Djava.util.logging.config.file="+tmpLoggingConfig.path
+#			tmpLoggingConfig = Tempfile.new('muscle_logging_configuration')
+#			tmpLoggingConfig.puts "handlers = java.util.logging.ConsoleHandler"
+#			tmpLoggingConfig.puts ".level = OFF"
+#			tmpLoggingConfig.close
+#			command << "-Djava.util.logging.config.file="+tmpLoggingConfig.path
+			command << "-Djava.util.logging.config.file="+env['logging_quiet_config_path'] if env.has_key?('logging_config_path')
+#			command << "-Djava.util.logging.ConsoleHandler.level=SEVERE"
 		else
 			command << "-Djava.util.logging.config.file="+env['logging_config_path'] if env.has_key?('logging_config_path')
 		end
-		command << "-Djava.util.logging.config.class=muscle.logging.LoggingConfiguration"
+#		command << "-Djava.util.logging.config.class=muscle.logging.LoggingConfiguration"
 #		command << "-ea"
 		command << "-Xms#{env['Xms']}" if env.has_key?('Xms') # note: no space between key and value
 		command << "-Xmx#{env['Xmx']}" if env.has_key?('Xmx') # note: no space between key and value

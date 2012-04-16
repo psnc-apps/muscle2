@@ -68,7 +68,7 @@ public class ConduitDescription implements Serializable {
 	}
 
 	public String toString() {
-		return className + "(" + id + ")";
+		return entrance.getID().getName() + " -> " + exit.getID().getName();
 	}
 
 	public EntranceDescription getEntranceDescription() {

@@ -71,7 +71,7 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour implements Inc
 				JadeReceiver recv = receivers.get(id);
 				if (recv == null) {
 					if (msg.getUserDefinedParameter("signal") != null) {
-						logger.log(Level.INFO, "signal intended for removed agent {0} received: {1}", new Object[] {id, msg.getUserDefinedParameter("signal")});
+						logger.log(Level.FINE, "signal intended for removed agent {0} received: {1}", new Object[] {id, msg.getUserDefinedParameter("signal")});
 					}
 					else {
 						logger.log(Level.SEVERE, "no destination receiver for <{0}> found, dropping data message", id);

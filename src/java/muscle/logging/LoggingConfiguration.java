@@ -23,11 +23,11 @@ package muscle.logging;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-	
 /**
 initializes our logging mechanism, load with<br>
 -Djava.util.logging.config.class=muscle.logging.LoggingConfiguration
@@ -49,7 +49,8 @@ public class LoggingConfiguration {
 		
 		if( loggingConfig != null ) {
 			// load our logging config into the LogManager
-			LogManager.getLogManager().readConfiguration(loggingConfig);
+			LogManager manager = LogManager.getLogManager();
+			manager.readConfiguration(loggingConfig);
 		}
 		else {
 			// init LogManager with JVMs default settings<br>
