@@ -94,8 +94,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 			if (!register()) {
 				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered, so execution is aborted", getLocalName());
-				this.disposeNoDeregister();
-				listener.isFinished(this);
+				if (this.disposeNoDeregister()) {
+					listener.isFinished(this);
+				}
 				return;
 			}
 			instance.connectPortals();
@@ -162,23 +163,27 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	public void dispose() {
-		this.disposeNoDeregister();
-		
-		// Deregister with the resolver
-		try {
-			Resolver r = resolverFactory.getResolver();
-			r.deregister(this.mainController == null ? this : this.mainController);
-		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
+		if (this.disposeNoDeregister()) {
+			// Deregister with the resolver
+			try {
+				Resolver r = resolverFactory.getResolver();
+				r.deregister(this.mainController == null ? this : this.mainController);
+			} catch (InterruptedException ex) {
+				logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
+			}
+
+			listener.isFinished(this);
 		}
-		
-		listener.isFinished(this);
 	}
 	
-	private void disposeNoDeregister() {
+	/** Disposes the current instance, without deregistering it.
+	 *   It will only be executed once per instance, after this it becomes a no-op.
+	 * @return whether the method was executed, false if it was a no-op.
+	 */
+	private boolean disposeNoDeregister() {
 		synchronized (this) {
 			if (isDone) {
-				return;
+				return false;
 			} else {
 				isDone = true;
 			}
@@ -199,6 +204,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			// probably the agent has been killed and did not call its afterExecute
 			afterExecute();
 		}
+		return true;
 	}
 		
 	private void beforeExecute() {
