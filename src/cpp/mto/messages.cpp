@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cstdio>
 #include <sstream>
-#include <boost/unordered_map.hpp>
+#include <map>
 
 // Helpers so that endianess will not affect serialisation
 
@@ -129,12 +129,6 @@ bool Identifier::operator<(const Identifier& other) const
   if(dstPort<other.dstPort)
     return true;
   return false;
-}
-
-std::size_t hash_value(const Identifier& b)
-{
-    boost::hash<int> h;
-    return h(b.dstAddress)-h(b.srcAddress)+h(b.dstPort)-h(b.srcPort);
 }
 
 #define USE_TEXT_FOR_HELLO true

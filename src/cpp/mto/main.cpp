@@ -6,8 +6,6 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/bind.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/foreach.hpp>
 
 #include <unistd.h>
@@ -58,10 +56,10 @@ io_service ioService;
 const posix_time::time_duration peerReconnectTimeout = posix_time::seconds(10);
 
 /** Ports described as 'listening' */
-unordered_set<pair<unsigned int, unsigned short> > availablePorts;
+set<pair<unsigned int, unsigned short> > availablePorts;
 
 /** Open connections tunneled via proxy */
-unordered_map<Identifier, Connection*> remoteConnections;
+map<Identifier, Connection*> remoteConnections;
 
 map<string, mto_config> mtoConfigs;
 
@@ -413,7 +411,7 @@ void newConnectionPairFormed(unsigned short portHigh){
   PeerConnectionHandler* inc = connectionsIncomming[portHigh];
   PeerConnectionHandler* out = connectionsOutgoing[portHigh];
   
-  for (unordered_map<Identifier, Connection*>::iterator it = remoteConnections.begin(); it != remoteConnections.end(); ++it) {
+  for (map<Identifier, Connection*>::iterator it = remoteConnections.begin(); it != remoteConnections.end(); ++it) {
     it->second->replacePeer(inc, out);
   }
   
@@ -472,8 +470,8 @@ void peerDied(PeerConnectionHandler* handler, bool reconnect)
   removeFirstKeyFromMap(connectionsIncomming, handler);
   removeFirstKeyFromMap(connectionsOutgoing, handler);
   
-  unordered_map< Identifier, Connection* > rcc(remoteConnections);
-  for(unordered_map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
+  map< Identifier, Connection* > rcc(remoteConnections);
+  for(map< Identifier, Connection* >::iterator it = rcc.begin(); it != rcc.end(); ++it)
     it->second->peerDied(handler);
   
   connectionsIncToOut.erase(handler);

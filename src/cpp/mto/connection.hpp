@@ -5,8 +5,8 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/bind.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
+#include <set>
+#include <map>
 
 #include "main.hpp"
 #include "options.hpp"
@@ -26,8 +26,8 @@ class Connection;
 
 /* from main.cpp */
 extern io_service ioService;
-extern unordered_map<Identifier, Connection*> remoteConnections; 
-extern unordered_set<pair<unsigned int, unsigned short> > availablePorts;
+extern map<Identifier, Connection*> remoteConnections; 
+extern set<pair<unsigned int, unsigned short> > availablePorts;
 
 
 /**

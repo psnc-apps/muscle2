@@ -387,7 +387,7 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   
   ::peerDied(this, reconnect);
   
-  for(unordered_map<Identifier, PeerConnectionHandler*>::const_iterator it =  fwdMap.begin(); it!=fwdMap.end(); ++it)
+  for(map<Identifier, PeerConnectionHandler*>::const_iterator it =  fwdMap.begin(); it!=fwdMap.end(); ++it)
   {
     Header h;
     h.type = Header::Close;
@@ -490,7 +490,7 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
 
 void PeerConnectionHandler::replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to)
 {
-  for (unordered_map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
+  for (map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
     if(it->second == from)
       it->second = to;
   }
@@ -498,7 +498,7 @@ void PeerConnectionHandler::replacePeer(PeerConnectionHandler* from, PeerConnect
 
 void PeerConnectionHandler::peerDied(PeerConnectionHandler* handler)
 {
-  for (unordered_map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
+  for (map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin(); it != fwdMap.end(); ++it) {
     if(it->second == handler){
       Header h;
       h.dstAddress=it->first.dstAddress;

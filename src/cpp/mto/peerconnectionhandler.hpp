@@ -4,7 +4,7 @@
 #include <iostream>
 #include <queue>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/unordered_map.hpp>
+#include <map>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/date_time.hpp>
@@ -92,7 +92,7 @@ protected:
   bool ready; ///< indicates that socket is open and can be used w/o problems
   
   /** Keeps information about connections forwarded by this MTO */
-  unordered_map<Identifier, PeerConnectionHandler*> fwdMap;
+  map<Identifier, PeerConnectionHandler*> fwdMap;
   
   /** Ptr to this inter-proxy socket */
   tcp::socket * socket;
