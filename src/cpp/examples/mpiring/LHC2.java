@@ -24,7 +24,7 @@ public class LHC2 extends muscle.core.standalone.MPIKernel {
 	}
 
 	public void addPortals() {
-		addExit("pipe", 1, double[].class);
+		addExit("pipe-in", 1, double[].class);
 	}
 
 }

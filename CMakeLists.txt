@@ -8,25 +8,25 @@ option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
 option(BUILD_CPACK_SCRIPTS "Build Muscle Transport Overlay service" OFF)
 
 
-SET(MUSCLE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix. Set to the empty value for a default system location")
+set(MUSCLE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix. Set to the empty value for a default system location")
 
 IF(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
-	SET(CMAKE_INSTALL_PREFIX ${MUSCLE_INSTALL_PREFIX})
+	set(CMAKE_INSTALL_PREFIX ${MUSCLE_INSTALL_PREFIX})
 ENDIF(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
 
 #IF(FORCE_INSTALLATION_IN_OPT)
 #	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-#		SET(CMAKE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix" FORCE)
+#		set(CMAKE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix" FORCE)
 #	ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #ENDIF(FORCE_INSTALLATION_IN_OPT)
 
-SET(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib") #this is importat for MAC OS Dynamic Library Linking
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib") #this is importat for MAC OS Dynamic Library Linking
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-SET(MUSCLE_LIB muscle_cpp)
-SET(MUSCLE2_LIB muscle2_cpp)
-SET(MUSCLE_JAVA muscle_java)
+set(MUSCLE_LIB muscle_cpp)
+set(MUSCLE2_LIB muscle2_cpp)
+set(MUSCLE_JAVA muscle_java)
 
 if (BUILD_JAVA)
 	add_subdirectory(src/java)
@@ -58,7 +58,7 @@ add_subdirectory(scripts)
 add_subdirectory(doc)
 
 if (BUILD_CPACK_SCRIPTS)
-	INCLUDE(cmake_scripts/CPackMuscle.cmake)
+	include(cmake_scripts/CPackMuscle.cmake)
 endif (BUILD_CPACK_SCRIPTS)
 
-#INCLUDE(cmake_scripts/VariableLogging.cmake)
+include(test/regression/CMakeLists.txt)

@@ -31,7 +31,7 @@ cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 3
 cxa.env["cxa_path"] = File.dirname(__FILE__)
-cxa.env["cpp:command"] = env['MUSCLE_HOME'] +  "/share/muscle/examples/transmutable2/transmutable2"
+cxa.env["cpp:command"] = ENV['MUSCLE_HOME'] +  "/share/muscle/examples/transmutable2/transmutable2"
 
 cxa.env["length"] = 4
 

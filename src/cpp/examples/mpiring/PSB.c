@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 		energy = insertProton(energy, maxEnergy, energy_callback);
 
     	printf("Proton energy after PSB:  %f. Injecting into LHC.\n", energy);
-    	MUSCLE_Send("pipe", &energy, 1, MUSCLE_DOUBLE);
+    	MUSCLE_Send("pipe-out", &energy, 1, MUSCLE_DOUBLE);
 
     	MUSCLE_Finalize();
 	}

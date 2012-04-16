@@ -28,25 +28,28 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	
 	public synchronized void sendDouble(String entranceName, double data[]) {
 		for (int i=0; i < entrances.size(); i++) {
-
-			if (entrances.get(i).getLocalName().split("@")[0]
+			System.err.println("entrances.get(i):" + entrances.get(i));
+			System.err.println("entrances.get(i).getEntrance()" + entrances.get(i).getEntrance());
+			if (entrances.get(i).getEntrance() != null && entrances.get(i).getLocalName().split("@")[0]
 					.equals(entranceName)) {
 				entrances.get(i).getEntrance().send(data);
 				return;
 			}
 		}
 		
-		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName);
+		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName + " in " + super.getLocalName() + "(valid entrances = " + entrances + ")");
 	}
 	
 	public synchronized double[] receiveDouble(String exitName) {
 		for (int i=0; i < exits.size(); i++) {
-			if (exits.get(i).getLocalName().split("@")[0].equals(exitName)) {
+			System.err.println("exits.get(i):" + exits.get(i));
+			System.err.println("exits.get(i).getExit()" + exits.get(i).getExit());
+			if (exits.get(i).getExit() != null && exits.get(i).getLocalName().split("@")[0].equals(exitName)) {
 				return (double[])exits.get(i).getExit().receive();
 			}
 		}
 		
-		throw new MUSCLERuntimeException("Unknown exit: " + exitName);
+		throw new MUSCLERuntimeException("Unknown exit: " + exitName + " in " + super.getLocalName() + "(valid exits = " + exits + ")");
 	}
 
 	public synchronized String getKernelName() {

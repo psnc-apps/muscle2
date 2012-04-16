@@ -35,12 +35,12 @@ cxa.env["cxa_path"] = File.dirname(__FILE__)
 cxa.env["PSB:InitialEnergy"] = 1.2
 cxa.env["PSB:DeltaEnergy"] = 0.1
 cxa.env["PSB:MaxEnergy"] = 4.0
-cxa.env["PSB:command"] = env['MUSCLE_HOME'] + "/opt/muscle/share/muscle/examples/mpiring/PSB"
+cxa.env["PSB:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/mpiring/PSB"
 cxa.env["PSB:mpiexec_args"] = "-np 2"
 
 cxa.env["LHC:DeltaEnergy"] = 0.2
 cxa.env["LHC:MaxEnergy"] = 12.0
-cxa.env["LHC:command"] = env['MUSCLE_HOME'] + "/opt/muscle/share/muscle/examples/mpiring/LHC"
+cxa.env["LHC:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/mpiring/LHC"
 cxa.env["LHC:mpiexec_args"] = "-np 2"
 
 # declare kernels
@@ -51,6 +51,6 @@ cxa.add_kernel('PSB', 'examples.mpiring.PSB2')
 cs = cxa.cs
 
 cs.attach('PSB' => 'LHC') {
-	tie('pipe', 'pipe')
+	tie('pipe-out', 'pipe-in')
 }
 

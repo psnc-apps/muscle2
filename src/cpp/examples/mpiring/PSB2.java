@@ -24,7 +24,7 @@ public class PSB2 extends muscle.core.standalone.MPIKernel {
 	}
 
 	public void addPortals() {
-		addEntrance("pipe", 1, double[].class);
+		addEntrance("pipe-out", 1, double[].class);
 	}
 
 }

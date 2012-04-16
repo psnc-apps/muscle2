@@ -9,12 +9,15 @@ cxa = Cxa.LAST
 #cxa.env["max_timesteps"] = 16*10 
 
 #unsafe
-cxa.env["max_timesteps"] = 9999;
 cxa.env["same_size_runs"] = 30;
 
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 cxa.env["steps"] = 10
+
+cxa.env["tests_count"] = 5
+cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["steps"];
+
 cxa.env["start_kiB_per_message"] = 1;
 
 # declare kernels

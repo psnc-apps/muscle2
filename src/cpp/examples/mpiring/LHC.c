@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 		/* wrapper over MPI_Bcast */
 		Ring_Broadcast_Params(&deltaEnergy, &maxEnergy);
 
-		MUSCLE_Receive("pipe", &energy, &count, MUSCLE_DOUBLE);
+		MUSCLE_Receive("pipe-in", &energy, &count, MUSCLE_DOUBLE);
 
 		printf("LHC:Received proton energy: %f\n", energy);
 

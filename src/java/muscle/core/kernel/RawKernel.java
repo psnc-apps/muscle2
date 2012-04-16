@@ -211,6 +211,7 @@ public abstract class RawKernel {
 		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
+		ec.setExit(e);
 		addExit(ec);
 
 		return e;
