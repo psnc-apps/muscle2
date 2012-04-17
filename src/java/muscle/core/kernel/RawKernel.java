@@ -21,11 +21,9 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core.kernel;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.*;
@@ -38,6 +36,7 @@ import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
 import utilities.MiscTool;
 import utilities.OSTool;
+import utilities.data.ArrayMap;
 import utilities.jni.JNIMethod;
 
 // experimental info mode with
@@ -49,8 +48,8 @@ A basic kernel, that all kernels must extend
 public abstract class RawKernel {
 	private static final Logger logger = Logger.getLogger(RawKernel.class.getName());
 	private Object[] arguments;
-	protected List<ConduitEntranceController> entrances = new ArrayList<ConduitEntranceController>();
-	protected List<ConduitExitController> exits = new ArrayList<ConduitExitController>();
+	protected Map<String,ConduitEntranceController> entrances = new ArrayMap<String,ConduitEntranceController>();
+	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
 
@@ -96,13 +95,13 @@ public abstract class RawKernel {
 		Timestamp portalTime = maxTime;
 
 		// search for the smallest "time" in our portals
-		for (Portal p : entrances) {
+		for (Portal p : entrances.values()) {
 			logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
 		}
-		for (Portal p : exits) {
+		for (Portal p : exits.values()) {
 			logger.log(Level.FINER, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
@@ -155,11 +154,10 @@ public abstract class RawKernel {
 	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
 	javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);<br>
 	return new Scale(dt,dx);
+	* return null if the kernel is dimensionless
 	 */
-	public Scale getScale() {
-		return null;
-	}
-
+	public abstract Scale getScale();
+	
 	/**
 	helper method to create a scale object where dt is a multiple of the kernel scale
 	* @deprecated use MML to specify this
@@ -170,39 +168,41 @@ public abstract class RawKernel {
 	}
 
 	protected void addEntrance(ConduitEntranceController entrance) {
-		if (!acceptPortals) {
-			throw new IgnoredException("adding of portals not allowed here");
-		}
+		String portName = entrance.getIdentifier().getPortName();
 
 		// only add if not already added
-		for (ConduitEntranceController e : entrances) {
-			if (e.equals(entrance)) {
+		for (String port : entrances.keySet()) {
+			if (portName.equals(port)) {
 				throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
 			}
 		}
 
 		controller.addConduitEntrance(entrance);
-		entrances.add(entrance);
+		entrances.put(portName, entrance);
 	}
 
 	protected void addExit(ConduitExitController exit) {
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of portals not allowed here");
 		}
+		String portName = exit.getIdentifier().getPortName();
 
 		// only add if not already added
-		for (ConduitExitController e : exits) {
-			if (e.equals(exit)) {
+		for (String port : exits.keySet()) {
+			if (portName.equals(port)) {
 				throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
 			}
 		}
 
 		controller.addConduitExit(exit);
-		exits.add(exit);
+		exits.put(portName, exit);
 	}
 
 	
 	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
+		if (!acceptPortals) {
+			throw new IgnoredException("adding of portals not allowed here");
+		}
 
 		if (newRate < 1) {
 			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
@@ -288,21 +288,9 @@ public abstract class RawKernel {
 	}
 
 	String infoText() {
-		StringWriter writer = new StringWriter();
-		PrintWriter out = new PrintWriter(writer);
-
-		out.printf("\nExits (" + exits.size() + ")\n");
-		for (ConduitExitController exit : exits) {
-			out.printf(" %-20s\n", exit.getLocalName());
-		}
-		out.printf("\nEntrances (" + entrances.size() + ")\n");
-		for (ConduitEntranceController entrance : entrances) {
-			out.printf(" %-5s%-20s\n", "", entrance.getLocalName());
-		}
-
-		out.println("==========");
-
-		return writer.toString();
+		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
+		sb.append("Exits: ").append(exits).append("; entrances: ").append(entrances);
+		return sb.toString();
 	}
 
 	/**
