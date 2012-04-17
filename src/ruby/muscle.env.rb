@@ -32,6 +32,11 @@ m = Muscle.LAST
 
 # some local variables to keep things simple
 base_dir = ENV["MUSCLE_HOME"]
+
+if base_dir == nil
+  puts "MUSCLE_HOME not defined!!!"
+  exit 1
+end
 #
 ## configure java CLASSPATH
 ## classpath must include jade and muscle classes
@@ -82,8 +87,7 @@ e = {
 'tmp_path' => mkJVMTmpPath,
 'muscle_src_root' => find_src_root,
 }
-#e['muscle.Env dump uri'] = URI.parse "file:#{File.join(e['tmp_path'], Muscle.jclass)}"
-e['muscle.Env dump uri'] = Proc.new {URI.parse "file:#{File.join(Muscle.LAST.env['tmp_path'], Muscle.jclass)}"}
+e['muscle.Env dump uri'] = URI.parse "file:#{File.join(e['tmp_path'], Muscle.jclass)}"
 
 e['muscle.behaviour.KillPlatformBehaviour'] = {"logging_after_teardown_properties_path" => File.join(base_dir, "share/muscle/resources/logging/logging.after_teardown.properties")}
 

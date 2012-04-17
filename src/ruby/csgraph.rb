@@ -24,7 +24,7 @@ Jan Hegewald
 =end
 
 # extend ConnectionScheme to be able to output a dot graph
-
+# OBSOLETE
 if File.symlink? __FILE__
 	PARENT_DIR = File.dirname(File.expand_path(File.readlink(__FILE__)))
 else

@@ -27,7 +27,7 @@ require 'jvm'
 require 'utilities'
 include MuscleUtils
 
-#
+#OBSOLETE
 class Jade
 	def Jade.build_command(agents, env)
 		# build command to launch cxa kernels

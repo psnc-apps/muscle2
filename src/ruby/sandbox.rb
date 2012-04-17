@@ -23,6 +23,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 Jan Hegewald
 =end
 
+#OBSOLATE - TO BE DELETED
+
 def do_sandbox(targetKernel, env=Muscle.LAST.env)
 	puts "running sandbox for kernel <#{targetKernel}>"
 	

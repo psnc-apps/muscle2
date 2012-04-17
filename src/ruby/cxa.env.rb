@@ -31,16 +31,12 @@ cxa = Cxa.LAST
 
 cxa.env['tmp_path'] = Muscle.LAST.env['tmp_path']
 
-cxa.env['plumber_class'] = "muscle.core.Plumber"
-cxa.env[cxa.env['plumber_class']] = {}
 
 # configure muscle.core.ConnectionScheme class with path to legacy CS
 cxa.env['CONNECTION_SCHEME_CLASS'] = "muscle.core.ConnectionScheme"
 cxa.env['muscle.core.ConnectionScheme legacy_cs_file_uri'] = URI.parse "file:#{File.join(cxa.env['tmp_path'], 'connection_scheme')}"
 cxa.env['muscle.core.ConnectionScheme'] = {"default_conduit"=>"muscle.core.conduit.VoidConduit", "cs_file_uri"=>"#{cxa.env['muscle.core.ConnectionScheme legacy_cs_file_uri'].to_s}"}
 
-cxa.known_agents << JadeAgent.new('plumber', 'muscle.core.Plumber')
-#cxa.known_agents << JadeAgent.new('gui' => 'muscle.gui.remote.RemoteComponentTailAgent')
 
 
 
