@@ -134,7 +134,7 @@ public class SerializableData implements Serializable {
 		switch (type.typeOf()) {
 			case NULL:
 				return new SerializableData(null, type, 0);
-			case STRING_MAP:
+			case MAP:
 				len = in.readInt();
 				HashMap<Serializable,Serializable> xdrMap = new HashMap<Serializable,Serializable>(len*3/2);
 				
@@ -325,7 +325,7 @@ public class SerializableData implements Serializable {
 		switch (type.typeOf()) {
 			case NULL:
 				break;
-			case STRING_MAP:
+			case MAP:
 				Map xdrMap = (Map)newValue;
 				out.writeInt(xdrMap.size());
 				for (Iterator it = xdrMap.entrySet().iterator(); it.hasNext();) {
@@ -369,54 +369,44 @@ public class SerializableData implements Serializable {
 				} else {
 					throw new IllegalArgumentException("Can not parse data from wrapper " + out.getClass().getName());
 				}
-		}	
+		}
+		if (type.isMatrix()) {
+			int dimNum = type.getDimensions();
+			int[] dims = new int[dimNum];
+			dimensionsOfMatrix(value, type, dims, 0);
+			for (int i = 0; i < dimNum - 1; i++) {
+				out.writeInt(dims[i]);
+			}
+		}
 	}
 	
 	private void encodePackerData(Packer packer, Object newValue) throws IOException {
-//		int len = 0;
-//		if (type.typeOf().isArray()) {
-//			int len = lengthOfMatrix(newValue, type);
-//			packer.writeArrayBegin(len);
-//		}
-//		switch (type.typeOf()) {
-//			case BYTE:
-//				xdrOut.xdrEncodeByte((Byte)newValue);
-//				break;
-//			case SHORT:
-//				xdrOut.xdrEncodeShort((Short)newValue);
-//				break;
-//			case FLOAT:
-//				xdrOut.xdrEncodeFloat((Float)newValue);
-//				break;
-//			case LONG:
-//				xdrOut.xdrEncodeLong((Long)newValue);
-//				break;
-//			case STRING_ARR:
-//				xdrOut.xdrEncodeStringVector((String[])newValue);
-//				break;
-//			case BOOLEAN_ARR:
-//				xdrOut.xdrEncodeBooleanVector((boolean[])newValue);
-//				break;
-//			case SHORT_ARR:
-//				xdrOut.xdrEncodeShortVector((short[])newValue);
-//				break;
-//			case INT_ARR:
-//				xdrOut.xdrEncodeIntVector((int[])newValue);
-//				break;
-//			case LONG_ARR:
-//				xdrOut.xdrEncodeLongVector((long[])newValue);
-//				break;
-//			case FLOAT_ARR:
-//				xdrOut.xdrEncodeFloatVector((float[])newValue);
-//				break;
-//			case DOUBLE_ARR:
-//				xdrOut.xdrEncodeDoubleVector((double[])newValue);
-//				break;
-//		}
-//		
-//		if (type.typeOf().isArray()) {
-//			packer.writeArrayEnd();
-//		}
+		int len = 0;
+		if (type.typeOf().isArray()) {
+			len = lengthOfMatrix(newValue, type);
+			packer.writeArrayBegin(len);
+		}
+		switch (type.typeOf()) {
+			case BYTE:
+				packer.write((Byte)newValue);
+				break;
+			case SHORT:
+				packer.write((Short)newValue);
+				break;
+			case FLOAT:
+				packer.write((Float)newValue);
+				break;
+			case LONG:
+				packer.write((Long)newValue);
+				break;
+			default:
+				// No more packer-defined-types
+				packer.write(newValue);
+		}
+		
+		if (type.typeOf().isArray()) {
+			packer.writeArrayEnd();
+		}
 	}
 	
 	/**
@@ -474,7 +464,7 @@ public class SerializableData implements Serializable {
 		} else switch (type.typeOf()) {
 			case NULL:
 				break;
-			case STRING_MAP:				
+			case MAP:				
 				Map xdrMap = (Map)value;
 				size = 4;
 				for (Iterator it = xdrMap.entrySet().iterator(); it.hasNext();) {
@@ -552,25 +542,39 @@ public class SerializableData implements Serializable {
 	}
 	
 	private static int lengthOfMatrix(Object value, SerializableDatatype type) {
+		int[] dims = {1, 1, 1, 1};
+		dimensionsOfMatrix(value, type, dims, 0);
+		return dims[0]*dims[1]*dims[2]*dims[3];
+	}
+	
+	private static void dimensionsOfMatrix(Object value, SerializableDatatype type, int[] dims, int depth) {
 		if (value instanceof Object[]) {
-			return ((Object[])value).length * lengthOfMatrix(((Object[])value)[0], type);
+			dims[depth] = ((Object[])value).length;
+			dimensionsOfMatrix(value, type, dims, depth + 1);
 		}
 		else {
 			switch (type.typeOf()) {
 				case BOOLEAN_ARR:
-					return ((boolean[])value).length;
+					dims[depth] = ((boolean[])value).length;
+					break;
 				case BYTE_ARR:
-					return ((byte[])value).length;
+					dims[depth] = ((byte[])value).length;
+					break;
 				case SHORT_ARR:
-					return ((short[])value).length;
+					dims[depth] = ((short[])value).length;
+					break;
 				case INT_ARR:
-					return ((int[])value).length;
+					dims[depth] = ((int[])value).length;
+					break;
 				case LONG_ARR:
-					return ((long[])value).length;
+					dims[depth] = ((long[])value).length;
+					break;
 				case FLOAT_ARR:
-					return ((float[])value).length;
+					dims[depth] = ((float[])value).length;
+					break;
 				case DOUBLE_ARR:
-					return ((double[])value).length;
+					dims[depth] = ((double[])value).length;
+					break;
 				default:
 					throw new IllegalArgumentException("Can only compute the length of arrays");
 			}
@@ -800,7 +804,7 @@ public class SerializableData implements Serializable {
 		Serializable newValue = value;
 		
 		if (type.isMatrix()) {
-			int dimX, dimY, dimZ, dimZZ, count = 0;
+			int dimX = 1, dimY = 1, dimZ = 1, dimZZ = 1, count = 0;
 			switch (type) {
 				case BOOLEAN_MATRIX_2D: {
 					boolean[][] oldValue = (boolean[][])value;
@@ -1045,7 +1049,7 @@ public class SerializableData implements Serializable {
 			case NULL: case STRING: case BOOLEAN: case BYTE: case SHORT: case INT: case LONG: case FLOAT: case DOUBLE:
 				copyValue = value;
 				break;
-			case STRING_MAP: {
+			case MAP: {
 				int len = ((Map)value).size();
 				HashMap<String,Serializable> map = new HashMap<String,Serializable>(len*3/2);
 				for (Iterator it = ((Map)value).entrySet().iterator(); it.hasNext();) {
