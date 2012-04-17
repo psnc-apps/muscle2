@@ -149,8 +149,13 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	
 	private PortalID getPortalID(PortalID id, Map<String,? extends PortDescription> descriptions, boolean entrance) {
 		ConduitDescription desc = null;
+		PortDescription port = null;
 		if (descriptions != null)
-			desc = descriptions.get(id.getPortName()).getConduitDescription();
+			port = descriptions.get(id.getPortName());
+		if (port == null)
+			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
+		else
+			desc = port.getConduitDescription();
 		if (desc == null)
 			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
 
