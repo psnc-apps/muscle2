@@ -74,7 +74,7 @@ class MuscleCli
 
 		# misc flags
 		@parser.separator "misc flags:"
-		@parser.on("-h", "--help") { RDoc::usage_no_exit('Synopsis');puts @parser.help; exit }
+		@parser.on("-h", "--help") { puts @parser.help; exit }
 		@parser.on("--print-env=[KEY0,KEY1,...]", Array, "prints the internal preferences, e.g. --print_env=CLASSPATH") {|val| if val.nil? then @env['print_env'] = true;else @env['print_env'] = val;end }
 		@parser.on("-v", "--verbose") { @env['verbose'] = true }
 		@parser.on("-d", "--debug", "produces more error logs and do not purges MUSCLE temporary directory") { @env['debug'] = true }
