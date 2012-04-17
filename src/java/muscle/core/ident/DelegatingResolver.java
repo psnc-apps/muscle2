@@ -36,7 +36,7 @@ public class DelegatingResolver extends SimpleDelegatingResolver {
 				delegate.deletePlatform();
 			}
 			else {
-				logger.log(Level.INFO, "Waiting on submodel instances {0} to quit MUSCLE.", stillAlive);
+				logger.log(Level.INFO, "Waiting on submodel instance(s) {0} to quit MUSCLE.", stillAlive);
 			}
 		}
 	}

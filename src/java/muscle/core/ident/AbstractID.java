@@ -32,7 +32,7 @@ public abstract class AbstractID  implements Identifier {
 	}
 	
 	public String toString() {
-		return getName() + "[" + getType() + "]";
+		return getName();
 	}
 	
 	public final boolean equals(Object other) {
