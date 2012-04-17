@@ -15,7 +15,7 @@ endmacro (do_test)
 do_test("SimpleExample.cxa.rb" "r w" "got: 2.0")
 do_test("Triangle.cxa.rb" "one two three" "Got from Three: 3.0")
 do_test("PingPong.cxa.rb" "Ping Pong" "All submodel instances have finished")
-
+do_test("SimpleSubmodelExample.cxa.rb" "r w" "(1.0	2.0	)")
 if (BUILD_CPP)
     do_test("NativeExample2.cxa.rb" "r w" "got: 2.0")
     do_test("TransmutableExample2.cxa.rb" "cpp" "t: 2")

@@ -6,6 +6,7 @@ package muscle.core.kernel;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 import muscle.core.*;
 
 /**
@@ -28,13 +29,17 @@ public abstract class Instance extends RawKernel {
 	@Override
 	protected void addPortals() {
 		ConnectionScheme cs = ConnectionScheme.getInstance();
-		Collection<? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier()).values();
-		for (PortDescription entrance : ports) {
-			this.addEntrance(entrance.getID().getPortName(), 1, Serializable.class);
+		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
+		if (ports != null) {
+			for (PortDescription entrance : ports.values()) {
+				this.addEntrance(entrance.getID().getPortName(), 1, Serializable.class);
+			}
 		}
-		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier()).values();
-		for (PortDescription exit : ports) {
-			this.addExit(exit.getID().getPortName(), 1, Serializable.class);
+		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
+		if (ports != null) {
+			for (PortDescription exit : ports.values()) {
+				this.addExit(exit.getID().getPortName(), 1, Serializable.class);
+			}
 		}
 	}
 

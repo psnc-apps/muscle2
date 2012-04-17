@@ -23,7 +23,6 @@ package muscle.core;
 
 import java.util.ArrayList;
 import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 
@@ -37,13 +36,12 @@ public class Scale implements java.io.Serializable {
 	private muscle.core.messaging.Duration dt; // time scale (must be seconds when used without quantity)
 	private ArrayList<DecimalMeasure<Length>> dx; // scale(s) in space (must be meter when used without quantity)
 	
-	public Scale(DecimalMeasure<Duration> newDt, DecimalMeasure ... newDx) {
-
-		if(newDx.length < 1)
-			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.length+">");		
-
-		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));
-		
+	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
+		this(new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND)), newDx);
+	}
+	
+	public Scale(muscle.core.messaging.Duration newDt, DecimalMeasure ... newDx) {
+		dt = newDt;
 
 		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
 		// this is probably because there are no generic c-style arrays in java
@@ -54,10 +52,8 @@ public class Scale implements java.io.Serializable {
 		}
 	}
 
-	public Scale(DecimalMeasure<Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
-		if(newDx.size() <= 0)
-			throw new IllegalArgumentException("number of dimensions must be greater 0 <"+newDx.size()+">");		
 
+	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
 		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));
 		dx = newDx;
 	}
@@ -93,7 +89,7 @@ public class Scale implements java.io.Serializable {
 
 			// test scale for every dimension in space
 			for(int i = 0; i < getDimensions(); i++) {
-				if( getDx(i).doubleValue(SI.METER) != other.getDx(i).doubleValue(SI.METER) )
+				if(getDx(i).doubleValue(SI.METER) != other.getDx(i).doubleValue(SI.METER) )
 					return false;
 			}
 			
