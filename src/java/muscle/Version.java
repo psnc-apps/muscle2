@@ -29,44 +29,14 @@ just the version of this MUSCLE
 */
 public class Version {
 
-	private static String NATIVE_LIB_BASENAME = "muscle";
-	private static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) from 2010-01-11_13-51-27";
-
-
-	//
-	private static native String nativeInfo();
+	private static String VERSION_NUM = "2.0";
+	private static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) " + VERSION_NUM + " Revision: $Rev$ from $Date$:";
 	
-	// info about the native library, if available
-	private static String nativeText() {
-	
-		if(nativeLibraryAvailable()) {
-			return "native library available ("+nativeInfo()+")";
-		}
-		else {
-			return "native library not available";
-		}
-	}
-
-
-	// info about the native library, if available
-	public static boolean nativeLibraryAvailable() {
-	
-		// see if we can load the native lib
-		try {
-			System.loadLibrary(NATIVE_LIB_BASENAME);
-		}
-		catch (java.lang.UnsatisfiedLinkError e) {
-			return false;
-		}
-	
-		return true;
-	}
-
 
 	//
 	public static String info() {
 	
-		return INFO_TEXT.replaceAll("@@", ""); // remove the @@ in case the version text has not been modified
+		return INFO_TEXT.replaceAll("$$", ""); // remove the $$ in case the version text has not been modified
 	}
 	
 	
@@ -74,6 +44,6 @@ public class Version {
 	public static void main(String[] args) {
 
       String mode = JVM.is64bitJVM() ? "64":"32";
-		System.out.println(info()+" running in "+mode+"-bit mode, "+nativeText());		
+		System.out.println(info()+" running in "+mode+"-bit mode");		
 	}
 }
