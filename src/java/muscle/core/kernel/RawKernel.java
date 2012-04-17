@@ -171,10 +171,8 @@ public abstract class RawKernel {
 		String portName = entrance.getIdentifier().getPortName();
 
 		// only add if not already added
-		for (String port : entrances.keySet()) {
-			if (portName.equals(port)) {
-				throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
-			}
+		if (entrances.containsKey(portName)) {
+			throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
 		}
 
 		controller.addConduitEntrance(entrance);
@@ -188,10 +186,8 @@ public abstract class RawKernel {
 		String portName = exit.getIdentifier().getPortName();
 
 		// only add if not already added
-		for (String port : exits.keySet()) {
-			if (portName.equals(port)) {
-				throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
-			}
+		if (exits.containsKey(portName)) {
+			throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
 		}
 
 		controller.addConduitExit(exit);
