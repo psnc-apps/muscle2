@@ -6,7 +6,7 @@ set(CTEST_TEST_TIMEOUT 20)
 add_test(MuscleVersion muscle --version)
 
 macro (do_test cxa kernels result)
-  set (CXA_FILE "$ENV{MUSCLE_HOME}/share/muscle/examples/cxa/${cxa}")
+  set (CXA_FILE "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/cxa/${cxa}")
   add_test (MuscleTest-${cxa} muscle --cxa_file ${CXA_FILE} --main ${kernels} --autoquit)
   set_tests_properties (MuscleTest-${cxa} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
   set_tests_properties (MuscleTest-${cxa} PROPERTIES TIMEOUT 30)
