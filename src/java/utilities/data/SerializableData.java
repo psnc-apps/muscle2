@@ -404,37 +404,37 @@ public class SerializableData implements Serializable {
 				break;
 			case STRING_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((String[])value)[i]);
+					packer.write(((String[])newValue)[i]);
 				}
 				break;
 			case BOOLEAN_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((boolean[])value)[i]);
+					packer.write(((boolean[])newValue)[i]);
 				}
 				break;
 			case SHORT_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((short[])value)[i]);
+					packer.write(((short[])newValue)[i]);
 				}
 				break;
 			case INT_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((int[])value)[i]);
+					packer.write(((int[])newValue)[i]);
 				}
 				break;
 			case LONG_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((long[])value)[i]);
+					packer.write(((long[])newValue)[i]);
 				}
 				break;
 			case FLOAT_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((float[])value)[i]);
+					packer.write(((float[])newValue)[i]);
 				}
 				break;
 			case DOUBLE_ARR:
 				for (int i = 0; i < len; i++) {
-					packer.write(((double[])value)[i]);
+					packer.write(((double[])newValue)[i]);
 				}
 				break;
 		}
