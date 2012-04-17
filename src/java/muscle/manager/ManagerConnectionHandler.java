@@ -39,15 +39,22 @@ public class ManagerConnectionHandler extends AbstractConnectionHandler<Simulati
 	}
 	
 	void writeLocation() {
-		String host = ss.getInetAddress().getHostAddress()  +":" + ss.getLocalPort();
-		logger.log(Level.INFO, "Started the connection handler, listening on {0}", host);
+		String hostport = ss.getInetAddress().getHostAddress()  +":" + ss.getLocalPort();
+		logger.log(Level.INFO, "Started the connection handler, listening on {0}", hostport);
 
 		// Writing address so that it can automatically be read
 		try {
 			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-			FileWriter fw = new FileWriter("simulationmanager." + pid + ".address");
-			fw.write(host);
+			String addrFileName = System.getProperty("java.io.tmpdir") + "/simulationmanager." + pid + ".address";
+			File flock = new File(addrFileName + ".lock");
+			
+			flock.createNewFile(); /* lock */
+			
+			FileWriter fw = new FileWriter(addrFileName);
+			fw.write(hostport);
 			fw.close();
+			
+			flock.delete(); /* unlock */
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, null, ex);
 		}

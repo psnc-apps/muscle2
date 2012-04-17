@@ -2,7 +2,7 @@
 #include "cmuscle.h"
 #include "cppmuscle.hpp"
 
-#include <string>
+#include <string.h>
 
 int MUSCLE_Init(void)
 {

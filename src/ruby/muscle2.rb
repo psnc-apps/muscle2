@@ -272,37 +272,107 @@ end
 kernels = cxa.known_agents.find_all {|a| a.kind_of?(KernelAgent)}
 kernels_names = kernels.collect {|k| k.name}
 
-muscle_args = []
+muscle_main_args = []
+muscle_local_args = []
 
 if m.env['main']
-	muscle_args << "muscle.manager.SimulationManager"
-	muscle_args << kernels_names
-else
-	muscle_args << "muscle.core.LocalManager"
-	
-	muscle_args << "-m"
+	muscle_main_args << "muscle.manager.SimulationManager"
+	muscle_main_args << kernels_names
+end
+
+if m.env['allkernels'] || args.size > 0
+	muscle_local_args << "muscle.core.LocalManager"	
 	if m.env['manager']
-		muscle_args << m.env['manager']
+		muscle_local_args << "-m"
+		muscle_local_args << m.env['manager']
+	elsif m.env['main']
+		puts "Running both manager and kernels"
 	else
 		puts "no --manager contact information given"
 		exit 1
 	end
 	if m.env['allkernels']
-		muscle_args << kernels
+		muscle_local_args << kernels
 	elsif args.size > 0
-		args.each { |arg| kernels.each { |kernel| muscle_args << kernel if kernel.name == arg } }
-	else
-		puts "No kernel(s) name given"
-		exit 1
-	end	
+		args.each { |arg| kernels.each { |kernel| muscle_local_args << kernel if kernel.name == arg } }
+	end
 end
 
-command = JVM.build_command(muscle_args, m.env).first
+if muscle_main_args.size == 0 && muscle_local_args.size == 0
+	puts "No kernel(s) name given"
+	exit 1
+end
+
 
 at_exit {puts "\n\ttmp dir was: <#{Muscle.LAST.env['tmp_path']}>"}
-puts "Running MUSCLE2: " + command
 
-exit_value = run_command(command, m.env)
+manager_pid = 0
+local_pid = 0
 
-exit exit_value if exit_value != nil
+if muscle_main_args.size != 0
+	command = JVM.build_command(muscle_main_args, m.env).first
+	puts "Running MUSCLE2 Simulation Manager: " + command
+	manager_pid = Process.fork {exec(command)}
+end
+
+
+if muscle_local_args.size != 0
+	if manager_pid != 0
+		contact_file_name = m.env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
+		puts "Waiting for manager contact file: #{contact_file_name}"
+		
+		while !File.exists?(contact_file_name)
+			sleep 2
+		end
+		
+		while File.exists?(contact_file_name + ".lock") #waiting for lock file to disappear 
+			sleep 2
+		end
+		
+		contact_addr = File.open(contact_file_name, "rb").read
+		puts "Using manager address: #{contact_addr}"
+		muscle_local_args << "-m"
+		muscle_local_args << contact_addr
+	end
+	command = JVM.build_command(muscle_local_args, m.env).first
+	puts "Running MUSCLE2 Local Manager: " + command
+	local_pid = Process.fork {exec(command)}
+end
+
+begin
+	statuses = Process.waitall
+	statuses.each { |status| exit status[1].exit if status[1].exitstatus !=0 } #exit with no zero value if only one process had non-zero exit value
+rescue Interrupt
+	puts "Interrupt received..."
+	exit_val = 1	
+	if manager_pid
+    	puts "sending SIGINT signal to Simulation Manager (pid=#{manager_pid})"
+        Process.kill("SIGINT", manager_pid)
+    end
+    
+    if local_pid
+    	puts "sending SIGINT signal to Local Manager (pid=#{local_pid})"
+        Process.kill("SIGINT", local_pid)
+    end
+                
+    begin
+        Process.waitall
+    rescue Interrupt
+		if manager_pid
+	    	puts "sending SIGKILL signal to Simulation Manager (pid=#{manager_pid})"
+	        Process.kill("SIGKILL", manager_pid)
+	    end
+	    
+	    if local_pid
+	    	puts "sending SIGKILL signal to Local Manager (pid=#{local_pid})"
+	        Process.kill("SIGKILL", local_pid)
+	    end
+    end
+    
+    Process.waitall
+    exit 1
+end
+
+exit 0
+
 

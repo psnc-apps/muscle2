@@ -2,10 +2,10 @@
 
 
 if [[ -z $MUSCLE_HOME ]] ; then
-	MUSCLE_HOME=/opt/muscle
+	MUSCLE_HOME=@MUSCLE_PREFIX@
 fi
 
 export MUSCLE_HOME
 
-$MUSCLE_HOME/share/muscle/ruby/muscle2.rb $@
+$MUSCLE_HOME/share/muscle/ruby/muscle.rb "$@"
 
