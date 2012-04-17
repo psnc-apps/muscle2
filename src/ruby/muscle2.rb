@@ -264,6 +264,10 @@ if m.env['use_mpi']
 	end
 end
 
+if cxa == nil
+	puts "--cxa_file option missing"
+	exit 1
+end
 
 kernels = cxa.known_agents.find_all {|a| a.kind_of?(KernelAgent)}
 kernels_names = kernels.collect {|k| k.name}

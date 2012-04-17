@@ -34,7 +34,7 @@ m = Muscle.LAST
 base_dir = ENV["MUSCLE_HOME"]
 
 if base_dir == nil
-  puts "MUSCLE_HOME not defined!!!"
+  puts "MUSCLE_HOME environment variable is not defined."
   exit 1
 end
 #
