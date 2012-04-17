@@ -285,7 +285,7 @@ public abstract class RawKernel {
 
 	String infoText() {
 		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
-		sb.append("Exits: ").append(exits).append("; entrances: ").append(entrances);
+		sb.append(getLocalName()).append(": exits: ").append(exits).append("; entrances: ").append(entrances);
 		return sb.toString();
 	}
 
