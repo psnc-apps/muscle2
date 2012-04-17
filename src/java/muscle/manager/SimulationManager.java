@@ -4,7 +4,11 @@
 
 package muscle.manager;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -109,21 +113,26 @@ public class SimulationManager {
 		
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch = null;
+		ServerSocket ss;
 		
 		try {
-			int port = 18310;
 			InetAddress addr = InetAddress.getLocalHost();
 			SocketFactory sf = new LocalSocketFactory();
-			mch = new ManagerConnectionHandler(sm, sf.createServerSocket(port, 10, addr));
+			ss = sf.createServerSocket(0, 10, addr);
+			mch = new ManagerConnectionHandler(sm, ss);
 			mch.start();
-			logger.log(Level.INFO, "Started the connection handler, listening on address {0} on port {1}", new Object[]{addr.getHostAddress(), port});
 			sm.setConnectionHandler(mch);
 		} catch (Exception ex) {
 			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
+			ss = null;
 			if (mch != null) {
 				sm.dispose();
 				mch.dispose();
+				mch = null;
 			}
+		}
+		if (mch != null) {
+			mch.writeLocation();
 		}
 	}
 }
