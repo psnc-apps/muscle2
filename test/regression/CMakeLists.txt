@@ -13,12 +13,14 @@ macro (do_test cxa kernels result)
 endmacro (do_test)
 
 do_test("SimpleExample.cxa.rb" "r w" "got: 2.0")
-do_test("NativeExample2.cxa.rb" "r w" "got: 2.0")
 do_test("Triangle.cxa.rb" "one two three" "Got from Three: 3.0")
-do_test("TransmutableExample2.cxa.rb" "cpp" "t: 2")
 do_test("PingPong.cxa.rb" "Ping Pong" "All submodel instances have finished")
-do_test("LHC2.cxa.rb" "LHC PSB" "LHC:Final proton energy: 12")
 
+if (BUILD_CPP)
+    do_test("NativeExample2.cxa.rb" "r w" "got: 2.0")
+    do_test("TransmutableExample2.cxa.rb" "cpp" "t: 2")
+    do_test("LHC2.cxa.rb" "LHC PSB" "LHC:Final proton energy: 12")
+endif (BUILD_CPP)
 
 #legacy examples
 #do_test("NativeExample.cxa.rb" "r w" "got: 2.0")
