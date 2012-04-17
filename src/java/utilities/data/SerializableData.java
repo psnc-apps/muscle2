@@ -177,6 +177,9 @@ public class SerializableData implements Serializable {
 				} catch (OncRpcException ex) {
 					throw new IllegalStateException("Could not parse data", ex);
 				}
+			} else if (in instanceof UnpackerWrapper) {
+				Unpacker unpacker = ((UnpackerWrapper)in).getUnpacker();
+				value = parseMsgPackData(unpacker, type);
 			} else {
 				throw new IllegalArgumentException("Can not parse data from wrapper " + in.getClass().getName());
 			}
@@ -365,7 +368,7 @@ public class SerializableData implements Serializable {
 						throw new IllegalStateException("Could not parse data", ex);
 					}
 				} else if (out instanceof PackerWrapper) {
-					encodePackerData(((PackerWrapper)out).getPacker(), newValue);
+					encodeMsgPackData(((PackerWrapper)out).getPacker(), newValue);
 				} else {
 					throw new IllegalArgumentException("Can not parse data from wrapper " + out.getClass().getName());
 				}
@@ -380,7 +383,7 @@ public class SerializableData implements Serializable {
 		}
 	}
 	
-	private void encodePackerData(Packer packer, Object newValue) throws IOException {
+	private void encodeMsgPackData(Packer packer, Object newValue) throws IOException {
 		int len = 0;
 		if (type.typeOf().isArray()) {
 			len = lengthOfMatrix(newValue, type);
@@ -399,9 +402,41 @@ public class SerializableData implements Serializable {
 			case LONG:
 				packer.write((Long)newValue);
 				break;
-			default:
-				// No more packer-defined-types
-				packer.write(newValue);
+			case STRING_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((String[])value)[i]);
+				}
+				break;
+			case BOOLEAN_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((boolean[])value)[i]);
+				}
+				break;
+			case SHORT_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((short[])value)[i]);
+				}
+				break;
+			case INT_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((int[])value)[i]);
+				}
+				break;
+			case LONG_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((long[])value)[i]);
+				}
+				break;
+			case FLOAT_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((float[])value)[i]);
+				}
+				break;
+			case DOUBLE_ARR:
+				for (int i = 0; i < len; i++) {
+					packer.write(((double[])value)[i]);
+				}
+				break;
 		}
 		
 		if (type.typeOf().isArray()) {
@@ -804,7 +839,7 @@ public class SerializableData implements Serializable {
 		Serializable newValue = value;
 		
 		if (type.isMatrix()) {
-			int dimX = 1, dimY = 1, dimZ = 1, dimZZ = 1, count = 0;
+			int dimX, dimY, dimZ, dimZZ, count = 0;
 			switch (type) {
 				case BOOLEAN_MATRIX_2D: {
 					boolean[][] oldValue = (boolean[][])value;
@@ -1039,7 +1074,9 @@ public class SerializableData implements Serializable {
 	public static <T extends Serializable> T createIndependent(T value) {
 		if (value instanceof SerializableData) {
 			SerializableData sValue = (SerializableData)value;
-			return (T)new SerializableData(createIndependent(sValue.getValue()), sValue.type, sValue.size);
+			@SuppressWarnings("unchecked")
+			T typedValue = (T)new SerializableData(createIndependent(sValue.getValue()), sValue.type, sValue.size);
+			return typedValue;
 		}
 		Serializable copyValue;
 		int dimX, dimY, dimZ, dimZZ;
@@ -1336,8 +1373,10 @@ public class SerializableData implements Serializable {
 				copyValue = newValue;
 				} break;
 			default:
-				throw new IllegalArgumentException("Serializable type not recognized");
+				throw new IllegalArgumentException("Serializable type " + type + " not recognized");
 		}
-		return (T)copyValue;
+		@SuppressWarnings("unchecked")
+		T typedValue = (T)copyValue;
+		return typedValue;
 	}
 }
