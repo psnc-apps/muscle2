@@ -1,24 +1,18 @@
 cmake_minimum_required(VERSION 2.6)
 PROJECT(MUSCLE)
 
-#option(FORCE_INSTALLATION_IN_OPT "Force installation in /opt/muscle regardeless of other settings" ON)
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
-option(BUILD_JAVA "Build Java part of MUSCLE" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
 option(BUILD_CPACK_SCRIPTS "Build Muscle Transport Overlay service" OFF)
 
+option(BUILD_JAVA "Build Java part of MUSCLE" ON)
+mark_as_advanced(BUILD_JAVA)
 
 set(MUSCLE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix. Set to the empty value for a default system location")
 
-IF(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
+if(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
 	set(CMAKE_INSTALL_PREFIX ${MUSCLE_INSTALL_PREFIX})
-ENDIF(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
-
-#IF(FORCE_INSTALLATION_IN_OPT)
-#	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-#		set(CMAKE_INSTALL_PREFIX "/opt/muscle" CACHE PATH "MUSCLE install prefix" FORCE)
-#	ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-#ENDIF(FORCE_INSTALLATION_IN_OPT)
+endif(NOT MUSCLE_INSTALL_PREFIX STREQUAL "")
 
 set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib") #this is importat for MAC OS Dynamic Library Linking
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
