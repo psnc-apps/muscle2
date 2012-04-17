@@ -3,8 +3,9 @@ PROJECT(MUSCLE)
 
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
-option(BUILD_CPACK_SCRIPTS "Build Muscle Transport Overlay service" OFF)
 
+option(BUILD_CPACK_SCRIPTS "Build scripts for packaging" OFF)
+mark_as_advanced(BUILD_CPACK_SCRIPTS)
 option(BUILD_JAVA "Build Java part of MUSCLE" ON)
 mark_as_advanced(BUILD_JAVA)
 
