@@ -21,6 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
+import java.math.BigDecimal;
+import javax.measure.DecimalMeasure;
+import javax.measure.quantity.Duration;
+import javax.measure.quantity.Length;
+import javax.measure.unit.SI;
+import muscle.core.Scale;
+
 /**
 kernel which does nothing, usefulf for testing purposes e.g. to use the QuitMonitor with a non empty CxA
 @author Jan Hegewald
@@ -32,5 +39,11 @@ public class VoidKernel extends RawKernel {
 
 	protected void execute() {
 		// do nothing
+	}
+
+	public Scale getScale() {
+		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
+		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
+		return new Scale(dt,dx);
 	}
 }

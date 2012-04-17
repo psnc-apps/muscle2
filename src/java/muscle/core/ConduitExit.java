@@ -28,9 +28,10 @@ import java.util.logging.Logger;
 import muscle.core.messaging.Observation;
 
 /**
-this is the (remote) tail of a conduit,
-an exit receives data from the conduit agent
-@author Jan Hegewald
+ * A ConduitExit outputs messages that are sent over a conduit.
+ * It has only the receive() interface, and receives only messages of a single type, sent over the conduit.
+ * 
+ * @author Joris Borgdorff
 */
 public class ConduitExit<T extends Serializable> { // generic T will be the underlying unwrapped data, e.g. double[]
 	private final BlockingQueue<Observation<T>> queue;
@@ -43,8 +44,11 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	}
 
 	/**
-	 * Receive one piece of data. Returns null if the model should stop computing.
-	*/
+	 * Receive one piece of data.
+	 * The call is blocking, meaning that it won't return until data is received. Data returned does not need to be copied.
+	 * 
+	 * @return a piece of data, or null if the model should stop computing.
+	 */
 	public T receive() {
 		try {
 			Observation<T> obs = this.queue.take();

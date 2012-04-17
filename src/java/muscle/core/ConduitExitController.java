@@ -97,6 +97,6 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	}
 
 	public String toString() {
-		return this.getIdentifier() + "-->|";
+		return "in:" + this.getIdentifier();
 	}
 }

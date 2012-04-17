@@ -197,6 +197,6 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	}
 	
 	public String toString() {
-		return "|-->" + this.getIdentifier();
+		return "out:" + this.getIdentifier();
 	}
 }
