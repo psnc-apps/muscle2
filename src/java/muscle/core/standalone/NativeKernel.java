@@ -3,8 +3,7 @@ package muscle.core.standalone;
 import java.util.Arrays;
 import java.util.List;
 
-import muscle.core.ConduitEntrance;
-import muscle.core.CxADescription;
+import muscle.core.*;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -27,29 +26,21 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	}
 	
 	public synchronized void sendDouble(String entranceName, double data[]) {
-		for (int i=0; i < entrances.size(); i++) {
-			System.err.println("entrances.get(i):" + entrances.get(i));
-			System.err.println("entrances.get(i).getEntrance()" + entrances.get(i).getEntrance());
-			if (entrances.get(i).getEntrance() != null && entrances.get(i).getLocalName().split("@")[0]
-					.equals(entranceName)) {
-				entrances.get(i).getEntrance().send(data);
-				return;
-			}
-		}
+		ConduitEntranceController ec = entrances.get(entranceName);
+		ConduitEntrance entrance;
+		if (ec == null || (entrance = ec.getEntrance()) == null)
+			throw new MUSCLERuntimeException("Unknown entrance: " + entranceName + " in " + getLocalName() + "(valid entrances = " + entrances.values() + ")");
 		
-		throw new MUSCLERuntimeException("Unknown entrance: " + entranceName + " in " + super.getLocalName() + "(valid entrances = " + entrances + ")");
+		entrance.send(data);		
 	}
 	
 	public synchronized double[] receiveDouble(String exitName) {
-		for (int i=0; i < exits.size(); i++) {
-			System.err.println("exits.get(i):" + exits.get(i));
-			System.err.println("exits.get(i).getExit()" + exits.get(i).getExit());
-			if (exits.get(i).getExit() != null && exits.get(i).getLocalName().split("@")[0].equals(exitName)) {
-				return (double[])exits.get(i).getExit().receive();
-			}
-		}
+		ConduitExitController ec = exits.get(exitName);
+		ConduitExit exit;
+		if (ec == null || (exit = ec.getExit()) == null)
+			throw new MUSCLERuntimeException("Unknown entrance: " + exitName + " in " + getLocalName() + "(valid entrances = " + entrances + ")");
 		
-		throw new MUSCLERuntimeException("Unknown exit: " + exitName + " in " + super.getLocalName() + "(valid exits = " + exits + ")");
+		return (double[])exit.receive();
 	}
 
 	public synchronized String getKernelName() {
