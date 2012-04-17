@@ -29,7 +29,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
 		if (ec == null || (entrance = ec.getEntrance()) == null)
-			throw new MUSCLERuntimeException("Unknown entrance: " + entranceName + " in " + getLocalName() + "(valid entrances = " + entrances.values() + ")");
+			throw new MUSCLERuntimeException("Unknown entrance: " + entranceName + " in " + getLocalName() + "(valid entrances = " + entrances.keySet() + ")");
 		
 		entrance.send(data);		
 	}
@@ -38,7 +38,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
 		if (ec == null || (exit = ec.getExit()) == null)
-			throw new MUSCLERuntimeException("Unknown entrance: " + exitName + " in " + getLocalName() + "(valid entrances = " + entrances + ")");
+			throw new MUSCLERuntimeException("Unknown entrance: " + exitName + " in " + getLocalName() + "(valid exits = " + exits.keySet() + ")");
 		
 		return (double[])exit.receive();
 	}
