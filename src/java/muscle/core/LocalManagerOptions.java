@@ -26,7 +26,7 @@ public class LocalManagerOptions {
 	private InetSocketAddress managerAddress;
 	
 	@Parameter(names={"-a", "--address"},converter=SocketAddressConverter.class)
-	private InetSocketAddress localAddress = getLocalAddress(6783);
+	private InetSocketAddress localAddress = getLocalAddress(0);
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);

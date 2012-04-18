@@ -59,8 +59,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Local address, accepting data connections
 		InetSocketAddress socketAddr = opts.getLocalSocketAddress();
-		TcpLocation loc = new TcpLocation(socketAddr);
 		ServerSocket ss = sf.createServerSocket(socketAddr.getPort(), 1000, socketAddr.getAddress());
+		TcpLocation loc = new TcpLocation(new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort()));
 		connectionHandler = new DataConnectionHandler(ss, this);
 		
 		// Create new conduit exits/entrances using this location.
