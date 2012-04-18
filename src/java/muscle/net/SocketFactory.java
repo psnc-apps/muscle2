@@ -39,7 +39,7 @@ public abstract class SocketFactory {
 
 		for (int i = portMin; i <= portMax; i++) {
 			try {
-				logger.log(Level.CONFIG, "Trying to bind on port: {0}", i);
+				logger.log(Level.FINE, "Trying to bind on port: {0}", i);
 				ss = new ServerSocket(i, backlog, addr);
 				break;
 			} catch (BindException ex) {

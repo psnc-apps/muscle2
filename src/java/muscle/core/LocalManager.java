@@ -6,6 +6,7 @@
 package muscle.core;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -59,8 +60,15 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Local address, accepting data connections
 		InetSocketAddress socketAddr = opts.getLocalSocketAddress();
-		ServerSocket ss = sf.createServerSocket(socketAddr.getPort(), 1000, socketAddr.getAddress());
-		TcpLocation loc = new TcpLocation(new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort()));
+		int port = socketAddr.getPort();
+		InetAddress address = socketAddr.getAddress();
+		ServerSocket ss = sf.createServerSocket(port, 1000, address);
+		
+		// Resetting the socket address to the actually used address
+		port = ss.getLocalPort();
+		logger.log(Level.CONFIG, "Data connection bound to {0}:{1,number,#}", new Object[]{address, port});
+		socketAddr = new InetSocketAddress(address, port);
+		TcpLocation loc = new TcpLocation(socketAddr);
 		connectionHandler = new DataConnectionHandler(ss, this);
 		
 		// Create new conduit exits/entrances using this location.
