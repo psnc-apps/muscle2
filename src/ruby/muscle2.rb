@@ -234,7 +234,7 @@ if m.env['use_mpi']
 	if rank and rank.to_i > 0
 		
 		unless cxa
-			puts "No --cxa_file Aborting."
+			puts "No --cxa Aborting."
 			exit 1
 		end
 		
@@ -265,7 +265,7 @@ if m.env['use_mpi']
 end
 
 if cxa == nil
-	puts "--cxa_file option missing"
+	puts "--cxa option missing"
 	exit 1
 end
 
@@ -319,10 +319,14 @@ end
 if muscle_local_args.size != 0
 	if manager_pid != 0
 		contact_file_name = m.env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
-		puts "Waiting for manager contact file: #{contact_file_name}"
+		
+		tries_count = 0
 		
 		while !File.exists?(contact_file_name)
 			sleep 2
+			if ++tries_count % 10 == 0
+				puts "Waiting for manager contact file: #{contact_file_name}"
+			end
 		end
 		
 		while File.exists?(contact_file_name + ".lock") #waiting for lock file to disappear 

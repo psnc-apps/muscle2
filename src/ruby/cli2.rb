@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 == Author
 Jan Hegewald
+Mariusz Mamonski
 =end
 
 PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
@@ -36,7 +37,7 @@ class MuscleCli
 		@env = {}
 		@parser = OptionParser.new
 	
-		@parser.banner += "\nExample: muscle --main plumber --cxa_file path/to/cxa.rb"
+		@parser.banner += "\nExample: muscle2 --cxa /opt/muscle/share/muscle/examples/cxa/SimpleExample.cxa.rb --main r w"
 
 		# MUSCLE flags
 		@parser.separator "MUSCLE flags:"
@@ -54,17 +55,19 @@ class MuscleCli
 		# control chief lead head main central
 		@parser.separator "Simulation Manager flags:"
 		@parser.on("--main", "make this instance also a MUSCLE global Simulation Manager") { @env['main'] = true }
-		@parser.on("--bindport PORT", "port where this manager should be contacted") {|arg| @env['bindport'] = arg.to_i; }
+		@parser.on("--bindport PORT", "port where this manager would be listening") {|arg| @env['bindport'] = arg.to_i; }
+		@parser.on("--bindaddr IPADDR", "bind address of the manager - TBD") {|arg| @env['bindaddr'] = arg; }
+		@parser.on("--bindinf  interface", "bind interface of the manager (e.g. eth0) - TBD") {|arg| @env['bindinf'] = arg; }
 		
 		@parser.separator "Local Manager flags:"		
 		@parser.on("--manager HOST:PORT", "IP or hostname:port where the MUSCLE Simulation Manager can be contacted") {|arg| @env['manager'] = arg; }
 		
 		@parser.separator "MTO flags:"
-		@parser.on("--intercluster", "uses Muscle Transport Overlay") { @env['intercluster'] = true }
-		@parser.on("--port-min ARG", "defines lower bound of the port range used (inclusive)") { |arg| @env['port_min'] = arg }
-		@parser.on("--port-max ARG", "defines higher bound of the port range used (inclusive)") { |arg| @env['port_max'] = arg }
-		@parser.on("--qcg", "enables cooperation with QosCosGrid services (forces local port)") { @env['qcg'] = true }
-		@parser.on("--mto HOST:PORT", "IP or hostname where MTO lives") {|arg| @env['mto'] = arg; }
+		@parser.on("--intercluster", "use Muscle Transport Overlay") { @env['intercluster'] = true }
+		@parser.on("--port-min ARG", "define lower bound of the port range used (inclusive)") { |arg| @env['port_min'] = arg }
+		@parser.on("--port-max ARG", "define higher bound of the port range used (inclusive)") { |arg| @env['port_max'] = arg }
+		@parser.on("--qcg", "enable cooperation with QosCosGrid services") { @env['qcg'] = true }
+		@parser.on("--mto HOST:PORT", "IP/hostname and port where MTO can be contacted") {|arg| @env['mto'] = arg; }
 		
 		# jvm flags
 		@parser.separator "JVM flags:"
@@ -77,7 +80,7 @@ class MuscleCli
 		@parser.on("-h", "--help") { puts @parser.help; exit }
 		@parser.on("--print-env=[KEY0,KEY1,...]", Array, "prints the internal preferences, e.g. --print_env=CLASSPATH") {|val| if val.nil? then @env['print_env'] = true;else @env['print_env'] = val;end }
 		@parser.on("-v", "--verbose") { @env['verbose'] = true }
-		@parser.on("-d", "--debug", "produces more error logs and do not purges MUSCLE temporary directory") { @env['debug'] = true }
+		@parser.on("-d", "--debug", "produces more verbose logs and do not purges MUSCLE temporary directory") { @env['debug'] = true }
 		
 		@parser.on("--quiet") { @env['quiet'] = true }
 		@parser.on("-p", "--print", "print command to stdout but do not execute it") { @env['execute'] = false; @env['verbose'] = true }
