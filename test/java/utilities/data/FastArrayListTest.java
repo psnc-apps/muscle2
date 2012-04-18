@@ -3,7 +3,10 @@
  */
 package utilities.data;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -127,6 +130,29 @@ public class FastArrayListTest {
 	public void testAdd_GenericType() {
 		System.out.println("add");
 		assertTrue(new FastArrayList<String>().add("lala"));
+	}
+	
+	/**
+	 * Test of add method, of class FastArrayList.
+	 */
+	@Test
+	public void testAddAll_GenericType() {
+		System.out.println("addAll");
+		FastArrayList<String> eqList = new FastArrayList<String>();
+		eqList.add("some stuff"); eqList.add("some more");
+
+		ArrayList<String> list = new ArrayList<String>();
+		list.add("some stuff"); list.add("some more");
+		FastArrayList<String> fastList = new FastArrayList<String>();
+		fastList.addAll(list);
+
+		assertEquals(eqList, fastList);
+		
+		Set<String> set = new HashSet<String>();
+		set.add("solala"); set.add("soooo");
+		fastList.addAll(set);
+		assertTrue(fastList.indexOf("solala") >= 2);
+		assertTrue(fastList.indexOf("soooo") >= 2);
 	}
 
 	/**
