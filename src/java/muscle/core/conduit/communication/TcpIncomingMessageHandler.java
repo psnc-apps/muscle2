@@ -49,6 +49,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		// Protocol not executed.
 		if (protoNum == -1) {
 			this.socket.close();
+			logger.finer("Closing stale socket.");
 			return null;
 		}
 		SignalEnum sigEnum = null;
@@ -92,8 +93,10 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 							}
 							if (sig != null) {
 								Receiver recv = listener.get(recipient);
+								// Ignore detach conduit if the submodel has already quit
 								if (recv == null) {
-									logger.log(Level.SEVERE, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+									if (sigEnum != SignalEnum.DETACH_CONDUIT)
+										logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
 								} else {
 									recv.put(new BasicMessage<SerializableData>(sig,recipient));
 									success = true;					

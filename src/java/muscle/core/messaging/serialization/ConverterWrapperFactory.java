@@ -31,9 +31,10 @@ public class ConverterWrapperFactory {
 			return new XdrSerializerWrapper(xdrOut);
 		} else {
 			MessagePack msgPack = new MessagePack();
-			OutputStream stream = new BufferedOutputStream(s.getOutputStream(), DATA_BUFFER_SIZE);
+			OutputStream socketStream = s.getOutputStream();
+			OutputStream stream = new BufferedOutputStream(socketStream, DATA_BUFFER_SIZE);
 			Packer packer = msgPack.createPacker(stream);
-			return new PackerWrapper(packer, stream);
+			return new PackerWrapper(packer, stream, socketStream);
 		}
 	}
 	public static SerializerWrapper getControlSerializer(Socket s) throws IOException {
@@ -42,9 +43,10 @@ public class ConverterWrapperFactory {
 			return new XdrSerializerWrapper(xdrOut);
 		} else {
 			MessagePack msgPack = new MessagePack();
-			OutputStream stream = new BufferedOutputStream(s.getOutputStream(), CONTROL_BUFFER_SIZE);
+			OutputStream socketStream = s.getOutputStream();
+			OutputStream stream = new BufferedOutputStream(socketStream, CONTROL_BUFFER_SIZE);
 			Packer packer = msgPack.createPacker(stream);
-			return new PackerWrapper(packer, stream);
+			return new PackerWrapper(packer, stream, socketStream);
 		}
 	}
 	public static DeserializerWrapper getDataDeserializer(Socket s) throws IOException {

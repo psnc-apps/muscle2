@@ -44,7 +44,6 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	private final static Logger logger = Logger.getLogger(ConduitEntranceController.class.getName());
 	private final FilterChain filters;
 	private boolean processingMessage;
-	private boolean processingNextMessage;
 	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate, EntranceDependency... newDependencies) {
@@ -53,6 +52,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 		this.transmitter = null;
 		this.conduitEntrance = null;
 		this.filters = createFilterChain();
+		this.processingMessage = false;
 	}
 	
 	/** Create a filter chain from the given arguments */
@@ -104,15 +104,6 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	 */
 	@Override
 	public void apply() {
-		synchronized (this) {
-			// Make sure that a double processingMessage is also processed
-			if (processingMessage) {
-				processingNextMessage = true;
-			}
-			else {
-				processingMessage = true;
-			}
-		}
 		this.trigger();
 	}
 	
@@ -123,19 +114,18 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	@Override
 	protected void execute() throws InterruptedException {
 		while (!queue.isEmpty()) {
+			synchronized (this) {
+				this.processingMessage = true;
+			}
 			Observation<T> elem = queue.remove();
 			
 			this.filters.process(elem);
+			synchronized (this) {
+				this.processingMessage = false;
+			}
 		}
 		synchronized (this) {
-			if (processingNextMessage) {
-				processingNextMessage = false;
-				this.trigger();
-			}
-			else {
-				processingMessage = false;
-				this.notifyAll();
-			}
+			this.notifyAll();
 		}
 	}
 	
@@ -144,7 +134,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 		while (!isDone && (this.processingMessage || (queue != null && !queue.isEmpty()))) {
 			wait();
 		}
-		return !this.processingMessage && queue.isEmpty();
+		return !this.processingMessage && (queue == null || queue.isEmpty());
 	}
 	
 	@Override
@@ -154,7 +144,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
-		logger.log(Level.SEVERE, "ConduitEntranceController {0} interrupted: {1}", new Object[]{portalID, ex});
+		logger.log(Level.SEVERE, "ConduitEntranceController " + this + " interrupted", ex);
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
@@ -181,7 +171,9 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			transmitter.dispose();
 			transmitter = null;
 		}
-
+		queue.clear();
+		queue.add(null);
+		
 		super.dispose();
 	}
 	

@@ -169,7 +169,7 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 	@Override
 	public boolean isEmpty() {
 		synchronized (prodLock) {
-			synchronized (consLock) {		
+			synchronized (consLock) {
 				return max == min;
 			}
 		}

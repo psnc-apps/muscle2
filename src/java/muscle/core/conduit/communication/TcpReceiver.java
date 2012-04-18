@@ -24,7 +24,6 @@ public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPo
 	public TcpReceiver() {
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>(1024);
 	}
-
 	
 	public void put(BasicMessage<SerializableData> msg) {
 		try {

@@ -26,13 +26,14 @@ import muscle.net.SocketFactory;
  * @author Joris Borgdorff
  */
 public class LocalManager implements InstanceControllerListener, ResolverFactory {
-	private final List<InstanceController> controllers;
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
+	private final List<InstanceController> controllers;
 	private final LocalManagerOptions opts;
 	private DataConnectionHandler connectionHandler;
 	private SimpleDelegatingResolver res;
 	private TcpIDManipulator idManipulator;
 	private PortFactory factory;
+	private boolean isDone;
 	
 	public static void main(String[] args) {
 		try {
@@ -53,6 +54,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		connectionHandler = null;
 		factory = null;
 		idManipulator = null;
+		isDone = false;
 	}
 	
 	private void init() throws IOException {
@@ -111,18 +113,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		logger.log(Level.FINE, "Instance {0} is no longer running.", ic.getLocalName());
 		synchronized (controllers) {
 			controllers.remove(ic);
-		
-			if (controllers.isEmpty()) {
-				logger.log(Level.INFO, "All local submodels have finished; exiting.");
-				if (factory != null) factory.dispose();
-				if (idManipulator != null) idManipulator.dispose();
-				if (connectionHandler != null) connectionHandler.dispose();
-			}
-		}
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, null, ex);
+			this.tryQuit();
 		}
 	}
 	
@@ -146,6 +137,23 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 					}
 				}
 				if (ic != null) ic.dispose();
+				tryQuit();
+			}
+		}
+	}
+	
+	private void tryQuit() {
+		synchronized (controllers) {			
+			if (controllers.isEmpty()) {
+				if (isDone) {
+					return;
+				}
+				isDone = true;
+
+				logger.log(Level.INFO, "All local submodels have finished; exiting.");
+				if (factory != null) factory.dispose();
+				if (idManipulator != null) idManipulator.dispose();
+				if (connectionHandler != null) connectionHandler.dispose();
 			}
 		}
 	}

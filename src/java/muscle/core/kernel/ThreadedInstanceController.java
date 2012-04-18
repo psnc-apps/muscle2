@@ -5,10 +5,7 @@
 
 package muscle.core.kernel;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +106,19 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			if (execute) {
 				beforeExecute();
 				logger.log(Level.INFO, "{0}: executing", getLocalName());
-				instance.execute();
+				try {
+					instance.execute();
+				} catch (Exception ex) {
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					ex.printStackTrace(pw);
+					try {
+						pw.close(); sw.close();
+					} catch (IOException ex1) {
+						Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
+					}
+					logger.log(Level.SEVERE, getLocalName() + " was terminated due to an error: " + ex + "\n====TRACE====\n" + sw + "==END TRACE==");
+				}
 				try {
 					for (ConduitEntranceController ec : entrances) {
 						if (!ec.waitUntilEmpty()) {

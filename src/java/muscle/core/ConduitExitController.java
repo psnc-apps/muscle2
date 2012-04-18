@@ -55,9 +55,12 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 			if (dmsg != null) {
 				if (dmsg.isSignal()) {
 					if (dmsg.getSignal() instanceof DetachConduitSignal) {
-						// Feeding last (empty) message
+						// Feeding last (empty) message, but don't give receiving submodel the
+						// chance to process existing messages first
 						this.queue.put(null);
-						this.dispose();
+						synchronized (this) {
+							this.isDone = true;
+						}
 					}
 				} else {
 					this.queue.put(dmsg.getObservation());
@@ -79,6 +82,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	public synchronized void dispose() {
 		// Empty the message queue and signal a null to the conduitexit
 		queue.clear();
+		queue.add(null);
 		receiver = null;
 		super.dispose();
 	}

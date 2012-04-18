@@ -6,8 +6,6 @@
 package muscle.core.messaging.serialization;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrDecodingStream;
 

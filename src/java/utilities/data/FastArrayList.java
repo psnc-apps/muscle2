@@ -1,9 +1,6 @@
 package utilities.data;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  * A fast implementation of a List. It does no runtime checking to keep access times as fast as possible. 
@@ -95,10 +92,23 @@ public class FastArrayList<T> implements List<T> {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
-	/** Not implemented */
 	@Override
 	public boolean addAll(Collection<? extends T> clctn) {
-		throw new UnsupportedOperationException("Not supported yet.");
+		int newSize = size + clctn.size();
+		ensureCapacity(newSize);
+		if (clctn instanceof List) {
+			List<? extends T> list = (List<? extends T>) clctn;
+			for (int i = size; i < newSize; i++) {
+				elems[i] = list.get(i - size);
+			}
+		} else {
+			Iterator<? extends T> addIter = clctn.iterator();
+			for (int i = size; i < newSize; i++) {
+				elems[i] = addIter.next();
+			}
+		}
+		size = newSize;
+		return true;
 	}
 
 	/** Not implemented */
@@ -121,6 +131,9 @@ public class FastArrayList<T> implements List<T> {
 
 	@Override
 	public void clear() {
+		for (int i = 0; i < size; i++) {
+			this.elems[i] = null;
+		}
 		size = 0;
 	}
 
@@ -151,14 +164,16 @@ public class FastArrayList<T> implements List<T> {
 	@Override
 	public T remove(int i) {
 		size--;
+		T tmp = elems[i];
 		if (i == size) {
 			return elems[i];
-		}
-		else {
-			T tmp = elems[i];
+		} else {
 			System.arraycopy(elems, i + 1, elems, i, size - i);
-			return tmp;
 		}
+		// Free space
+		elems[size] = null;
+		
+		return tmp;
 	}
 
 	@Override
@@ -217,7 +232,7 @@ public class FastArrayList<T> implements List<T> {
 		StringBuilder sb = new StringBuilder(50*size);
 		sb.append('[');
 		for (int i = 0; i < size - 1; i++) {
-			sb.append(elems[i]);
+			sb.append(elems[i]).append(", ");
 		}
 		if (size > 0) {
 			sb.append(elems[size-1]);
@@ -234,6 +249,26 @@ public class FastArrayList<T> implements List<T> {
 			System.arraycopy(elems, 0, tmp, 0, size);
 			elems = tmp;
 		}
+	}
+	
+	public boolean equals(Object o) {
+		if (o == null || !o.getClass().equals(this.getClass())) return false;
+		FastArrayList other = (FastArrayList)o;
+		if (size != other.size) return false;
+		for (int i = 0; i < size; i++) {
+			if (elems[i] == null ? other.elems[i] != null : !elems[i].equals(other.elems[i])) return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 31 * hash + this.size;
+		for (int i = 0; i < size; i++) {
+			hash = 31 * hash + (elems[i] == null ? 0 : elems[i].hashCode());
+		}
+		return hash;
 	}
 	
 	private final class FastIterator implements ListIterator<T> {
