@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -19,13 +21,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Mariusz Mamonski
  */
 
-public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, SocketFactory {
-
-	public static final String PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min";
-	public static final String PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max";
+public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.JICP.SocketFactory {
+	private final static Logger logger = Logger.getLogger(CrossSocketFactory.class.getName());
+	
 	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
-	public static final String PROP_DEBUG = "pl.psnc.mapper.muscle.debug";
-	public static final String PROP_TRACE = "pl.psnc.mapper.muscle.trace";
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
 	public static final String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
 
@@ -46,43 +45,21 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
 	public static final String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
-	protected int portMin = 9000;
-	protected int portMax = 9500;
 	protected int magicPort = 22;
-	protected boolean debug = true;
-	protected boolean trace = false;
 	protected String socketFile = "socket.file";
 	protected InetAddress mtoAddr = null;
 	protected int mtoPort = -1;
 
 	public CrossSocketFactory() {
-		if (System.getProperty(PROP_PORT_RANGE_MIN) != null) {
-			portMin = Integer.valueOf(System.getProperty(PROP_PORT_RANGE_MIN));
-		}
-
-		if (System.getProperty(PROP_PORT_RANGE_MAX) != null) {
-			portMax = Integer.valueOf(System.getProperty(PROP_PORT_RANGE_MAX));
-		}
-
 		if (System.getProperty(PROP_MAIN_PORT) != null) {
 			magicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
 		}
 
-		if (System.getProperty(PROP_DEBUG) != null) {
-			debug = Boolean.valueOf(System.getProperty(PROP_DEBUG));
-		}
-
-		if (System.getProperty(PROP_TRACE) != null) {
-			trace = Boolean.valueOf(System.getProperty(PROP_TRACE));
-		}
-
 		if (System.getProperty(PROP_MTO_ADDRESS) != null) {
 			try {
-				mtoAddr = InetAddress.getByName(System
-						.getProperty(PROP_MTO_ADDRESS));
+				mtoAddr = InetAddress.getByName(System.getProperty(PROP_MTO_ADDRESS));
 			} catch (UnknownHostException e) {
-				logDebug("Provided MTO address unresolvable: "
-						+ e.getLocalizedMessage());
+				logger.log(Level.SEVERE, "Provided MTO address unresolvable: {0}", e);
 			}
 		}
 
@@ -95,54 +72,35 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			InetAddress addr) throws IOException {
 		
 		if (port == magicPort) {
-			logDebug("binding socket on MAIN port and addr " + addr);
+			logger.log(Level.FINE, "binding socket on MAIN port and addr {0}", addr);
 		} else if (port == 0) {
-			logDebug("binding socket on ANY port and addr " + addr);
+			logger.log(Level.FINE, "binding socket on ANY port and addr {0}", addr);
 		} else {
-			logDebug("binding socket on port " + port + " and addr " + addr);
-			trace();
+			logger.log(Level.FINE, "binding socket on port {0} and addr {1}", new Object[]{port, addr});
 			throw new java.net.BindException();
 		}
 
-		trace();
+		ServerSocket ss = createServerSocketInRange(backlog, addr);
 
-		ServerSocket ss = null;
-		Exception lastEx = null;
+		logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
 
-		for (int i = portMin; i <= portMax; i++) {
+		if (mtoAddr != null && mtoPort != -1) {
 			try {
-				logDebug("Trying to bind on port: " + i);
-				ss = new ServerSocket(i, backlog, addr);
-				break;
-			} catch (BindException ex) {
-				logDebug("BindFailed: " + ex.getMessage());
-				lastEx = ex;
+				mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
+			} catch (IOException ex) {
+				throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
 			}
+
+			logger.info("Registered to MTO");
+		} else
+			logger.warning("Missing MTO address / port. MTO will not be used.");
+
+		if (port == magicPort) {
+			putConnectionData(InetAddress.getLocalHost()
+					.getHostAddress(), ss.getLocalPort());
+
 		}
-
-		if (ss != null) {
-			System.err.println("Bound to port: " + ss.getLocalPort());
-
-			if (mtoAddr != null && mtoPort != -1) {
-				try {
-					mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
-				} catch (IOException ex) {
-					throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
-				}
-
-				logDebug("Registered to MTO");
-			} else
-				logDebug("Missing MTO address / port. MTO will not be used.");
-
-			if (port == magicPort) {
-				putConnectionData(InetAddress.getLocalHost()
-						.getHostAddress(), ss.getLocalPort());
-
-			}
-			return ss;
-		} else {
-			throw new BindException(lastEx.getMessage());
-		}
+		return ss;
 	}
 
 	private void putConnectionData(String hostAddress, int localPort)
@@ -179,8 +137,7 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 
 		try {
 
-			if (trace)
-				logDebug("Request Message: " + request);
+			logger.log(Level.FINEST, "Request Message: {0}", request);
 
 			conn.setDoOutput(true);
 			conn.setRequestMethod("POST");
@@ -200,8 +157,7 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 				response.append(line);
 			}
 
-			if (trace)
-				logDebug("Response Message: " + response);
+			logger.log(Level.FINEST, "Response Message: {0}", response);
 
 		} catch (RuntimeException e) {
 			throw e;
@@ -222,7 +178,7 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 		String sessionID = System.getenv(ENV_SESSION_ID);
 		StringBuilder message = new StringBuilder(4096);
 
-		logDebug("Acquiring connection data (" + coordinatorURL + ")");
+		logger.log(Level.FINE, "Acquiring connection data ({0})", coordinatorURL);
 
 		if (coordinatorURL == null)
 			throw new IOException(ENV_COORDINATOR_URL + " env variable not set");
@@ -253,7 +209,7 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 
 			if (saxHandler.getParsedValues().size() != 2) {
 				for (String value : saxHandler.getParsedValues()) {
-					logDebug(" parsed value: " + value);
+					logger.log(Level.FINER, " parsed value: {0}", value);
 				}
 				throw new IOException(
 						"Unexpected coordinator response (items count = "
@@ -268,8 +224,8 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			throw new AssertionError(ex);
 		}
 
-		logDebug("Master host: " + host);
-		logDebug("Master port: " + port);
+		logger.log(Level.FINE, "Master host: {0}", host);
+		logger.log(Level.FINE, "Master port: {0}", port);
 
 		try {
 			/**
@@ -278,39 +234,20 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			 */
 			Thread.sleep(3000);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 
 		return new InetSocketAddress(host, port);
 	}
 
-	protected void trace() {
-		if (trace) {
-			System.err.println("---TRACE---");
-			try {
-				throw new Exception();
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-	}
-
-	protected void logDebug(String msg) {
-		if (debug) {
-			System.err.println("-- XSS -- : " + msg);
-		}
-	}
-
 	public Socket createSocket() {
-		logDebug("creating new client socket");
-		trace();
+		logger.fine("creating new client socket");
 		return new CrossSocket();
 	}
 
 	private class CrossSocket extends Socket {
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
-			logDebug("connecting to:" + endpoint);
+			logger.log(Level.FINE, "connecting to: {0}", endpoint);
 			InetSocketAddress processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
 
 			int port = processedEndpoint.getPort();
@@ -319,7 +256,7 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 				super.connect(processedEndpoint, timeout);
 			} else {
 				if (mtoPort == -1 || mtoAddr == null) {
-					logDebug("Connection out of port range, but MTO is not configured. Trying local");
+					logger.severe("Connection out of port range, but MTO is not configured. Trying local");
 					super.connect(processedEndpoint, timeout);
 					return;
 				}
@@ -358,9 +295,6 @@ public class CrossSocketFactory implements jade.imtp.leap.JICP.SocketFactory, So
 			ByteBuffer buffer = ByteBuffer.allocate(MtoRequest.byteSize());
 			getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
-
-//			System.out.println("Req: " + req.toString());
-//			System.out.println("Res: " + res.toString());
 
 			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
 					&& res.srcA.equals(req.srcA) && res.srcP == req.srcP;

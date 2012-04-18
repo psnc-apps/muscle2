@@ -13,7 +13,7 @@ import java.net.Socket;
  *
  * @author Joris Borgdorff
  */
-public class LocalSocketFactory implements SocketFactory {
+public class LocalSocketFactory extends SocketFactory {
 	@Override
 	public Socket createSocket() {
 		return new Socket();
@@ -21,6 +21,10 @@ public class LocalSocketFactory implements SocketFactory {
 
 	@Override
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress addr) throws IOException {
-		return new ServerSocket(port, backlog, addr);
+		if (port == 0) {
+			return createServerSocketInRange(backlog, addr);
+		} else {
+			return new ServerSocket(port, backlog, addr);
+		}
 	}
 }
