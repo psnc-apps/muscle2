@@ -585,7 +585,9 @@ public class SerializableData implements Serializable {
 	private static void dimensionsOfMatrix(Object value, SerializableDatatype type, int[] dims, int depth) {
 		if (value instanceof Object[]) {
 			dims[depth] = ((Object[])value).length;
-			dimensionsOfMatrix(value, type, dims, depth + 1);
+			if (dims[depth] > 0) {
+				dimensionsOfMatrix(((Object[])value)[0], type, dims, depth + 1);
+			}
 		}
 		else {
 			switch (type.typeOf()) {

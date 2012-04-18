@@ -32,7 +32,7 @@ endif (BUILD_CPP)
 
 do_test2("SimpleExample.cxa.rb" ] "got: 2.0")
 do_test2("Triangle.cxa.rb"  "Got from Three: 3.0")
-do_test2("PingPong.cxa.rb" "All submodel instances have finished")
+do_test2("PingPong.cxa.rb"  "All local submodels have finished")
 do_test2("SimpleSubmodelExample.cxa.rb"  "(1.0\t2.0\t)")
 if (BUILD_CPP)
     do_test2("NativeExample2.cxa.rb"  "got: 2.0")
