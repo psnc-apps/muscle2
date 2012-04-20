@@ -34,6 +34,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private TcpIDManipulator idManipulator;
 	private PortFactory factory;
 	private boolean isDone;
+	private DisposeOfControllersHook disposeOfControllersHook;
+	private ForcefulQuitHook forcefulQuitHook;
 	
 	public static void main(String[] args) {
 		try {
@@ -90,7 +92,11 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private void start() {
-		Runtime.getRuntime().addShutdownHook(new DisposeOfControllersHook());
+		disposeOfControllersHook = new DisposeOfControllersHook();
+		Runtime.getRuntime().addShutdownHook(disposeOfControllersHook);
+		forcefulQuitHook = new ForcefulQuitHook();
+		Runtime.getRuntime().addShutdownHook(forcefulQuitHook);
+		
 		
 		// Start listening for connections
 		connectionHandler.start();
@@ -139,6 +145,37 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 				if (ic != null) ic.dispose();
 				tryQuit();
 			}
+			forcefulQuitHook.notifyDisposerFinished();
+		}
+	}
+	
+	private class ForcefulQuitHook extends Thread {
+		boolean finished = false;
+		public void run() {
+			try {
+				this.waitForDisposer();
+			} catch (InterruptedException ex) {}
+			if (!finished) {
+				System.out.println("Submodels not exiting nicely; forcing exit.");
+				System.exit(1);
+			}
+		}
+		
+		public synchronized void waitForDisposer() throws InterruptedException {
+			if (!finished)
+				wait(2000);
+
+			// Not waiting more than 15 seconds, and interrupting every second.
+			for (int i = 0; !finished && i < 15; i++) {
+				forcefulQuitHook.interrupt();
+				System.out.print(".");
+				wait(1000);
+			}
+		}
+		
+		public synchronized void notifyDisposerFinished() {
+			finished = true;
+			this.notify();
 		}
 	}
 	
