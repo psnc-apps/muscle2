@@ -45,14 +45,26 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 		this.liveSocket.start();
 	}
 	
-	public void transmit(Observation<T> obs) {
+	// Synchronized: can only transmit one signal or message at a time.
+	public synchronized void transmit(Observation<T> obs) {
 		if (converter == null) {
 			throw new IllegalStateException("Can not send message without serialization");
+		}
+		if (this.isDisposed()) {
+			logger.log(Level.WARNING, "Transmitter is disposed of; unable to send observation to {0}", portalID);
+			return;
 		}
 		sendMessage(converter.serialize(obs), null);
 	}
 
-	public void signal(Signal signal) {
+	// Synchronized: can only transmit one signal or message at a time.
+	public synchronized void signal(Signal signal) {
+		if (this.isDisposed()) {
+			if (!(signal instanceof DetachConduitSignal))
+				logger.log(Level.WARNING, "Transmitter is disposed of; unable to send signal {0} to {1}", new Object[] {signal, portalID});
+
+			return;
+		}
 		sendMessage(null, signal);
 	}
 	
@@ -62,8 +74,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 			
 			if (reloadSocket || out == null) {
 				Socket socket = liveSocket.getOrCreateSocket();
-				if (reloadSocket || out == null)
-					out = ConverterWrapperFactory.getDataSerializer(socket);
+				out = ConverterWrapperFactory.getDataSerializer(socket);
 			}
 			if (obs != null) {
 				if (logger.isLoggable(Level.FINEST))
@@ -100,8 +111,8 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 		}
 	}
 	
-	public void dispose() {
-		liveSocket.dispose();
+	public synchronized void dispose() {
 		super.dispose();
+		liveSocket.dispose();
 	}
 }

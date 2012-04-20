@@ -24,12 +24,14 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ConduitExitController.class.getName());
+	private boolean isDetached;
 
 	public ConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>(1024);
 		this.receiver = null;
 		this.conduitExit = null;
+		this.isDetached = false;
 	}
 	
 	public synchronized void setReceiver(Receiver<T, ?,?,?> recv) {
@@ -55,12 +57,10 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 			if (dmsg != null) {
 				if (dmsg.isSignal()) {
 					if (dmsg.getSignal() instanceof DetachConduitSignal) {
-						// Feeding last (empty) message, but don't give receiving submodel the
+						// Feeding last (empty) message, but give receiving submodel the
 						// chance to process existing messages first
 						this.queue.put(null);
-						synchronized (this) {
-							this.isDone = true;
-						}
+						this.isDetached = true;
 					}
 				} else {
 					this.queue.put(dmsg.getObservation());
@@ -71,7 +71,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	}
 	
 	private synchronized Receiver<T, ?,?,?> waitForReceiver() throws InterruptedException {
-		while (!isDone && this.receiver == null) {
+		while (!isDisposed() && this.receiver == null) {
 			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
 			wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
@@ -92,8 +92,9 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 		logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
 	}
 	
-	protected synchronized boolean continueComputation() {
-		return !isDone;
+	protected boolean continueComputation() {
+		// Can access isDetached: its called in the same thread as execute.
+		return !isDisposed() && !this.isDetached;
 	}
 	
 	BlockingQueue<Observation<T>> getQueue() {

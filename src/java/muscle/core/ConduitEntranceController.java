@@ -119,6 +119,11 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			}
 			Observation<T> elem = queue.remove();
 			
+			if (elem == null) {
+				logger.log(Level.WARNING, "Can not send null data through ConduitEntrance {0}", this);
+				continue;
+			}
+			
 			this.filters.process(elem);
 			synchronized (this) {
 				this.processingMessage = false;
@@ -131,7 +136,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	
 	/** Waits until no more messages have to be sent. */
 	public synchronized boolean waitUntilEmpty() throws InterruptedException {
-		while (!isDone && (this.processingMessage || (queue != null && !queue.isEmpty()))) {
+		while (!isDisposed() && (this.processingMessage || (queue != null && !queue.isEmpty()))) {
 			wait();
 		}
 		return !this.processingMessage && (queue == null || queue.isEmpty());
@@ -149,7 +154,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
 	private synchronized Transmitter<T, ?,?,?> waitForTransmitter() throws InterruptedException {
-		while (!isDone && transmitter == null) {
+		while (!isDisposed() && transmitter == null) {
 			if (logger.isLoggable(Level.FINE)) {
 				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
 				if (queue != null) {

@@ -15,7 +15,14 @@ import muscle.core.messaging.serialization.DataConverter;
 public abstract class AbstractCommunicatingPoint<E,F, Q extends Identifier, P extends PortalID<Q>> implements CommunicatingPoint<E,F,Q,P> {
 	protected DataConverter<E, F> converter;
 	protected P portalID;
+	private volatile boolean isDone;
 
+	public AbstractCommunicatingPoint() {
+		this.converter = null;
+		this.portalID = null;
+		this.isDone = false;
+	}
+	
 	public void setComplementaryPort(P id) {
 		this.portalID = id;
 	}
@@ -24,5 +31,11 @@ public abstract class AbstractCommunicatingPoint<E,F, Q extends Identifier, P ex
 		this.converter = converter;
 	}
 	
-	public void dispose() {}
+	public void dispose() {
+		this.isDone = true;
+	}
+	
+	public boolean isDisposed() {
+		return this.isDone;
+	}
 }

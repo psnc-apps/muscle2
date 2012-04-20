@@ -41,7 +41,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 
 	@Override
 	protected final synchronized void handleInterruption(InterruptedException ex) {
-		if (isDone) {
+		if (isDisposed()) {
 			logger.log(Level.FINE, "ConnectionHandler {0} finished.", this.getClass());		 
 		} else {
 			logger.log(Level.WARNING, "ConnectionHandler interrupted", ex);
@@ -55,7 +55,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			executor.submit(this.createProtocolHandler(s));
 		} catch (IOException iox) {
-			if (!isDone)
+			if (!isDisposed())
 				logger.log(Level.SEVERE, "ConnectionHandler could not accept connection.", iox);
 			// Else, we're closing the serversocket ourselves.
 		}

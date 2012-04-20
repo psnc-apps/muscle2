@@ -11,7 +11,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
+ * An efficient BlockingQueue for a single producer and single consumer.
+ * Correct behavior is guaranteed only if used by a single
+ * producing thread and a single consuming thread.
+ * Null values are allowed. Except size(), isEmpty() and clear(), its collection
+ * interface is not implemented.
+ * 
  * @author Joris Borgdorff
  */
 public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> {
@@ -98,9 +103,25 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 	}
 
 	@Override
+	// Same as poll, but we can not reuse poll, since it returns null for
+	// both null elements and with an emtpy queue.
 	public E remove() {
-		E ret = poll();
-		if (ret == null) throw new IllegalStateException("Queue is empty");
+		int newMin = (this.min + 1)%this.elements.length;
+		E ret;
+
+		if (this.min == this.max) {
+			synchronized (prodLock) {
+				if (this.min == this.max) throw new IllegalStateException("Queue is empty");
+			}
+		}
+		
+		ret = elements[this.min];
+
+		synchronized (consLock) {	
+			elements[this.min] = null;
+			this.min = newMin;
+			consLock.notify();
+		}
 		
 		return ret;
 	}

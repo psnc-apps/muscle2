@@ -19,10 +19,10 @@ public abstract class SafeQueueConsumerThread<T> extends SafeThread implements Q
 	}
 	
 	protected synchronized boolean continueComputation() throws InterruptedException {
-		while (!isDone && (queue == null || queue.isEmpty())) {
+		while (!isDisposed() && (queue == null || queue.isEmpty())) {
 			wait();
 		}
-		return !isDone;
+		return !isDisposed();
 	}
 
 	public synchronized void setIncomingQueue(Queue<T> queue) {

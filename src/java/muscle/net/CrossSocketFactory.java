@@ -234,6 +234,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			 */
 			Thread.sleep(3000);
 		} catch (InterruptedException e) {
+			logger.warning("Wait to resolve socket interrupted.");
 		}
 
 		return new InetSocketAddress(host, port);

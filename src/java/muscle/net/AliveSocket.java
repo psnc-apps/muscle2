@@ -21,6 +21,8 @@ import utilities.Timer;
  * @author Joris Borgdorff
  */
 public class AliveSocket extends SafeTriggeredThread {
+	private final static Logger logger = Logger.getLogger(AliveSocket.class.getName());
+	
 	private final InetSocketAddress address;
 	private final SocketFactory socketFactory;
 	private Socket socket;
@@ -48,27 +50,42 @@ public class AliveSocket extends SafeTriggeredThread {
 	/** 
 	 * Locks the socket.
 	 * 
+	 * It must always be followed by a unlockSocket() statement, in a finally
+	 * block of the try/catch construction that envelops getOrCreateSocket().
+	 * 
 	 * @return whether a new socket should be created
 	 * @throws IllegalStateException when the AliveSocket has been disposed.
 	 */
 	public boolean lockSocket() {
 		synchronized (this) {
-			if (this.isDone) {
-				throw new IllegalStateException("AliveSocket has already been disposed.");
+			if (this.isDisposed()) {
+				throw new IllegalStateException("AliveSocket has already been disposed of.");
 			}
 			lock.lock();
 		}
 		return socket == null;
 	}
 	
+	/** 
+	 * Gets or creates the underlying socket.
+	 * 
+	 * @return socket to be used
+	 * @throws IllegalStateException when a lock has not been obtained through lockSocket()
+	 */
 	public Socket getOrCreateSocket() throws IOException {
+		if (!lock.isHeldByCurrentThread()) {
+			throw new IllegalStateException("Socket can only be retrieved once a lock has been obtained.");
+		}
 		if (socket == null) {
 			this.socket = this.socketFactory.createSocket();
 			this.socket.connect(this.address);
 		}
-		return this.socket;		
+		return this.socket;
 	}
 	
+	/**
+	 * Unlocks the socket for some other's use.
+	 */
 	public void unlockSocket() {
 		this.timeSinceUnlock.reset();
 		this.trigger();
@@ -89,16 +106,21 @@ public class AliveSocket extends SafeTriggeredThread {
 
 	@Override
 	protected void execute() throws InterruptedException {
+		boolean lockHeld = false;
+		
 		long milli = this.timeSinceUnlock.millisec();
 		if (milli < this.keepAlive) {
 			Thread.sleep(this.keepAlive - milli);
 		}
 		try {
 			synchronized (this) {
-				if (isDone || this.timeSinceUnlock.millisec() < this.keepAlive) {
+				if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) {
+					// also runs finally block, but lockHeld is false so
+					// it won't try to unlock
 					return;
 				}
 				lock.lock();
+				lockHeld = true;
 			}
 			if (this.timeSinceUnlock.millisec() < this.keepAlive) {
 				this.trigger();
@@ -107,9 +129,9 @@ public class AliveSocket extends SafeTriggeredThread {
 
 			this.closeSocket();
 		} catch (Exception ex) {
-			Logger.getLogger(AliveSocket.class.getName()).log(Level.SEVERE, "Exception occurred", ex);
+			logger.log(Level.SEVERE, "Exception occurred", ex);
 		} finally {
-			if (lock.isHeldByCurrentThread())
+			if (lockHeld)
 				lock.unlock();
 		}
 	}
@@ -122,7 +144,9 @@ public class AliveSocket extends SafeTriggeredThread {
 				out.close();
 				this.socket.close();
 				this.socket = null;
-			} catch (IOException ex) {}
+			} catch (IOException ex) {
+				logger.log(Level.WARNING, "Could not properly close socket", ex);
+			}
 		}
 	}
 }

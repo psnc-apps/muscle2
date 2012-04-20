@@ -32,7 +32,7 @@ formats log messages
 @author Jan Hegewald
 */
 public class MuscleDetailFormatter extends SimpleFormatter {
-	private final static String format = "[%tF %tT %15.15s: %25.25s.%-20.20s] %s%s\n";
+	private final static String format = "[%tF %tT %15.15s: %25.25s.%-20.20s] %s%s%s\n";
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
@@ -88,6 +88,6 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 			}
 		}
 		Long time = System.currentTimeMillis();
-		return String.format(format, time, time, pkg, clazz, method, msg, err);
+		return String.format(format, time, time, pkg, clazz, method, level, msg, err);
 	}
 }

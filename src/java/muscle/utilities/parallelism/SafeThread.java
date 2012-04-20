@@ -7,13 +7,13 @@ package muscle.utilities.parallelism;
  * A thread that does safe disposal of its resources.
  * @author Joris Borgdorff
  */
-public abstract class SafeThread extends Thread {
+public abstract class SafeThread extends Thread implements Disposable {
 	/**
 	 * This is set to true as soon as the thread should stop. Methods that do
 	 * any long calculation or waiting should check this to see if they should
 	 * continue their calculation.
 	 */
-	protected boolean isDone;
+	private volatile boolean isDone;
 	
 	public SafeThread(String name) {
 		super(name);
@@ -50,7 +50,11 @@ public abstract class SafeThread extends Thread {
 	/**
 	 * Whether computation can continue. May wait for some time.
 	 */
-	protected synchronized boolean continueComputation() throws InterruptedException {
+	protected boolean continueComputation() throws InterruptedException {
 		return !isDone;
+	}
+	
+	public boolean isDisposed() {
+		return this.isDone;
 	}
 }
