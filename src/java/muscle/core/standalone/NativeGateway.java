@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.acplt.oncrpc.OncRpcException;
@@ -15,7 +16,7 @@ import org.acplt.oncrpc.XdrTcpEncodingStream;
 public class NativeGateway  extends Thread {
 	protected ServerSocket ss;
 	protected CallListener listener;
-	protected static Logger log = Logger.getLogger("muscle.native.protocol");
+	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));
@@ -55,101 +56,99 @@ public class NativeGateway  extends Thread {
 		try {
 			Socket s = ss.accept();
 			
-			log.fine("Accepted connection from: " +  s.getRemoteSocketAddress() + ":" + s.getPort());
+			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			
 			XdrTcpDecodingStream xdrIn =  new XdrTcpDecodingStream(s, 64 * 1024);
 			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, 64 * 1024);
 			
 			while (true) {
-				log.finest("Starting decoding...");
+				logger.finest("Starting decoding...");
 				xdrIn.beginDecoding();
 
 				int operationCode = xdrIn.xdrDecodeInt();
-				log.finest("Operation code = " + operationCode);
+				logger.log(Level.FINEST, "Operation code = {0}", operationCode);
 				
 				switch (operationCode) {
 					case 0:
 					{
-						log.finest("finalize() request.");
+						logger.finest("finalize() request.");
 						xdrIn.close();
 						xdrOut.close();
-						log.finest("Native Process Gateway exiting...");
+						logger.finest("Native Process Gateway exiting...");
 						return;
 					}	
 					case 1:
 					{
-						log.finest("getKernelName() request.");
+						logger.finest("getKernelName() request.");
 						xdrOut.xdrEncodeString(listener.getKernelName());
-						log.finest("Kernel name sent : " + listener.getKernelName());
+						logger.log(Level.FINEST, "Kernel name sent : {0}", listener.getKernelName());
 						break;
 					}
 					case 2:
 					{
-						log.finest("getProperty() request.");
+						logger.finest("getProperty() request.");
 						String value = listener.getProperty(xdrIn.xdrDecodeString());
 						xdrOut.xdrEncodeString(value);
-						log.finest("Property value sent: " + value);
+						logger.log(Level.FINEST, "Property value sent: {0}", value);
 						break;
 					}
 					case 3:
 					{
-						log.finest("willStop() request.");
+						logger.finest("willStop() request.");
 						boolean stop = listener.willStop();
 						xdrOut.xdrEncodeBoolean(stop);
-						log.finest("Stop?: " + stop);
+						logger.log(Level.FINEST, "Stop?: {0}", stop);
 						break;
 					}
 					case 4:
 					{
-						log.finest("sendDouble() request.");
+						logger.finest("sendDouble() request.");
 						String entranceName = xdrIn.xdrDecodeString();
 						double[] doubleA = xdrIn.xdrDecodeDoubleVector();
-						log.finest("entranceName = " + entranceName + ", array lenght = " + doubleA.length);
+						logger.log(Level.FINEST, "entranceName = {0}, array lenght = {1}", new Object[]{entranceName, doubleA.length});
 						listener.sendDouble(entranceName, doubleA);
-						log.finest("data sent");
+						logger.finest("data sent");
 						break;
 					}
 					case 5:
 					{
-						log.finest("receiveDouble() request.");
+						logger.finest("receiveDouble() request.");
 						String exitName = xdrIn.xdrDecodeString();
-						log.finest("exitName = " + exitName);
+						logger.log(Level.FINEST, "exitName = {0}", exitName);
 						double[] doubleA =  listener.receiveDouble(exitName);
-						log.finest("exitName = " + exitName + ", array lenght = " + doubleA.length);
+						logger.log(Level.FINEST, "exitName = {0}, array lenght = {1}", new Object[]{exitName, doubleA.length});
 						xdrOut.xdrEncodeDoubleVector(doubleA);
-						log.finest("data encoded");
+						logger.finest("data encoded");
 						break;
 					}
 					case 6:
 					{
-						log.finest("getProperties() request.");
+						logger.finest("getProperties() request.");
 						xdrOut.xdrEncodeString(listener.getProperties());
 						break;
 					}
 					case 7:
 					{
-						log.finest("getTmpPath() request.");
+						logger.finest("getTmpPath() request.");
 						xdrOut.xdrEncodeString(listener.getTmpPath());
 						break;
 					}
 					default:
 						throw new IOException("Unknown operation code " + operationCode);	
 				}
-				log.finest("flushing response");
+				logger.finest("flushing response");
 				xdrOut.endEncoding();
 				
-				log.finest("operation decoded.");
+				logger.finest("operation decoded.");
 				xdrIn.endDecoding();
 				
 			}
 		} catch (IOException ex) {
-			System.err.println("Communication error:");
-			ex.printStackTrace();
+			logger.log(Level.SEVERE, "Communication error", ex);
 		} catch (OncRpcException ex) {
-			System.err.println("XDR Enc/Dec exception:");
-			ex.printStackTrace();
+			logger.log(Level.SEVERE, "XDR Enc/Dec exception", ex);
 		} catch (Throwable ex) {
-			ex.printStackTrace();
+			logger.log(Level.SEVERE, "Could not finish communication with native code.", ex);
 		}
 		
 	}
