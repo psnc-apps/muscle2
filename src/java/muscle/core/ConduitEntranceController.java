@@ -113,11 +113,18 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 	 */
 	@Override
 	protected void execute() throws InterruptedException {
-		while (!queue.isEmpty()) {
+		boolean running;
+		synchronized (this) {
+			running = queue != null && !queue.isEmpty();
+		}
+		while (running) {
+			Observation<T> elem = null;
 			synchronized (this) {
 				this.processingMessage = true;
+				if (queue != null) {
+					elem = queue.remove();
+				}
 			}
-			Observation<T> elem = queue.remove();
 			
 			if (elem == null) {
 				logger.log(Level.WARNING, "Can not send null data through ConduitEntrance {0}", this);
@@ -127,6 +134,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			this.filters.process(elem);
 			synchronized (this) {
 				this.processingMessage = false;
+				running = queue != null && !queue.isEmpty();
 			}
 		}
 		synchronized (this) {
@@ -176,8 +184,7 @@ public class ConduitEntranceController<T extends Serializable> extends Portal<T>
 			transmitter.dispose();
 			transmitter = null;
 		}
-		queue.clear();
-		queue.add(null);
+		queue = null;
 		
 		super.dispose();
 	}

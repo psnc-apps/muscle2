@@ -21,13 +21,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> {
 	private final E[] elements;
-	private int min, max;
+	private volatile int min, max;
+	private int consMin, consMax, prodMin, prodMax;
 	private final Object prodLock = new Object(), consLock = new Object();
 	
 	public SingleProducerConsumerBlockingQueue(int size) {
 		this.elements = (E[])new Object[size + 1];
-		this.min = 0;
-		this.max = 0;
+		this.min = this.consMin = this.prodMin = 0;
+		this.max = this.consMax = this.prodMax = 0;
 	}
 	
 	// Producer methods
@@ -39,18 +40,17 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 
 	@Override
 	public boolean offer(E e) {
-		int newMax = (this.max + 1)%this.elements.length;
+		int newMax = (this.prodMax + 1)%this.elements.length;
 		
-		if (this.min == newMax) {
-			synchronized (consLock) {
-				if (this.min == newMax) return false;
-			}
+		if (this.prodMin == newMax) {
+			this.prodMin = this.min;
+			if (this.prodMin == newMax) return false;
 		}
 		
-		elements[this.max] = e;
-		
+		elements[this.prodMax] = e;
+		this.max = this.prodMax = newMax;
+
 		synchronized (prodLock) {
-			this.max = newMax;
 			prodLock.notify();
 		}
 		
@@ -59,20 +59,21 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 
 	@Override
 	public void put(E e) throws InterruptedException {
-		int newMax = (this.max + 1)%this.elements.length;
+		int newMax = (this.prodMax + 1)%this.elements.length;
 		
-		if (this.min == newMax) {
+		if (this.prodMin == newMax) {
 			synchronized (consLock) {
 				while (this.min == newMax) {
 					consLock.wait();
 				}
 			}
+			this.prodMin = this.min;
 		}
 
-		elements[this.max] = e;
+		elements[this.prodMax] = e;
+		this.max = this.prodMax = newMax;
 		
 		synchronized (prodLock) {
-			this.max = newMax;
 			prodLock.notify();
 		}
 	}
@@ -80,22 +81,24 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 	// Consumer methods
 	@Override
 	public E take() throws InterruptedException {
-		int newMin = (this.min + 1)%this.elements.length;
+		int newMin = (this.consMin + 1)%this.elements.length;
 		E ret;
 		
-		if (this.min == this.max) {
+		if (this.consMin == this.consMax) {
 			synchronized (prodLock) {
-				while (this.min == this.max) {
+				while (this.consMin == this.max) {
 					prodLock.wait();
 				}
 			}
+			this.consMax = this.max;
 		}
 		
-		ret = elements[this.min];
+		ret = elements[this.consMin];
+
+		elements[this.consMin] = null;
+		this.min = this.consMin = newMin;
 		
-		synchronized (consLock) {	
-			elements[this.min] = null;
-			this.min = newMin;
+		synchronized (consLock) {
 			consLock.notify();
 		}
 		
@@ -106,20 +109,19 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 	// Same as poll, but we can not reuse poll, since it returns null for
 	// both null elements and with an emtpy queue.
 	public E remove() {
-		int newMin = (this.min + 1)%this.elements.length;
+		int newMin = (this.consMin + 1)%this.elements.length;
 		E ret;
 
-		if (this.min == this.max) {
-			synchronized (prodLock) {
-				if (this.min == this.max) throw new IllegalStateException("Queue is empty");
-			}
+		if (this.consMin == this.consMax) {
+			this.consMax = this.max;
+			if (this.consMin == this.consMax) throw new IllegalStateException("Queue is empty");
 		}
 		
-		ret = elements[this.min];
+		ret = elements[this.consMin];
+		elements[this.min] = null;
+		this.min = this.consMin = newMin;
 
 		synchronized (consLock) {	
-			elements[this.min] = null;
-			this.min = newMin;
 			consLock.notify();
 		}
 		
@@ -128,20 +130,19 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 
 	@Override
 	public E poll() {
-		int newMin = (this.min + 1)%this.elements.length;
+		int newMin = (this.consMin + 1)%this.elements.length;
 		E ret;
 
-		if (this.min == this.max) {
-			synchronized (prodLock) {
-				if (this.min == this.max) return null;
-			}
+		if (this.consMin == this.consMax) {
+			this.consMax = this.max;
+			if (this.consMin == this.consMax) return null;
 		}
 		
 		ret = elements[this.min];
+		elements[this.consMin] = null;
+		this.min = this.consMin = newMin;
 
 		synchronized (consLock) {	
-			elements[this.min] = null;
-			this.min = newMin;
 			consLock.notify();
 		}
 		
@@ -151,70 +152,56 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 	// Non-modifying methods
 	@Override
 	public E element() {
-		E ret = peek();
+		if (this.consMin == this.consMax) {
+			this.consMax = this.max;
+			if (this.consMin == this.consMax) throw new IllegalStateException("Queue is empty");
+		}
 		
-		if (ret == null) throw new IllegalStateException("Queue is empty");
-		
-		return ret;
+		return elements[this.consMin];
 	}
 
 	@Override
 	public E peek() {
-		if (this.min == this.max) {
-			synchronized (prodLock) {
-				if (this.min == this.max) return null;
-			}
+		if (this.consMin == this.consMax) {
+			this.consMax = this.max;
+			if (this.consMin == this.consMax) return null;
 		}
 		
-		return elements[this.min];
+		return elements[this.consMin];
 	}
 
 	@Override
 	public int remainingCapacity() {
-		synchronized (prodLock) {
-			synchronized (consLock) {		
-				return min > max ? min - max - 1: this.elements.length - (max - min) - 1;
-			}
-		}
+		return min > max ? min - max - 1: this.elements.length - (max - min) - 1;
 	}
 
 	@Override
 	public int size() {
-		synchronized (prodLock) {
-			synchronized (consLock) {		
-				return min > max ? this.elements.length - (min - max) : (max - min);
-			}
-		}
+		return min > max ? this.elements.length - (min - max) : (max - min);
 	}
 
 	@Override
 	public boolean isEmpty() {
-		synchronized (prodLock) {
-			synchronized (consLock) {
-				return max == min;
-			}
-		}
+		return max == min;
 	}
 
 	@Override
-	public synchronized void clear() {
-		synchronized (prodLock) {
-			synchronized (consLock) {
-				if (this.min <= this.max) {
-					for (int i = this.min; i < this.max; i++) {
-						elements[i] = null;
-					}
-				} else {
-					for (int i = 0; i < this.max; i++) {
-						elements[i] = null;
-					}
-					for (int i = this.min; i < elements.length; i++) {
-						elements[i] = null;
-					}
-				}
-				this.min = this.max = 0;
+	/** May only be called by the consumer thread. */
+	public void clear() {
+		this.consMax = this.max;
+		if (this.consMin <= this.consMax) {
+			for (int i = this.consMin; i < this.consMax; i++) {
+				elements[i] = null;
+			}
+		} else {
+			for (int i = 0; i < this.consMax; i++) {
+				elements[i] = null;
+			}
+			for (int i = this.consMin; i < elements.length; i++) {
+				elements[i] = null;
 			}
 		}
+		this.min = this.consMin = this.consMax;
 	}
 	
 	@Override

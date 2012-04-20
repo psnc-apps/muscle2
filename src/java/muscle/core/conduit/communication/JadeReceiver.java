@@ -18,7 +18,7 @@ import utilities.data.SingleProducerConsumerBlockingQueue;
  * @author Joris Borgdorff
  */
 public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,DataMessage<T>,JadeIdentifier,JadePortalID> implements Receiver<T,DataMessage<T>,JadeIdentifier,JadePortalID> {
-	private BlockingQueue<Message<T>> queue;
+	private volatile BlockingQueue<Message<T>> queue;
 
 	public JadeReceiver() {
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>(10);
@@ -29,13 +29,14 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 			queue.put(this.converter.deserialize(msg));
 		} catch (InterruptedException ex) {
 			Logger.getLogger(JadeReceiver.class.getName()).log(Level.WARNING, "Receiver stopped; could not process received message.", ex);
+		} catch (NullPointerException ex) {
+			Logger.getLogger(TcpReceiver.class.getName()).log(Level.WARNING, "Receiver stopped; could not process received message", ex);
 		}
 	}
 
 	@Override
 	public void dispose() {
 		// If the queue was waiting on a take
-		this.queue.clear();
 		this.queue = null;
 		super.dispose();
 	}
@@ -43,7 +44,9 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 	@Override
 	public Message<T> receive() {
 		try {
-			return queue.take();
+			BlockingQueue<Message<T>> recvQueue = queue;
+			if (recvQueue == null) return null;
+			return recvQueue.take();
 		} catch (InterruptedException ex) {
 			Logger.getLogger(JadeReceiver.class.getName()).log(Level.FINE, "Receiver stopped; not passing more messages.");
 			return null;

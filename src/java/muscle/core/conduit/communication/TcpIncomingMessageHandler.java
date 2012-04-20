@@ -52,68 +52,70 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 			logger.finer("Closing stale socket.");
 			return null;
 		}
-		SignalEnum sigEnum = null;
 		if (protoNum < 0 || protoNum >= msgType.length) {
 			logger.log(Level.WARNING, "Unrecognized message type number {0} received.", protoNum);
-		} else {
-			TcpDataProtocol proto = msgType[protoNum];
-			String owner_name = in.readString();
-			IDType idType = IDType.values()[in.readInt()];
-			Identifier recipient = resolver.getIdentifier(owner_name, idType);
-
-			if (recipient != null) {
-				switch (proto) {
-					case OBSERVATION: {
-						Timestamp time = new Timestamp(in.readDouble());
-						Timestamp nextTime = new Timestamp(in.readDouble());
-						SerializableData data = SerializableData.parseData(in);
-						BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
-						logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
-						Receiver recv = listener.get(recipient);
-						if (recv == null) {
-							logger.log(Level.SEVERE, "No receiver registered for message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});	
-						} else {
-							recv.put(msg);
-							success = true;					
-						}
-					} break;
-					case SIGNAL: {
-						Signal sig = null;
-						int sigNum = in.readInt();
-						if (sigNum < 0 || sigNum >= signals.length) {
-								logger.log(Level.WARNING, "Unrecognized signal number {0} received for {1}.", new Object[]{sigNum, recipient});
-						} else {
-							sigEnum = signals[sigNum];
-							switch (sigEnum) {
-								case DETACH_CONDUIT:
-									sig = new DetachConduitSignal();
-									break;
-								default:
-									logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{sigEnum, recipient});
-							}
-							if (sig != null) {
-								Receiver recv = listener.get(recipient);
-								// Ignore detach conduit if the submodel has already quit
-								if (recv == null) {
-									if (sigEnum != SignalEnum.DETACH_CONDUIT)
-										logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
-								} else {
-									recv.put(new BasicMessage<SerializableData>(sig,recipient));
-									success = true;					
-								}
-							}
-						}
-					} break;
-					default:
-						break;
-				}
-			}
+			return false;
 		}
 
-		if (sigEnum != SignalEnum.DETACH_CONDUIT) {
+		TcpDataProtocol proto = msgType[protoNum];
+		String owner_name = in.readString();
+		IDType idType = IDType.values()[in.readInt()];
+		Identifier recipient = resolver.getIdentifier(owner_name, idType);
+		boolean shouldDetach = false;
+
+		switch (proto) {
+			case OBSERVATION: {
+				Timestamp time = new Timestamp(in.readDouble());
+				Timestamp nextTime = new Timestamp(in.readDouble());
+				SerializableData data = SerializableData.parseData(in);
+				BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
+				logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
+				Receiver recv = listener.get(recipient);
+				if (recv == null) {
+					logger.log(Level.SEVERE, "No receiver registered for message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});	
+				} else {
+					recv.put(msg);
+					success = true;					
+				}
+			} break;
+			case SIGNAL: {
+				Signal sig = getSignal(in.readInt(), recipient);
+				shouldDetach = sig instanceof DetachConduitSignal;
+				
+				if (sig != null) {
+					Receiver recv = listener.get(recipient);
+					if (recv == null) {
+						// Ignore detach conduit if the submodel has already quit
+						if (!shouldDetach)
+							logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+					} else {
+						recv.put(new BasicMessage<SerializableData>(sig,recipient));
+						success = true;					
+					}
+				}
+			} break;
+			default:
+				break;
+		}
+	
+		if (!shouldDetach) {
 			this.connectionHandler.resubmit(this);
 		}
 		
 		return success;
+	}
+
+	private Signal getSignal(int sigNum, Identifier recipient) {
+		if (sigNum < 0 || sigNum >= signals.length) {
+			logger.log(Level.WARNING, "Unrecognized signal number {0} received for {1}.", new Object[]{sigNum, recipient});
+		} else {
+			switch (signals[sigNum]) {
+				case DETACH_CONDUIT:
+					return new DetachConduitSignal();
+				default:
+					logger.log(Level.WARNING, "Unrecognized signal {0} received for {1}.", new Object[]{signals[sigNum], recipient});
+			}
+		}
+		return null;
 	}
 }

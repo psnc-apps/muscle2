@@ -57,9 +57,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 			if (dmsg != null) {
 				if (dmsg.isSignal()) {
 					if (dmsg.getSignal() instanceof DetachConduitSignal) {
-						// Feeding last (empty) message, but give receiving submodel the
-						// chance to process existing messages first
-						this.queue.put(null);
+						queue.put(null);
 						this.isDetached = true;
 					}
 				} else {
@@ -80,21 +78,21 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 	
 	@Override
 	public synchronized void dispose() {
-		// Empty the message queue and signal a null to the conduitexit
-		queue.clear();
-		queue.add(null);
+		// dispose of the conduitexit, and send a null in case it was blocked.
+		this.conduitExit.dispose();
 		receiver = null;
 		super.dispose();
 	}
 
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
-		logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
+		if (continueComputation()) {
+			logger.log(Level.SEVERE, "ConduitExitController was interrupted", ex);
+		}
 	}
 	
 	protected boolean continueComputation() {
-		// Can access isDetached: its called in the same thread as execute.
-		return !isDisposed() && !this.isDetached;
+		return !isDetached && !isDisposed();
 	}
 	
 	BlockingQueue<Observation<T>> getQueue() {

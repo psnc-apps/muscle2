@@ -37,10 +37,12 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	private final BlockingQueue<Observation<T>> queue;
 	private final ConduitExitController<T> controller;
 	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
+	private volatile boolean isDone;
 
 	public ConduitExit(ConduitExitController<T> control) {
 		this.queue = control.getQueue();
 		this.controller = control;
+		this.isDone = false;
 	}
 
 	/**
@@ -51,9 +53,10 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 */
 	public T receive() {
 		try {
+			if (this.isDone) return null;
 			Observation<T> obs = this.queue.take();
 			
-			if (obs == null)
+			if (obs == null || this.isDone)
 				return null;
 			
 			// Update the willStop timestamp only when the message is received by the Instance.
@@ -63,5 +66,9 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
 			return null;
 		}
+	}
+	
+	void dispose() {
+		this.isDone = true;
 	}
 }

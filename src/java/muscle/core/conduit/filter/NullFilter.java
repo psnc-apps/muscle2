@@ -32,8 +32,7 @@ this filter does nothing, data passed to this filter is lost
 public class NullFilter<E extends Serializable,F extends Serializable> extends AbstractObservationFilter<E,F> {
 	
 	public void apply() {
-		if (incomingQueue == null) return;
-		else {
+		if (incomingQueue != null) {
 			incomingQueue.clear();
 		}
 	}

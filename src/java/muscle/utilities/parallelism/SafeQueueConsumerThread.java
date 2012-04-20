@@ -42,7 +42,7 @@ public abstract class SafeQueueConsumerThread<T> extends SafeThread implements Q
 	protected abstract void execute(T element);
 
 	public synchronized void dispose() {
-		this.queue.clear();
+		this.queue = null;
 		super.dispose();
 	}
 }
