@@ -229,6 +229,12 @@ if m.env['use_mpi']
 			rank = value
 		end
 	end
+	
+	if rank == nil
+		puts "Called with MPI argument, but the use of MPI is not detected. Aborting."
+		exit 1
+	end
+
  	puts "MPI RANK  = " + rank	
  	# non-root rank
 	if rank and rank.to_i > 0
