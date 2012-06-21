@@ -1,7 +1,14 @@
 #ifndef CPPMUSCLE_H
 #define CPPMUSCLE_H
 
+#ifndef MUSCLE_INIT_SUCCESS
+#define MUSCLE_INIT_SUCCESS 0
+#define MUSCLE_INIT_ERR_SPAWN 1
+#define MUSCLE_INIT_ERR_IO 2
+#endif
+
 #include <string>
+#include <unistd.h>
 
 #include "muscle_types.h"
 
@@ -11,7 +18,7 @@ namespace muscle {
 	{
 	  public:
 
-		static void init(void);
+		static int init(int* argc, char ***argv);
 		static void finalize(void);
 
 		static bool will_stop(void);
@@ -22,6 +29,13 @@ namespace muscle {
 		static void free_data(void *ptr, muscle_datatype_t type);
 
 		static std::string get_tmp_path(void);
+
+	private:
+		
+		static pid_t spawn(char * const *argv);
+		static pid_t muscle2_spawn(int* argc, char ***argv);
+		static char * create_tmpfifo();
+		static void muscle2_tcp_location(pid_t pid, char *host, unsigned short *port);
 	};
 
 	class cxa

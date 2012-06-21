@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 		double energy = - 1, deltaEnergy = -1, maxEnergy = -1;
 		size_t count = 1;
 
-		MUSCLE_Init(); /* MUSCLE calls are only permitted in the rank 0 process */
+		MUSCLE_Init(&argc, &argv); /* MUSCLE calls are only permitted in the rank 0 process */
 
 		deltaEnergy = atof(MUSCLE_Get_Property("LHC:DeltaEnergy"));
 		maxEnergy = atof(MUSCLE_Get_Property("LHC:MaxEnergy"));

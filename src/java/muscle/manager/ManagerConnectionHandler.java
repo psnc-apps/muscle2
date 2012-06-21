@@ -22,11 +22,9 @@ import muscle.net.AbstractConnectionHandler;
  */
 public class ManagerConnectionHandler extends AbstractConnectionHandler<SimulationManager> {
 	private final static Logger logger = Logger.getLogger(ManagerConnectionHandler.class.getName());
-	private File addressFile;
 	
 	public ManagerConnectionHandler(SimulationManager listener, ServerSocket ss) {
 		super(ss, listener);
-		addressFile = null;
 	}
 
 	@Override

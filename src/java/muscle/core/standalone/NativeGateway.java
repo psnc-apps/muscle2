@@ -42,11 +42,18 @@ public class NativeGateway  extends Thread {
 		public String getProperties();
 		/* OPCODE = 7 */
 		public String getTmpPath();
+		/* OPCODE = 8 */
+		public void isFinished();
 		
 	}
 	
-	public String getContactInformation() {
-		return String.valueOf(ss.getLocalPort());
+	public int getPort() {
+		return ss.getLocalPort();
+		
+		//return "tcp://" + ss.getInetAddress() + ":" + ss.getLocalPort();
+	}
+	public InetAddress getInetAddress() {
+		return ss.getInetAddress();
 		
 		//return "tcp://" + ss.getInetAddress() + ":" + ss.getLocalPort();
 	}
@@ -131,6 +138,12 @@ public class NativeGateway  extends Thread {
 					{
 						logger.finest("getTmpPath() request.");
 						xdrOut.xdrEncodeString(listener.getTmpPath());
+						break;
+					}
+					case 8:
+					{
+						logger.finest("isFinished() request.");
+						listener.isFinished();
 						break;
 					}
 					default:

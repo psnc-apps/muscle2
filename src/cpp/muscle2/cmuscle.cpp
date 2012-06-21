@@ -4,11 +4,9 @@
 
 #include <string.h>
 
-int MUSCLE_Init(void)
+int MUSCLE_Init(int *argc, char ***argv)
 {
-	muscle::env::init();
-
-	return 0;
+	return muscle::env::init(argc, argv);
 }
 
 const char* MUSCLE_Get_Kernel_Name(void)

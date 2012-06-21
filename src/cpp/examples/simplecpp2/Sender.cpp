@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 
 	try
 	{
-		muscle::env::init();
+		muscle::env::init(&argc, &argv);
 
 		cout << "c++: begin "<< argv[0] <<endl;
 		cout << "Kernel Name: " << muscle::cxa::kernel_name() << endl;

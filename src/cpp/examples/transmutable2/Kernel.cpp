@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	{
 		cout << "c++: begin " << argv[0] <<endl;
 
-		muscle::env::init();
+		muscle::env::init(&argc, &argv);
 
 		cout << "kernel tmp path: " << muscle::env::get_tmp_path() << endl;
 		cout << "CxA property 'max_timesteps': " << muscle::cxa::get_property("max_timesteps") << endl;

@@ -84,6 +84,7 @@ class MuscleCli
 		
 		@parser.on("--quiet") { @env['quiet'] = true }
 		@parser.on("-p", "--print", "print command to stdout but do not execute it") { @env['execute'] = false; @env['verbose'] = true }
+		@parser.on("--native-tmp-file ARG", "temporary file to write host and port to when calling from native code") { |arg| @env['native_tmp_file'] = arg }
 
 	end
 

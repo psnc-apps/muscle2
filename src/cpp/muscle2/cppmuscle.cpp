@@ -6,6 +6,8 @@
 #include <rpc/xdr.h>
 
 #include <cstdio>
+#include <stdio.h>
+#include <string>
 #include <iomanip>
 #include <iostream>
 #include <boost/asio.hpp>
@@ -19,8 +21,10 @@ namespace muscle {
 
 tcp::socket *s;
 XDR xdro, xdri;
+pid_t muscle_pid;
+const char *tmpfifo;
 
-/* #define CPPMUSCLE_TRACE  */
+#define CPPMUSCLE_TRACE  
 
 
 extern "C" int xdr_read_from_socket(void *socket_handle, void *buf, int buf_len)
@@ -39,25 +43,51 @@ extern "C" int xdr_write_to_socket(void *socket_handle, void *buf, int buf_len)
 	return boost::asio::write(*((tcp::socket *)socket_handle), boost::asio::buffer(buf, buf_len));
 }
 
-void env::init(void)
+int env::init(int *argc, char ***argv)
 {
 	using boost::lexical_cast;
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::init() " << endl;
 #endif
-
+	// Initialize host and port on which MUSCLE is listening
+	unsigned short port = 0;
+	char host_str[16];
+	boost::asio::ip::address_v4 host;	
+	muscle_pid = -1;
+	
+	env::muscle2_tcp_location(muscle_pid, host_str, &port);
+	
+	// Port is not initialized, initialize MUSCLE instead.
+	if (port == 0)
+	{
+		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
+		muscle_pid = env::muscle2_spawn(argc, argv);
+		if (muscle_pid < 0)
+		{
+			if (muscle_pid == -2)
+				logger::severe("Could not instantiate MUSCLE: no command line arguments given.");
+			
+			return MUSCLE_INIT_ERR_SPAWN;
+		}
+		
+		env::muscle2_tcp_location(muscle_pid, host_str, &port);
+		if (port == 0)
+		{
+			logger::severe("Could not contact MUSCLE: no TCP port given.");
+			return MUSCLE_INIT_ERR_IO;
+		}
+	}
+	host = *host_str ? boost::asio::ip::address_v4::from_string(host_str) : boost::asio::ip::address_v4::loopback();
+	
+	// Start communicating with MUSCLE instance
 	try
 	{
 		boost::asio::io_service io_service;
 
 		s = new tcp::socket(io_service);
 
-		s->connect(
-				tcp::endpoint(
-						boost::asio::ip::address_v4::loopback(),
-
-						boost::lexical_cast<unsigned short>(getenv("MUSCLE_GATEWAY_PORT")))); /* TODO: check if NOT NULL */
+		s->connect(tcp::endpoint(host, port));
 /*TODO: detect signature in CMake */
 #ifdef __APPLE__
 		xdrrec_create(&xdro, 0, 0, (char*)s, 0, (int (*) (void *, void *, int)) xdr_write_to_socket);
@@ -74,15 +104,17 @@ void env::init(void)
 		xdri.x_op = XDR_DECODE;
 
 	} catch (std::exception& e) {
-		 cout << "Exception: " << e.what() << endl;
+		string msg = "Exception: ";
+		msg += e.what();
+		logger::severe(msg);
+		return MUSCLE_INIT_ERR_IO;
 	}
-
-
+	return MUSCLE_INIT_SUCCESS;
 }
 
 void env::finalize(void)
 {
-	int opcode = 0;
+	int opcode = 8;
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::finalize() " << endl;
@@ -100,6 +132,14 @@ void env::finalize(void)
 
 	xdr_destroy(&xdro);
 	xdr_destroy(&xdri);
+
+	if (muscle_pid > 0) {
+		int status;
+		wait(&status);
+		if (status != 1) {
+			logger::severe("MUSCLE exited with errors.");
+		}
+	}
 }
 
 std::string cxa::kernel_name(void)
@@ -282,6 +322,166 @@ void* env::receive(std::string exit_name, void *data, size_t &count,  muscle_dat
 	assert( xdr_array(&xdri, (char **)&data, &count_int, 65536, sizeof(double), (xdrproc_t)&xdr_double) == 1);
 
 	return data;
+}
+
+/**
+ * Gets the listening port of the created MUSCLE instance.
+ * This implementation always returns the fixed port 50210 after a sleep of 10 seconds.
+ * @param pid of the created MUSCLE instance
+ * @return port number
+ * @todo implement some means of retrieving the MUSCLE port number.
+ */
+void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
+{
+	*port = 0;
+
+#ifdef CPPMUSCLE_TRACE
+	cout << "muscle::env::muscle2_tcp_location()" << endl;
+#endif
+	
+	if (pid < 0)
+	{
+		char *port_str = getenv("MUSCLE_GATEWAY_PORT");
+		if (port_str != NULL) {
+			*port = boost::lexical_cast<unsigned short>(port_str);
+			strncpy(host, getenv("MUSCLE_GATEWAY_HOST"), 16);
+		}
+	}
+	else
+	{
+		FILE *fp = fopen(tmpfifo, "r");
+		if(fp == 0 || ferror(fp))
+		{	
+			string msg = "Could not open temporary file ";
+			msg += tmpfifo;
+			logger::severe(msg);
+			return;
+		}
+		while (fscanf(fp, "%15[^:]:%hu", host, port) == EOF) {
+			sleep(1);
+		}
+		fclose(fp);
+		// Null terminated
+		assert( host[15] == 0 );
+
+		string msg = "Will communicate with Java MUSCLE on ";
+		msg += host;
+		msg += ":";
+		msg += *port;
+		logger::info(msg);
+	}
+}
+
+char * env::create_tmpfifo()
+{
+#ifdef CPPMUSCLE_TRACE
+	cout << "muscle::env::create_tmpfifo()" << endl;
+#endif
+
+	char *tmppath;
+	while ((tmppath = tempnam(NULL, NULL)))
+	{
+		if (mknod(tmppath, S_IFIFO|0600, 0) == 0)
+			break;
+		if (errno != EEXIST)
+		{
+			string msg = "Can not create temporary file; error ";
+			msg += strerror(errno);
+			logger::severe(msg);
+			return NULL;
+		}
+	}
+	if (!tmppath)
+	{
+		logger::severe("Can not create temporary file.");
+		return NULL;
+	}
+	
+	return tmppath;
+}
+
+/**
+ * Spawn a new Java MUSCLE, using all arguments after "--" in the programs arguments.
+ * For this to work, muscle2 must be in the PATH. All MUSCLE arguments, including "--"
+ * will be removed from the arguments of the caller.
+ * @param argc pointer to the number of arguments of the main function.
+ * @param argv pointer to the arguments of the main function.
+ * @return pid of the created MUSCLE instance.
+ */
+pid_t env::muscle2_spawn(int* argc, char ***argv)
+{
+#ifdef CPPMUSCLE_TRACE
+	cout << "muscle::env::muscle2_spawn()" << endl;
+#endif
+
+	pid_t pid = -2;
+	string term_str = "--";
+	int term = -1;
+	
+	// Find terminator
+	for (int i = 1; i < *argc; i++) {
+		if (term_str.compare((*argv)[i]) == 0) {
+			term = i;
+			break;
+		}
+	}
+	
+	if (term == -1) return -1;
+	
+	tmpfifo = env::create_tmpfifo();
+	
+	// Size:                           1            | i - 1                     | 1    | *argc - (i + 1)          | 3
+	// Number of arguments for muscle: muscle2      +                                    all arguments after "--" + tmparg + tmpdir + null terminator
+	// Number of arguments given:      muscleKernel + all arguments before "--" + "--" + all arguments after "--"
+	// Number of arguments returned:   muscleKernel + all arguments before "--"
+	int new_args = 3;
+	int argc_new = *argc + new_args - term;
+	
+	const char ** argv_new = (const char **)malloc(argc_new*sizeof(char *));
+	argv_new[0] = "muscle2";
+	// Copy all arguments after "--"
+	memcpy(&argv_new[1], &(*argv)[term+1], (argc_new - (new_args + 1))*sizeof(char *));
+	argv_new[argc_new - 3] = "--native-tmp-file";
+	argv_new[argc_new - 2] = tmpfifo;
+	argv_new[argc_new - 1] = NULL;
+
+	// Spawn Java MUSCLE
+	pid = env::spawn((char * const *)argv_new);
+	free(argv_new);
+	
+	// Make MUSCLE arguments unavailable to the calling program.
+	*argc = term;
+	
+	return pid;
+}
+		
+
+/**
+ * Spawn a new process with arguments argv. argv[0] is the process name.
+ * @return the pid of the created process.
+ */
+pid_t env::spawn(char * const *argv)
+{
+	pid_t pid;
+	
+#ifdef CPPMUSCLE_TRACE
+	cout << "muscle::env::spawn(" << argv[0] << ")" << endl;
+#endif
+	pid = fork();
+	if (pid == -1) {
+		logger::severe("Could not start new Java MUSCLE instance: fork failed. Aborting.");
+		return -1;
+	}
+	
+	// Child process: execute
+	if (pid == 0) {
+		int rc = execvp(argv[0], argv);
+		if (rc == -1) {
+			logger::severe("Executable muscle2 not found in the PATH. Aborting.");
+			return -1;
+		}
+	}
+	return pid;
 }
 
 void logger::log_message(muscle_loglevel_t level, std::string message)

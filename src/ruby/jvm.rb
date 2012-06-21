@@ -62,6 +62,7 @@ class JVM
 		end
 
 		command << "-Djava.io.tmpdir="+env['tmp_path'].to_s if env.has_key?('tmp_path') # used by standard java stuff
+		command << "-Dmuscle.native.tmpfile="+env['native_tmp_file'].to_s if env.has_key?('native_tmp_file') # used to write the host and port of the file to
 		
 		command << jargs unless jargs.nil? # the java class to launch
 		
