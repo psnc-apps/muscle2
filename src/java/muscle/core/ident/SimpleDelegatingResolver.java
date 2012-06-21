@@ -103,13 +103,19 @@ public class SimpleDelegatingResolver implements Resolver {
 	/** Registers a local InstanceController. */
 	public boolean register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
-		if (!id.isResolved() && id instanceof InstanceID) {
-			((InstanceID)id).resolve(here);
-		}
-		this.addResolvedIdentifier(id);
-		
 		logger.log(Level.FINE, "Registering identifier {0}", id);
-		return delegate.propagate(id, here);
+		return delegate.register(id, here);
+	}
+	
+	public void makeAvailable(InstanceController controller) {
+		Identifier id = controller.getIdentifier();
+		logger.log(Level.FINE, "Making identifier {0} available to MUSCLE", id);
+		if (id.isResolved()) {
+			this.addResolvedIdentifier(id);
+		} else {
+			throw new IllegalStateException("Controller must be resolved to make it available.");
+		}
+		delegate.propagate(id);
 	}
 	
 	/** Deregisters a local InstanceController. */

@@ -76,14 +76,15 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		}
 	}
 
-	public boolean propagate(Identifier id, Location loc) {
+	@Override
+	public boolean register(Identifier id, Location loc) {
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(((JadeIdentifier)id).getAID());
 
 		ServiceDescription offerSelf = AgentSubscriptionInitiator.getAgentServices(id);
 
 		// Add location
-		for (Property p : (JadeLocation)loc) {
+		for (Property p : (JadeLocation)id.getLocation()) {
 			offerSelf.addProperties(p);
 		}
 		
@@ -96,6 +97,12 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 		} catch (FIPAException e) {
 			return false;
 		}
+	}
+	
+	@Override
+	public boolean propagate(Identifier id) {
+		// Natively done by JADE
+		return true;
 	}
 
 	public Identifier create(String name, IDType type) {

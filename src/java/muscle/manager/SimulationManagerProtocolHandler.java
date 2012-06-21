@@ -62,6 +62,11 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				success = listener.register(id);
 				out.writeBoolean(success);
 				break;
+			case PROPAGATE:
+				out.writeInt(opnum);
+				success = listener.propagate(id);
+				out.writeBoolean(success);
+				break;
 			case DEREGISTER:
 				out.writeInt(opnum);
 				success = listener.deregister(id);

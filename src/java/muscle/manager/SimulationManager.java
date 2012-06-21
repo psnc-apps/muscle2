@@ -4,9 +4,6 @@
 
 package muscle.manager;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -26,7 +23,8 @@ import utilities.data.ArraySet;
  * @author Joris Borgdorff
  */
 public class SimulationManager {
-	private final Map<String,Identifier> active;
+	private final Map<String,Identifier> registered;
+	private final Set<String> available;
 	private final Set<String> stillActive;
 	private boolean isDone;
 	private AbstractConnectionHandler connections;
@@ -34,7 +32,8 @@ public class SimulationManager {
 	
 	private SimulationManager(Set<String> stillActive) {
 		this.stillActive = stillActive;
-		this.active = new ArrayMap<String,Identifier>(stillActive == null ? 10 : stillActive.size());
+		this.registered = new ArrayMap<String,Identifier>(stillActive == null ? 10 : stillActive.size());
+		this.available = new ArraySet<String>(stillActive == null ? 10 : stillActive.size());
 		this.isDone = false;
 	}
 	
@@ -44,8 +43,8 @@ public class SimulationManager {
 	
 	public synchronized boolean register(Identifier id) {
 		logger.log(Level.FINE, "Registering ID {0}", id);
-		if (this.active.containsKey(id.getName())) {
-			logger.log(Level.WARNING, "Registering ID {0} failed: an ID is already registered under the same name", id);
+		if (this.registered.containsKey(id.getName())) {
+			logger.log(Level.WARNING, "Registering ID {0} failed: an ID is already registered under the same name.", id);
 			return false;
 		}
 		else if (!id.isResolved()) {
@@ -54,10 +53,23 @@ public class SimulationManager {
 		}
 		else {
 			logger.log(Level.INFO, "Registered ID {0}", id);
-			this.active.put(id.getName(),id);
-			this.notifyAll();
+			this.registered.put(id.getName(),id);
 			return true;
 		}
+	}
+	
+	public synchronized boolean propagate(Identifier id) {
+		logger.log(Level.FINE, "Propagating ID {0}", id);
+		if (!this.registered.containsKey(id.getName())) {
+			logger.log(Level.WARNING, "Propagating ID {0} failed: can only propagate registered ID's.", id);
+			return false;
+		}
+		else {
+			this.available.add(id.getName());
+			this.notifyAll();
+			logger.log(Level.INFO, "Propagated ID {0}", id);
+			return true;
+		}		
 	}
 	
 	public synchronized boolean deregister(Identifier id) {
@@ -81,17 +93,17 @@ public class SimulationManager {
 				this.dispose();
 			}
 		}
-		return (this.active.remove(id.getName()) != null);
+		return this.available.remove(id.getName());
 	}
 	
 	public synchronized void resolve(Identifier id) throws InterruptedException {
 		logger.log(Level.FINE, "Resolving location of ID {0}", id);
-		while (!id.isResolved() && !this.active.containsKey(id.getName()) && !this.isDone) {
+		while (!id.isResolved() && !this.available.contains(id.getName()) && !this.isDone) {
 			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", id);
 			wait();
 		}
 		if (!isDone && !id.isResolved()) {
-			Identifier resolvedId = this.active.get(id.getName());
+			Identifier resolvedId = this.registered.get(id.getName());
 			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
 			id.resolveLike(resolvedId);
 		}
@@ -113,18 +125,16 @@ public class SimulationManager {
 		
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch = null;
-		ServerSocket ss;
 		
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
 			SocketFactory sf = new LocalSocketFactory();
-			ss = sf.createServerSocket(0, 10, addr);
+			ServerSocket ss = sf.createServerSocket(0, 10, addr);
 			mch = new ManagerConnectionHandler(sm, ss);
 			mch.start();
 			sm.setConnectionHandler(mch);
 		} catch (Exception ex) {
 			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
-			ss = null;
 			if (mch != null) {
 				sm.dispose();
 				mch.dispose();

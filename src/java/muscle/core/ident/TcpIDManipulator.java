@@ -7,17 +7,17 @@ package muscle.core.ident;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.messaging.serialization.DeserializerWrapper;
 import muscle.core.messaging.serialization.SerializerWrapper;
 import muscle.manager.SimulationManagerProtocol;
-import muscle.net.SocketFactory;
 import muscle.net.ProtocolHandler;
-import org.acplt.oncrpc.OncRpcException;
-import org.acplt.oncrpc.XdrDecodingStream;
-import org.acplt.oncrpc.XdrEncodingStream;
+import muscle.net.SocketFactory;
 
 /**
  *
@@ -48,7 +48,7 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 
 	@Override
-	public boolean propagate(Identifier id, Location loc) {
+	public boolean register(Identifier id, Location loc) {
 		this.checkInstanceID(id);
 		if (!id.isResolved())
 			((InstanceID)id).resolve(loc);
@@ -63,6 +63,20 @@ public class TcpIDManipulator implements IDManipulator {
 		}
 	}
 
+	@Override
+	public boolean propagate(Identifier id) {
+		this.checkInstanceID(id);
+		
+		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.PROPAGATE);
+		try {
+			return (f != null && Boolean.TRUE.equals(f.get()));
+		} catch (InterruptedException ex) {
+			return false;
+		} catch (ExecutionException ex) {
+			return false;
+		}
+	}
+	
 	@Override
 	public void search(Identifier id) {
 		if (id.isResolved()) return;

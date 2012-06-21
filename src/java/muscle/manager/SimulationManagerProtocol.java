@@ -16,6 +16,9 @@ package muscle.manager;
  *      <dd>REGISTER</dd>
  *      <dt>For clients to register themselves. Client sends the name of its ID, and then its TcpLocation. SimulationManager tries to add the ID; it
  *             will return a false boolean code if it already existed, or true if it was not entered yet.</dt>
+ *      <dd>PROPAGATE</dd>
+ *      <dt>Indicates to the server that a client is ready to accept data transactions. Only succeeds if there was
+ *				a successful registration. The client only sends an ID, the SimulationManager returns a boolean for success.</dt>
  *      <dd>DEREGISTER</dd>
  *     <dt>For clients to deregister themselves. Client sends the name of its ID. SimulationManager tries to remove this ID, and return a boolean
  *             for success.</dt>
@@ -26,6 +29,6 @@ package muscle.manager;
  * @author Joris Borgdorff
  */
 public enum SimulationManagerProtocol {
-	LOCATE, REGISTER, DEREGISTER,
+	LOCATE, REGISTER, PROPAGATE, DEREGISTER,
 	UNSUPPORTED;
 }

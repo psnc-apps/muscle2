@@ -27,7 +27,9 @@ public class NativeGateway  extends Thread {
 	}
 	
 	public interface CallListener {
-		
+
+		/* OPCODE = 0 */
+		public void isFinished();
 		/* OPCODE = 1 */
 		public String getKernelName();
 		/* OPCODE = 2 */
@@ -42,8 +44,6 @@ public class NativeGateway  extends Thread {
 		public String getProperties();
 		/* OPCODE = 7 */
 		public String getTmpPath();
-		/* OPCODE = 8 */
-		public void isFinished();
 		
 	}
 	
@@ -81,6 +81,7 @@ public class NativeGateway  extends Thread {
 						logger.finest("finalize() request.");
 						xdrIn.close();
 						xdrOut.close();
+						listener.isFinished();
 						logger.finest("Native Process Gateway exiting...");
 						return;
 					}	
@@ -138,12 +139,6 @@ public class NativeGateway  extends Thread {
 					{
 						logger.finest("getTmpPath() request.");
 						xdrOut.xdrEncodeString(listener.getTmpPath());
-						break;
-					}
-					case 8:
-					{
-						logger.finest("isFinished() request.");
-						listener.isFinished();
 						break;
 					}
 					default:

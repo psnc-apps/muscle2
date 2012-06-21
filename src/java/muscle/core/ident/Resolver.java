@@ -21,5 +21,7 @@ public interface Resolver {
 	/** At current location */
 	public boolean register(InstanceController id);
 	/** At current location */
+	public void makeAvailable(InstanceController id);
+	/** At current location */
 	public boolean deregister(InstanceController id);
 }

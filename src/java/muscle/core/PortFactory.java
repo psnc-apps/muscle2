@@ -34,8 +34,13 @@ public abstract class PortFactory {
 	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned receiver was.
 	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
 	 */
-	public <T extends Serializable> Future<Receiver<T,?,?,?>> getReceiver(ConduitExitController<T> localInstance, PortalID otherSide) {
-		return executor.submit(this.<T>getReceiverTask(localInstance, otherSide));
+	public <T extends Serializable> Receiver<T,?,?,?> getReceiver(ConduitExitController<T> localInstance, PortalID otherSide) {
+		try {
+			return this.<T>getReceiverTask(localInstance, otherSide).call();
+		} catch (Exception ex) {
+			Logger.getLogger(PortFactory.class.getName()).log(Level.SEVERE, "Could not instantiate receiver", ex);
+			return null;
+		}
 	}
 	
 	/**

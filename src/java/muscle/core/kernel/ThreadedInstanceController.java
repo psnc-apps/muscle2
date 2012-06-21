@@ -89,13 +89,14 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			instance.setArguments(initFromArgs(args));
 
 			if (!register()) {
-				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered, so execution is aborted", getLocalName());
+				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. Submodel execution aborted.", getLocalName());
 				if (this.disposeNoDeregister()) {
 					listener.isFinished(this);
 				}
 				return;
 			}
 			instance.connectPortals();
+			propagate();
 
 			// log info about this controller
 			Level logLevel = Level.INFO;
@@ -292,10 +293,20 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			Resolver locator = resolverFactory.getResolver();
 			return locator.register(this.mainController == null ? this : this.mainController);
 		} catch (InterruptedException ex) {
-			Logger.getLogger(JadeInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
 			return false;
 		} catch (Exception ex) {
 			return false;
+		}
+	}
+	
+	private void propagate() {
+		try {
+			Resolver locator = resolverFactory.getResolver();
+			locator.makeAvailable(this.mainController == null ? this : this.mainController);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (Exception ex) {
 		}
 	}
 	

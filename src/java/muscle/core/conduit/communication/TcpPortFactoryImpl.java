@@ -39,10 +39,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 			@SuppressWarnings("unchecked")
 			public Receiver<T, ?, ?, ?> call() throws Exception {
 				exit.start();
-				if (!resolvePort(port)) {
-					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, exit});
-				}
-			
+				
 				@SuppressWarnings("unchecked")
 				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
 				
