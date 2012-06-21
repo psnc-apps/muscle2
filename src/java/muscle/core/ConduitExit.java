@@ -26,10 +26,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.messaging.Observation;
+import muscle.exception.MUSCLEConduitExhaustedException;
 
 /**
  * A ConduitExit outputs messages that are sent over a conduit.
- * It has only the receive() interface, and receives only messages of a single type, sent over the conduit.
+ * Messages are accessed over the blocking receive() function, which returns only messages of a single type.
+ * When no more messages will be sent over the conduit, due to the conduit stopping,
+ * hasNext() will return false and receive() will throw an exception.
+ * It is not thread-safe, in the sense that only a single thread may call hasNext() and receive().
  * 
  * @author Joris Borgdorff
 */
@@ -38,34 +42,57 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	private final ConduitExitController<T> controller;
 	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
 	private volatile boolean isDone;
+	private Observation<T> nextElem;
 
 	public ConduitExit(ConduitExitController<T> control) {
 		this.queue = control.getQueue();
 		this.controller = control;
 		this.isDone = false;
+		this.nextElem = null;
 	}
 
+	/**
+	 * Whether there will be a next piece of data. It is a blocking function,
+	 * waiting for the next message or a signal that no more messages will come.
+	 * If the sending end has stopped, or the current submodel is stopping, the
+	 * result is false. As long as receive() is not called, subsequent
+	 * calls to hasNext() return the same result. After hasNext() returns true, the subsequent call
+	 * to receive() is guaranteed to return a result. Conversely, if hasNext() returns false, the
+	 * subsequent call to receive() will throw a MUSCLEConduitExhaustedException.
+	 */
+	public boolean hasNext() {
+		// As long as receive() is not called, return true.
+		if (this.nextElem != null) return true;
+		if (this.isDone) return false;
+		try {
+			this.nextElem = this.queue.take();
+		} catch (InterruptedException ex) {
+			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
+			this.isDone = true;
+		}
+		if (this.isDone) this.nextElem = null;
+		else if (this.nextElem == null) this.isDone = true;
+		
+		return this.nextElem != null;
+	}
+	
 	/**
 	 * Receive one piece of data.
 	 * The call is blocking, meaning that it won't return until data is received. Data returned does not need to be copied.
 	 * 
-	 * @return a piece of data, or null if the model should stop computing.
+	 * @throws MUSCLEConduitExhaustedException if hasNext would produce false.
+	 * @return a piece of data
 	 */
 	public T receive() {
-		try {
-			if (this.isDone) return null;
-			Observation<T> obs = this.queue.take();
-			
-			if (obs == null || this.isDone)
-				return null;
-			
-			// Update the willStop timestamp only when the message is received by the Instance.
-			controller.setNextTimestamp(obs.getNextTimestamp());
-			return obs.getData();
-		} catch (InterruptedException ex) {
-			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
-			return null;
+		if (!hasNext()) {
+			throw new MUSCLEConduitExhaustedException("This submodel is stopping; its conduit can no longer be used.");
 		}
+		
+		// Update the willStop timestamp only when the message is received by the Instance.
+		this.controller.setNextTimestamp(this.nextElem.getNextTimestamp());
+		T data = this.nextElem.getData();
+		this.nextElem = null;
+		return data;
 	}
 	
 	void dispose() {
