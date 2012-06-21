@@ -34,7 +34,7 @@ public class ConduitEntrance<T extends Serializable> {
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Duration timeStep) {
 		this.serializer = new SerializableDataConverter<T>();
-		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>(1024);
+		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		controller.setIncomingQueue(queue);
 
 		this.nextTime = origin;

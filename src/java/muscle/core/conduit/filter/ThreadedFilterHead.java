@@ -4,7 +4,6 @@
  */
 package muscle.core.conduit.filter;
 
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +20,7 @@ public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueP
 	
 	public ThreadedFilterHead(QueueConsumer<F> consumer) {
 		super("FilterHead");
-		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>();
 		this.setQueueConsumer(consumer);
 	}
 	

@@ -35,7 +35,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	protected QueueConsumer<F> consumer;
 	
 	protected AbstractFilter() {
-		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>();
 	}
 	
 	public AbstractFilter(QueueConsumer<F> qc) {

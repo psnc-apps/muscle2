@@ -36,7 +36,7 @@ public class FilterHead<F> implements QueueProducer<F> {
 	private final BlockingQueue<F> outgoingQueue;
 	
 	public FilterHead(QueueConsumer<F> qc) {
-		 outgoingQueue = new SingleProducerConsumerBlockingQueue<F>(10);
+		 outgoingQueue = new SingleProducerConsumerBlockingQueue<F>();
 		 consumer = qc;
 		 consumer.setIncomingQueue(outgoingQueue);
 	}

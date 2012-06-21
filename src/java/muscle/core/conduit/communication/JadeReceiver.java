@@ -21,7 +21,7 @@ public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingP
 	private volatile BlockingQueue<Message<T>> queue;
 
 	public JadeReceiver() {
-		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>(10);
+		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>();
 	}
 
 	public void put(DataMessage<T> msg) {
