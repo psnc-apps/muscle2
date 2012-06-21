@@ -28,7 +28,7 @@ public class ConduitExitController<T extends Serializable> extends Portal<T> {
 
 	public ConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, int newRate, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newRate, newDataTemplate);
-		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>(1024);
+		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.receiver = null;
 		this.conduitExit = null;
 		this.isDetached = false;
