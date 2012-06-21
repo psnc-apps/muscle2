@@ -16,192 +16,215 @@ import java.util.concurrent.TimeUnit;
  * producing thread and a single consuming thread.
  * Null values are allowed. Except size(), isEmpty() and clear(), its collection
  * interface is not implemented.
- * 
+ *
  * @author Joris Borgdorff
  */
 public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> {
-	private final E[] elements;
-	private volatile int min, max;
-	private int consMin, consMax, prodMin, prodMax;
-	private final Object prodLock = new Object(), consLock = new Object();
+	private final TailPointer tail;
+	private final HeadPointer head;
 	
-	public SingleProducerConsumerBlockingQueue(int size) {
-		this.elements = (E[])new Object[size + 1];
-		this.min = this.consMin = this.prodMin = 0;
-		this.max = this.consMax = this.prodMax = 0;
+	public SingleProducerConsumerBlockingQueue() {
+		head = new HeadPointer();
+		tail = new TailPointer();
 	}
 	
 	// Producer methods
 	@Override
 	public boolean add(E e) {
-		if (!offer(e)) throw new IllegalStateException("Queue is full");
+		tail.put(e);
 		return true;
 	}
 
 	@Override
 	public boolean offer(E e) {
-		int newMax = (this.prodMax + 1)%this.elements.length;
-		
-		if (this.prodMin == newMax) {
-			this.prodMin = this.min;
-			if (this.prodMin == newMax) return false;
-		}
-		
-		elements[this.prodMax] = e;
-		this.max = this.prodMax = newMax;
-
-		synchronized (prodLock) {
-			prodLock.notify();
-		}
-		
+		tail.put(e);
 		return true;
 	}
 
 	@Override
 	public void put(E e) throws InterruptedException {
-		int newMax = (this.prodMax + 1)%this.elements.length;
-		
-		if (this.prodMin == newMax) {
-			synchronized (consLock) {
-				while (this.min == newMax) {
-					consLock.wait();
-				}
-			}
-			this.prodMin = this.min;
-		}
-
-		elements[this.prodMax] = e;
-		this.max = this.prodMax = newMax;
-		
-		synchronized (prodLock) {
-			prodLock.notify();
-		}
+		tail.put(e);
 	}
 
 	// Consumer methods
 	@Override
 	public E take() throws InterruptedException {
-		int newMin = (this.consMin + 1)%this.elements.length;
-		E ret;
-		
-		if (this.consMin == this.consMax) {
-			synchronized (prodLock) {
-				while (this.consMin == this.max) {
-					prodLock.wait();
-				}
-			}
-			this.consMax = this.max;
-		}
-		
-		ret = elements[this.consMin];
-
-		elements[this.consMin] = null;
-		this.min = this.consMin = newMin;
-		
-		synchronized (consLock) {
-			consLock.notify();
-		}
-		
-		return ret;
+		return head.take();
 	}
 
+	public class HeadPointer {
+		private boolean empty = true;
+		private SingleProducerConsumerBlockingQueue.Element<E> head;
+		
+		public E take() throws InterruptedException {
+			if (empty) {
+				synchronized (this) {
+					while (head == null) {
+						wait();
+					}
+				}
+				empty = false;
+			}
+
+			return advance();
+		}
+		
+		/**
+		 * Advance the head of the queue to the next element.
+		 * May only be called if the queue is non-empty. If the queue is empty
+		 * after advancing, the variable empty is set to true.
+		 * 
+		 * @return the previous head of the queue
+		 */
+		private E advance() {
+			final SingleProducerConsumerBlockingQueue.Element<E> oldHead = head;
+
+			synchronized (oldHead) {
+				head = oldHead.prevElement;
+				if (head == null) empty = true;
+			}
+			// If the queue is empty, the oldHead will still be stored as the tail, so it will not be garbage collected.
+			// Thus its contents is set to null.
+			if (empty) {
+				final E ret = oldHead.value;
+				oldHead.value = null;
+				return ret;
+			} else {
+				return oldHead.value;
+			}
+		}
+		
+		public E remove() {
+			if (isEmpty()) throw new IllegalStateException("Queue is empty");
+
+			return advance();			
+		}
+		
+		public E poll() {
+			if (isEmpty()) return null;
+			
+			return advance();
+		}
+		
+		public E element() {
+			if (isEmpty()) throw new IllegalStateException("Queue is empty");
+
+			return head.value;
+		}
+		
+		public E peek() {
+			if (isEmpty()) return null;
+			
+			return head.value;
+		}
+		
+		synchronized void setHead(SingleProducerConsumerBlockingQueue.Element<E> value) {
+			if (value == null) {
+				empty = true;
+			}
+			head = value;
+			notify();
+		}
+		
+		/** Unsynchronized version of isEmpty. */
+		boolean unsafeIsEmpty() {
+			return head == null;
+		}
+		
+		public boolean isEmpty() {
+			if (empty) {
+				synchronized (this) {
+					if (head == null) return true;
+				}
+				empty = false;
+			}
+			return false;
+		}
+		
+		public int size() {
+			int size = 0;
+			if (!isEmpty()) {
+				SingleProducerConsumerBlockingQueue.Element<E> tmp = head;
+				while (tmp != null) {
+					size++;
+					synchronized (tmp) {
+						tmp = tmp.prevElement;
+					}
+				}
+			}
+			return size;
+		}
+	}
+	
+	public class TailPointer {
+		private SingleProducerConsumerBlockingQueue.Element<E> tail = new SingleProducerConsumerBlockingQueue.Element<E>(null);
+		
+		public void put(E e) {
+			final SingleProducerConsumerBlockingQueue.Element<E> oldTail = tail;
+			tail = new SingleProducerConsumerBlockingQueue.Element<E>(e);
+		
+			boolean empty;
+			synchronized (oldTail) {
+				empty = head.unsafeIsEmpty();
+				if (!empty) {
+					oldTail.prevElement = tail;
+				}
+			}
+			if (empty) {
+				head.setHead(tail);
+			}
+		}
+	}
+	
 	@Override
-	// Same as poll, but we can not reuse poll, since it returns null for
-	// both null elements and with an emtpy queue.
 	public E remove() {
-		int newMin = (this.consMin + 1)%this.elements.length;
-		E ret;
-
-		if (this.consMin == this.consMax) {
-			this.consMax = this.max;
-			if (this.consMin == this.consMax) throw new IllegalStateException("Queue is empty");
-		}
-		
-		ret = elements[this.consMin];
-		elements[this.min] = null;
-		this.min = this.consMin = newMin;
-
-		synchronized (consLock) {	
-			consLock.notify();
-		}
-		
-		return ret;
+		return head.remove();
 	}
 
 	@Override
 	public E poll() {
-		int newMin = (this.consMin + 1)%this.elements.length;
-		E ret;
-
-		if (this.consMin == this.consMax) {
-			this.consMax = this.max;
-			if (this.consMin == this.consMax) return null;
-		}
-		
-		ret = elements[this.min];
-		elements[this.consMin] = null;
-		this.min = this.consMin = newMin;
-
-		synchronized (consLock) {	
-			consLock.notify();
-		}
-		
-		return ret;
+		return head.poll();
 	}
 
 	// Non-modifying methods
 	@Override
 	public E element() {
-		if (this.consMin == this.consMax) {
-			this.consMax = this.max;
-			if (this.consMin == this.consMax) throw new IllegalStateException("Queue is empty");
-		}
-		
-		return elements[this.consMin];
+		return head.element();
 	}
 
 	@Override
 	public E peek() {
-		if (this.consMin == this.consMax) {
-			this.consMax = this.max;
-			if (this.consMin == this.consMax) return null;
-		}
-		
-		return elements[this.consMin];
+		return head.peek();
 	}
 
 	@Override
 	public int remainingCapacity() {
-		return min > max ? min - max - 1: this.elements.length - (max - min) - 1;
+		return Integer.MAX_VALUE;
 	}
 
 	@Override
 	public int size() {
-		return min > max ? this.elements.length - (min - max) : (max - min);
+		return head.size();
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return max == min;
+		return head.isEmpty();
 	}
 
 	@Override
-	/** May only be called by the consumer thread. */
 	public void clear() {
-		this.consMax = this.max;
-		if (this.consMin <= this.consMax) {
-			for (int i = this.consMin; i < this.consMax; i++) {
-				elements[i] = null;
-			}
-		} else {
-			for (int i = 0; i < this.consMax; i++) {
-				elements[i] = null;
-			}
-			for (int i = this.consMin; i < elements.length; i++) {
-				elements[i] = null;
-			}
+		head.setHead(null);
+	}
+	
+	private static class Element<E> {
+		E value;
+		SingleProducerConsumerBlockingQueue.Element<E> prevElement;
+		
+		public Element(E val) {
+			value = val;
+			prevElement = null;
 		}
-		this.min = this.consMin = this.consMax;
 	}
 	
 	@Override
