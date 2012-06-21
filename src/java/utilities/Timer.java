@@ -15,7 +15,7 @@ public class Timer {
 	private long pauseTime;
 	private Timer pauseTimer;
 	private boolean paused;
-	private final static DecimalFormat doubleFormat = new DecimalFormat("#.#### s");
+	private final static DecimalFormat doubleFormat = new DecimalFormat("#.####");
 
 	public Timer() {
 		baseTime = getTime();
@@ -70,7 +70,7 @@ public class Timer {
 	 */
 	@Override
 	public String toString() {
-		return toString(reset());
+		return toString(reset()) + " s";
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class Timer {
 	public static String toString(long diff) {
 		return doubleFormat.format((diff / 100000)/10000.d);
 	}
-
+	
 	/**
 	 * Print a message to standard out with the current time. This resets the timer.
 	 * @param msg Message to print
