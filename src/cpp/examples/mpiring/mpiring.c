@@ -107,6 +107,7 @@ int main(int argc, char **argv)
 		accelerateProtons();
 
 	Ring_Cleanup();
+	return 0;
 }
 
 #ifdef __cplusplus

@@ -27,10 +27,11 @@ void Ring_Init(const char *_ringName)
   printf("Initialized %d node in ring %s.\n", rank, ringName);
 }
 
-void Ring_Broadcast_Params(double *deltaE, double *maxE)
+void Ring_Broadcast_Params(double *deltaE, double *maxE, int *will_stop)
 {
 	assert( MPI_Bcast(deltaE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
 	assert( MPI_Bcast(maxE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
+	assert( MPI_Bcast(will_stop, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
 }
 
 

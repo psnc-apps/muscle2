@@ -58,4 +58,6 @@ int main(int argc, char **argv)
 	{
 		std::cerr << "Error occured" << std::endl;
 	}
+	
+	return 0;
 }

@@ -7,7 +7,7 @@ extern "C" {
 
 void Ring_Init(const char *ringName);
 
-void Ring_Broadcast_Params(double *deltaE, double *maxE);
+void Ring_Broadcast_Params(double *deltaE, double *maxE, int *will_stop);
 
 /* To be used by rank 0 process */
 double insertProton(double initialEnergy, double maxEnergy, void (*energy_callback)(double protonE));

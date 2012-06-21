@@ -114,7 +114,7 @@ int env::init(int *argc, char ***argv)
 
 void env::finalize(void)
 {
-	int opcode = 8;
+	int opcode = 0;
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::finalize() " << endl;
@@ -135,9 +135,9 @@ void env::finalize(void)
 
 	if (muscle_pid > 0) {
 		int status;
-		wait(&status);
-		if (status != 1) {
-			logger::severe("MUSCLE exited with errors.");
+		waitpid(muscle_pid, &status, 0);
+		if (!WIFEXITED(status) || WEXITSTATUS(status)) {
+			logger::severe("MUSCLE execution failed.");
 		}
 	}
 }
@@ -364,10 +364,8 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		// Null terminated
 		assert( host[15] == 0 );
 
-		string msg = "Will communicate with Java MUSCLE on ";
-		msg += host;
-		msg += ":";
-		msg += *port;
+		char msg[96];
+		sprintf(msg, "Will communicate with Java MUSCLE on %s:%d", host, *port);
 		logger::info(msg);
 	}
 }

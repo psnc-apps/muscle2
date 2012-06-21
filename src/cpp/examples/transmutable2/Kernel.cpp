@@ -83,6 +83,8 @@ int main(int argc, char **argv)
 	{
 		cerr << "Unknown error" << endl;
 	}
+	
+	return 0;
 }
 
 

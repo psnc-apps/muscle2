@@ -29,7 +29,7 @@ abort "this is a configuration file  to be used with the MUSCLE bootstrap utilit
 # configure cxa properties
 cxa = Cxa.LAST
 
-cxa.env["max_timesteps"] = 5
+cxa.env["max_timesteps"] = 1
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 cxa.env["PSB:InitialEnergy"] = 1.2

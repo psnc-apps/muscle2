@@ -31,6 +31,9 @@ int MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype
 	return 0;
 }
 
+int MUSCLE_Will_Stop(void) {
+	return muscle::env::will_stop();
+}
 
 void MUSCLE_Finalize(void)
 {
