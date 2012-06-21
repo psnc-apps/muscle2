@@ -154,29 +154,29 @@ public class BlockingQueueTest {
 		}
 	}
 	
-	static class TakeConsumerThread extends ConsumerThread {
-		private final SingleProducerConsumerBlockingQueue1.TakePointer<String> tp;
-		TakeConsumerThread(SingleProducerConsumerBlockingQueue1<String> newQueue) {
-			super(newQueue);
-			tp = newQueue.getTakePointer();
-		}
-		public void run() {
-			long lsum = 0;
-			Timer t = new Timer();
-			for (int j = 0; j < TESTS; j++) {
-				for (int i = 0; i < MSGS_PER_TEST; i++) {
-					try {
-						tp.take();
-					} catch (InterruptedException ex) {
-						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
-					}
-//					lsum += doSemiheavyCalculation(s);
-				}
-				outother = lsum;
-				times[j] = t.reset();
-			}
-		}
-	}
+//	static class TakeConsumerThread extends ConsumerThread {
+//		private final SingleProducerConsumerBlockingQueue1.TakePointer<String> tp;
+//		TakeConsumerThread(SingleProducerConsumerBlockingQueue1<String> newQueue) {
+//			super(newQueue);
+//			tp = newQueue.getTakePointer();
+//		}
+//		public void run() {
+//			long lsum = 0;
+//			Timer t = new Timer();
+//			for (int j = 0; j < TESTS; j++) {
+//				for (int i = 0; i < MSGS_PER_TEST; i++) {
+//					try {
+//						tp.take();
+//					} catch (InterruptedException ex) {
+//						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
+//					}
+////					lsum += doSemiheavyCalculation(s);
+//				}
+//				outother = lsum;
+//				times[j] = t.reset();
+//			}
+//		}
+//	}
 	
 	static class ProducerThread implements Runnable {
 		private final BlockingQueue<String> q;
@@ -203,29 +203,29 @@ public class BlockingQueueTest {
 	}
 	
 		
-	static class PutProducerThread extends ProducerThread {
-		private final SingleProducerConsumerBlockingQueue1.PutPointer<String> putPointer;
-		PutProducerThread(SingleProducerConsumerBlockingQueue1<String> newQueue) {
-			super(newQueue);
-			this.putPointer = newQueue.getPutPointer();
-		}
-		public void run() {
-			long lsum = 0;
-			String s = "ja ja";
-			for (int j = 0; j < TESTS; j++) {
-				for (int i = 0; i < MSGS_PER_TEST; i++) {
-					try {
-						putPointer.put(s);
-					} catch (InterruptedException ex) {
-						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
-					}
-//					lsum += doSemiheavyCalculation(s);
-				}
-				outother += lsum;
-			}
-		}
-	}
-	
+//	static class PutProducerThread extends ProducerThread {
+//		private final SingleProducerConsumerBlockingQueue1.PutPointer<String> putPointer;
+//		PutProducerThread(SingleProducerConsumerBlockingQueue1<String> newQueue) {
+//			super(newQueue);
+//			this.putPointer = newQueue.getPutPointer();
+//		}
+//		public void run() {
+//			long lsum = 0;
+//			String s = "ja ja";
+//			for (int j = 0; j < TESTS; j++) {
+//				for (int i = 0; i < MSGS_PER_TEST; i++) {
+//					try {
+//						putPointer.put(s);
+//					} catch (InterruptedException ex) {
+//						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
+//					}
+////					lsum += doSemiheavyCalculation(s);
+//				}
+//				outother += lsum;
+//			}
+//		}
+//	}
+//	
 	private static int doSemiheavyCalculation(String s) {
 		return (int)Math.sin(Math.sqrt(Double.valueOf(s + s)));
 	}
