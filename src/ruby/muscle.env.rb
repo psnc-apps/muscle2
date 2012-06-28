@@ -57,7 +57,7 @@ m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
 m.add_libpath "#{base_dir}/lib"
 
 e = {
-"bootclass" => "muscle.core.Boot",
+"bootclass" => "muscle.client.JadeBoot",
 'execute' => true,
 'verbose' => false,
 'quiet' => false,

@@ -22,30 +22,21 @@ package muscle.core;
 
 import jade.core.ContainerID;
 import jade.core.Location;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.Serializable;
-import java.util.Properties;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import utilities.MiscTool;
 import muscle.Constant;
-import muscle.exception.MUSCLERuntimeException;
-import muscle.core.kernel.KernelBootInfo;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import muscle.core.kernel.RawKernel;
-import utilities.JVM;
-import utilities.data.Env;
+import muscle.util.JVM;
+import muscle.util.MiscTool;
+import muscle.util.data.Env;
 
 /**
 singleton which holds information about the current CxA
 @author Jan Hegewald
  */
-public class CxADescription extends utilities.data.Env implements Serializable {
+public class CxADescription extends muscle.util.data.Env implements Serializable {
 
 	private final static transient Logger logger = Logger.getLogger(CxADescription.class.getName());
 
@@ -143,11 +134,6 @@ public class CxADescription extends utilities.data.Env implements Serializable {
 		return text.toString();
 	}
 
-	// do not create multiple instances when deserializing multiple times
-	private Object readResolve() {
-		return ONLY;
-	}
-
 	/**
 	configure this CxA from the muscle environment
 	 */
@@ -167,50 +153,5 @@ public class CxADescription extends utilities.data.Env implements Serializable {
 		} else {
 			logger.log(Level.INFO, "using tmp directory <{0}>", tmpDir);
 		}
-	}
-
-	/**
-	generates kernel infos from a properties file
-	either put
-	kernel.example.SomeKernel
-	or
-	name kernel.example.SomeKernel
-	in the file<br>
-	commented lines are allowed as described in http://java.sun.com/javase/6/docs/api/java/util/Properties.html#load(java.io.Reader)
-	 */
-	private static List<KernelBootInfo> kernelBootInfosFromFile(File file) throws java.io.FileNotFoundException {
-
-		// load kernel info properties from file
-		Properties props = new Properties();
-		try {
-			FileInputStream in = new FileInputStream(file);
-			props.load(in);
-		} catch (java.io.IOException e) {
-			throw new MUSCLERuntimeException(e);
-		}
-
-		List<KernelBootInfo> kbi = new ArrayList<KernelBootInfo>();
-		for (Iterator<String> iter = props.stringPropertyNames().iterator(); iter.hasNext();) {
-			String key = iter.next();
-			String val = props.getProperty(key);
-			// strip any leading and trailing whitespace from class name
-			val = val.trim();
-
-			if (val.equals("")) {
-				val = key; // only class name given
-			}
-			Class<? extends RawKernel> cls = null;
-			try {
-				// do not initialize the kernel class here, else e.g. their static code is already called
-				cls = (Class<? extends RawKernel>) Class.forName(val, false, CxADescription.class.getClassLoader());
-			} catch (java.lang.ClassNotFoundException e) {
-				MUSCLERuntimeException cre = new MUSCLERuntimeException("unknown class <" + cls + ">");
-				cre.setStackTrace(e.getStackTrace());
-				throw new MUSCLERuntimeException(cre);
-			}
-			kbi.add(new KernelBootInfo(key, cls));
-		}
-
-		return kbi;
 	}
 }

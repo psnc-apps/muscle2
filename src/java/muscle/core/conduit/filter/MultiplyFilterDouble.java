@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 
 /**
 multiplies every value of incoming data with a constant factor

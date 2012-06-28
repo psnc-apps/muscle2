@@ -6,7 +6,7 @@ package examples.simplesubmodel;
 
 import muscle.core.Scale;
 import muscle.core.kernel.Submodel;
-import muscle.core.messaging.Duration;
+import muscle.core.model.Duration;
 
 /**
  *

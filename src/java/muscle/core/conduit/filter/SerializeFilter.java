@@ -22,7 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.util.serialization.ByteJavaObjectConverter;
 
 /**
 serialize to a byte array

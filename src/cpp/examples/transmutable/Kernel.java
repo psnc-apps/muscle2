@@ -29,8 +29,8 @@ import javax.measure.unit.SI;
 import muscle.core.JNIConduitEntrance;
 import muscle.core.JNIConduitExit;
 import muscle.core.Scale;
-import muscle.core.messaging.serialization.DataConverter;
-import muscle.core.messaging.serialization.DoubleStringConverter;
+import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.DoubleStringConverter;
 
 
 /**

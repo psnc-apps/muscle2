@@ -5,7 +5,6 @@
 package muscle.core.kernel;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Map;
 import muscle.core.*;
 
@@ -32,13 +31,13 @@ public abstract class Instance extends RawKernel {
 		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
 		if (ports != null) {
 			for (PortDescription entrance : ports.values()) {
-				this.addEntrance(entrance.getID().getPortName(), 1, Serializable.class);
+				this.addEntrance(entrance.getID().getPortName(), Serializable.class);
 			}
 		}
 		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
 		if (ports != null) {
 			for (PortDescription exit : ports.values()) {
-				this.addExit(exit.getID().getPortName(), 1, Serializable.class);
+				this.addExit(exit.getID().getPortName(), Serializable.class);
 			}
 		}
 	}

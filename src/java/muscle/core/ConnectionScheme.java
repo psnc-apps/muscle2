@@ -31,10 +31,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.core.ident.*;
-import utilities.MiscTool;
-import utilities.data.ArrayMap;
-import utilities.data.Env;
-import utilities.data.FastArrayList;
+import muscle.util.MiscTool;
+import muscle.util.data.ArrayMap;
+import muscle.util.data.Env;
+import muscle.util.data.FastArrayList;
 
 /**
 describes the p2p connections between kernels

@@ -24,8 +24,8 @@ package muscle.core.conduit.filter;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.messaging.Observation;
-import muscle.core.messaging.Timestamp;
+import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 
 /**
 ignores data after a given timestep, only recommended for debugging purposes

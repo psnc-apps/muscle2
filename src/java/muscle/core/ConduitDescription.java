@@ -21,7 +21,6 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.Serializable;
-import jade.core.AID;
 import java.util.List;
 
 /**

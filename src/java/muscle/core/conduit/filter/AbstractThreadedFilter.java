@@ -6,8 +6,8 @@ package muscle.core.conduit.filter;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.utilities.parallelism.SafeQueueConsumerThread;
-import utilities.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.concurrency.SafeQueueConsumerThread;
+import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *

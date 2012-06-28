@@ -24,7 +24,7 @@ package muscle.core.conduit.filter;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import utilities.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
 entry point for a filter chain used within conduits

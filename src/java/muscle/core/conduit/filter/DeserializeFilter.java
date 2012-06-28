@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.messaging.serialization.ByteJavaObjectConverter;
+import muscle.util.serialization.ByteJavaObjectConverter;
 
 /**
 deserialize a byte array

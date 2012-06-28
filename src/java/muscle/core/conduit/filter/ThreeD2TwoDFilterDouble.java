@@ -21,10 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 import muscle.core.DataTemplate;
-import utilities.array3d.Array3D_double;
-import utilities.array2d.Array2D_double;
+import muscle.util.data.array3d.Array3D_double;
+import muscle.util.data.array2d.Array2D_double;
 
 /**
 maps 3d grid data to 2d data (calculates the average value for the third dimension)

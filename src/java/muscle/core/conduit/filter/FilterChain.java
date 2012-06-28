@@ -6,7 +6,7 @@ package muscle.core.conduit.filter;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 import muscle.exception.MUSCLERuntimeException;
 
 /**

@@ -2,7 +2,6 @@ package muscle.core.standalone;
 
 import java.util.Arrays;
 import java.util.List;
-
 import muscle.core.CxADescription;
 
 public abstract class MPIKernel extends NativeKernel {

@@ -10,9 +10,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.Location;
-import muscle.core.messaging.serialization.DeserializerWrapper;
-import muscle.core.messaging.serialization.SerializerWrapper;
 import muscle.net.ProtocolHandler;
+import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.SerializerWrapper;
 
 /**
  *

@@ -11,10 +11,10 @@ import java.net.Socket;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.messaging.serialization.ConverterWrapperFactory;
-import muscle.core.messaging.serialization.SerializerWrapper;
-import muscle.utilities.parallelism.SafeTriggeredThread;
-import utilities.Timer;
+import muscle.util.Timer;
+import muscle.util.concurrency.SafeTriggeredThread;
+import muscle.util.serialization.ConverterWrapperFactory;
+import muscle.util.serialization.SerializerWrapper;
 
 /**
  *

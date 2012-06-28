@@ -6,12 +6,9 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import muscle.core.messaging.Duration;
-import muscle.core.messaging.Observation;
-import muscle.core.messaging.Timestamp;
-import muscle.core.messaging.serialization.DataConverter;
-import muscle.core.messaging.serialization.SerializableDataConverter;
-import utilities.data.SingleProducerConsumerBlockingQueue;
+import muscle.core.model.Duration;
+import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 
 /**
  * A ConduitEntrance adds data to a conduit.
@@ -25,7 +22,6 @@ public class ConduitEntrance<T extends Serializable> {
 	private final ConduitEntranceController<T> consumer;
 	protected Timestamp nextTime;
 	protected final Duration dt;
-	private final DataConverter<T,?> serializer;
 	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Scale sc) {
@@ -33,10 +29,6 @@ public class ConduitEntrance<T extends Serializable> {
 	}
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Duration timeStep) {
-		this.serializer = new SerializableDataConverter<T>();
-		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
-		controller.setIncomingQueue(queue);
-
 		this.nextTime = origin;
 		this.dt = timeStep;
 		
@@ -61,8 +53,8 @@ public class ConduitEntrance<T extends Serializable> {
 	 * @see send(T)
 	 */
 	public void send(T data, Timestamp currentTime) {
-		nextTime = currentTime.add(dt);
-		this.send(data, currentTime, nextTime);		
+		Timestamp next = currentTime.add(dt);
+		this.send(data, currentTime, next);
 	}
 
 	/**
@@ -72,24 +64,6 @@ public class ConduitEntrance<T extends Serializable> {
 	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
 		this.nextTime = next;
-		T dataCopy = serializer.copy(data);
-		Observation<T> msg = new Observation<T>(dataCopy, currentTime, next);
-		this.send(msg);
-	}
-	
-	/**
-	 * Send an observation.
- 	 * @see send(T)
-	 */
-	private void send(Observation<T> msg) {
-		try {
-			this.queue.put(msg);
-		} catch (InterruptedException ex) {
-			throw new IllegalStateException("Can not send message", ex);
-		}
-		
-		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
-		this.consumer.setNextTimestamp(msg.getNextTimestamp());
-		this.consumer.apply();
+		this.consumer.send(data, currentTime, next);
 	}
 }

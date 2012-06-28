@@ -287,7 +287,7 @@ if m.env['main']
 end
 
 if m.env['allkernels'] || args.size > 0
-	muscle_local_args << "muscle.core.LocalManager"	
+	muscle_local_args << "muscle.client.LocalManager"	
 	if m.env['manager']
 		muscle_local_args << "-m"
 		muscle_local_args << m.env['manager']

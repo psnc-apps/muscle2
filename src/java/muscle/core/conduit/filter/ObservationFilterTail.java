@@ -23,7 +23,7 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 
 /**
 exit of a filter chain used within conduits

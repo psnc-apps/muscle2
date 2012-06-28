@@ -21,8 +21,8 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.Serializable;
-import muscle.core.messaging.serialization.DataConverter;
-import utilities.jni.JNIMethod;
+import muscle.util.serialization.DataConverter;
+import muscle.util.jni.JNIMethod;
 
 /**
 exit which can directly be called from native code<br>

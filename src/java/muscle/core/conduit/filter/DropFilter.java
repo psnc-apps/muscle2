@@ -22,7 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 
 /**
 drops data if incoming time scale is not a multiple of outgoing dt, newInDt is only required to build the corresponding DataTemplate for incomming data

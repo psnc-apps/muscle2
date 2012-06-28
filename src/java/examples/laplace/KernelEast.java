@@ -21,17 +21,16 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.laplace;
 
-import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
 import java.math.BigDecimal;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
 import javax.swing.JFrame;
-import muscle.core.ConduitExit;
 import muscle.core.ConduitEntrance;
+import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
+import muscle.core.Scale;
 
 
 /**

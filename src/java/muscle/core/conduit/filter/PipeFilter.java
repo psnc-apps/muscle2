@@ -22,7 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 
 /**
 this filter simply forwards the data to the next filter without altering the data

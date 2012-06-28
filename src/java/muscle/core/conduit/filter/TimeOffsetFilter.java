@@ -22,8 +22,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import muscle.core.messaging.Duration;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Duration;
+import muscle.core.model.Observation;
 
 /**
 modifies timestep with a given offset

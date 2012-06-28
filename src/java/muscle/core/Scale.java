@@ -33,14 +33,14 @@ represents time and spatial scale according to SSM in SI units
 */
 public class Scale implements java.io.Serializable {
 
-	private muscle.core.messaging.Duration dt; // time scale (must be seconds when used without quantity)
+	private muscle.core.model.Duration dt; // time scale (must be seconds when used without quantity)
 	private ArrayList<DecimalMeasure<Length>> dx; // scale(s) in space (must be meter when used without quantity)
 	
 	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
-		this(new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND)), newDx);
+		this(new muscle.core.model.Duration(newDt.doubleValue(SI.SECOND)), newDx);
 	}
 	
-	public Scale(muscle.core.messaging.Duration newDt, DecimalMeasure ... newDx) {
+	public Scale(muscle.core.model.Duration newDt, DecimalMeasure ... newDx) {
 		dt = newDt;
 
 		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
@@ -54,12 +54,12 @@ public class Scale implements java.io.Serializable {
 
 
 	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
-		dt = new muscle.core.messaging.Duration(newDt.doubleValue(SI.SECOND));
+		dt = new muscle.core.model.Duration(newDt.doubleValue(SI.SECOND));
 		dx = newDx;
 	}
 	
 	
-	public muscle.core.messaging.Duration getDt() {
+	public muscle.core.model.Duration getDt() {
 		return this.dt;
 	}
 	

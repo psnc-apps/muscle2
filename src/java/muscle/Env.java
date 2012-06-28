@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.Map;
 import java.net.URI;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -34,20 +33,16 @@ import muscle.exception.MUSCLERuntimeException;
 loads environment for a muscle platform
 @author Jan Hegewald
 */
-public class Env extends utilities.data.Env {
+public class Env extends muscle.util.data.Env {
 
 	public static Env ONLY = create();
 	
-	
-	
-	
-	private static Env create() {
-		
+	private static Env create() {		
 		// use java property like:
 		// -Dmuscle.core.Env="file:/path/to/json_file"
 		// or a json formatted string
 		// -Dmuscle.core.Env={\"cs_file\":\"/path/to/custom/cs\"}
-		String rawEnv = System.getProperty(javatool.ClassTool.getName(Env.class));
+		String rawEnv = System.getProperty(muscle.util.ClassTool.getName(Env.class));
 		
 		if(rawEnv != null) {
 			URI envUri = null;

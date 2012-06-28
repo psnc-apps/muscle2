@@ -5,7 +5,7 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 
 /**
  * A wrapper only consumes datawrappers with a certain template.

@@ -11,10 +11,10 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.ident.Location;
-import muscle.core.ident.TcpLocation;
-import muscle.core.messaging.serialization.ConverterWrapperFactory;
-import muscle.core.messaging.serialization.DeserializerWrapper;
-import muscle.core.messaging.serialization.SerializerWrapper;
+import muscle.client.ident.TcpLocation;
+import muscle.util.serialization.ConverterWrapperFactory;
+import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.SerializerWrapper;
 
 /**
  * Handles a protocol using serialization.

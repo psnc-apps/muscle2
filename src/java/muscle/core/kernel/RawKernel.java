@@ -27,17 +27,15 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.*;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.PortalID;
-import muscle.core.messaging.Timestamp;
-import muscle.core.messaging.serialization.DataConverter;
-import muscle.core.messaging.serialization.PipeConverter;
+import muscle.core.model.Timestamp;
+import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.PipeConverter;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
-import utilities.MiscTool;
-import utilities.OSTool;
-import utilities.data.ArrayMap;
-import utilities.jni.JNIMethod;
+import muscle.util.MiscTool;
+import muscle.util.OSTool;
+import muscle.util.data.ArrayMap;
+import muscle.util.jni.JNIMethod;
 
 // experimental info mode with
 // coast sk:coast.cxa.test.sandbox.RawKernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
@@ -52,35 +50,12 @@ public abstract class RawKernel {
 	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
-
-	public void setInstanceController(InstanceController ic) {
-		this.controller = ic;
-	}
 	
 	/**
 	 * Get the local name of the current kernel. This call is delegated to the InstanceController.
 	*/
 	protected String getLocalName() {
 		return this.controller.getLocalName();
-	}
-
-	/**
-	prints info about a given kernel to stdout
-	 */
-	public static String info(Class<? extends RawKernel> controllerClass) {
-		// instantiates a controller which is not intended to run as a JADE agent
-		RawKernel kernel = null;
-		try {
-			kernel = controllerClass.newInstance();
-		} catch (java.lang.InstantiationException e) {
-			throw new RuntimeException(e);
-		} catch (java.lang.IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-
-		kernel.connectPortals();
-
-		return kernel.infoText();
 	}
 
 	/**
@@ -95,13 +70,13 @@ public abstract class RawKernel {
 		Timestamp portalTime = maxTime;
 
 		// search for the smallest "time" in our portals
-		for (Portal p : entrances.values()) {
+		for (ConduitEntranceController p : entrances.values()) {
 			logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
 		}
-		for (Portal p : exits.values()) {
+		for (ConduitExitController p : exits.values()) {
 			logger.log(Level.FINER, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
@@ -111,24 +86,8 @@ public abstract class RawKernel {
 		return portalTime.compareTo(maxTime) > -1;
 	}
 
-	public JNIMethod stopJNIMethod() {
-		return new JNIMethod(this, "willStop");
-	}
-
-	public KernelBootInfo getKernelBootInfo() {
-		return new KernelBootInfo(controller.getLocalName(), getClass());
-	}
-
 	// in case we want do do custom initialization where we need e.g. the JADE services already activated
 	protected void beforeSetup() {
-	}
-
-	// currently we can not add portals dynamically during runtime
-	// add all portals here (and only here) at once
-	final void connectPortals() {
-		acceptPortals = true;
-		addPortals();
-		acceptPortals = false;
 	}
 
 	// use addExit/addEntrance to add portals to this controller
@@ -157,99 +116,53 @@ public abstract class RawKernel {
 	* return null if the kernel is dimensionless
 	 */
 	public abstract Scale getScale();
-	
-	/**
-	helper method to create a scale object where dt is a multiple of the kernel scale
-	* @deprecated use MML to specify this
-	 */
-	@Deprecated
-	private Scale getPortalScale(int rate) {
-		return null;
-	}
 
-	protected void addEntrance(ConduitEntranceController entrance) {
-		String portName = entrance.getIdentifier().getPortName();
-
-		// only add if not already added
-		if (entrances.containsKey(portName)) {
-			throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
-		}
-
-		controller.addConduitEntrance(entrance);
-		entrances.put(portName, entrance);
-	}
-
-	protected void addExit(ConduitExitController exit) {
-		if (!acceptPortals) {
-			throw new IgnoredException("adding of portals not allowed here");
-		}
-		String portName = exit.getIdentifier().getPortName();
-
-		// only add if not already added
-		if (exits.containsKey(portName)) {
-			throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
-		}
-
-		controller.addConduitExit(exit);
-		exits.put(portName, exit);
-	}
-
-	
-	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
-		if (!acceptPortals) {
-			throw new IgnoredException("adding of portals not allowed here");
-		}
-
-		if (newRate < 1) {
-			throw new IllegalArgumentException("portal use rate is <" + newRate + "> but can not be < 1");
-		}
-
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
+	protected <T extends Serializable> ConduitExit<T> addExit(String portName, Class<T> dataClass) {
+		ConduitExitController<T> ec = controller.createConduitExit(portName, new DataTemplate<T>(dataClass));
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		ec.setExit(e);
-		addExit(ec);
+		addExitToList(portName, ec);
 
 		return e;
 	}
 
-	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		ConduitExitController<T> ec = new ConduitExitController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass));
+	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
+		ConduitExitController<T> ec = controller.createConduitExit(portName, new DataTemplate<T>(dataClass));
 
-		JNIConduitExit<T, R> e = new JNIConduitExit<T, R>(newTransmuter, newJNIClass, ec);
+		JNIConduitExit<T,R> e = new JNIConduitExit<T,R>(transmuter, jniClass, ec);
 		ec.setExit(e);
-		addExit(ec);
-		return e;
+		addExitToList(portName, ec);
+
+		return e;		
+	}
+	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String portName, Class<T> dataClass, Class<T> jniClass) {
+		return addJNIExit(portName, dataClass, jniClass, new PipeConverter<T>());
 	}
 
-	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
-		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
-		return addJNIExit(newPortalName, newRate, newDataClass, newDataClass, newTransmuter);
-	}
+	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(portName, new DataTemplate<T>(dataClass));
 
-	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
-
-		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, getScale());
+		Scale sc = getScale();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, sc);
 		ec.setEntrance(e);
+		addEntranceToList(portName, ec);
 
-		addEntrance(ec);
 		return e;
 	}
 
-	protected <R, T extends Serializable> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter, EntranceDependency... newDependencies) {
-		ConduitEntranceController<T> ec = new ConduitEntranceController<T>(new PortalID<Identifier>(newPortalName, controller.getIdentifier()), controller, newRate, new DataTemplate<T>(newDataClass), newDependencies);
+	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(portName, new DataTemplate<T>(dataClass));
 
-		JNIConduitEntrance<R, T> e = new JNIConduitEntrance<R, T>(newTransmuter, newJNIClass, ec, getScale());
+		Scale sc = getScale();
+		JNIConduitEntrance<R,T> e = new JNIConduitEntrance<R,T>(transmuter, jniClass, ec, sc);
 		ec.setEntrance(e);
+		addEntranceToList(portName, ec);
 
-		addEntrance(ec);
-		return e;
+		return e;		
 	}
-
-	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass, EntranceDependency... newDependencies) {
-		DataConverter<T, T> newTransmuter = new PipeConverter<T>();
-		return addJNIEntrance(newPortalName, newRate, newDataClass, newDataClass, newTransmuter, newDependencies);
+	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String portName, Class<T> dataClass, Class<T> jniClass) {
+		return addJNIEntrance(portName, dataClass, jniClass, new PipeConverter<T>());
 	}
 
 	/**
@@ -283,7 +196,101 @@ public abstract class RawKernel {
 		return CxADescription.ONLY;
 	}
 
-	String infoText() {
+	protected Logger getLogger() {
+		return Logger.getLogger(getClass().getName());
+	}
+	
+	protected void log(String msg) {
+		log(msg, Level.INFO);
+	}
+
+	protected void log(String msg, Level lvl) {
+		getLogger().log(lvl, msg);
+	}
+
+	public void setArguments(Object[] args) {
+		this.arguments = args;
+	}
+
+	public Object[] getArguments() {
+		if (arguments == null) {
+			return new Object[0];
+		}
+
+		return arguments;
+	}
+	
+	public String getProperty(String key) {
+		return CxADescription.ONLY.getProperty(key);
+	}
+	public int getIntProperty(String key) {
+		return CxADescription.ONLY.getIntProperty(key);
+	}
+	public double getDoubleProperty(String key) {
+		return CxADescription.ONLY.getDoubleProperty(key);
+	}
+	public boolean getBooleanProperty(String key) {
+		return CxADescription.ONLY.getBooleanProperty(key);
+	}
+	
+	
+	// ==============MANAGEMENT====================//
+	
+	public void setInstanceController(InstanceController ic) {
+		this.controller = ic;
+	}
+	
+	
+	/**
+	prints info about a given kernel to stdout
+	 */
+	public static String info(Class<? extends RawKernel> controllerClass) {
+		// instantiates a controller which is not intended to run as a JADE agent
+		RawKernel kernel = null;
+		try {
+			kernel = controllerClass.newInstance();
+		} catch (java.lang.InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (java.lang.IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+
+		kernel.connectPortals();
+
+		return kernel.infoText();
+	}
+	
+	
+	public JNIMethod stopJNIMethod() {
+		return new JNIMethod(this, "willStop");
+	}
+	
+	// currently we can not add portals dynamically during runtime
+	// add all portals here (and only here) at once
+	public final void connectPortals() {
+		acceptPortals = true;
+		addPortals();
+		acceptPortals = false;
+	}
+
+	public final void beforeExecute() {
+		beforeSetup();
+	}
+	public final void start() {
+		execute();
+	}
+	
+	/**
+	helper method to create a scale object where dt is a multiple of the kernel scale
+	* @deprecated use MML to specify this
+	 */
+	@Deprecated
+	private Scale getPortalScale(int rate) {
+		return null;
+	}
+	
+	
+	public String infoText() {
 		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
 		sb.append(getLocalName()).append(": exits: ").append(exits).append("; entrances: ").append(entrances);
 		return sb.toString();
@@ -312,41 +319,55 @@ public abstract class RawKernel {
 
 		}
 	}
-
-	protected Logger getLogger() {
-		return Logger.getLogger(getClass().getName());
-	}
 	
-	protected void log(String msg) {
-		log(msg, Level.INFO);
-	}
-
-	protected void log(String msg, Level lvl) {
-		getLogger().log(lvl, msg);
-	}
-
-	void setArguments(Object[] args) {
-		this.arguments = args;
-	}
-
-	public Object[] getArguments() {
-		if (arguments == null) {
-			return new Object[0];
+	private <T extends Serializable> void addExitToList(String portName, ConduitExitController<T> exit) {
+		if (!acceptPortals) {
+			throw new IgnoredException("adding of portals not allowed here");
 		}
-
-		return arguments;
+		// only add if not already added
+		if (exits.containsKey(portName)) {
+			throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
+		}
+		exits.put(portName, exit);		
 	}
 	
-	public String getProperty(String key) {
-		return CxADescription.ONLY.getProperty(key);
+	private <T extends Serializable> void addEntranceToList(String portName, ConduitEntranceController<T> entrance) {
+		if (!acceptPortals) {
+			throw new IgnoredException("adding of portals not allowed here");
+		}
+		// only add if not already added
+		if (entrances.containsKey(portName)) {
+			throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
+		}
+		entrances.put(portName, entrance);		
 	}
-	public int getIntProperty(String key) {
-		return CxADescription.ONLY.getIntProperty(key);
+	
+	@Deprecated
+	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
+		return addJNIExit(newPortalName, newDataClass, newJNIClass, newTransmuter);
 	}
-	public double getDoubleProperty(String key) {
-		return CxADescription.ONLY.getDoubleProperty(key);
+
+	@Deprecated
+	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
+		return addJNIExit(newPortalName, newDataClass, newDataClass);
 	}
-	public boolean getBooleanProperty(String key) {
-		return CxADescription.ONLY.getBooleanProperty(key);
+	
+	@Deprecated
+	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
+		return addExit(newPortalName, newDataClass);
+	}
+	@Deprecated
+	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter) {
+		return addJNIEntrance(newPortalName, newDataClass, newJNIClass, newTransmuter);
+	}
+
+	@Deprecated
+	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass) {
+		return addJNIEntrance(newPortalName, newDataClass, newDataClass);
+	}
+	
+	@Deprecated
+	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass) {
+		return addEntrance(newPortalName, newDataClass);
 	}
 }

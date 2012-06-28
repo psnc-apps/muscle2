@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
@@ -27,7 +26,6 @@ public class NativeGateway  extends Thread {
 	}
 	
 	public interface CallListener {
-
 		/* OPCODE = 0 */
 		public void isFinished();
 		/* OPCODE = 1 */

@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle;
 
-import utilities.JVM;
+import muscle.util.JVM;
 
 /**
 just the version of this MUSCLE

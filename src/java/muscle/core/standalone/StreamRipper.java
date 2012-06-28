@@ -1,11 +1,6 @@
 package muscle.core.standalone;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-
+import java.io.*;
 
 public class StreamRipper extends Thread {
 	
@@ -19,7 +14,7 @@ public class StreamRipper extends Thread {
 	}
 	
 	public void run() {
-		String line = null;
+		String line;
 		
 		try {
 		

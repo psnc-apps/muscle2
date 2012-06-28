@@ -15,8 +15,8 @@ import muscle.core.ident.Identifier;
 import muscle.net.AbstractConnectionHandler;
 import muscle.net.LocalSocketFactory;
 import muscle.net.SocketFactory;
-import utilities.data.ArrayMap;
-import utilities.data.ArraySet;
+import muscle.util.data.ArrayMap;
+import muscle.util.data.ArraySet;
 
 /**
  * Keeps a registry of running submodels and stops simulation once all submodels have finished.

@@ -37,7 +37,7 @@ public class VoidKernel extends RawKernel {
 		// add no portals
 	}
 
-	protected void execute() {
+	public void execute() {
 		// do nothing
 	}
 

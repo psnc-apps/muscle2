@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-
 import muscle.core.*;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;

@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.utilities.parallelism.SafeThread;
+import muscle.util.concurrency.SafeThread;
 
 /**
  * Handles connections over a socket.

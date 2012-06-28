@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.messaging.Observation;
+import muscle.core.model.Observation;
 import muscle.exception.MUSCLEConduitExhaustedException;
 
 /**
@@ -41,11 +41,11 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	private final BlockingQueue<Observation<T>> queue;
 	private final ConduitExitController<T> controller;
 	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
-	private volatile boolean isDone;
+	private boolean isDone;
 	private Observation<T> nextElem;
 
 	public ConduitExit(ConduitExitController<T> control) {
-		this.queue = control.getQueue();
+		this.queue = control.getMessageQueue();
 		this.controller = control;
 		this.isDone = false;
 		this.nextElem = null;
@@ -54,11 +54,12 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	/**
 	 * Whether there will be a next piece of data. It is a blocking function,
 	 * waiting for the next message or a signal that no more messages will come.
-	 * If the sending end has stopped, or the current submodel is stopping, the
-	 * result is false. As long as receive() is not called, subsequent
-	 * calls to hasNext() return the same result. After hasNext() returns true, the subsequent call
-	 * to receive() is guaranteed to return a result. Conversely, if hasNext() returns false, the
-	 * subsequent call to receive() will throw a MUSCLEConduitExhaustedException.
+	 * If the sending end has stopped, the result is false. As long as receive()
+	 * is not called, subsequent calls to hasNext() return the same result.
+	 * After hasNext() returns true, the subsequent call to receive() is
+	 * guaranteed to return a result. Conversely, if hasNext() returns false,
+	 * the subsequent call to receive() will throw a
+	 * MUSCLEConduitExhaustedException.
 	 */
 	public boolean hasNext() {
 		// As long as receive() is not called, return true.
@@ -68,17 +69,16 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 			this.nextElem = this.queue.take();
 		} catch (InterruptedException ex) {
 			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
-			this.isDone = true;
 		}
-		if (this.isDone) this.nextElem = null;
-		else if (this.nextElem == null) this.isDone = true;
+		if (this.nextElem == null) this.isDone = true;
 		
-		return this.nextElem != null;
+		return !isDone;
 	}
 	
 	/**
 	 * Receive one piece of data.
-	 * The call is blocking, meaning that it won't return until data is received. Data returned does not need to be copied.
+	 * The call is blocking, meaning that it won't return until data is
+	 * received. Data returned does not need to be copied.
 	 * 
 	 * @throws MUSCLEConduitExhaustedException if hasNext would produce false.
 	 * @return a piece of data
@@ -88,14 +88,11 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 			throw new MUSCLEConduitExhaustedException("This submodel is stopping; its conduit can no longer be used.");
 		}
 		
-		// Update the willStop timestamp only when the message is received by the Instance.
-		this.controller.setNextTimestamp(this.nextElem.getNextTimestamp());
+		// Indicate to the controller that the message is received, so it can
+		// do last minute edits.
+		this.controller.messageReceived(nextElem);
 		T data = this.nextElem.getData();
 		this.nextElem = null;
 		return data;
-	}
-	
-	void dispose() {
-		this.isDone = true;
 	}
 }

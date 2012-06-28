@@ -23,7 +23,7 @@ package muscle.core.ident;
 
 /**
 portal identifier
-@author Jan Hegewald
+@author Joris Borgdorff
 */
 public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
 	protected final E ownerID;
