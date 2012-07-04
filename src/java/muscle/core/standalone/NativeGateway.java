@@ -58,13 +58,16 @@ public class NativeGateway  extends Thread {
 	
 	@Override
 	public void run() {
+		Socket s = null;
+		XdrTcpDecodingStream xdrIn = null;
+		XdrTcpEncodingStream xdrOut = null;
 		try {
-			Socket s = ss.accept();
+			s = ss.accept();
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			
-			XdrTcpDecodingStream xdrIn =  new XdrTcpDecodingStream(s, 64 * 1024);
-			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, 64 * 1024);
+			xdrIn =  new XdrTcpDecodingStream(s, 64 * 1024);
+			xdrOut = new XdrTcpEncodingStream(s, 64 * 1024);
 			
 			while (true) {
 				logger.finest("Starting decoding...");
@@ -151,12 +154,35 @@ public class NativeGateway  extends Thread {
 			}
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Communication error", ex);
+			listener.isFinished();
 		} catch (OncRpcException ex) {
 			logger.log(Level.SEVERE, "XDR Enc/Dec exception", ex);
+			listener.isFinished();
 		} catch (Throwable ex) {
-			logger.log(Level.SEVERE, "Could not finish communication with native code.", ex);
+			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex.toString(), ex);
+			listener.isFinished();
+			if (s != null) {
+				if (xdrIn != null) {
+					try {
+						xdrIn.close();
+					} catch (Exception ex1) {
+						Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + "could not close communications with native code", ex1);
+					}
+				}
+				if (xdrOut != null) {
+					try {
+						xdrOut.close();
+					} catch (Exception ex1) {
+						Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + "could not close communications with native code", ex1);
+					}
+				}
+				try {
+					s.close();
+				} catch (IOException ex1) {
+					Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + "could not close communications with native code", ex1);
+				}
+			}
 		}
-		
 	}
 
 }

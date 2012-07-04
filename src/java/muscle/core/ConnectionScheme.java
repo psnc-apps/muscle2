@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import eu.mapperproject.jmml.util.ArrayMap;
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -32,9 +34,7 @@ import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.core.ident.*;
 import muscle.util.MiscTool;
-import muscle.util.data.ArrayMap;
 import muscle.util.data.Env;
-import muscle.util.data.FastArrayList;
 
 /**
 describes the p2p connections between kernels

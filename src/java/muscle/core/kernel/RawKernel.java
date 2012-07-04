@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.kernel;
 
+import eu.mapperproject.jmml.util.ArrayMap;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -28,14 +29,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.*;
 import muscle.core.model.Timestamp;
-import muscle.util.serialization.DataConverter;
-import muscle.util.serialization.PipeConverter;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.util.MiscTool;
 import muscle.util.OSTool;
-import muscle.util.data.ArrayMap;
 import muscle.util.jni.JNIMethod;
+import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.PipeConverter;
 
 // experimental info mode with
 // coast sk:coast.cxa.test.sandbox.RawKernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
@@ -151,7 +151,7 @@ public abstract class RawKernel {
 		return e;
 	}
 
-	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
+	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<R> jniClass, Class<T> dataClass, DataConverter<R, T> transmuter) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(portName, new DataTemplate<T>(dataClass));
 
 		Scale sc = getScale();
@@ -161,8 +161,8 @@ public abstract class RawKernel {
 
 		return e;		
 	}
-	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String portName, Class<T> dataClass, Class<T> jniClass) {
-		return addJNIEntrance(portName, dataClass, jniClass, new PipeConverter<T>());
+	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String portName, Class<T> dataClass) {
+		return addJNIEntrance(portName, dataClass, dataClass, new PipeConverter<T>());
 	}
 
 	/**
@@ -358,12 +358,12 @@ public abstract class RawKernel {
 	}
 	@Deprecated
 	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter) {
-		return addJNIEntrance(newPortalName, newDataClass, newJNIClass, newTransmuter);
+		return addJNIEntrance(newPortalName, newJNIClass, newDataClass, newTransmuter);
 	}
 
 	@Deprecated
 	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass) {
-		return addJNIEntrance(newPortalName, newDataClass, newDataClass);
+		return addJNIEntrance(newPortalName, newDataClass);
 	}
 	
 	@Deprecated

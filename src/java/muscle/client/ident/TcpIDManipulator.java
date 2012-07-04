@@ -13,20 +13,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.InstanceID;
-import muscle.core.ident.Location;
-import muscle.core.ident.PortalID;
-import muscle.core.ident.Resolver;
-import muscle.util.serialization.DeserializerWrapper;
-import muscle.util.serialization.SerializerWrapper;
+import muscle.core.ident.*;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
+import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.SerializerWrapper;
 
 /**
- *
  * @author Joris Borgdorff
  */
 public class TcpIDManipulator implements IDManipulator {
@@ -63,8 +57,10 @@ public class TcpIDManipulator implements IDManipulator {
 		try {
 			return (f != null && Boolean.TRUE.equals(f.get()));
 		} catch (InterruptedException ex) {
+			logger.log(Level.WARNING, "Register query was interrupted.", ex);
 			return false;
 		} catch (ExecutionException ex) {
+			logger.log(Level.WARNING, "Could not execute register query.", ex);
 			return false;
 		}
 	}
@@ -77,8 +73,10 @@ public class TcpIDManipulator implements IDManipulator {
 		try {
 			return (f != null && Boolean.TRUE.equals(f.get()));
 		} catch (InterruptedException ex) {
+			logger.log(Level.WARNING, "Propagate query was interrupted.", ex);
 			return false;
 		} catch (ExecutionException ex) {
+			logger.log(Level.WARNING, "Could not execute propagate query.", ex);
 			return false;
 		}
 	}
@@ -124,8 +122,10 @@ public class TcpIDManipulator implements IDManipulator {
 		try {
 			return (f != null && Boolean.TRUE.equals(f.get()));
 		} catch (InterruptedException ex) {
+			logger.log(Level.INFO, "Deregister query was interrupted.", ex);
 			return false;
 		} catch (ExecutionException ex) {
+			logger.log(Level.INFO, "Could not execute deregister query.", ex);
 			return false;
 		}
 	}
@@ -158,7 +158,7 @@ public class TcpIDManipulator implements IDManipulator {
 		private Boolean successful;
 
 		ManagerProtocolHandler(Socket s, InstanceID id, SimulationManagerProtocol action) {
-			super(s, TcpIDManipulator.this, true, true, true);
+			super(s, TcpIDManipulator.this, true, true, 3, true);
 			this.action = action;
 			this.id = id;
 			if (this.action == SimulationManagerProtocol.REGISTER && !this.id.isResolved()) {

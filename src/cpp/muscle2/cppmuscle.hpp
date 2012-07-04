@@ -8,7 +8,7 @@
 #endif
 
 #include <string>
-#include <unistd.h>
+#include <sys/types.h>
 
 #include "muscle_types.h"
 

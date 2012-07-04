@@ -10,8 +10,8 @@ import java.net.Socket;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.Location;
 import muscle.client.ident.TcpLocation;
+import muscle.core.ident.Location;
 import muscle.util.serialization.ConverterWrapperFactory;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
@@ -34,8 +34,9 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 	private SerializerWrapper out;
 	private final boolean outIsControl;
 	private final boolean inIsControl;
+	private final int tries;
 	
-	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl, boolean closeSocket) {
+	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl, int tries, boolean closeSocket) {
 		this.listener = listener;
 		this.socket = s;
 		this.closeSocket = closeSocket;
@@ -43,43 +44,55 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 		this.out = null;
 		this.inIsControl = inIsControl;
 		this.outIsControl = outIsControl;
+		this.tries = tries;
 	}
-
+	
+	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl, boolean closeSocket) {
+		this(s, listener, inIsControl, outIsControl, 1, closeSocket);
+	}
+	
 	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl) {
-		this(s, listener, inIsControl, outIsControl, false);
+		this(s, listener, inIsControl, outIsControl, 1, false);
+	}
+	
+	public ProtocolHandler(Socket s, T listener, boolean inIsControl, boolean outIsControl, int tries) {
+		this(s, listener, inIsControl, outIsControl, tries, false);
 	}
 	
 	@Override
 	public S call() {
 		S ret = null;
-		try {
-			if (in == null) {
-				if (inIsControl) {
-					in = ConverterWrapperFactory.getControlDeserializer(socket);
-				} else {
-					in = ConverterWrapperFactory.getDataDeserializer(socket);
+		boolean succeeded = false;
+		for (int i = 1; !succeeded && i <= tries; i++) {
+			try {
+				if (in == null) {
+					if (inIsControl) {
+						in = ConverterWrapperFactory.getControlDeserializer(socket);
+					} else {
+						in = ConverterWrapperFactory.getDataDeserializer(socket);
+					}
 				}
+				if (out == null) {
+					if (outIsControl) {
+						out = ConverterWrapperFactory.getControlSerializer(socket);
+					} else {
+						out = ConverterWrapperFactory.getDataSerializer(socket);
+					}
+				}
+
+				ret = executeProtocol(in, out);
+				succeeded = true;
+			} catch (IOException ex) {
+				logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
+			} catch (RuntimeException ex) {
+				logger.log(Level.SEVERE, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
 			}
-			if (out == null) {
-				if (outIsControl) {
-					out = ConverterWrapperFactory.getControlSerializer(socket);
-				} else {
-					out = ConverterWrapperFactory.getDataSerializer(socket);
-				}
-			}
-			
-			ret = executeProtocol(in, out);
-		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket.", ex);
-		} catch (RuntimeException ex) {
-			logger.log(Level.SEVERE, "Could not finish protocol due to an error.", ex);
-		} finally {
-			if (this.closeSocket) {
-				try {
-					this.socket.close();
-				} catch (IOException ex) {
-					logger.log(Level.SEVERE, "Failure to close socket after protocol has finished", ex);
-				}
+		}
+		if (this.closeSocket) {
+			try {
+				this.socket.close();
+			} catch (IOException ex) {
+				logger.log(Level.SEVERE, "Failure to close socket after protocol has finished", ex);
 			}
 		}
 		return ret;

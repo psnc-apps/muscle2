@@ -21,14 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplecpp2;
 
-import java.math.BigDecimal;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
 import muscle.core.Scale;
+import muscle.core.model.Distance;
 
 /**
 example of a kernel which is using native code to send and receive data using a new Native MUSCLE API
@@ -36,14 +30,13 @@ example of a kernel which is using native code to send and receive data using a 
 */
 public class Sender extends muscle.core.standalone.NativeKernel {
 
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 	
 	public void addPortals() {
-		addEntrance("data", 1, double[].class);
+		addEntrance("data", double[].class);
 	}
 
 }

@@ -5,21 +5,21 @@
 
 package muscle.client.communication;
 
-import muscle.client.communication.message.IncomingMessageProcessor;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.PortalID;
 import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
+import muscle.net.SocketFactory;
 import muscle.util.serialization.BasicMessageConverter;
 import muscle.util.serialization.ObservationConverter;
 import muscle.util.serialization.SerializableDataConverter;
-import muscle.net.SocketFactory;
 
 /**
  *

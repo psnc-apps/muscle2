@@ -5,9 +5,9 @@
 
 package muscle.client.communication;
 
-import muscle.client.communication.message.JadeIncomingMessageProcessor;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
+import muscle.client.communication.message.JadeIncomingMessageProcessor;
 import muscle.client.ident.JadeIdentifier;
 import muscle.client.ident.JadePortalID;
 import muscle.client.instance.ConduitEntranceControllerImpl;

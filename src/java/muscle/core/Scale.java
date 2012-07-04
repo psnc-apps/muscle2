@@ -22,9 +22,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
+import muscle.core.model.Distance;
 
 
 /**
@@ -33,37 +35,33 @@ represents time and spatial scale according to SSM in SI units
 */
 public class Scale implements java.io.Serializable {
 
-	private muscle.core.model.Duration dt; // time scale (must be seconds when used without quantity)
-	private ArrayList<DecimalMeasure<Length>> dx; // scale(s) in space (must be meter when used without quantity)
+	private Distance dt; // time scale (must be seconds when used without quantity)
+	private ArrayList<Distance> dx; // scale(s) in space (must be meter when used without quantity)
 	
-	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
-		this(new muscle.core.model.Duration(newDt.doubleValue(SI.SECOND)), newDx);
-	}
-	
-	public Scale(muscle.core.model.Duration newDt, DecimalMeasure ... newDx) {
+	public Scale(Distance newDt) {
 		dt = newDt;
 
 		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
 		// this is probably because there are no generic c-style arrays in java
 		// so we check the types for each vararr item to be a DecimalMeasure<Length>
-		dx = new ArrayList<DecimalMeasure<Length>>();
-		for(DecimalMeasure m : newDx) {
-			dx.add((DecimalMeasure<Length>)m);
-		}
+		dx = new ArrayList<Distance>();
 	}
 
+	public Scale(Distance newDt, Distance ... newDx) {
+		dt = newDt;
 
-	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
-		dt = new muscle.core.model.Duration(newDt.doubleValue(SI.SECOND));
-		dx = newDx;
+		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
+		// this is probably because there are no generic c-style arrays in java
+		// so we check the types for each vararr item to be a DecimalMeasure<Length>
+		dx = new ArrayList<Distance>(Arrays.asList(newDx));
 	}
+
 	
-	
-	public muscle.core.model.Duration getDt() {
+	public Distance getDt() {
 		return this.dt;
 	}
 	
-	public DecimalMeasure<Length> getDx(int index) {
+	public Distance getDx(int index) {
 		return dx.get(index);
 	}
 	
@@ -89,7 +87,7 @@ public class Scale implements java.io.Serializable {
 
 			// test scale for every dimension in space
 			for(int i = 0; i < getDimensions(); i++) {
-				if(getDx(i).doubleValue(SI.METER) != other.getDx(i).doubleValue(SI.METER) )
+				if(!getDx(i).equals(other.getDx(i)))
 					return false;
 			}
 			
@@ -107,6 +105,33 @@ public class Scale implements java.io.Serializable {
 		}
 		
 		return text.toString();
+	}
+	
+	@Deprecated
+	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
+		this(new muscle.core.model.Distance(newDt.doubleValue(SI.SECOND)), newDx);
+	}
+	
+	@Deprecated
+	public Scale(Distance newDt, DecimalMeasure ... newDx) {
+		dt = newDt;
+
+		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
+		// this is probably because there are no generic c-style arrays in java
+		// so we check the types for each vararr item to be a DecimalMeasure<Length>
+		dx = new ArrayList<Distance>();
+		for(DecimalMeasure m : newDx) {
+			dx.add(new Distance(m.doubleValue(SI.METER)));
+		}
+	}
+
+	@Deprecated
+	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
+		dt = new muscle.core.model.Distance(newDt.doubleValue(SI.SECOND));
+		dx = new ArrayList<Distance>();
+		for(DecimalMeasure m : newDx) {
+			dx.add(new Distance(m.doubleValue(SI.METER)));
+		}
 	}
 }
 

@@ -3,12 +3,12 @@
  */
 package muscle.client.communication;
 
-import muscle.client.communication.message.BasicMessage;
-import muscle.client.communication.message.Message;
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.communication.message.BasicMessage;
+import muscle.client.communication.message.Message;
 import muscle.core.ident.InstanceID;
 import muscle.core.ident.PortalID;
 import muscle.util.data.SerializableData;

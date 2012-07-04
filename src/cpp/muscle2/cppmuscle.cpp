@@ -5,6 +5,7 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 
+#include <unistd.h>
 #include <cstdio>
 #include <stdio.h>
 #include <string>
@@ -12,6 +13,10 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/errno.h>
 
 using boost::asio::ip::tcp;
 using namespace std;
@@ -24,7 +29,7 @@ XDR xdro, xdri;
 pid_t muscle_pid;
 const char *tmpfifo;
 
-#define CPPMUSCLE_TRACE  
+//#define CPPMUSCLE_TRACE  
 
 
 extern "C" int xdr_read_from_socket(void *socket_handle, void *buf, int buf_len)
@@ -63,19 +68,12 @@ int env::init(int *argc, char ***argv)
 	{
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
 		muscle_pid = env::muscle2_spawn(argc, argv);
-		if (muscle_pid < 0)
-		{
-			if (muscle_pid == -2)
-				logger::severe("Could not instantiate MUSCLE: no command line arguments given.");
-			
-			return MUSCLE_INIT_ERR_SPAWN;
-		}
 		
 		env::muscle2_tcp_location(muscle_pid, host_str, &port);
 		if (port == 0)
 		{
 			logger::severe("Could not contact MUSCLE: no TCP port given.");
-			return MUSCLE_INIT_ERR_IO;
+			exit(1);
 		}
 	}
 	host = *host_str ? boost::asio::ip::address_v4::from_string(host_str) : boost::asio::ip::address_v4::loopback();
@@ -424,7 +422,11 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 		}
 	}
 	
-	if (term == -1) return -1;
+	if (term == -1)
+	{
+		logger::severe("Could not instantiate MUSCLE: no command line arguments given.");			
+		exit(1);
+	}
 	
 	tmpfifo = env::create_tmpfifo();
 	
@@ -466,17 +468,19 @@ pid_t env::spawn(char * const *argv)
 	cout << "muscle::env::spawn(" << argv[0] << ")" << endl;
 #endif
 	pid = fork();
-	if (pid == -1) {
+	if (pid == -1)
+	{
 		logger::severe("Could not start new Java MUSCLE instance: fork failed. Aborting.");
-		return -1;
+		exit(1);
 	}
 	
 	// Child process: execute
 	if (pid == 0) {
 		int rc = execvp(argv[0], argv);
-		if (rc == -1) {
+		if (rc == -1)
+		{
 			logger::severe("Executable muscle2 not found in the PATH. Aborting.");
-			return -1;
+			_exit(1);
 		}
 	}
 	return pid;

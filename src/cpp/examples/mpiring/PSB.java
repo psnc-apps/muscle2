@@ -1,22 +1,13 @@
 package examples.mpiring;
 
-import java.math.BigDecimal;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
-import muscle.core.ConduitEntrance;
-import muscle.core.CxADescription;
-import muscle.core.Scale;
-
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.ptr.DoubleByReference;
-
-import examples.mpiring.LHC.EnergyCallback;
+import muscle.core.ConduitEntrance;
+import muscle.core.CxADescription;
+import muscle.core.Scale;
+import muscle.core.model.Distance;
 
 public class PSB extends muscle.core.kernel.CAController {
 	
@@ -48,16 +39,14 @@ public class PSB extends muscle.core.kernel.CAController {
 		ring = (MPIRING) Native.loadLibrary("mpiring", MPIRING.class);
 	}
 
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
 	public void addPortals() {
-		pipeOutput = addEntrance("pipe", 1, double[].class);
+		pipeOutput = addEntrance("pipe", double[].class);
 	}
-	 
 
 	protected void execute() {
 	

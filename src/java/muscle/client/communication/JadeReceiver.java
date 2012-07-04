@@ -3,12 +3,12 @@
  */
 package muscle.client.communication;
 
-import muscle.client.communication.message.Message;
-import muscle.client.communication.message.JadeMessage;
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.communication.message.JadeMessage;
+import muscle.client.communication.message.Message;
 import muscle.client.ident.JadeIdentifier;
 import muscle.client.ident.JadePortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;

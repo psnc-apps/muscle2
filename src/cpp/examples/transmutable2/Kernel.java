@@ -29,6 +29,7 @@ import javax.measure.unit.SI;
 import muscle.core.JNIConduitEntrance;
 import muscle.core.JNIConduitExit;
 import muscle.core.Scale;
+import muscle.core.model.Distance;
 import muscle.util.serialization.DataConverter;
 import muscle.util.serialization.DoubleStringConverter;
 import muscle.core.standalone.NativeKernel;
@@ -45,19 +46,16 @@ public class Kernel extends NativeKernel {
 	private JNIConduitEntrance<double[],String> entrance;
 	private JNIConduitExit<String,double[]> exit;
 
-	//
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
-
 	
 	public void addPortals() {
 		DataConverter<double[], String> dc = new DoubleStringConverter();
-		entrance = addJNIEntrance("writer", 1, double[].class, String.class, dc);
+		entrance = addJNIEntrance("writer", double[].class, String.class, dc);
 
-		exit = addJNIExit("reader", 1, String.class, double[].class, dc);
+		exit = addJNIExit("reader", String.class, double[].class, dc);
 	}
 
 }

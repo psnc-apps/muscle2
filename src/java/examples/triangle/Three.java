@@ -21,83 +21,46 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.triangle;
 
-import muscle.core.ConduitExit;
 import muscle.core.ConduitEntrance;
+import muscle.core.ConduitExit;
 import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
+import muscle.core.model.Distance;
 
 /**
 @author Bartosz Bosak
 */
 public class Three extends muscle.core.kernel.CAController {
-
-	private static final int INTERNAL_DT = 1;
-
-	// external dt's for out portals
-	private static final int DT_READ_A = 1;
-	private static final int dtWriteA = 1;
-
 	private ConduitExit<double[]> reader3;
 	private ConduitEntrance<double[]> writer3;
 
-	private int time; // cxa time
-
-	//
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
-	//
-	protected void addPortals() {
-	
-		reader3 = addExit("data", DT_READ_A, double[].class);
-		writer3 = addEntrance("data", 1, double[].class);
+	protected void addPortals() {	
+		reader3 = addExit("data", double[].class);
+		writer3 = addEntrance("data", double[].class);
 	}
 		
 
 	//
 	protected void execute() {
-
-		startAutomaton();
-	}
-	
-	
-	//
-	private void startAutomaton() {
-	
-		double[] dataA = null;
-		
-		// loop stepping with INTERNAL_DT
-		for(time = 0; !willStop(); time += INTERNAL_DT) {
-		
+		while (!willStop()) {
 			// read from our portals at designated frequency
-			if(time % DT_READ_A == 0)
-				dataA = reader3.receive();
+			double[] dataA = reader3.receive();
 						
 			// process data
 			for(int i = 0; i < dataA.length; i++) {
 			}
-						
+			
 			// dump to our portals at designated frequency
-			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			if(time % dtWriteA == 0) {
-				for(int i = 0; i < dataA.length; i++)
-				{
-					System.out.println("got from Two: "+dataA[i]);
-					dataA[i]++;
-				}
-				System.out.println("Sending data to One");
-				writer3.send(dataA);
+			for(int i = 0; i < dataA.length; i++) {
+				System.out.println("got from Two: "+dataA[i]);
+				dataA[i]++;
 			}
+			System.out.println("Sending data to One");
+			writer3.send(dataA);
 		}
 	}
-
 }

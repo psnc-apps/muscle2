@@ -23,11 +23,7 @@ package examples.simplejava;
 
 import muscle.core.ConduitEntrance;
 import muscle.core.Scale;
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
+import muscle.core.model.Distance;
 
 
 /**
@@ -35,17 +31,15 @@ a simple java example kernel which sends data
 @author Jan Hegewald
 */
 public class Sender extends muscle.core.kernel.CAController {
-
 	private ConduitEntrance<double[]> entrance;
 	
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
-
+	
 	protected void addPortals() {
-		entrance = addEntrance("data", 1, double[].class);
+		entrance = addEntrance("data", double[].class);
 	}
 
 	protected void execute() {

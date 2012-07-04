@@ -1,14 +1,10 @@
 package examples.pingpong;
 
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
 import muscle.core.kernel.CAController;
+import muscle.core.model.Distance;
 
 public class Ping extends CAController {
 	private ConduitEntrance<byte[]> entrance;
@@ -16,8 +12,8 @@ public class Ping extends CAController {
 
 	@Override
 	protected void addPortals() {
-		entrance = addEntrance("out", 1, byte[].class);
-		exit = addExit("in", 1, byte[].class);
+		entrance = addEntrance("out", byte[].class);
+		exit = addExit("in", byte[].class);
 	}
 
 	@Override
@@ -105,11 +101,7 @@ public class Ping extends CAController {
 
 	@Override
 	public Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1),
-				SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1),
-				SI.METER);
-		return new Scale(dt, dx);
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
-
 }

@@ -27,7 +27,7 @@ import java.util.logging.LogManager;
 
 /**
 initializes our logging mechanism, load with<br>
--Djava.util.logging.config.class=muscle.logging.LoggingConfiguration
+-Djava.util.logging.config.class=muscle.util.logging.LoggingConfiguration
 @author Jan Hegewald
 */
 public class LoggingConfiguration {

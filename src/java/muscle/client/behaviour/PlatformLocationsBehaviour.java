@@ -21,14 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.client.behaviour;
 
-import jade.content.onto.basic.Result;
-import jade.core.Agent;
 import jade.content.onto.OntologyException;
 import jade.content.onto.UngroundedException;
+import jade.content.onto.basic.Result;
+import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
-
-
 import muscle.exception.JADERuntimeException;
 
 

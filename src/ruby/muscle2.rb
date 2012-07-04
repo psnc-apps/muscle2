@@ -35,6 +35,7 @@ else
 end unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
 
+require 'timeout'
 require 'utilities'
 require 'cli2'
 require 'cxa'
@@ -349,38 +350,45 @@ if muscle_local_args.size != 0
 	local_pid = Process.fork {exec(command)}
 end
 
+def kill_process(pid, signal, name)
+	if pid
+    	begin
+			puts "sending #{signal} signal to #{name} (pid=#{pid})"
+			Process.kill(signal, pid)
+		rescue Errno::ESRCH
+			puts "#{name} already finished."
+		end
+    end
+end
+
 begin
 	statuses = Process.waitall
 	statuses.each { |status| exit status[1].exit if status[1].exitstatus !=0 } #exit with no zero value if only one process had non-zero exit value
 rescue Interrupt
 	puts "Interrupt received..."
-	exit_val = 1	
-	if manager_pid
-    	puts "sending SIGINT signal to Simulation Manager (pid=#{manager_pid})"
-        Process.kill("SIGINT", manager_pid)
-    end
+	exit_val = 1
+
+	kill_process(manager_pid, "SIGINT", "Simulation Manager")
+	kill_process(local_pid, "SIGINT", "Local Manager")
+
+	# After 30 seconds, do a full kill.
+	begin
+		Timeout::timeout(30) {
+			begin
+				Process.waitall
+			rescue Interrupt
+				kill_process(manager_pid, "SIGKILL", "Simulation Manager")
+				kill_process(local_pid, "SIGKILL", "Local Manager")
+			    Process.waitall
+			end
+		}
+	rescue Timeout::Error
+		kill_process(manager_pid, "SIGKILL", "Simulation Manager")
+		kill_process(local_pid, "SIGKILL", "Local Manager")
+	    Process.waitall
+	end
     
-    if local_pid
-    	puts "sending SIGINT signal to Local Manager (pid=#{local_pid})"
-        Process.kill("SIGINT", local_pid)
-    end
-                
-    begin
-        Process.waitall
-    rescue Interrupt
-		if manager_pid
-	    	puts "sending SIGKILL signal to Simulation Manager (pid=#{manager_pid})"
-	        Process.kill("SIGKILL", manager_pid)
-	    end
-	    
-	    if local_pid
-	    	puts "sending SIGKILL signal to Local Manager (pid=#{local_pid})"
-	        Process.kill("SIGKILL", local_pid)
-	    end
-    end
-    
-    Process.waitall
-    exit 1
+    exit exit_val
 end
 
 exit 0

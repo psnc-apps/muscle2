@@ -21,18 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.laplace;
 
-import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import javax.swing.JFrame;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
-
+import muscle.core.Scale;
+import muscle.core.model.Distance;
 
 /**
 heat flow calculation wrapped in a MUSCLE kernel for distributed computation
@@ -43,15 +37,11 @@ public class KernelWest extends muscle.core.kernel.CAController {
 	private ConduitExit<double[]> readerEast;
 	private ConduitEntrance<double[]> writerEast;
 	private Temperature t;
-	
-	
-	//
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+		
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
-
 
 	/**
 	init the temperature calculator
@@ -101,9 +91,8 @@ public class KernelWest extends muscle.core.kernel.CAController {
 	announce our conduit connections
 	*/
 	protected void addPortals() {
-	
-		writerEast = addEntrance("west", 1, double[].class);
-		readerEast = addExit("east", 1, double[].class);
+		writerEast = addEntrance("west", double[].class);
+		readerEast = addExit("east", double[].class);
 	}
 		
 

@@ -6,8 +6,8 @@ package muscle.client.communication;
 
 import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
-import muscle.util.serialization.DataConverter;
 import muscle.util.concurrency.Disposable;
+import muscle.util.serialization.DataConverter;
 
 /**
  *

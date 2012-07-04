@@ -5,7 +5,6 @@ package muscle.client.communication;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.DetachConduitSignal;
@@ -18,7 +17,6 @@ import muscle.core.model.Observation;
 import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
-import muscle.util.serialization.ConverterWrapperFactory;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -30,12 +28,10 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	private final static Logger logger = Logger.getLogger(TcpTransmitter.class.getName());
 	private final static long socketKeepAlive = 5000*1000;
 	private final SocketFactory socketFactory;
-	private SerializerWrapper out;
 	
 	public TcpTransmitter(SocketFactory sf) {
 		this.socketFactory = sf;
 		this.liveSocket = null;
-		this.out = null;
 	}
 
 	@Override
@@ -54,7 +50,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 			logger.log(Level.WARNING, "Transmitter is disposed of; unable to send observation to {0}", portalID);
 			return;
 		}
-		sendMessage(converter.serialize(obs), null);
+		send(converter.serialize(obs), null);
 	}
 
 	// Synchronized: can only transmit one signal or message at a time.
@@ -65,50 +61,60 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 
 			return;
 		}
-		sendMessage(null, signal);
+		send(null, signal);
 	}
 	
-	private void sendMessage(Observation<SerializableData> obs, Signal signal) {
-		try {
-			boolean reloadSocket = liveSocket.lockSocket();
-			
-			if (reloadSocket || out == null) {
-				Socket socket = liveSocket.getOrCreateSocket();
-				out = ConverterWrapperFactory.getDataSerializer(socket);
-			}
-			if (obs != null) {
-				if (logger.isLoggable(Level.FINEST))
-					logger.log(Level.FINEST, "Sending data message of type {0} to {1}", new Object[] {obs.getData().getType(), portalID});
-				out.writeInt(TcpDataProtocol.OBSERVATION.ordinal());
-				out.writeString(portalID.getName());
-				out.writeInt(portalID.getType().ordinal());
-				out.writeDouble(obs.getTimestamp().doubleValue());
-				out.writeDouble(obs.getNextTimestamp().doubleValue());
-				obs.getData().encodeData(out);
-				out.flush();
-			}
-			else if (signal != null) {
-				SignalEnum sig;
-				if (signal instanceof DetachConduitSignal) {
-					sig = SignalEnum.DETACH_CONDUIT;
-				} else {
-					return;
-				}
-				logger.log(Level.FINEST, "Sending signal {0} to {1}", new Object[] {sig, portalID});
+	private void send(Observation<SerializableData> obs, Signal signal) {
+		boolean sent = false;
+		for (int tries = 1; !sent && tries <= 3; tries++) {
+			if (liveSocket.lock()) {
+				try {
+					SerializerWrapper out = liveSocket.getOutput();
 
-				out.writeInt(TcpDataProtocol.SIGNAL.ordinal());
-				out.writeString(portalID.getName());
-				out.writeInt(portalID.getType().ordinal());
-				out.writeInt(sig.ordinal());
-				out.flush();
+					if (obs != null) {
+						sendMessage(out, obs);
+					}
+					else if (signal != null) {
+						sendSignal(out, signal);
+					}
+					sent = true;
+				} catch (IOException ex) {
+					logger.log(Level.SEVERE, "I/O failure to send message to " + portalID + "; tried " + tries + "/3 times.", ex);
+				} catch (Exception ex) {
+					logger.log(Level.SEVERE, "Unexpected failure to send message to " + portalID + "; tried " + tries + "/3 times.", ex);
+				} finally {
+					liveSocket.unlock();
+				}
 			}
-		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "I/O failure to send message to {0}: {1}", new Object[]{portalID, ex});
-		} catch (Exception ex) {
-			logger.log(Level.SEVERE, "Unexpected failure to send message to {0}: {1}", new Object[]{portalID, ex});
-		} finally {
-			liveSocket.unlockSocket();
 		}
+	}
+	
+	private void sendMessage(SerializerWrapper out, Observation<SerializableData> obs) throws IOException {
+		if (logger.isLoggable(Level.FINEST))
+			logger.log(Level.FINEST, "Sending data message of type {0} to {1}", new Object[] {obs.getData().getType(), portalID});
+		out.writeInt(TcpDataProtocol.OBSERVATION.ordinal());
+		out.writeString(portalID.getName());
+		out.writeInt(portalID.getType().ordinal());
+		out.writeDouble(obs.getTimestamp().doubleValue());
+		out.writeDouble(obs.getNextTimestamp().doubleValue());
+		obs.getData().encodeData(out);
+		out.flush();
+	}
+	
+	private void sendSignal(SerializerWrapper out, Signal signal) throws IOException {
+		SignalEnum sig;
+		if (signal instanceof DetachConduitSignal) {
+			sig = SignalEnum.DETACH_CONDUIT;
+		} else {
+			return;
+		}
+		logger.log(Level.FINEST, "Sending signal {0} to {1}", new Object[] {sig, portalID});
+
+		out.writeInt(TcpDataProtocol.SIGNAL.ordinal());
+		out.writeString(portalID.getName());
+		out.writeInt(portalID.getType().ordinal());
+		out.writeInt(sig.ordinal());
+		out.flush();
 	}
 	
 	public synchronized void dispose() {

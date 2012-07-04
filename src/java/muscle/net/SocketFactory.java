@@ -43,7 +43,7 @@ public abstract class SocketFactory {
 				ss = new ServerSocket(i, backlog, addr);
 				break;
 			} catch (BindException ex) {
-				logger.log(Level.FINE, "Failed to bind to port: {0}", ex);
+				logger.log(Level.FINE, "Failed to bind to port: " + i, ex);
 			}
 		}
 		

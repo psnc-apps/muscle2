@@ -24,12 +24,7 @@ package examples.triangle;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
-import muscle.core.kernel.RawKernel;
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
+import muscle.core.model.Distance;
 
 
 /**
@@ -40,30 +35,20 @@ public class One extends muscle.core.kernel.CAController {
 	private ConduitEntrance<double[]> writer1;
 	private ConduitExit<double[]> reader1;
 	
-	private int time;
-
-	//
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
-
-	//
 	protected void addPortals() {
-	
-		writer1 = addEntrance("data", 1, double[].class);
-		reader1 = addExit("data", 1, double[].class);
+		writer1 = addEntrance("data", double[].class);
+		reader1 = addExit("data", double[].class);
 	}
 
-
-	//
 	protected void execute() {
-
 		double[] dataA = new double[5];
 		
-		for(time = 0; !willStop(); time ++) {
+		while(!willStop()) {
 								
 			// process data
 			for(int i = 0; i < dataA.length; i++) {

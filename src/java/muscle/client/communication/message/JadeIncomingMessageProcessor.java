@@ -20,21 +20,18 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.client.communication.message;
 
+import eu.mapperproject.jmml.util.ArrayMap;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.communication.JadeReceiver;
-import muscle.client.communication.JadeReceiver;
-import muscle.client.communication.Receiver;
 import muscle.client.communication.Receiver;
 import muscle.core.ident.Identifier;
 import muscle.util.serialization.ACLConverter;
 import muscle.util.serialization.ByteJavaObjectConverter;
-import muscle.util.data.ArrayMap;
 
 /**
 process the agent message queue from a sub-thread of the agents main thread

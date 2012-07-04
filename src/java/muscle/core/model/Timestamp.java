@@ -3,33 +3,47 @@
  */
 package muscle.core.model;
 
+import eu.mapperproject.jmml.util.numerical.SIUnit;
+import eu.mapperproject.jmml.util.numerical.ScaleFactor;
+import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
+
 /**
  *
  * @author Joris Borgdorff
  */
-public class Timestamp extends AbstractTime {
+public class Timestamp extends SIUnit {
 	public Timestamp(double t) {
-		super(t);
+		this(t, ScaleFactor.SECOND);
+	}
+	
+	private Timestamp(double t, ScaleFactor sc) {
+		super(t, sc);
+	}
+
+	private Timestamp(SIUnit unit) {
+		super(unit);
 	}
 	
 	public String toString() {
-		return "t=" + this.t + " s";
+		return "t=" + doubleValue() + " s";
 	}
 	
-	public Timestamp subtract(Duration other) {
-		return new Timestamp(t - other.t);
+	public Timestamp subtract(Distance other) {
+		if (other.getDimension() != Dimension.TIME) {
+			throw new IllegalArgumentException("May only subtract time from a timestamp");
+		}
+		return new Timestamp(super.sub(other));
 	}
-	public Timestamp add(Duration other) {
-		return new Timestamp(t + other.t);
+	public Timestamp add(Distance other) {
+		if (other.getDimension() != Dimension.TIME) {
+			throw new IllegalArgumentException("May only add time to a timestamp");
+		}
+		return new Timestamp(super.add(other));
 	}
 	public Timestamp multiply(double factor) {
-		return new Timestamp(t * factor);
+		return new Timestamp(value * factor, scale);
 	}
 	public Timestamp divide(double factor) {
-		return new Timestamp(t / factor);
-	}
-	
-	public double doubleValue() {
-		return t;
+		return new Timestamp(value / factor, scale);
 	}
 }

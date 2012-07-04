@@ -21,14 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplecpp;
 
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import muscle.core.JNIConduitEntrance;
 import muscle.core.Scale;
 import muscle.core.kernel.CAController;
+import muscle.core.model.Distance;
 
 
 /**
@@ -44,14 +40,13 @@ public class Sender extends CAController {
 
 	private native void callNative(JNIConduitEntrance entranceJref);	
 
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(BigDecimal.ONE, SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(BigDecimal.ONE, SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
 	public void addPortals() {
-		entrance = addJNIEntrance("data", 1, double[].class);
+		entrance = addJNIEntrance("data", double[].class);
 	}
 
 	protected void execute() {

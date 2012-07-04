@@ -23,11 +23,8 @@ package muscle.client.behaviour;
 
 import jade.core.AID;
 import jade.core.Agent;
-
-import java.util.Iterator;
-
 import jade.core.Location;
-
+import java.util.Iterator;
 
 /**
 prints the results of a LocationAgentsBehaviour to System.out

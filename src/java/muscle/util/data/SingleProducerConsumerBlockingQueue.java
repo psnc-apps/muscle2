@@ -227,66 +227,79 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 		}
 	}
 	
+	/** Not implemented. */
 	@Override
 	public Iterator<E> iterator() {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public Object[] toArray() {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public <T> T[] toArray(T[] ts) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean containsAll(Collection<?> clctn) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean addAll(Collection<? extends E> clctn) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean removeAll(Collection<?> clctn) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean retainAll(Collection<?> clctn) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public E poll(long l, TimeUnit tu) throws InterruptedException {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean offer(E e, long l, TimeUnit tu) throws InterruptedException {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	
-		@Override
+	/** Not implemented. */
+	@Override
 	public boolean remove(Object o) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public boolean contains(Object o) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public int drainTo(Collection<? super E> clctn) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
+	/** Not implemented. */
 	@Override
 	public int drainTo(Collection<? super E> clctn, int i) {
 		throw new UnsupportedOperationException("Not supported yet.");

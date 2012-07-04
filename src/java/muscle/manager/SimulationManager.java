@@ -4,6 +4,8 @@
 
 package muscle.manager;
 
+import eu.mapperproject.jmml.util.ArrayMap;
+import eu.mapperproject.jmml.util.ArraySet;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -15,8 +17,6 @@ import muscle.core.ident.Identifier;
 import muscle.net.AbstractConnectionHandler;
 import muscle.net.LocalSocketFactory;
 import muscle.net.SocketFactory;
-import muscle.util.data.ArrayMap;
-import muscle.util.data.ArraySet;
 
 /**
  * Keeps a registry of running submodels and stops simulation once all submodels have finished.

@@ -21,33 +21,24 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplejava;
 
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
-
+import muscle.core.model.Distance;
 
 /**
 a simple java example kernel which receives data and prints its content to stdout
 @author Jan Hegewald
 */
 public class ConsoleWriter extends muscle.core.kernel.CAController {
-
-	private static final int INTERNAL_DT = 1;
-
 	private ConduitExit<double[]> readerA;
 
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
 	protected void addPortals() {	
-		readerA = addExit("data", 1, double[].class);
+		readerA = addExit("data", double[].class);
 	}
 
 	protected void execute() {

@@ -6,7 +6,7 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import muscle.core.model.Duration;
+import muscle.core.model.Distance;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
 
@@ -21,14 +21,14 @@ import muscle.core.model.Timestamp;
 public class ConduitEntrance<T extends Serializable> {
 	private final ConduitEntranceController<T> consumer;
 	protected Timestamp nextTime;
-	protected final Duration dt;
+	protected final Distance dt;
 	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Scale sc) {
-		this(controller, new Timestamp(0d), sc == null ? new Duration(1) : sc.getDt());
+		this(controller, new Timestamp(0d), sc == null ? new Distance(1) : sc.getDt());
 	}
 	
-	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Duration timeStep) {
+	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Distance timeStep) {
 		this.nextTime = origin;
 		this.dt = timeStep;
 		

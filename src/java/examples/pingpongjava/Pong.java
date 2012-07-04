@@ -21,86 +21,41 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.pingpongjava;
 
-import java.math.BigDecimal;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
 import muscle.core.ConduitExit;
 import muscle.core.Scale;
-
+import muscle.core.kernel.CAController;
+import muscle.core.model.Distance;
 
 /**
 a simple java example kernel which receives data and prints its content to stdout
 @author Jan Hegewald
 */
-public class Pong extends muscle.core.kernel.CAController {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private static final int INTERNAL_DT = 1;
-
-	// external dt's for out portals
-	private static final int DT_READ_A = 1;
-	private static final int dtWriteA = 1;
-
+public class Pong extends CAController {
 	private ConduitExit<double[]> readerA;
 
-	private int time; // cxa time
-
-
-	//
 	@Override
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
-
-	//
 	@Override
 	protected void addPortals() {
-
-		this.readerA = this.addExit("data", DT_READ_A, double[].class);
+		this.readerA = this.addExit("data", double[].class);
 	}
 
-
-	//
 	@Override
 	protected void execute() {
+		while (!this.willStop()) {
 
-		this.startAutomaton();
-	}
+			// read from our portals
+			double[] dataA = this.readerA.receive();
 
-
-	//
-	private void startAutomaton() {
-
-		double[] dataA = null;
-
-		// loop stepping with INTERNAL_DT
-		for(this.time = 0; !this.willStop(); this.time += INTERNAL_DT) {
-
-			// read from our portals at designated frequency
-			if(this.time % DT_READ_A == 0) {
-				dataA = this.readerA.receive();
+			// dump to our portals
+			for (double element : dataA) {
+				System.out.println("got: "+element);
 			}
-
-			// dump to our portals at designated frequency
-			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			if(this.time % dtWriteA == 0) {
-				for (double element : dataA) {
-					System.out.println("got: "+element);
-				}
-				System.out.println();
-			}
+			System.out.println();
 		}
 	}
-
 }

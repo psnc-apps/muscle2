@@ -89,9 +89,6 @@ e = {
 }
 e['muscle.Env dump uri'] = URI.parse "file:#{File.join(e['tmp_path'], Muscle.jclass)}"
 
-e['muscle.behaviour.KillPlatformBehaviour'] = {"logging_after_teardown_properties_path" => File.join(base_dir, "share/muscle/resources/logging/logging.after_teardown.properties")}
-
-
 m.add_env(e)
 
 

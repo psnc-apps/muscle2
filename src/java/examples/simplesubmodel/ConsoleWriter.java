@@ -6,7 +6,7 @@ package examples.simplesubmodel;
 
 import muscle.core.Scale;
 import muscle.core.kernel.Submodel;
-import muscle.core.model.Duration;
+import muscle.core.model.Distance;
 
 /**
  *
@@ -23,6 +23,6 @@ public class ConsoleWriter extends Submodel {
 	}
 
 	public Scale getScale() {
-		return new Scale(new Duration(1d));
+		return new Scale(new Distance(1d));
 	}
 }

@@ -21,10 +21,10 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.client.instance;
 
 import jade.core.Agent;
+import muscle.client.communication.message.JadeIncomingMessageProcessor;
 import muscle.client.ident.JadeAgentID;
 import muscle.client.ident.JadeLocation;
 import muscle.core.kernel.InstanceController;
-import muscle.client.communication.message.JadeIncomingMessageProcessor;
 
 /**
 JADE agent which filters incoming data messages and passes them to multiple message sinks

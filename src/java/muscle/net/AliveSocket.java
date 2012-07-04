@@ -11,9 +11,11 @@ import java.net.Socket;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.util.SynchronizedTimer;
 import muscle.util.Timer;
 import muscle.util.concurrency.SafeTriggeredThread;
 import muscle.util.serialization.ConverterWrapperFactory;
+import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -29,6 +31,8 @@ public class AliveSocket extends SafeTriggeredThread {
 	private final ReentrantLock lock;
 	private final Timer timeSinceUnlock;
 	private final long keepAlive;
+	private SerializerWrapper out;
+	private DeserializerWrapper in;
 	
 	/**
 	 * 
@@ -43,53 +47,69 @@ public class AliveSocket extends SafeTriggeredThread {
 		this.address = addr;
 		this.socket = null;
 		this.lock = new ReentrantLock();
-		this.timeSinceUnlock = new Timer();
+		this.timeSinceUnlock = new SynchronizedTimer();
 		this.keepAlive = keepAlive;
+		this.in = null;
+		this.out = null;
 	}
 	
 	/** 
 	 * Locks the socket.
 	 * 
-	 * It must always be followed by a unlockSocket() statement, in a finally
-	 * block of the try/catch construction that envelops getOrCreateSocket().
+	 * It must always be followed by a call to unlock(), for instance in a finally
+	 * block. This will fail only if the socket is disposed of.
 	 * 
-	 * @return whether a new socket should be created
-	 * @throws IllegalStateException when the AliveSocket has been disposed.
+	 * @return whether the lock succeeded
 	 */
-	public boolean lockSocket() {
-		synchronized (this) {
-			if (this.isDisposed()) {
-				throw new IllegalStateException("AliveSocket has already been disposed of.");
-			}
-			lock.lock();
+	public boolean lock() {
+		if (this.isDisposed()) return false;
+		lock.lock();
+		if (this.isDisposed()) {
+			lock.unlock();
+			return false;
 		}
-		return socket == null;
+		return true;
 	}
 	
-	/** 
-	 * Gets or creates the underlying socket.
-	 * 
-	 * @return socket to be used
-	 * @throws IllegalStateException when a lock has not been obtained through lockSocket()
-	 */
-	public Socket getOrCreateSocket() throws IOException {
-		if (!lock.isHeldByCurrentThread()) {
-			throw new IllegalStateException("Socket can only be retrieved once a lock has been obtained.");
+	public SerializerWrapper getOutput() throws IOException {				
+		this.updateSocket();
+		if (this.out == null) {
+			out = ConverterWrapperFactory.getDataSerializer(this.socket);
 		}
+		return this.out;
+	}
+
+	public DeserializerWrapper getInput() throws IOException {
+		this.updateSocket();
+		if (this.in == null) {
+			in = ConverterWrapperFactory.getDataDeserializer(this.socket);
+		}
+		return this.in;
+	}
+	
+	protected void updateSocket() throws IOException {
+		if (!lock.isHeldByCurrentThread())
+			throw new IllegalStateException("Can only use AliveSocket with a lock.");
+		
+		if (socket != null && socket.isClosed()) {
+			this.out = null;
+			this.in = null;
+			this.socket = null;
+		}
+		
 		if (socket == null) {
 			this.socket = this.socketFactory.createSocket();
 			this.socket.connect(this.address);
 		}
-		return this.socket;
 	}
-	
+		
 	/**
 	 * Unlocks the socket for some other's use.
 	 */
-	public void unlockSocket() {
+	public void unlock() {
 		this.timeSinceUnlock.reset();
-		this.trigger();
 		lock.unlock();
+		this.trigger();
 	}
 	
 	@Override
@@ -101,52 +121,65 @@ public class AliveSocket extends SafeTriggeredThread {
 	public void dispose() {
 		super.dispose();
 		lock.lock();
-		this.closeSocket();
+		try {
+			this.reset();
+		} finally {
+			lock.unlock();
+		}
 	}
 
 	@Override
 	protected void execute() throws InterruptedException {
-		boolean lockHeld = false;
-		
 		long milli = this.timeSinceUnlock.millisec();
 		if (milli < this.keepAlive) {
 			Thread.sleep(this.keepAlive - milli);
 		}
 		try {
-			synchronized (this) {
-				if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) {
-					// also runs finally block, but lockHeld is false so
-					// it won't try to unlock
-					return;
-				}
-				lock.lock();
-				lockHeld = true;
-			}
-			if (this.timeSinceUnlock.millisec() < this.keepAlive) {
+			// Disposed, or there has been another unlock, and thus trigger.
+			if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) return;
+			lock.lock();
+			
+			if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) {
 				this.trigger();
 				return;
 			}
-
-			this.closeSocket();
+		
+			this.reset();
 		} catch (Exception ex) {
 			logger.log(Level.SEVERE, "Exception occurred", ex);
 		} finally {
-			if (lockHeld)
+			// lock may not yet be locked.
+			if (lock.isHeldByCurrentThread())
 				lock.unlock();
 		}
 	}
 	
-	private void closeSocket() {
+	public void reset() {
+		if (!lock.isHeldByCurrentThread())
+			throw new IllegalStateException("Can only use AliveSocket with a lock.");
+
 		if (this.socket != null) {
-			try {
-				SerializerWrapper out = ConverterWrapperFactory.getControlSerializer(this.socket);
-				out.writeInt(-1);
-				out.close();
-				this.socket.close();
-				this.socket = null;
-			} catch (IOException ex) {
-				logger.log(Level.WARNING, "Could not properly close socket", ex);
+			if (!this.socket.isClosed()) {
+				logger.fine("Closing stale socket.");
+				try {
+					getOutput();
+					out.writeInt(-1);
+					out.close();
+					if (in != null) {
+						in.close();
+					}
+				} catch (IOException ex) {
+					logger.log(Level.WARNING, "Could not properly send end-sequence to socket", ex);
+					try {
+						this.socket.close();
+					} catch (IOException ex1) {
+						Logger.getLogger(AliveSocket.class.getName()).log(Level.SEVERE, "Could not properly close socket", ex1);
+					}
+				}
 			}
+			this.out = null;
+			this.in = null;
+			this.socket = null;
 		}
 	}
 }

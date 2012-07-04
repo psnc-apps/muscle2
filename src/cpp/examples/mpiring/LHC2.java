@@ -1,30 +1,17 @@
 package examples.mpiring;
 
-import java.math.BigDecimal;
-
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
-
-import muscle.core.ConduitExit;
-import muscle.core.CxADescription;
 import muscle.core.Scale;
-
-import com.sun.jna.Callback;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
+import muscle.core.model.Distance;
 
 public class LHC2 extends muscle.core.standalone.MPIKernel {
 
-	public muscle.core.Scale getScale() {
-		DecimalMeasure<Duration> dt = DecimalMeasure.valueOf(new BigDecimal(1), SI.SECOND);
-		DecimalMeasure<Length> dx = DecimalMeasure.valueOf(new BigDecimal(1), SI.METER);
-		return new Scale(dt,dx);
+	public Scale getScale() {
+		Distance delta = new Distance(1);
+		return new Scale(delta,delta);
 	}
 
 	public void addPortals() {
-		addExit("pipe-in", 1, double[].class);
+		addExit("pipe-in", double[].class);
 	}
 
 }

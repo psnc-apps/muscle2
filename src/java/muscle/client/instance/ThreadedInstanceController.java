@@ -5,6 +5,7 @@
 
 package muscle.client.instance;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +13,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.communication.PortFactory;
+import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.core.*;
 import muscle.core.ident.Identifier;
 import muscle.core.ident.PortalID;
@@ -24,7 +25,6 @@ import muscle.core.kernel.InstanceControllerListener;
 import muscle.core.kernel.RawKernel;
 import muscle.util.JVM;
 import muscle.util.MiscTool;
-import muscle.util.data.FastArrayList;
 
 /**
  *

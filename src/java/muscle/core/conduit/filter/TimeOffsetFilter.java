@@ -22,7 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import muscle.core.model.Duration;
+import muscle.core.model.Distance;
 import muscle.core.model.Observation;
 
 /**
@@ -30,12 +30,12 @@ modifies timestep with a given offset
 @author Jan Hegewald
 */
 public class TimeOffsetFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
-	private final Duration offset;
+	private final Distance offset;
 
 	/** @param newOffset offset in seconds */
 	public TimeOffsetFilter(int newOffset) {
 		super();
-		offset = new Duration(newOffset);
+		offset = new Distance(newOffset);
 	}
 
 	protected void apply(Observation<E> subject) {

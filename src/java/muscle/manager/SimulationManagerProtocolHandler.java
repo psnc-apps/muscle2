@@ -23,7 +23,7 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 
 	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener) {
 		// Use control for in and out
-		super(s, listener, true, true);
+		super(s, listener, true, true, 3);
 	}
 
 	@Override

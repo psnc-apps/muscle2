@@ -20,10 +20,10 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.util;
 
+import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
-import muscle.util.data.ArraySet;
 
 /**
 singleton class which provides access to global (JVM wide) settings

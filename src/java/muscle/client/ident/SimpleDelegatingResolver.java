@@ -1,18 +1,14 @@
 package muscle.client.ident;
 
+import eu.mapperproject.jmml.util.ArrayMap;
+import eu.mapperproject.jmml.util.ArraySet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.IDType;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.Location;
-import muscle.core.ident.PortalID;
-import muscle.core.ident.Resolver;
+import muscle.core.ident.*;
 import muscle.core.kernel.InstanceController;
-import muscle.util.data.ArrayMap;
-import muscle.util.data.ArraySet;
 
 /**
  * A simple resolver that delegates the actual creation and searching of Identifiers and Locations.

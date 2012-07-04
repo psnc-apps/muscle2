@@ -11,8 +11,6 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
-import muscle.client.communication.Receiver;
-import muscle.client.communication.Transmitter;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.ident.PortalID;

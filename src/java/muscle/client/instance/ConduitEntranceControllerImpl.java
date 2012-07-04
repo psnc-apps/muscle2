@@ -149,7 +149,7 @@ public class ConduitEntranceControllerImpl<T extends Serializable> extends Porta
 	
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
-		logger.log(Level.SEVERE, "ConduitEntranceController " + this + " interrupted", ex);
+		logger.log(Level.WARNING, "ConduitEntranceController " + this + " interrupted", ex);
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */

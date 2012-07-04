@@ -6,7 +6,7 @@ package examples.simplesubmodel;
 
 import muscle.core.Scale;
 import muscle.core.kernel.Submodel;
-import muscle.core.model.Duration;
+import muscle.core.model.Distance;
 
 /**
  *
@@ -16,11 +16,7 @@ public class Sender extends Submodel {
 	private double[][] data;
 	
 	protected void init() {
-		data = new double[2][2];
-		data[0][0] = 2d;
-		data[1][0] = 3d;
-		data[0][1] = 1d;
-		data[1][1] = 2d;
+		data = new double[][] {{2, 1}, {3, 2}};
 	}
 	
 	protected void intermediateObservation() {
@@ -28,6 +24,6 @@ public class Sender extends Submodel {
 	}
 	
 	public Scale getScale() {
-		return new Scale(new Duration(1d));
+		return new Scale(new Distance(1d));
 	}
 }

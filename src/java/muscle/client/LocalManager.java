@@ -5,9 +5,6 @@
 
 package muscle.client;
 
-import muscle.client.ident.TcpLocation;
-import muscle.client.ident.TcpIDManipulator;
-import muscle.client.ident.SimpleDelegatingResolver;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -16,14 +13,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.message.DataConnectionHandler;
-import muscle.client.communication.TcpPortFactoryImpl;
-import muscle.core.ConnectionScheme;
 import muscle.client.communication.PortFactory;
+import muscle.client.communication.TcpPortFactoryImpl;
+import muscle.client.communication.message.DataConnectionHandler;
+import muscle.client.ident.SimpleDelegatingResolver;
+import muscle.client.ident.TcpIDManipulator;
+import muscle.client.ident.TcpLocation;
+import muscle.client.instance.ThreadedInstanceController;
+import muscle.core.ConnectionScheme;
 import muscle.core.ident.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
-import muscle.client.instance.ThreadedInstanceController;
 import muscle.net.LocalSocketFactory;
 import muscle.net.SocketFactory;
 
@@ -140,6 +140,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 				System.out.println();
 				System.out.println("MUSCLE is locally shutting down; deregistering local submodels");
 			}
+	
 			while (!controllers.isEmpty()) {
 				InstanceController ic = null;
 				synchronized (controllers) {
@@ -162,7 +163,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			} catch (InterruptedException ex) {}
 			if (!finished) {
 				System.out.println("Submodels not exiting nicely; forcing exit.");
-				System.exit(1);
+				Runtime.getRuntime().halt(1);
 			}
 		}
 		
@@ -172,10 +173,11 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 
 			// Not waiting more than 15 seconds, and interrupting every second.
 			for (int i = 0; !finished && i < 15; i++) {
-				forcefulQuitHook.interrupt();
+				disposeOfControllersHook.interrupt();
 				System.out.print(".");
 				wait(1000);
 			}
+			System.out.println();
 		}
 		
 		public synchronized void notifyDisposerFinished() {

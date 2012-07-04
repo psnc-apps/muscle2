@@ -21,33 +21,25 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import com.thoughtworks.xstream.XStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
-import muscle.util.jni.JNITool;
-
+import muscle.core.model.Distance;
 
 /**
 describes data content and accompanies a DataWrapper
 @author Jan Hegewald
 */
 public class DataTemplate<T> implements Serializable {
-	public static final int ANY_SIZE = -1;
-	public static final int UNKNOWN_QUANTITY = -2;
-
 	// these fields might be null to indicate: any
 	private final Class<?> dataClass; // double.class for double, boolean.class for boolean, int[].class for 1D int array etc.
-	private int size = ANY_SIZE;
 	private final Scale scale;
 
 	public DataTemplate(Class<T> newDataClass) {
-		this(newDataClass, new Scale(new DecimalMeasure<Duration>(BigDecimal.ONE, SI.SECOND), new DecimalMeasure<Length>(BigDecimal.ONE,SI.METER)));
+		this(newDataClass, new Scale(new Distance(1d), new Distance(1d)));
 	}
 	
 	public DataTemplate(Class<T> newDataClass, Scale newScale) {
@@ -59,49 +51,8 @@ public class DataTemplate<T> implements Serializable {
 		return this.scale;
 	}
 	
-	/**
-	returns amount of data in bits or negative value if unspecified
-	*/
-	public long getQuantity() {
-		int dataSize = 0;
-		if(dataClass.equals(boolean[].class))
-			dataSize = 1;
-		else if(dataClass.equals(byte[].class))
-			dataSize = Byte.SIZE;
-		else if(dataClass.equals(char[].class))
-			dataSize = Character.SIZE;
-		else if(dataClass.equals(short[].class))
-			dataSize = Short.SIZE;
-		else if(dataClass.equals(int[].class))
-			dataSize = Integer.SIZE;
-		else if(dataClass.equals(long[].class))
-			dataSize = Long.SIZE;
-		else if(dataClass.equals(float[].class))
-			dataSize = Float.SIZE;
-		else if(dataClass.equals(double[].class))
-			dataSize = Double.SIZE;
-		else {
-			Logger.getLogger(DataTemplate.class.getName()).log(Level.INFO, "unknown data class <{0}>", dataClass.getName());
-			return UNKNOWN_QUANTITY;
-		}
-			
-		if( getSize() == ANY_SIZE)
-			return ANY_SIZE;
-			
-		return dataSize * getSize();
-	}
-
-	public String getJNISignature() {
-		return JNITool.toFieldDescriptor(dataClass);
-	}
-
-	private int getSize() {
-		return size;
-	}
-
 	public String toString() {
-		XStream xstream = new XStream();
-		return xstream.toXML(this);
+		return dataClass.getCanonicalName() + ":" + scale.toString();
 	}
 
 	// workaround to solve an issue with the JADE Classloader which can not serialize a Class field with a primitive class
@@ -142,12 +93,5 @@ public class DataTemplate<T> implements Serializable {
 	private static class PrimitiveLong {}
 	private static class PrimitiveFloat {}
 	private static class PrimitiveDouble {}
-
-	//
-	public static void main (String args[]) {
-
-		DataTemplate<double[]> template = new DataTemplate<double[]>(double[].class/*, new DataPattern(0,DataPattern.ANY_BLOCKSIZE,1,0)*/);
-		System.out.println(template.toString());
-	}
 }
 

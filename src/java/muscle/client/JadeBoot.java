@@ -21,20 +21,20 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.client;
 
+import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.management.*;
 import java.util.*;
 import muscle.Constant;
 import muscle.Version;
-import muscle.core.ConnectionScheme;
 import muscle.client.ident.JadeAgentIDManipulator;
+import muscle.client.instance.JadeInstanceController;
+import muscle.core.ConnectionScheme;
 import muscle.core.ident.Resolver;
 import muscle.core.ident.ResolverFactory;
-import muscle.client.instance.JadeInstanceController;
 import muscle.util.JVM;
 import muscle.util.MiscTool;
-import muscle.util.data.ArraySet;
 
 /**
 handle booting/terminating of MUSCLE
