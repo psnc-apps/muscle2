@@ -4,10 +4,7 @@
 package muscle.net;
 
 import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +39,7 @@ public abstract class SocketFactory {
 				logger.log(Level.FINE, "Trying to bind on port: {0}", i);
 				ss = new ServerSocket(i, backlog, addr);
 				break;
-			} catch (BindException ex) {
+			} catch (SocketException ex) {
 				logger.log(Level.FINE, "Failed to bind to port: " + i, ex);
 			}
 		}
