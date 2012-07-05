@@ -360,7 +360,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		}
 		fclose(fp);
 		// Null terminated
-		assert( host[15] == 0 );
+		assert( strnlen(host, 16) < 16 );
 
 		char msg[96];
 		sprintf(msg, "Will communicate with Java MUSCLE on %s:%d", host, *port);
