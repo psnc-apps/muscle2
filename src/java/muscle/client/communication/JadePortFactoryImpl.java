@@ -20,7 +20,6 @@ import muscle.core.model.Observation;
 import muscle.util.serialization.ByteJavaObjectConverter;
 import muscle.util.serialization.PipeConverter;
 
-
 /**
  *
  * @author Joris Borgdorff

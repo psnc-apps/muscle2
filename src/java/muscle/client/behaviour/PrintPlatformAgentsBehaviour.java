@@ -23,7 +23,6 @@ package muscle.client.behaviour;
 
 import jade.core.Agent;
 import jade.core.ContainerID;
-
 import java.util.Iterator;
 
 /**

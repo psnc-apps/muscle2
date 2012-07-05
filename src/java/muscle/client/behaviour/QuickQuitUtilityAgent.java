@@ -26,7 +26,6 @@ import jade.wrapper.ContainerController;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
 helper agent to immediately quit the agent platform 
 @author Jan Hegewald

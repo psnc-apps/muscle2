@@ -13,16 +13,22 @@ package muscle.core.kernel;
 public abstract class Submodel extends Instance {	
 	@Override
 	protected void execute() {
-		this.operationsAllowed = RECV;
-		this.init();
-		while (!willStop()) {
-			this.operationsAllowed = SEND;
-			this.intermediateObservation();
+		readFromCheckpoint();
+		while (true) {
 			this.operationsAllowed = RECV;
-			this.solvingStep();
+			this.init();
+			while (!endCondition()) {
+				this.operationsAllowed = SEND;
+				this.intermediateObservation();
+				this.operationsAllowed = RECV;
+				this.solvingStep();
+			}
+			this.operationsAllowed = SEND;
+			this.finalObservation();
+			if (!restartSubmodel()) {
+				break;
+			}
 		}
-		this.operationsAllowed = SEND;
-		this.finalObservation();
 	}
 	
 	/**
@@ -48,4 +54,26 @@ public abstract class Submodel extends Instance {
 	 * It will be called at the end of a submodel. Override to implement the O_f operator in MML. During this step, messages may only be sent.
 	 */
 	protected void finalObservation() {}
+
+	/**
+	 * Determines whether the submodel will exit the submodel execution loop, and jump to the final observation.
+	 * @return by default, the value of willStop().
+	 */
+	protected boolean endCondition() {
+		return willStop();
+	}
+
+	/**
+	 * Determines whether a submodel will be restarted, once it is finished.
+	 * @return false by default.
+	 */
+	protected boolean restartSubmodel() {
+		return false;
+	}
+
+	/**
+	 * Override to read the state from a checkpoint when the submodel is instantiated.
+	 * Checkpoints may have been made as part of the intermediate or final observation.
+	 */
+	protected void readFromCheckpoint() {}
 }

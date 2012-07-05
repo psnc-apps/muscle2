@@ -43,8 +43,6 @@ create standard messages to communicate with the ams
 @author Jan Hegewald
 */
 public class MessageTool {
-
-
 	//
 	public static ACLMessage createShutdownPlatformRequest(Agent ownerAgent) {
 	
