@@ -32,10 +32,6 @@ otherwise this filter can not provide data for the last timestep<br>
 dtCoarseCount = (globalStepCount%dt_coarse)-1<br>
 dtFineCount = (globalStepCount%dt_fine)-1<br>
 dtCoarseCount/2 == dtFineCount<br>
-<tt>0���1���2���3 t_coarse<br>
-    |��/|��/|��/|<br>
-    |�|�|�|�|�|�|<br>
-    0�1�2�3�4�5�6 t_fine</tt>
 @author Jan Hegewald
 */
 public class LinearTimeInterpolationFilterDouble extends AbstractObservationFilter<double[],double[]> {
