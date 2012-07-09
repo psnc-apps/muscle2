@@ -12,7 +12,7 @@ import muscle.client.communication.PortFactory;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.DataTemplate;
-import muscle.core.ident.Identifier;
+import muscle.id.Identifier;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 

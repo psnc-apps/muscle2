@@ -29,7 +29,7 @@ import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.core.*;
 import muscle.core.conduit.filter.FilterChain;
-import muscle.core.ident.PortalID;
+import muscle.id.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;

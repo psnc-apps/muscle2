@@ -21,8 +21,8 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.client.communication.message;
 
 import jade.lang.acl.ACLMessage;
-import muscle.client.ident.JadeIdentifier;
-import muscle.core.ident.PortalID;
+import muscle.client.id.JadeIdentifier;
+import muscle.id.PortalID;
 
 /**
 @author Jan Hegewald

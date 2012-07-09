@@ -22,8 +22,8 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.core.ident.Identifiable;
-import muscle.core.ident.PortalID;
+import muscle.id.Identifiable;
+import muscle.id.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Timestamp;
 import muscle.util.concurrency.SafeTriggeredThread;

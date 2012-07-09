@@ -8,15 +8,15 @@ package muscle.client.communication;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import muscle.client.communication.message.JadeIncomingMessageProcessor;
-import muscle.client.ident.JadeIdentifier;
-import muscle.client.ident.JadePortalID;
+import muscle.client.id.JadeIdentifier;
+import muscle.client.id.JadePortalID;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.client.instance.JadeInstanceController;
-import muscle.core.ident.PortalID;
-import muscle.core.ident.ResolverFactory;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
+import muscle.id.PortalID;
+import muscle.id.ResolverFactory;
 import muscle.util.serialization.ByteJavaObjectConverter;
 import muscle.util.serialization.PipeConverter;
 
@@ -31,12 +31,12 @@ public class JadePortFactoryImpl extends PortFactory {
 	
 	@Override
 	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
-		return new ReceiverTask<T>(localInstance, otherSide);
+		return new JadePortFactoryImpl.ReceiverTask<T>(localInstance, otherSide);
 	}
 
 	@Override
 	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
-		return new TransmitterTask<T>(ic, localInstance, otherSide);
+		return new JadePortFactoryImpl.TransmitterTask<T>(ic, localInstance, otherSide);
 	}
 	
 	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?,?,?>> {

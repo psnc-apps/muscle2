@@ -21,7 +21,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.Serializable;
-import muscle.core.ident.PortalID;
+import muscle.id.PortalID;
 
 /**
 stores info necessary to setup an entrance

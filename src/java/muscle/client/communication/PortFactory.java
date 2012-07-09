@@ -13,8 +13,8 @@ import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
-import muscle.core.ident.PortalID;
-import muscle.core.ident.ResolverFactory;
+import muscle.id.PortalID;
+import muscle.id.ResolverFactory;
 import muscle.core.kernel.InstanceController;
 
 /**

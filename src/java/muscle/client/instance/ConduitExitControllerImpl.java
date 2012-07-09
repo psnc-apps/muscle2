@@ -13,7 +13,7 @@ import muscle.client.communication.message.Message;
 import muscle.core.ConduitExit;
 import muscle.core.ConduitExitController;
 import muscle.core.DataTemplate;
-import muscle.core.ident.PortalID;
+import muscle.id.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;

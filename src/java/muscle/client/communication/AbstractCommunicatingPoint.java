@@ -4,8 +4,8 @@
  */
 package muscle.client.communication;
 
-import muscle.core.ident.Identifier;
-import muscle.core.ident.PortalID;
+import muscle.id.Identifier;
+import muscle.id.PortalID;
 import muscle.util.serialization.DataConverter;
 
 /**

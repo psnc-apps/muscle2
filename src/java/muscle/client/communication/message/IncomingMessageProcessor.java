@@ -6,7 +6,7 @@
 package muscle.client.communication.message;
 
 import muscle.client.communication.Receiver;
-import muscle.core.ident.Identifier;
+import muscle.id.Identifier;
 
 /**
  *

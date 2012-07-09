@@ -21,6 +21,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import muscle.id.PortalID;
+import muscle.id.ResolverFactory;
+import muscle.id.Identifier;
+import muscle.id.Resolver;
+import muscle.id.IDType;
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.File;
@@ -32,7 +37,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.ident.*;
 import muscle.util.MiscTool;
 import muscle.util.data.Env;
 

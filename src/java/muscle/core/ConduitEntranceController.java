@@ -6,8 +6,8 @@
 package muscle.core;
 
 import java.io.Serializable;
-import muscle.core.ident.Identifiable;
-import muscle.core.ident.PortalID;
+import muscle.id.Identifiable;
+import muscle.id.PortalID;
 import muscle.core.model.Timestamp;
 
 /**

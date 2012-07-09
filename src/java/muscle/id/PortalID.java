@@ -19,18 +19,51 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
     along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package muscle.core;
+package muscle.id;
 
-import muscle.id.PortalID;
-
-// a leaf in our connection scheme tree
-// is now a "node" instead of a leaf because it may have multiple conduits
 /**
-stores info necessary to setup an exit
-@author Jan Hegewald
+portal identifier
+@author Joris Borgdorff
 */
-public class ExitDescription extends PortDescription {
-	public ExitDescription(PortalID newID) {
-		super(newID);
+public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
+	protected final E ownerID;
+	
+	public PortalID(String newName, E newAgentID) {
+		super(newName);
+		this.ownerID = newAgentID;
+	}
+	
+	public boolean isResolved() {
+		return ownerID.isResolved();
+	}
+	
+	@Override
+	public String getName() {
+		return name+"@"+ownerID.getName();
+	}
+	
+	public String getPortName() {
+		return name;
+	}
+	
+	public E getOwnerID() {
+		return this.ownerID;
+	}
+	
+	public void unResolve() {
+		ownerID.unResolve();
+	}
+	
+	@Override
+	public IDType getType() {
+		return IDType.port;
+	}
+
+	public Location getLocation() {
+		return ownerID.getLocation();
+	}
+	
+	public void resolveLike(Identifier id) {
+		this.ownerID.resolveLike(id);
 	}
 }

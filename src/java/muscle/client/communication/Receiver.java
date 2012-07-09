@@ -5,8 +5,8 @@ package muscle.client.communication;
 
 import java.io.Serializable;
 import muscle.client.communication.message.Message;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.PortalID;
+import muscle.id.Identifier;
+import muscle.id.PortalID;
 
 /**
  *

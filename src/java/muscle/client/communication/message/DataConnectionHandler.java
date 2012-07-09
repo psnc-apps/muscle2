@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
-import muscle.core.ident.Identifier;
-import muscle.core.ident.ResolverFactory;
+import muscle.id.Identifier;
+import muscle.id.ResolverFactory;
 import muscle.net.AbstractConnectionHandler;
 
 /**

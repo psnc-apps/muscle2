@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.Identifier;
+import muscle.id.Identifier;
 import muscle.net.AbstractConnectionHandler;
 import muscle.net.LocalSocketFactory;
 import muscle.net.SocketFactory;

@@ -5,6 +5,11 @@
 
 package muscle.client;
 
+import muscle.id.InstanceClass;
+import muscle.id.ResolverFactory;
+import muscle.id.Identifier;
+import muscle.id.Resolver;
+import muscle.id.IDType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -16,12 +21,11 @@ import java.util.logging.Logger;
 import muscle.client.communication.PortFactory;
 import muscle.client.communication.TcpPortFactoryImpl;
 import muscle.client.communication.message.DataConnectionHandler;
-import muscle.client.ident.SimpleDelegatingResolver;
-import muscle.client.ident.TcpIDManipulator;
-import muscle.client.ident.TcpLocation;
+import muscle.client.id.SimpleDelegatingResolver;
+import muscle.client.id.TcpIDManipulator;
+import muscle.client.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
-import muscle.core.ident.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.net.LocalSocketFactory;

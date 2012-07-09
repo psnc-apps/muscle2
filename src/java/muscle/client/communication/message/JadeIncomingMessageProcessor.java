@@ -29,7 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.JadeReceiver;
 import muscle.client.communication.Receiver;
-import muscle.core.ident.Identifier;
+import muscle.id.Identifier;
 import muscle.util.serialization.ACLConverter;
 import muscle.util.serialization.ByteJavaObjectConverter;
 

@@ -28,11 +28,11 @@ import java.lang.management.*;
 import java.util.*;
 import muscle.Constant;
 import muscle.Version;
-import muscle.client.ident.JadeAgentIDManipulator;
+import muscle.client.id.JadeAgentIDManipulator;
 import muscle.client.instance.JadeInstanceController;
 import muscle.core.ConnectionScheme;
-import muscle.core.ident.Resolver;
-import muscle.core.ident.ResolverFactory;
+import muscle.id.Resolver;
+import muscle.id.ResolverFactory;
 import muscle.util.JVM;
 import muscle.util.MiscTool;
 

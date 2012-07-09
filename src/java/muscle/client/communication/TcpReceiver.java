@@ -9,8 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.BasicMessage;
 import muscle.client.communication.message.Message;
-import muscle.core.ident.InstanceID;
-import muscle.core.ident.PortalID;
+import muscle.id.InstanceID;
+import muscle.id.PortalID;
 import muscle.util.data.SerializableData;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 

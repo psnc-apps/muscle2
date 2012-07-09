@@ -9,8 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.JadeMessage;
 import muscle.client.communication.message.Message;
-import muscle.client.ident.JadeIdentifier;
-import muscle.client.ident.JadePortalID;
+import muscle.client.id.JadeIdentifier;
+import muscle.client.id.JadePortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**

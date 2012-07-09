@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.ident.InstanceClass;
+import muscle.id.InstanceClass;
 import muscle.core.kernel.RawKernel;
 
 /**

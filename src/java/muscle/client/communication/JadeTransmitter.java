@@ -7,8 +7,8 @@ import jade.core.Agent;
 import java.io.Serializable;
 import muscle.client.communication.message.JadeObservationMessage;
 import muscle.client.communication.message.Signal;
-import muscle.client.ident.JadeIdentifier;
-import muscle.client.ident.JadePortalID;
+import muscle.client.id.JadeIdentifier;
+import muscle.client.id.JadePortalID;
 import muscle.core.model.Observation;
 
 /**

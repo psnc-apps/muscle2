@@ -7,7 +7,7 @@ import java.io.Serializable;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.DataTemplate;
-import muscle.core.ident.Identifiable;
+import muscle.id.Identifiable;
 
 /**
  * @author Joris Borgdorff

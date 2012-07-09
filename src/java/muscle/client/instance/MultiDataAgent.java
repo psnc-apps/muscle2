@@ -22,8 +22,8 @@ package muscle.client.instance;
 
 import jade.core.Agent;
 import muscle.client.communication.message.JadeIncomingMessageProcessor;
-import muscle.client.ident.JadeAgentID;
-import muscle.client.ident.JadeLocation;
+import muscle.client.id.JadeAgentID;
+import muscle.client.id.JadeLocation;
 import muscle.core.kernel.InstanceController;
 
 /**
