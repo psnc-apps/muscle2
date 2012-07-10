@@ -10,9 +10,7 @@ import java.util.concurrent.Callable;
 import muscle.client.communication.message.JadeIncomingMessageProcessor;
 import muscle.client.id.JadeIdentifier;
 import muscle.client.id.JadePortalID;
-import muscle.client.instance.ConduitEntranceControllerImpl;
-import muscle.client.instance.ConduitExitControllerImpl;
-import muscle.client.instance.JadeInstanceController;
+import muscle.client.instance.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
@@ -41,10 +39,14 @@ public class JadePortFactoryImpl extends PortFactory {
 	
 	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?,?,?>> {
 		private final JadePortalID port;
-		private final ConduitExitControllerImpl<T> exit;
+		private final ThreadedConduitExitController<T> exit;
 
 		public ReceiverTask(ConduitExitControllerImpl<T> exit, PortalID other) {
-			this.exit = exit;
+			if (exit instanceof ThreadedConduitExitController) {
+				this.exit = (ThreadedConduitExitController<T>)exit;
+			} else {
+				throw new IllegalArgumentException("Only threaded conduit exits can be created by JadePortFactoryImpl.");
+			}
 			if (other instanceof JadePortalID) {
 				this.port = (JadePortalID) other;
 			} else {

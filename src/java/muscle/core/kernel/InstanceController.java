@@ -14,8 +14,8 @@ import muscle.id.Identifiable;
  */
 public interface InstanceController extends Identifiable, Runnable {
 	public String getLocalName();
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(String portalName, DataTemplate newDataTemplate);
-	public <T extends Serializable> ConduitExitController<T> createConduitExit(String portalName, DataTemplate newDataTemplate);
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate);
+	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate);
 	/** Dispose of the instance. If it was centrally registered, it will deregister itself. */
 	public void dispose();
 	public boolean isExecuting();

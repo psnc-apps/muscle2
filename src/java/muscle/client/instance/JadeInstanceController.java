@@ -27,13 +27,14 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 	
 	
 	@Override
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(String portalName, DataTemplate newDataTemplate) {
-		return realController.createConduitEntrance(portalName, newDataTemplate);
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate) {
+		return realController.createConduitEntrance(threaded, portalName, newDataTemplate);
 	}
 
 	@Override
-	public <T extends Serializable> ConduitExitController<T> createConduitExit(String portalName, DataTemplate newDataTemplate) {
-		return realController.createConduitExit(portalName, newDataTemplate);
+	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
+		// Only excepts threaded conduit exits
+		return realController.createConduitExit(true, portalName, newDataTemplate);
 	}
 	
 	@Override

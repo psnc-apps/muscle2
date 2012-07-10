@@ -11,9 +11,9 @@ import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Signal;
 import muscle.client.communication.message.SignalEnum;
 import muscle.client.id.TcpLocation;
+import muscle.core.model.Observation;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
-import muscle.core.model.Observation;
 import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
@@ -35,7 +35,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	}
 
 	@Override
-	public void setComplementaryPort(PortalID port) {
+	public void setComplementaryPort(PortalID<InstanceID> port) {
 		super.setComplementaryPort(port);
 		this.liveSocket = new AliveSocket(socketFactory, ((TcpLocation)port.getLocation()).getSocketAddress(), socketKeepAlive);
 		this.liveSocket.start();
@@ -85,6 +85,9 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 				} finally {
 					liveSocket.unlock();
 				}
+			} else {
+				logger.log(Level.WARNING, "Can not send message: connection to {0} already closed.", portalID);
+				break;
 			}
 		}
 	}

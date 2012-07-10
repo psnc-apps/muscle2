@@ -13,9 +13,9 @@ import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
+import muscle.core.kernel.InstanceController;
 import muscle.id.PortalID;
 import muscle.id.ResolverFactory;
-import muscle.core.kernel.InstanceController;
 
 /**
  * Assigns Receivers and Transmitters to Portals.

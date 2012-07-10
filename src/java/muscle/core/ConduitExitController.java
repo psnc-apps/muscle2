@@ -7,20 +7,17 @@ package muscle.core;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
+import muscle.core.model.Observation;
 import muscle.id.Identifiable;
 import muscle.id.PortalID;
-import muscle.core.model.Observation;
-import muscle.core.model.Timestamp;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public interface ConduitExitController<T extends Serializable> extends Identifiable<PortalID> {
+public interface ConduitExitController<T extends Serializable> extends Identifiable<PortalID>, Portal {
 	BlockingQueue<Observation<T>> getMessageQueue();
 	void messageReceived(Observation<T> obs);
-	public String getLocalName();
 	public ConduitExit<T> getExit();
 	public void setExit(ConduitExit<T> exit);
-	public Timestamp getSITime();
 }

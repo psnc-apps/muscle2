@@ -22,20 +22,18 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import muscle.core.DataTemplate;
-import muscle.id.Identifiable;
-import muscle.id.PortalID;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Timestamp;
-import muscle.util.concurrency.SafeTriggeredThread;
+import muscle.id.Identifiable;
+import muscle.id.PortalID;
 
-public abstract class Portal<T extends Serializable> extends SafeTriggeredThread implements Serializable, Identifiable<PortalID> {
+public abstract class PassivePortal<T extends Serializable> implements Serializable, Identifiable<PortalID> {
 	protected final PortalID portalID;
 	protected Timestamp customSITime;
 	private int usedCount;
 	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
 	
-	Portal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
-		super(newPortalID.toString());
+	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
 		portalID = newPortalID;
 	
 		// set custom time to 0
@@ -66,7 +64,7 @@ public abstract class Portal<T extends Serializable> extends SafeTriggeredThread
 	public boolean equals(Object obj) {
 		if (obj == null || !obj.getClass().equals(this.getClass())) return false;
 		
-		return ((Portal) obj).portalID.equals(portalID);
+		return ((PassivePortal) obj).portalID.equals(portalID);
 	}
 
 	@Override

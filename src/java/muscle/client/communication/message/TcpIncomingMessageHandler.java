@@ -11,11 +11,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.TcpDataProtocol;
+import muscle.core.model.Timestamp;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
-import muscle.core.model.Timestamp;
 import muscle.net.ProtocolHandler;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
@@ -47,7 +47,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		// Protocol not executed.
 		if (protoNum == -1) {
 			this.socket.close();
-			logger.finer("Closing stale socket.");
+			logger.finer("Closing stale incoming socket.");
 			return null;
 		}
 		if (protoNum < 0 || protoNum >= msgType.length) {

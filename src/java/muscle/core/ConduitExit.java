@@ -52,6 +52,14 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	}
 
 	/**
+	 * Whether the next call to hasNext or receive will return without blocking.
+	 * This is a non-blocking function. If it returns true, that does not guarantee that there is a next message.
+	 */
+	public boolean ready() {
+		return !this.queue.isEmpty();
+	}
+	
+	/**
 	 * Whether there will be a next piece of data. It is a blocking function,
 	 * waiting for the next message or a signal that no more messages will come.
 	 * If the sending end has stopped, the result is false. As long as receive()

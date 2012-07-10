@@ -17,7 +17,7 @@ public class Pong extends CAController {
 
 	@Override
 	protected void addPortals() {
-		entrance = addEntrance("out", byte[].class);
+		entrance = addSynchronizedEntrance("out", byte[].class);
 		exit = addExit("in", byte[].class);
 
 	}

@@ -10,12 +10,11 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
-import muscle.client.instance.ConduitEntranceControllerImpl;
-import muscle.client.instance.ConduitExitControllerImpl;
+import muscle.client.instance.*;
+import muscle.core.kernel.InstanceController;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.id.ResolverFactory;
-import muscle.core.kernel.InstanceController;
 import muscle.net.SocketFactory;
 import muscle.util.serialization.BasicMessageConverter;
 import muscle.util.serialization.ObservationConverter;
@@ -43,10 +42,15 @@ public class TcpPortFactoryImpl extends PortFactory {
 				@SuppressWarnings("unchecked")
 				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
 				
-				TcpReceiver<T> recv = new TcpReceiver<T>();
+				boolean passive = exit instanceof PassiveConduitExitController;
+				
+				Receiver recv = passive ?  (PassiveConduitExitController)exit : new TcpReceiver<T>();
 				recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
 				recv.setComplementaryPort(instancePort);
-				exit.setReceiver(recv);
+				
+				if (!passive && exit instanceof ThreadedConduitExitController) {
+					((ThreadedConduitExitController)exit).setReceiver(recv);
+				}
 			
 				messageProcessor.addReceiver(exit.getIdentifier(), recv);
 				

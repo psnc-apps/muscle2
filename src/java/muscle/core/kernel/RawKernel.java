@@ -118,7 +118,7 @@ public abstract class RawKernel {
 	public abstract Scale getScale();
 
 	protected <T extends Serializable> ConduitExit<T> addExit(String portName, Class<T> dataClass) {
-		ConduitExitController<T> ec = controller.createConduitExit(portName, new DataTemplate<T>(dataClass));
+		ConduitExitController<T> ec = controller.createConduitExit(false, portName, new DataTemplate<T>(dataClass));
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		ec.setExit(e);
@@ -126,9 +126,9 @@ public abstract class RawKernel {
 
 		return e;
 	}
-
+	
 	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
-		ConduitExitController<T> ec = controller.createConduitExit(portName, new DataTemplate<T>(dataClass));
+		ConduitExitController<T> ec = controller.createConduitExit(true, portName, new DataTemplate<T>(dataClass));
 
 		JNIConduitExit<T,R> e = new JNIConduitExit<T,R>(transmuter, jniClass, ec);
 		ec.setExit(e);
@@ -141,7 +141,18 @@ public abstract class RawKernel {
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
+
+		Scale sc = getScale();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, sc);
+		ec.setEntrance(e);
+		addEntranceToList(portName, ec);
+
+		return e;
+	}
+	
+	protected <T extends Serializable> ConduitEntrance<T> addSynchronizedEntrance(String portName, Class<T> dataClass) {
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
 
 		Scale sc = getScale();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, sc);
@@ -152,7 +163,7 @@ public abstract class RawKernel {
 	}
 
 	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<R> jniClass, Class<T> dataClass, DataConverter<R, T> transmuter) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
 
 		Scale sc = getScale();
 		JNIConduitEntrance<R,T> e = new JNIConduitEntrance<R,T>(transmuter, jniClass, ec, sc);

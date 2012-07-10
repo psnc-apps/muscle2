@@ -16,13 +16,13 @@ import muscle.Constant;
 import muscle.client.communication.PortFactory;
 import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.core.*;
+import muscle.core.kernel.InstanceController;
+import muscle.core.kernel.InstanceControllerListener;
+import muscle.core.kernel.RawKernel;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
-import muscle.core.kernel.InstanceController;
-import muscle.core.kernel.InstanceControllerListener;
-import muscle.core.kernel.RawKernel;
 import muscle.util.JVM;
 import muscle.util.MiscTool;
 
@@ -347,9 +347,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	@Override
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(String portalName, DataTemplate newDataTemplate) {
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate) {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
-		ConduitEntranceControllerImpl<T> s = new ConduitEntranceControllerImpl(currentID, this, newDataTemplate);
+		ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController(currentID, this, newDataTemplate) : new PassiveConduitEntranceController(currentID, this, newDataTemplate);
 		PortalID other = getOtherPortalID(currentID, ENTRANCE);
 		portFactory.<T>getTransmitter(this.mainController == null ? this : this.mainController, s, other);
 		entrances.add(s);
@@ -357,9 +357,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	@Override
-	public <T extends Serializable> ConduitExitController<T> createConduitExit(String portalName, DataTemplate newDataTemplate) {
+	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
-		ConduitExitControllerImpl<T> s = new ConduitExitControllerImpl(currentID, this, newDataTemplate);
+		ThreadedConduitExitController<T> s = new ThreadedConduitExitController(currentID, this, newDataTemplate);
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
 		portFactory.<T>getReceiver(s, otherID);
 		exits.add(s);
