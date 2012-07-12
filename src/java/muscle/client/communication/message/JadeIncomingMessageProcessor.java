@@ -52,12 +52,16 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour implements Inc
 	
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {
-		this.receivers.put(id, (JadeReceiver)recv);
+		synchronized (receivers) {
+			this.receivers.put(id, (JadeReceiver)recv);
+		}
 	}
 	
 	@Override
 	public void removeReceiver(Identifier id) {
-		this.receivers.remove(id);
+		synchronized (receivers) {
+			this.receivers.remove(id);
+		}
 	}
 	
 	/** Deserialize, process, and send message to receiver*/
@@ -67,13 +71,17 @@ public class JadeIncomingMessageProcessor extends CyclicBehaviour implements Inc
 			JadeMessage dmsg = deserializer.deserialize(msg);
 			if (dmsg != null) {
 				Identifier id = dmsg.getRecipient();
-				JadeReceiver recv = receivers.get(id);
+				JadeReceiver recv;
+				synchronized (receivers) {
+					 recv = receivers.get(id);
+				}
 				if (recv == null) {
 					if (msg.getUserDefinedParameter("signal") != null) {
 						logger.log(Level.FINE, "signal intended for removed agent {0} received: {1}", new Object[] {id, msg.getUserDefinedParameter("signal")});
 					}
 					else {
 						logger.log(Level.SEVERE, "no destination receiver for <{0}> found, dropping data message", id);
+						System.out.println(receivers.toString());
 					}
 				}
 				else {

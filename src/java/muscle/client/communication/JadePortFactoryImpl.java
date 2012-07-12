@@ -58,7 +58,7 @@ public class JadePortFactoryImpl extends PortFactory {
 		public Receiver<T, ?, ?, ?> call() throws Exception {
 			exit.start();
 			
-			resolvePort(port);
+			//resolvePort(port);
 			
 			@SuppressWarnings("unchecked")
 			Receiver<T,T, JadeIdentifier, JadePortalID> recv = new JadeReceiver();

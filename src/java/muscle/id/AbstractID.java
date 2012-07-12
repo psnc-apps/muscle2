@@ -9,6 +9,7 @@ package muscle.id;
  */
 public abstract class AbstractID  implements Identifier {
 	protected final String name;
+	private int hashCode = -1;
 	
 	public AbstractID(String name) {
 		this.name = name;
@@ -36,16 +37,19 @@ public abstract class AbstractID  implements Identifier {
 	}
 	
 	public final boolean equals(Object other) {
-		if (other == null || !(other instanceof AbstractID)) return false;
+		if (other == null || !(other instanceof Identifier)) return false;
 		
-		AbstractID aid = (AbstractID)other;
-		return this.getName().equals(aid.getName()) && this.getType().equals(aid.getType());
+		Identifier iid = (Identifier)other;
+		return hashCode() == iid.hashCode() && this.getName().equals(iid.getName()) && this.getType().equals(iid.getType());
 	}
 	
 	public int hashCode() {
-		int hash = 7;
-		hash = 47 * hash + (this.name != null ? this.name.hashCode() : 0);
-		hash = 47 * hash + (this.getType() != null ? this.getType().hashCode() : 0);
-		return hash;
+		if (hashCode == -1) {
+			hashCode = 7;
+			hashCode = 47 * hashCode + (this.getName() != null ? this.getName().hashCode() : 0);
+			hashCode = 47 * hashCode + (this.getType() != null ? this.getType().hashCode() : 0);
+			if (hashCode == -1) hashCode = -2;
+		}
+		return hashCode;
 	}
 }

@@ -4,16 +4,10 @@
  */
 package muscle.util.data;
 
-import muscle.util.serialization.XdrDeserializerWrapper;
-import muscle.util.serialization.SerializerWrapper;
-import muscle.util.serialization.PackerWrapper;
-import muscle.util.serialization.ByteJavaObjectConverter;
-import muscle.util.serialization.UnpackerWrapper;
-import muscle.util.serialization.DeserializerWrapper;
-import muscle.util.serialization.XdrSerializerWrapper;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import muscle.util.serialization.*;
 import org.acplt.oncrpc.OncRpcException;
 import org.acplt.oncrpc.XdrDecodingStream;
 import org.acplt.oncrpc.XdrEncodingStream;
@@ -83,19 +77,31 @@ public class SerializableData implements Serializable {
 	public static SerializableData valueOf(Serializable value) {
 		if (value == null) {
 			return new SerializableData(null, SerializableDatatype.NULL, 0);
-		} else if (value instanceof SerializableData) {
-			return (SerializableData)value;
 		}
 		SerializableDatatype type = inferDatatype(value);
 		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
 		return new SerializableData(value, type, size);
 	}
 	
-	private static SerializableDatatype inferDatatype(Serializable value) {
+	/**
+	 * Creates a new SerializableData object containing given value and datatype,
+	 * determining the size.
+	 * @param value any Serializable object
+	 * @see SerializableData(Serializable, SerializableDatatype)
+	 */
+	public static SerializableData valueOf(Serializable value, SerializableDatatype type) {
+		if (value == null) {
+			return new SerializableData(null, SerializableDatatype.NULL, 0);
+		}
+		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
+		return new SerializableData(value, type, size);
+	}
+	
+	public static SerializableDatatype inferDatatype(Serializable value) {
 		if (value == null) {
 			return SerializableDatatype.NULL;
 		}
-		for (SerializableDatatype type : SerializableDatatype.values()) {
+		for (SerializableDatatype type : datatypes) {
 			if (type.getDataClass() != null && type.getDataClass().isInstance(value)) {
 				return type;
 			}
@@ -1080,6 +1086,10 @@ public class SerializableData implements Serializable {
 	}
 	
 	public static <T extends Serializable> T createIndependent(T value) {
+		return createIndependent(value, inferDatatype(value));
+	}
+	
+	public static <T extends Serializable> T createIndependent(T value, SerializableDatatype type) {
 		if (value instanceof SerializableData) {
 			SerializableData sValue = (SerializableData)value;
 			@SuppressWarnings("unchecked")
@@ -1088,7 +1098,6 @@ public class SerializableData implements Serializable {
 		}
 		Serializable copyValue;
 		int dimX, dimY, dimZ, dimZZ;
-		SerializableDatatype type = inferDatatype(value);
 		switch (type) {
 			// Immutable
 			case NULL: case STRING: case BOOLEAN: case BYTE: case SHORT: case INT: case LONG: case FLOAT: case DOUBLE:

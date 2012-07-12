@@ -31,4 +31,5 @@ package muscle.manager;
 public enum SimulationManagerProtocol {
 	LOCATE, REGISTER, PROPAGATE, DEREGISTER,
 	UNSUPPORTED;
+	public final static int MAGIC_NUMBER = 2391029;
 }

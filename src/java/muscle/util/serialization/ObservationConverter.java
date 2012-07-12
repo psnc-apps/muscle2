@@ -12,7 +12,7 @@ import muscle.core.model.Observation;
  * @author Joris Borgdorff
  */
 public class ObservationConverter<E extends Serializable,F extends Serializable> extends AbstractDataConverter<Observation<E>, Observation<F>> {
-	private final DataConverter<E, F> converter;
+	protected final DataConverter<E, F> converter;
 	public ObservationConverter(DataConverter<E,F> converter) {
 		this.converter = converter;
 	}

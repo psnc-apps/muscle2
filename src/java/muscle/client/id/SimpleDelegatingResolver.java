@@ -1,10 +1,5 @@
 package muscle.client.id;
 
-import muscle.id.Location;
-import muscle.id.PortalID;
-import muscle.id.Identifier;
-import muscle.id.Resolver;
-import muscle.id.IDType;
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.ArraySet;
 import java.util.Map;
@@ -13,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
+import muscle.id.*;
 
 /**
  * A simple resolver that delegates the actual creation and searching of Identifiers and Locations.
@@ -23,17 +19,21 @@ public class SimpleDelegatingResolver implements Resolver {
 	/** Stores all resolved IDs */
 	private final Map<String,Identifier> resolvedIdCache;
 	private final Map<String,Identifier> idCache;
+	private final Set<String> expecting;
+	private final Set<String> registeredHere;
 	private Location here;
 	private final Set<String> searchingNow;
 	private boolean isDone;
 	private final static Logger logger = Logger.getLogger(SimpleDelegatingResolver.class.getName());
 	
-	public SimpleDelegatingResolver(IDManipulator newDelegate) {
+	public SimpleDelegatingResolver(IDManipulator newDelegate, Set<String> expecting) {
 		delegate = newDelegate;
 		resolvedIdCache = new ArrayMap<String,Identifier>();
 		idCache = new ConcurrentHashMap<String,Identifier>();
 		searchingNow = new ArraySet<String>();
+		registeredHere = new ArraySet<String>();
 		here = delegate.getLocation();
+		this.expecting = expecting;
 		this.isDone = false;
 	}
 	
@@ -99,17 +99,39 @@ public class SimpleDelegatingResolver implements Resolver {
 	
 	/** Whether the id resides in the current location */
 	public boolean isLocal(Identifier id) {
-		if (here == null) {
+		String name;
+		if (id instanceof PortalID) {
+			name = ((PortalID)id).getOwnerID().getName();
+		} else {
+			name = id.getName();
+		}
+		try {
+			synchronized (registeredHere) {
+				while (!this.isDisposed() && expecting.contains(name) && !registeredHere.contains(name)) {
+					registeredHere.wait();
+				}
+				return !this.isDisposed() && registeredHere.contains(name);
+			}
+		} catch (InterruptedException ex) {
+			Logger.getLogger(SimpleDelegatingResolver.class.getName()).log(Level.SEVERE, "Could not determine whether id " + id + " is local.", ex);
 			return false;
 		}
-		return here.equals(id.getLocation());
 	}
 
 	/** Registers a local InstanceController. */
 	public boolean register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		logger.log(Level.FINE, "Registering identifier {0}", id);
-		return delegate.register(id, here);
+		boolean ret = delegate.register(id, here);
+		synchronized (registeredHere) {
+			if (ret) {
+				registeredHere.add(id.getName());
+			} else {
+				expecting.remove(id.getName());
+			}
+			registeredHere.notifyAll();
+		}
+		return ret;
 	}
 	
 	public void makeAvailable(InstanceController controller) {
@@ -158,5 +180,10 @@ public class SimpleDelegatingResolver implements Resolver {
 	public synchronized void dispose() {
 		this.isDone = true;
 		this.notifyAll();
+	}
+
+	@Override
+	public synchronized boolean isDisposed() {
+		return this.isDone;
 	}
 }

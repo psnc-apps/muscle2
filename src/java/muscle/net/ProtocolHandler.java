@@ -83,9 +83,9 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 				ret = executeProtocol(in, out);
 				succeeded = true;
 			} catch (IOException ex) {
-				logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
+				logger.log(Level.WARNING, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
 			} catch (RuntimeException ex) {
-				logger.log(Level.SEVERE, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
+				logger.log(Level.WARNING, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
 			}
 		}
 		if (this.closeSocket) {

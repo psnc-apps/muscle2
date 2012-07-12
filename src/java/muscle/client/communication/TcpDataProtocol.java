@@ -10,4 +10,5 @@ package muscle.client.communication;
  */
 public enum TcpDataProtocol {
 	OBSERVATION, SIGNAL, KEEPALIVE, FINISHED;
+	public final static int MAGIC_NUMBER = 134405;
 }

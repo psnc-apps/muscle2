@@ -24,7 +24,9 @@ public class Pong extends CAController {
 
 	@Override
 	protected void execute() {
-		while (!willStop()) {
+		int count = getIntProperty("preparation_steps") + getIntProperty("tests_count")*getIntProperty("same_size_runs")*getIntProperty("steps");
+		
+		for (int i = 0; i < count; i++) {
 			byte[] ba = exit.receive();
 			entrance.send(ba);
 		}

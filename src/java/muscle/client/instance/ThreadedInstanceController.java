@@ -60,11 +60,11 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		this.execute = true;
 		this.listener = listener;
 		this.args = args;
-		this.mainController = null;
 		this.resolverFactory = rf;
 		this.isDone = false;
 		this.portFactory = portFactory;
 		this.isExecuting = false;
+		this.mainController = this;
 	}
 	
 	public void setMainController(InstanceController ic) {
@@ -86,7 +86,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		try {
 			instance = (RawKernel) this.instanceClass.newInstance();
 
-			instance.setInstanceController(this);
+			instance.setInstanceController(this.mainController);
 
 			instance.beforeExecute();
 
@@ -196,9 +196,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 				isDone = true;
 			}
 		}
-		IncomingMessageProcessor msgProcessor = portFactory.getMessageProcessor();
 		for (ConduitExitControllerImpl<?> source : exits) {
-			msgProcessor.removeReceiver(source.getIdentifier());
+			portFactory.removeReceiver(source.getIdentifier());
 			source.dispose();
 		}
 		for (ConduitEntranceControllerImpl<?> sink : entrances) {
@@ -285,7 +284,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private boolean register() {
 		try {
 			Resolver locator = resolverFactory.getResolver();
-			return locator.register(this.mainController == null ? this : this.mainController);
+			return locator.register(this.mainController);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
 			return false;
@@ -297,7 +296,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private void propagate() {
 		try {
 			Resolver locator = resolverFactory.getResolver();
-			locator.makeAvailable(this.mainController == null ? this : this.mainController);
+			locator.makeAvailable(this.mainController);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
 		} catch (Exception ex) {
@@ -351,7 +350,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController(currentID, this, newDataTemplate) : new PassiveConduitEntranceController(currentID, this, newDataTemplate);
 		PortalID other = getOtherPortalID(currentID, ENTRANCE);
-		portFactory.<T>getTransmitter(this.mainController == null ? this : this.mainController, s, other);
+		portFactory.<T>getTransmitter(this.mainController, s, other);
 		entrances.add(s);
 		return s;
 	}
@@ -359,7 +358,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	@Override
 	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
-		ThreadedConduitExitController<T> s = new ThreadedConduitExitController(currentID, this, newDataTemplate);
+		ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController(currentID, this, newDataTemplate) : new PassiveConduitExitController(currentID, this, newDataTemplate);
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
 		portFactory.<T>getReceiver(s, otherID);
 		exits.add(s);

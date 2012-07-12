@@ -4,12 +4,6 @@
 
 package muscle.client.id;
 
-import muscle.id.Location;
-import muscle.id.PortalID;
-import muscle.id.InstanceID;
-import muscle.id.Identifier;
-import muscle.id.Resolver;
-import muscle.id.IDType;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -19,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.id.*;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
@@ -179,6 +174,7 @@ public class TcpIDManipulator implements IDManipulator {
 		protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 			// Send command
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
+			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER);
 			out.writeInt(this.action.ordinal());
 			out.writeString(this.id.getName());
 			if (action == SimulationManagerProtocol.REGISTER) {

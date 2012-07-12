@@ -4,15 +4,18 @@
 package muscle.client.instance;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Message;
+import muscle.core.ConduitDescription;
 import muscle.core.ConduitExit;
-import muscle.core.ConduitExitController;
+import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
@@ -28,6 +31,7 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 	private final BlockingQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ThreadedConduitExitController.class.getName());
 	private boolean isDetached;
+	private final FilterChain filters;
 
 	public ThreadedConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
@@ -35,8 +39,28 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 		this.receiver = null;
 		this.conduitExit = null;
 		this.isDetached = false;
+		this.filters = createFilterChain();
 	}
 	
+	
+	/** Create a filter chain from the given arguments */
+	private FilterChain createFilterChain() {
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
+		List<String> args = cd.getArgs();
+		if (args.isEmpty()) return null;
+		
+		FilterChain fc = new FilterChain() {
+			@SuppressWarnings("unchecked")
+			protected void apply(Observation subject) {
+				ThreadedConduitExitController.this.queue.add(subject);
+			}
+		};
+		fc.init(args);
+		logger.log(Level.INFO, "The conduit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		return fc;
+	}
+
 	public synchronized void setReceiver(Receiver<T, ?,?,?> recv) {
 		this.receiver = recv;
 		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
@@ -52,31 +76,33 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 		return this.conduitExit;
 	}
 
-	@Override
-	protected void execute() throws InterruptedException {
-		Receiver<T, ?,?,?> recv = waitForReceiver();
-		if (recv != null) {
-			Message<T> dmsg = this.receiver.receive();
-			if (dmsg != null) {
-				if (dmsg.isSignal()) {
-					if (dmsg.getSignal() instanceof DetachConduitSignal) {
-						queue.put(null);
-						this.isDetached = true;
-					}
-				} else {
-					this.queue.put(dmsg.getObservation());
-					increment();
-				}
-			}
-		}
-	}
-	
-	private synchronized Receiver<T, ?,?,?> waitForReceiver() throws InterruptedException {
-		while (!isDisposed() && this.receiver == null) {
+	protected synchronized void setUp() throws InterruptedException {
+		// Try to get the receiver. If the loop exits because there was
+		// a dispose, then execute will not be called.
+		while (this.receiver == null && !isDisposed()) {
 			logger.log(Level.FINE, "ConduitExit <{0}> is waiting for connection to receive a message over.", portalID);
 			wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
-		return this.receiver;
+	}
+	
+	@Override
+	protected void execute() throws InterruptedException {
+		Message<T> dmsg = this.receiver.receive();
+		if (dmsg != null) {
+			if (dmsg.isSignal()) {
+				if (dmsg.getSignal() instanceof DetachConduitSignal) {
+					queue.put(null);
+					this.isDetached = true;
+				}
+			} else {
+				if (this.filters == null) {
+					this.queue.put(dmsg.getObservation());
+				} else {
+					this.filters.process(dmsg.getObservation());
+				}
+				increment();
+			}
+		}
 	}
 	
 	@Override
@@ -97,7 +123,7 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 	}
 	
 	public String toString() {
-		return "in-port:" + this.getIdentifier();
+		return "threaded-in:" + this.getIdentifier();
 	}
 
 	@Override

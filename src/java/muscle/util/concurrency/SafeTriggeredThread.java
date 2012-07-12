@@ -24,7 +24,7 @@ public abstract class SafeTriggeredThread extends SafeThread {
 	 * Wait until apply notify is called. Returns false if the thread should halt.
 	 */
 	protected synchronized boolean continueComputation() throws InterruptedException {
-		while (!isDisposed() && !triggered) {
+		while (!triggered && !isDisposed()) {
 			wait();
 		}
 		triggered = false;

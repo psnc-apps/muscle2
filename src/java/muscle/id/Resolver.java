@@ -1,12 +1,13 @@
 package muscle.id;
 
 import muscle.core.kernel.InstanceController;
+import muscle.util.concurrency.Disposable;
 
 /**
  *
  * @author jborgdo1
  */
-public interface Resolver {
+public interface Resolver extends Disposable {
 	/** Whether given ID is local to the current execution. */
 	public boolean isLocal(Identifier id);
 	/** Get an identifier non-blocking, unresolved. */

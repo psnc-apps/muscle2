@@ -139,6 +139,10 @@ public class JadeBoot implements ResolverFactory {
 		return agentNames.get(agentName);
 	}
 	
+	public Set<String> getAgentNames() {
+		return agentNames.keySet();
+	}
+	
 	public Set<String> monitorQuit() {
 		return this.monitorQuit;
 	}

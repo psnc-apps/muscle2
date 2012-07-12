@@ -4,9 +4,9 @@
 package muscle.client.communication.message;
 
 import java.io.Serializable;
-import muscle.id.Identifier;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
+import muscle.id.Identifier;
 
 /**
  *
@@ -53,5 +53,13 @@ public class BasicMessage<E extends Serializable> implements Message<E>, Seriali
 	@Override
 	public Signal getSignal() {
 		return this.signal;
+	}
+	
+	public String toString() {
+		if (isSignal()) {
+			return "BasicMessage<" + this.signal + "," + this.recv + ">";
+		} else {
+			return "BasicMessage<" + this.obs + "," + this.recv + ">";
+		}
 	}
 }

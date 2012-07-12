@@ -10,14 +10,18 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
-import muscle.client.instance.*;
+import muscle.client.communication.message.LocalDataHandler;
+import muscle.client.instance.ConduitEntranceControllerImpl;
+import muscle.client.instance.ConduitExitControllerImpl;
+import muscle.client.instance.PassiveConduitExitController;
+import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
-import muscle.id.InstanceID;
-import muscle.id.PortalID;
-import muscle.id.ResolverFactory;
+import muscle.core.model.Observation;
+import muscle.id.*;
 import muscle.net.SocketFactory;
 import muscle.util.serialization.BasicMessageConverter;
 import muscle.util.serialization.ObservationConverter;
+import muscle.util.serialization.PipeConverter;
 import muscle.util.serialization.SerializableDataConverter;
 
 /**
@@ -26,9 +30,11 @@ import muscle.util.serialization.SerializableDataConverter;
  */
 public class TcpPortFactoryImpl extends PortFactory {
 	private final SocketFactory socketFactory;
+	private final LocalDataHandler localMsgProcessor;
 		
-	public TcpPortFactoryImpl(ResolverFactory rf, SocketFactory sf, IncomingMessageProcessor msgProcessor) {
-		super(rf, msgProcessor);
+	public TcpPortFactoryImpl(ResolverFactory rf, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
+		super(rf, globalMsgProcessor);
+		this.localMsgProcessor = localMsgProcessor;
 		this.socketFactory = sf;
 	}
 
@@ -45,15 +51,22 @@ public class TcpPortFactoryImpl extends PortFactory {
 				boolean passive = exit instanceof PassiveConduitExitController;
 				
 				Receiver recv = passive ?  (PassiveConduitExitController)exit : new TcpReceiver<T>();
-				recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
+				
 				recv.setComplementaryPort(instancePort);
+				
+				Resolver res = getResolver();
+				if (res.isLocal(instancePort)) {
+					recv.setDataConverter(new PipeConverter());
+					localMsgProcessor.addReceiver(exit.getIdentifier(), recv);				
+				} else {
+					recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
+					messageProcessor.addReceiver(exit.getIdentifier(), recv);				
+				}
 				
 				if (!passive && exit instanceof ThreadedConduitExitController) {
 					((ThreadedConduitExitController)exit).setReceiver(recv);
 				}
 			
-				messageProcessor.addReceiver(exit.getIdentifier(), recv);
-				
 				return recv;
 			}
 		};
@@ -71,12 +84,30 @@ public class TcpPortFactoryImpl extends PortFactory {
 				@SuppressWarnings("unchecked")
 				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
 				
-				TcpTransmitter<T> trans = new TcpTransmitter<T>(socketFactory);
-				trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
+				Resolver res = getResolver();
+				Transmitter trans;
+				if (res.isLocal(instancePort)) {
+					trans = new LocalTransmitter<T>(localMsgProcessor);
+					ObservationConverter<T,T> copyPipe = new ObservationConverter<T,T>(new SerializableDataConverter()) {
+						public Observation<T> serialize(Observation<T> data) {
+							return data.copyWithNewData(this.converter.copy(data.getData()));
+						}
+					};
+					trans.setDataConverter(copyPipe);
+				} else {
+					trans = new TcpTransmitter<T>(socketFactory);
+					trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
+				}
 				trans.setComplementaryPort(instancePort);
 				entrance.setTransmitter(trans);
 				return trans;
 			}
 		};
+	}
+	
+	@Override
+	public void removeReceiver(Identifier id) {
+		this.messageProcessor.removeReceiver(id);
+		this.localMsgProcessor.removeReceiver(id);
 	}
 }

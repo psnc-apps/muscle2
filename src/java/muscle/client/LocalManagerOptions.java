@@ -1,12 +1,14 @@
 package muscle.client;
 
 import com.beust.jcommander.*;
+import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.InstanceClass;
@@ -45,6 +47,14 @@ public class LocalManagerOptions {
 	
 	public List<InstanceClass> getAgents() {
 		return this.agents;
+	}
+	
+	public Set<String> getAgentNames() {
+		Set<String> set = new ArraySet<String>(this.agents.size());
+		for (InstanceClass cl : this.agents) {
+			set.add(cl.getName());
+		}
+		return set;
 	}
 	
 	public InetSocketAddress getManagerSocketAddress() {

@@ -13,8 +13,8 @@ public class DelegatingResolver extends SimpleDelegatingResolver {
 	private final Set<String> stillAlive;
 	private final static Logger logger = Logger.getLogger(DelegatingResolver.class.getName());
 	
-	public DelegatingResolver(IDManipulator newDelegate, Set<String> stillAlive) {
-		super(newDelegate);
+	public DelegatingResolver(IDManipulator newDelegate, Set<String> expecting, Set<String> stillAlive) {
+		super(newDelegate, expecting);
 		this.stillAlive = stillAlive;
 		if (this.stillAlive == null) {
 			logger.fine("MUSCLE will not autoquit.");

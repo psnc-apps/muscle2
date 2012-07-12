@@ -21,13 +21,13 @@ public class Ping extends CAController {
 	@Override
 	protected void execute() {
 		// How many steps for a single test
-		int steps = Integer.parseInt(getCxAProperty("steps"));
+		int steps = getIntProperty("steps");
 
 		// How many steps total will be done
-		int max_timesteps = Integer.parseInt(getCxAProperty("max_timesteps")) + 1;
+		int max_timesteps = getIntProperty("max_timesteps") + 1;
 		
 		// How many steps total will be done
-		int runs = Integer.parseInt(getCxAProperty("same_size_runs"));
+		int runs = getIntProperty("same_size_runs");
 		
 		// size in B
 		int size = getIntProperty("start_kiB_per_message")*1024;
@@ -35,14 +35,18 @@ public class Ping extends CAController {
 		// helper with results for a single test
 		long[] totalTimes = new long[runs];
 		long[] serializationTimes = new long[runs];
-		byte[] data = new byte[1024*1024];
+		byte[] data = new byte[1024];
 
 		// Making noise in order to give time for JVM to stabilize
 		System.out.print("Preparing");
-		for (int i = 0; i < steps && !willStop(); i++) {
+		
+		int prepare_steps = getIntProperty("preparation_steps");
+		
+		for (int i = 0; i < prepare_steps; i++) {
 			entrance.send(data);
 			exit.receive();
-			System.out.print(".");
+			if (i % 5 == 0)
+				System.out.print(".");
 		}
 		System.out.println("\n\nValues are NOT divided by 2. Each value is calculated for RTT.");
 		System.out.println("Sending " + max_timesteps + " messages in total. For each data size, " + runs + " tests are performed, each sending " + steps + " messages.\n");
@@ -84,27 +88,27 @@ public class Ping extends CAController {
 					// Enter synchronized conduit
 					//data = converter.copy(data);
 					// Serialize for sending
-					SerializableData sdata = converter.serialize(data);
-					// 
-					byte[] data2 = (byte[])sdata.getValue();
-					for (int j = 0; j < data2.length; j++) {
-						data[j] = data2[j];
-					}
-					byte[] data3 = new byte[data.length];
-					for (int j = 0; j < data.length; j++) {
-						data3[j] = data[j];
-					}
-                    
-					// Enter synchronized conduit
-					//data = converter.copy(data3);
-					sdata = converter.serialize(data);
-					data2 = (byte[])sdata.getValue();
-					for (int j = 0; j < data2.length; j++) {
-						data[j] = data2[j];
-					}
-					for (int j = 0; j < data2.length; j++) {
-						data3[j] = data[j];
-					}
+//					SerializableData sdata = converter.serialize(data);
+//					// 
+//					byte[] data2 = (byte[])sdata.getValue();
+//					for (int j = 0; j < data2.length; j++) {
+//						data[j] = data2[j];
+//					}
+//					byte[] data3 = new byte[data.length];
+//					for (int j = 0; j < data.length; j++) {
+//						data3[j] = data[j];
+//					}
+//                    
+//					// Enter synchronized conduit
+					//data = converter.copy(data);
+//					sdata = converter.serialize(data);
+//					data2 = (byte[])sdata.getValue();
+//					for (int j = 0; j < data2.length; j++) {
+//						data[j] = data2[j];
+//					}
+//					for (int j = 0; j < data2.length; j++) {
+//						data3[j] = data[j];
+//					}
 				}
 			}
 			sum += totalTimes[test] = System.nanoTime() - tAll;
@@ -113,8 +117,7 @@ public class Ping extends CAController {
 		return sum;
 	}
 	
-	private void printOutcomes(long[] totalTimes, long sum1, long sum2, int size, int steps) {
-		
+	private void printOutcomes(long[] totalTimes, long sum1, long sum2, int size, int steps) {	
 		double avg1 = sum1/((double)(totalTimes.length * steps));
 		double avg2 = sum2/((double)(totalTimes.length * steps));
 		double stdDev = stdDev(totalTimes, avg1, steps);

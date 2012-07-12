@@ -71,6 +71,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 				try {
 					SerializerWrapper out = liveSocket.getOutput();
 
+					out.writeInt(TcpDataProtocol.MAGIC_NUMBER);
 					if (obs != null) {
 						sendMessage(out, obs);
 					}

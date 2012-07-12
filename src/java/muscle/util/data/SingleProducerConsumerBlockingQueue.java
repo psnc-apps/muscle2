@@ -163,15 +163,12 @@ public class SingleProducerConsumerBlockingQueue<E> implements BlockingQueue<E> 
 			final SingleProducerConsumerBlockingQueue.Element<E> oldTail = tail;
 			tail = new SingleProducerConsumerBlockingQueue.Element<E>(e);
 		
-			boolean empty;
 			synchronized (oldTail) {
-				empty = head.unsafeIsEmpty();
-				if (!empty) {
+				if (head.unsafeIsEmpty()) {
+					head.setHead(tail);
+				} else {
 					oldTail.prevElement = tail;
 				}
-			}
-			if (empty) {
-				head.setHead(tail);
 			}
 		}
 	}

@@ -35,7 +35,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		this.ss = ss;
 		this.listener = listener;
 		String prop_num_connections = System.getProperty(PROP_NUM_CONNECTIONS);
-		int numConnections = prop_num_connections == null ? 10 : Integer.valueOf(prop_num_connections);
+		int numConnections = prop_num_connections == null ? 5 : Integer.valueOf(prop_num_connections);
 		executor = Executors.newFixedThreadPool(numConnections);
 	}
 

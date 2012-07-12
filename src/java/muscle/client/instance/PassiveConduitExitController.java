@@ -4,18 +4,25 @@
 package muscle.client.instance;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.message.BasicMessage;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Message;
+import muscle.core.ConduitDescription;
 import muscle.core.ConduitExit;
+import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
-import muscle.util.data.SerializableData;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.serialization.DataConverter;
 
@@ -23,17 +30,39 @@ import muscle.util.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> {
+public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage,InstanceID,PortalID<InstanceID>> {
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<Observation<T>> queue;
 	private volatile boolean isDone;
-	protected DataConverter<Message<T>,BasicMessage<SerializableData>> converter;
+	protected DataConverter<Message<T>,BasicMessage> converter;
+	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
+	private final FilterChain filters;
 
 	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
+		this.filters = createFilterChain();
+	}
+	
+	/** Create a filter chain from the given arguments */
+	private FilterChain createFilterChain() {
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
+		List<String> args = cd.getArgs();
+		if (args.isEmpty()) return null;
+		
+		FilterChain fc = new FilterChain() {
+			@SuppressWarnings("unchecked")
+			protected void apply(Observation subject) {
+				queue.add(subject);
+			}
+		};
+		
+		fc.init(args);
+		logger.log(Level.INFO, "The conduit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		return fc;
 	}
 	
 	public void setExit(ConduitExit<T> exit) {
@@ -50,7 +79,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	public String toString() {
-		return "in-port:" + this.getIdentifier();
+		return "pasv-in:" + this.getIdentifier();
 	}
 
 	@Override
@@ -64,7 +93,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	@Override
-	public void put(BasicMessage<SerializableData> dmsg) {
+	public void put(BasicMessage dmsg) {
 		Message<T> msg = converter.deserialize(dmsg);
 		if (dmsg != null) {
 			if (msg.isSignal()) {
@@ -73,14 +102,18 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 					this.dispose();
 				}
 			} else {
-				this.queue.add(msg.getObservation());
+				if (this.filters == null) {
+					this.queue.add(msg.getObservation());
+				} else {
+					this.filters.process(msg.getObservation());
+				}
 				increment();
 			}
 		}
 	}
 
 	@Override
-	public void setDataConverter(DataConverter<Message<T>, BasicMessage<SerializableData>> serializer) {
+	public void setDataConverter(DataConverter<Message<T>, BasicMessage> serializer) {
 		this.converter = serializer;
 	}
 

@@ -13,7 +13,7 @@ public abstract class SafeThread extends Thread implements Disposable {
 	 * any long calculation or waiting should check this to see if they should
 	 * continue their calculation.
 	 */
-	private volatile boolean isDone;
+	private boolean isDone;
 	
 	public SafeThread(String name) {
 		super(name);
@@ -23,14 +23,17 @@ public abstract class SafeThread extends Thread implements Disposable {
 	/** The thread calls execute() until it is done. */
 	public final void run() {
 		try {
-			while(continueComputation()) {
-				execute();
+			this.setUp();
+			while(this.continueComputation()) {
+				this.execute();
 			}
 		} catch (InterruptedException ex) {
 			this.handleInterruption(ex);
 		}
 	}
 	
+	/** Any initialization before execute is called can be done by overriding this method. */
+	protected void setUp() throws InterruptedException {}
 	
 	protected abstract void handleInterruption(InterruptedException ex);
 	
@@ -50,11 +53,11 @@ public abstract class SafeThread extends Thread implements Disposable {
 	/**
 	 * Whether computation can continue. May wait for some time.
 	 */
-	protected boolean continueComputation() throws InterruptedException {
+	protected synchronized boolean continueComputation() throws InterruptedException {
 		return !isDone;
 	}
 	
-	public boolean isDisposed() {
+	public synchronized boolean isDisposed() {
 		return this.isDone;
 	}
 }

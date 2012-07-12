@@ -50,6 +50,7 @@ public abstract class RawKernel {
 	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
+	private Timestamp maxTime = null;
 	
 	/**
 	 * Get the local name of the current kernel. This call is delegated to the InstanceController.
@@ -65,19 +66,30 @@ public abstract class RawKernel {
 	do not change signature! (used from native code)
 	 */
 	public boolean willStop() {
-		int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS.toString());
-		Timestamp maxTime = new Timestamp(maxSeconds);
+		if (maxTime == null) {
+			int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS.toString());
+			maxTime = new Timestamp(maxSeconds);
+		}
 		Timestamp portalTime = maxTime;
 
+		boolean isFiner = logger.isLoggable(Level.FINER);
+		Object[] msg = isFiner ? null : new Object[2];
+		
 		// search for the smallest "time" in our portals
 		for (ConduitEntranceController p : entrances.values()) {
-			logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
+			if (isFiner) {
+				msg[0] = p; msg[1] = p.getSITime();
+				logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", msg);
+			}
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}
 		}
 		for (ConduitExitController p : exits.values()) {
-			logger.log(Level.FINER, "Exit SI Time of {0} is {1}", new Object[]{p, p.getSITime()});
+			if (isFiner) {
+				msg[0] = p; msg[1] = p.getSITime();
+				logger.log(Level.FINER, "Exit SI Time of {0} is {1}", msg);
+			}
 			if (p.getSITime().compareTo(portalTime) < 0) {
 				portalTime = p.getSITime();
 			}

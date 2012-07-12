@@ -11,21 +11,20 @@ import muscle.client.communication.message.BasicMessage;
 import muscle.client.communication.message.Message;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
-import muscle.util.data.SerializableData;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage<SerializableData>,InstanceID,PortalID<InstanceID>> {
+public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage,InstanceID,PortalID<InstanceID>> {
 	private volatile BlockingQueue<Message<T>> queue;
 	
 	public TcpReceiver() {
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>();
 	}
 	
-	public void put(BasicMessage<SerializableData> msg) {
+	public void put(BasicMessage msg) {
 		try {
 			queue.put(converter.deserialize(msg));
 		} catch (InterruptedException ex) {

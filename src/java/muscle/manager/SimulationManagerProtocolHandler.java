@@ -30,10 +30,18 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
 		in.refresh();
+		int magic_number = in.readInt();
+		if (magic_number != SimulationManagerProtocol.MAGIC_NUMBER) {
+			out.writeInt(-1);
+			out.flush();
+			logger.warning("Protocol for communicating MUSCLE information is not recognized.");
+			return null;
+		}
 		int opnum = in.readInt();
 		SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
 		if (opnum >= protoArr.length || opnum < 0) {
 			out.writeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
+			out.flush();
 			logger.log(Level.WARNING, "Unsupported operation number {0} requested", opnum);
 			return Boolean.FALSE;
 		}

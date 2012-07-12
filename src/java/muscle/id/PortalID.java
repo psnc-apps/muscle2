@@ -27,10 +27,12 @@ portal identifier
 */
 public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
 	protected final E ownerID;
+	private final String combinedName;
 	
 	public PortalID(String newName, E newAgentID) {
 		super(newName);
 		this.ownerID = newAgentID;
+		this.combinedName = name+"@"+ownerID.getName();
 	}
 	
 	public boolean isResolved() {
@@ -39,7 +41,7 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 	
 	@Override
 	public String getName() {
-		return name+"@"+ownerID.getName();
+		return combinedName;
 	}
 	
 	public String getPortName() {

@@ -16,7 +16,8 @@ cxa.env["cxa_path"] = File.dirname(__FILE__)
 cxa.env["steps"] = 10
 
 cxa.env["tests_count"] = 5
-cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["steps"];
+cxa.env["preparation_steps"]=cxa.env["steps"]*cxa.env["same_size_runs"]
+cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["preparation_steps"];
 
 cxa.env["start_kiB_per_message"] = 1;
 

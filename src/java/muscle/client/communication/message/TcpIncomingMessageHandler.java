@@ -43,18 +43,23 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		boolean success = false;
 
 		in.refresh();
-		int protoNum = in.readInt();
-		// Protocol not executed.
-		if (protoNum == -1) {
+		int magic_number = in.readInt();
+		if (magic_number == -1) {
 			this.socket.close();
 			logger.finer("Closing stale incoming socket.");
 			return null;
 		}
+		if (magic_number != TcpDataProtocol.MAGIC_NUMBER) {
+			logger.warning("Unrecognized protocol for data messages.");
+			return null;
+		}
+		int protoNum = in.readInt();
+		// Protocol not executed.
 		if (protoNum < 0 || protoNum >= msgType.length) {
 			logger.log(Level.WARNING, "Unrecognized message type number {0} received.", protoNum);
 			return false;
 		}
-
+		
 		TcpDataProtocol proto = msgType[protoNum];
 		String owner_name = in.readString();
 		IDType idType = IDType.values()[in.readInt()];

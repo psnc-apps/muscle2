@@ -207,6 +207,12 @@ public class ConnectionScheme implements Serializable {
 		else return map.get(id.getPortName());
 	}
 	
+	public ExitDescription exitDescriptionForPortal(PortalID id) {
+		Map<String, ExitDescription> map = this.conduitExits.get(id.getOwnerID());
+		if (map == null) return null;
+		else return map.get(id.getPortName());
+	}
+	
 	public LinkedList<ExitDescription> getConnectionSchemeRoot() {
 		return this.targetExitDescriptions;
 	}

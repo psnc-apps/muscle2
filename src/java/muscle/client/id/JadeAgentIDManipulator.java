@@ -33,9 +33,9 @@ public class JadeAgentIDManipulator extends Agent implements IDManipulator {
 	@Override
 	public void setup() {
 		JadeBoot boot = JadeBoot.getInstance();
-		Set<String> agentNames = boot.monitorQuit();
-		owner = new DelegatingResolver(this, agentNames);
-		if (agentNames != null) {
+		Set<String> monitor = boot.monitorQuit();
+		owner = new DelegatingResolver(this, boot.getAgentNames(), monitor);
+		if (monitor != null) {
 			SubscriptionInitiator si = AgentRemovalSubscription.getAgentSubscription(this, owner);
 			addBehaviour(si);
 		}

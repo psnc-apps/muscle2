@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import muscle.client.communication.PortFactory;
 import muscle.client.communication.TcpPortFactoryImpl;
 import muscle.client.communication.message.DataConnectionHandler;
+import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.id.SimpleDelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.id.TcpLocation;
@@ -38,7 +39,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<InstanceController> controllers;
 	private final LocalManagerOptions opts;
-	private DataConnectionHandler connectionHandler;
+	private DataConnectionHandler tcpConnectionHandler;
+	private LocalDataHandler localConnectionHandler;
 	private SimpleDelegatingResolver res;
 	private TcpIDManipulator idManipulator;
 	private PortFactory factory;
@@ -62,7 +64,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		this.opts = opts;
 		controllers = new ArrayList<InstanceController>(opts.getAgents().size());
 		res = null;
-		connectionHandler = null;
+		tcpConnectionHandler = null;
+		localConnectionHandler = null;
 		factory = null;
 		idManipulator = null;
 		isDone = false;
@@ -82,14 +85,15 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		logger.log(Level.CONFIG, "Data connection bound to {0}:{1,number,#}", new Object[]{address, port});
 		socketAddr = new InetSocketAddress(address, port);
 		TcpLocation loc = new TcpLocation(socketAddr);
-		connectionHandler = new DataConnectionHandler(ss, this);
+		tcpConnectionHandler = new DataConnectionHandler(ss, this);
+		localConnectionHandler = new LocalDataHandler();
 		
 		// Create new conduit exits/entrances using this location.
-		factory = new TcpPortFactoryImpl(this, sf, connectionHandler);
+		factory = new TcpPortFactoryImpl(this, sf, tcpConnectionHandler, localConnectionHandler);
 		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
-		res = new SimpleDelegatingResolver(idManipulator);
+		res = new SimpleDelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
 		
 		// Initialize the InstanceControllers
@@ -108,7 +112,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		
 		// Start listening for connections
-		connectionHandler.start();
+		tcpConnectionHandler.start();
+		localConnectionHandler.start();
+		
 		
 		// Start all instances but the first in a new thread
 		for (int i = 1; i < controllers.size(); i++) {
@@ -139,6 +145,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private class DisposeOfControllersHook extends Thread {
+		public DisposeOfControllersHook() {
+			super("DisposeOfControllersHook");
+		}
 		public void run() {
 			if (!controllers.isEmpty()) {
 				System.out.println();
@@ -161,6 +170,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	
 	private class ForcefulQuitHook extends Thread {
 		boolean finished = false;
+		public ForcefulQuitHook() {
+			super("ForcefulQuitHook");
+		}
 		public void run() {
 			try {
 				this.waitForDisposer();
@@ -201,7 +213,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 				logger.log(Level.INFO, "All local submodels have finished; exiting.");
 				if (factory != null) factory.dispose();
 				if (idManipulator != null) idManipulator.dispose();
-				if (connectionHandler != null) connectionHandler.dispose();
+				if (tcpConnectionHandler != null) tcpConnectionHandler.dispose();
+				if (localConnectionHandler != null) localConnectionHandler.dispose();
 			}
 		}
 	}

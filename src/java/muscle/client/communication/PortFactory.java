@@ -14,17 +14,21 @@ import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.kernel.InstanceController;
+import muscle.id.Identifier;
 import muscle.id.PortalID;
+import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
+import muscle.util.concurrency.Disposable;
 
 /**
  * Assigns Receivers and Transmitters to Portals.
  * 
  * @author Joris Borgdorff
  */
-public abstract class PortFactory {
+public abstract class PortFactory implements Disposable {
 	protected final ExecutorService executor;
 	protected final ResolverFactory resolverFactory;
+	private Resolver resolver;
 	protected final IncomingMessageProcessor messageProcessor;
 	private final static Logger logger = Logger.getLogger(PortFactory.class.getName());
 	
@@ -71,28 +75,48 @@ public abstract class PortFactory {
 		this.executor = Executors.newCachedThreadPool();
 		this.resolverFactory = rf;
 		this.messageProcessor = msgProcessor;
+		this.resolver = null;
 	}
 	
 	/** Resolves a PortalID, if not already done. */
 	protected boolean resolvePort(PortalID port) {
 		if (!port.isResolved()) {
+			Resolver res = getResolver();
+			// Could not find resolver
+			if (res == null) return false;
+			
 			try {
-				resolverFactory.getResolver().resolveIdentifier(port);
+				res.resolveIdentifier(port);
 				if (!port.isResolved()) return false;
 			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, "Resolving port interrupted", ex);
+				Logger.getLogger(PortFactory.class.getName()).log(Level.SEVERE, "Could not resolve identifier", ex);
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	public IncomingMessageProcessor getMessageProcessor() {
-		return this.messageProcessor;
+	protected synchronized Resolver getResolver() {
+		if (resolver == null) {
+			try {
+				resolver = resolverFactory.getResolver();
+			} catch (InterruptedException ex) {
+				logger.log(Level.SEVERE, "Could not find resolver", ex);
+			}
+		}
+		return resolver;
+	}
+	
+	public void removeReceiver(Identifier id) {
+		this.messageProcessor.removeReceiver(id);
 	}
 	
 	/** Frees all resources attached to the PortFactory. After this call, getReceiver() and getTransmitter() can not be called anymore. */
 	public void dispose() {
 		executor.shutdown();
+	}
+	
+	public boolean isDisposed() {
+		return executor.isShutdown();
 	}
 }

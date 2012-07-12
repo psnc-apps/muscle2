@@ -55,7 +55,7 @@ public class Observation<T extends Serializable> implements Serializable {
 	}
 
 	public String toString() {
-		return getClass().getName()+" time:"+siTime+" dataclass:"+data.getClass();
+		return "Observation<"+siTime+",type="+data.getClass().getSimpleName()+">";
 	}	
 }
 
