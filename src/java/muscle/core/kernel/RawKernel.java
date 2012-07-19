@@ -73,7 +73,7 @@ public abstract class RawKernel {
 		Timestamp portalTime = maxTime;
 
 		boolean isFiner = logger.isLoggable(Level.FINER);
-		Object[] msg = isFiner ? null : new Object[2];
+		Object[] msg = isFiner ? new Object[2] : null;
 		
 		// search for the smallest "time" in our portals
 		for (ConduitEntranceController p : entrances.values()) {
