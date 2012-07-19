@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.Identifier;
 import muscle.net.AbstractConnectionHandler;
-import muscle.net.LocalSocketFactory;
+import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 
 /**
@@ -128,7 +128,7 @@ public class SimulationManager {
 		
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
-			SocketFactory sf = new LocalSocketFactory();
+			SocketFactory sf = new CrossSocketFactory();
 			ServerSocket ss = sf.createServerSocket(0, 10, addr);
 			mch = new ManagerConnectionHandler(sm, ss);
 			mch.start();

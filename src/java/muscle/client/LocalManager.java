@@ -5,11 +5,6 @@
 
 package muscle.client;
 
-import muscle.id.InstanceClass;
-import muscle.id.ResolverFactory;
-import muscle.id.Identifier;
-import muscle.id.Resolver;
-import muscle.id.IDType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -29,7 +24,8 @@ import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
-import muscle.net.LocalSocketFactory;
+import muscle.id.*;
+import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 
 /**
@@ -72,7 +68,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	private void init() throws IOException {
-		SocketFactory sf = new LocalSocketFactory();
+		SocketFactory sf = new CrossSocketFactory();
 		
 		// Local address, accepting data connections
 		InetSocketAddress socketAddr = opts.getLocalSocketAddress();
