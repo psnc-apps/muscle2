@@ -19,6 +19,14 @@ macro (do_test2 cxa result)
   set_tests_properties (Muscle2Test-${cxa} PROPERTIES TIMEOUT 30)
 endmacro (do_test2)
 
+macro (do_test2_exec exec cxa result)
+  set (CXA_FILE "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/cxa/${cxa}")
+  set (CXA_EXEC "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/${exec}/${exec}")
+  add_test (Muscle2ExecTest-${cxa} ${CXA_EXEC} -- --cxa ${CXA_FILE} --main --allkernels)
+  set_tests_properties (Muscle2ExecTest-${cxa} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
+  set_tests_properties (Muscle2ExecTest-${cxa} PROPERTIES TIMEOUT 30)
+endmacro (do_test2_exec)
+
 
 do_test("SimpleExample.cxa.rb" ] "got: 2.0")
 do_test("Triangle.cxa.rb"  "Got from Three: 3.0")
@@ -38,6 +46,8 @@ if (BUILD_CPP)
     do_test2("NativeExample2.cxa.rb"  "got: 2.0")
     do_test2("TransmutableExample2.cxa.rb"  "t: 2")
     do_test2("LHC2.cxa.rb"  "LHC:Final proton energy: 12")
+    do_test2_exec("simplecpp2" "NativeExample2.cxa.rb"  "got: 2.0")
+    do_test2_exec("transmutable2" "TransmutableExample2.cxa.rb"  "t: 2")
 endif (BUILD_CPP)
 
 
