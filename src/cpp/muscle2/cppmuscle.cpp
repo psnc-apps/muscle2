@@ -90,7 +90,7 @@ void env::finalize(void)
 		}
 		else if (WIFSIGNALED(status))
 		{
-			logger::severe("MUSCLE execution terminated by signal %d.", WTERMSIG(status));
+			logger::severe("MUSCLE execution terminated by signal %s.", strsignal(WTERMSIG(status)));
 		}
 		else logger::severe("MUSCLE failed");
 	}
