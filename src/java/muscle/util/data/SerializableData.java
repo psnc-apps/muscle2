@@ -44,16 +44,18 @@ public class SerializableData implements Serializable {
 		if (type == SerializableDatatype.NULL && value != null) {
 			throw new IllegalArgumentException("A NULL datatype should be provided with null data.");
 		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
-			this.value = serialize(value, type);
-			this.size = sizeOf(value, type);
-			this.type = type;
+			if (value instanceof SerializableData) {
+				SerializableData sValue = (SerializableData)value;
+				this.value = sValue.value;
+				this.size = sValue.size;
+				this.type = sValue.type;
+			} else {
+				this.value = serialize(value, type);
+				this.size = sizeOf(value, type);
+				this.type = type;
+			}
 		} else if (type.getDataClass() != null && !type.getDataClass().isInstance(value)) {
 			throw new IllegalArgumentException("Class of value '" + value.getClass() + "' does not match datatype '" + type + "'");
-		} else if (value instanceof SerializableData) {
-			SerializableData sValue = (SerializableData)value;
-			this.value = sValue.value;
-			this.size = sValue.size;
-			this.type = sValue.type;
 		} else {
 			this.value = value;
 			this.size = size;
@@ -1395,5 +1397,10 @@ public class SerializableData implements Serializable {
 		@SuppressWarnings("unchecked")
 		T typedValue = (T)copyValue;
 		return typedValue;
+	}
+	
+	@Override
+	public String toString() {
+		return "SerializableData[" + type.toString() + ", size=" + size + "]";
 	}
 }

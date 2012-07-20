@@ -86,6 +86,8 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				break;
 		}
 		out.flush();
+		in.cleanUp();
+		
 		return success;
 	}
 	

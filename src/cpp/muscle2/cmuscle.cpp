@@ -1,10 +1,9 @@
-
 #include "cmuscle.h"
 #include "cppmuscle.hpp"
 
 #include <string.h>
 
-int MUSCLE_Init(int *argc, char ***argv)
+muscle_error_t MUSCLE_Init(int *argc, char ***argv)
 {
 	return muscle::env::init(argc, argv);
 }
@@ -24,11 +23,11 @@ void* MUSCLE_Receive(const char *entrance_name, void *array, size_t *size, muscl
 	return muscle::env::receive(std::string(entrance_name), array, *size, type);
 }
 
-int MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type)
+muscle_error_t MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type)
 {
 	muscle::env::send(std::string(exit_name), array, size, type);
 
-	return 0;
+	return MUSCLE_SUCCESS;
 }
 
 int MUSCLE_Will_Stop(void) {

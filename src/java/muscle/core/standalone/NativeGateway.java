@@ -7,7 +7,11 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.acplt.oncrpc.OncRpcException;
+import muscle.util.data.SerializableData;
+import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.SerializerWrapper;
+import muscle.util.serialization.XdrDeserializerWrapper;
+import muscle.util.serialization.XdrSerializerWrapper;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
@@ -35,9 +39,9 @@ public class NativeGateway  extends Thread {
 		/* OPCODE = 3 */
 		public boolean willStop();
 		/* OPCODE = 4 */
-		public void sendDouble(String entranceName, double data[]);
+		public void send(String entranceName, SerializableData data);
 		/* OPCODE = 5 */
-		public double[] receiveDouble(String exitName);
+		public SerializableData receive(String exitName);
 		/* OPCODE = 6 */
 		public String getProperties();
 		/* OPCODE = 7 */
@@ -59,29 +63,29 @@ public class NativeGateway  extends Thread {
 	@Override
 	public void run() {
 		Socket s = null;
-		XdrTcpDecodingStream xdrIn = null;
-		XdrTcpEncodingStream xdrOut = null;
+		DeserializerWrapper in = null;
+		SerializerWrapper out = null;
 		try {
 			s = ss.accept();
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			
-			xdrIn =  new XdrTcpDecodingStream(s, 64 * 1024);
-			xdrOut = new XdrTcpEncodingStream(s, 64 * 1024);
+			in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, 64 * 1024));
+			out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, 64 * 1024));
 			
 			while (true) {
 				logger.finest("Starting decoding...");
-				xdrIn.beginDecoding();
+				in.refresh();
 
-				int operationCode = xdrIn.xdrDecodeInt();
+				int operationCode = in.readInt();
 				logger.log(Level.FINEST, "Operation code = {0}", operationCode);
 				
 				switch (operationCode) {
 					case 0:
 					{
 						logger.finest("finalize() request.");
-						xdrIn.close();
-						xdrOut.close();
+						in.close();
+						out.close();
 						listener.isFinished();
 						logger.finest("Native Process Gateway exiting...");
 						return;
@@ -89,15 +93,15 @@ public class NativeGateway  extends Thread {
 					case 1:
 					{
 						logger.finest("getKernelName() request.");
-						xdrOut.xdrEncodeString(listener.getKernelName());
+						out.writeString(listener.getKernelName());
 						logger.log(Level.FINEST, "Kernel name sent : {0}", listener.getKernelName());
 						break;
 					}
 					case 2:
 					{
 						logger.finest("getProperty() request.");
-						String value = listener.getProperty(xdrIn.xdrDecodeString());
-						xdrOut.xdrEncodeString(value);
+						String value = listener.getProperty(in.readString());
+						out.writeString(value);
 						logger.log(Level.FINEST, "Property value sent: {0}", value);
 						break;
 					}
@@ -105,73 +109,69 @@ public class NativeGateway  extends Thread {
 					{
 						logger.finest("willStop() request.");
 						boolean stop = listener.willStop();
-						xdrOut.xdrEncodeBoolean(stop);
+						out.writeBoolean(stop);
 						logger.log(Level.FINEST, "Stop?: {0}", stop);
 						break;
 					}
 					case 4:
 					{
 						logger.finest("sendDouble() request.");
-						String entranceName = xdrIn.xdrDecodeString();
-						double[] doubleA = xdrIn.xdrDecodeDoubleVector();
-						logger.log(Level.FINEST, "entranceName = {0}, array lenght = {1}", new Object[]{entranceName, doubleA.length});
-						listener.sendDouble(entranceName, doubleA);
+						String entranceName = in.readString();
+						SerializableData data = SerializableData.parseData(in);
+						logger.log(Level.FINEST, "entranceName = {0}, data = {1}", new Object[]{entranceName, data});
+						listener.send(entranceName, data);
 						logger.finest("data sent");
 						break;
 					}
 					case 5:
 					{
 						logger.finest("receiveDouble() request.");
-						String exitName = xdrIn.xdrDecodeString();
+						String exitName = in.readString();
 						logger.log(Level.FINEST, "exitName = {0}", exitName);
-						double[] doubleA =  listener.receiveDouble(exitName);
-						logger.log(Level.FINEST, "exitName = {0}, array lenght = {1}", new Object[]{exitName, doubleA.length});
-						xdrOut.xdrEncodeDoubleVector(doubleA);
+						SerializableData data =  listener.receive(exitName);
+						logger.log(Level.FINEST, "exitName = {0}, data = {1}", new Object[]{exitName, data});
+						data.encodeData(out);
 						logger.finest("data encoded");
 						break;
 					}
 					case 6:
 					{
 						logger.finest("getProperties() request.");
-						xdrOut.xdrEncodeString(listener.getProperties());
+						out.writeString(listener.getProperties());
 						break;
 					}
 					case 7:
 					{
 						logger.finest("getTmpPath() request.");
-						xdrOut.xdrEncodeString(listener.getTmpPath());
+						out.writeString(listener.getTmpPath());
 						break;
 					}
 					default:
 						throw new IOException("Unknown operation code " + operationCode);	
 				}
 				logger.finest("flushing response");
-				xdrOut.endEncoding();
+				out.flush();
 				
-				logger.finest("operation decoded.");
-				xdrIn.endDecoding();
-				
+				logger.finest("proceeding to next native call");
+				in.cleanUp();
 			}
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Communication error", ex);
-			listener.isFinished();
-		} catch (OncRpcException ex) {
-			logger.log(Level.SEVERE, "XDR Enc/Dec exception", ex);
-			listener.isFinished();
 		} catch (Throwable ex) {
 			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex.toString(), ex);
+		} finally {
 			listener.isFinished();
 			if (s != null) {
-				if (xdrIn != null) {
+				if (in != null) {
 					try {
-						xdrIn.close();
+						in.close();
 					} catch (Exception ex1) {
 						Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + "could not close communications with native code", ex1);
 					}
 				}
-				if (xdrOut != null) {
+				if (out != null) {
 					try {
-						xdrOut.close();
+						out.close();
 					} catch (Exception ex1) {
 						Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + "could not close communications with native code", ex1);
 					}

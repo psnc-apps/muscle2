@@ -13,11 +13,13 @@ import muscle.util.data.SerializableDatatype;
  * @author Joris Borgdorff
  */
 public class SerializableDataConverter<T extends Serializable> implements DataConverter<T,SerializableData> {
-	private SerializableDatatype type = null;
+	private SerializableDatatype type = SerializableDatatype.NULL;
 	
 	@Override
 	public SerializableData serialize(T data) {
-		if (type == null || !type.getDataClass().isInstance(data)) {
+		if (data == null) {
+			type = SerializableDatatype.NULL;
+		} else if (type.getDataClass() == null || !type.getDataClass().isInstance(data)) {
 			type = SerializableData.inferDatatype(data);
 		}
 		return SerializableData.valueOf(data, type);
@@ -31,7 +33,9 @@ public class SerializableDataConverter<T extends Serializable> implements DataCo
 
 	@Override
 	public T copy(T data) {
-		if (type == null || !type.getDataClass().isInstance(data)) {
+		if (data == null) {
+			type = SerializableDatatype.NULL;
+		} else if (type.getDataClass() == null || !type.getDataClass().isInstance(data)) {
 			type = SerializableData.inferDatatype(data);
 		}
 		return SerializableData.createIndependent(data, type);

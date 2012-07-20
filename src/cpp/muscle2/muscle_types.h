@@ -12,7 +12,8 @@ typedef enum {
 	MUSCLE_INT64,
 	MUSCLE_STRING,
 	MUSCLE_BOOLEAN,
-	MUSCLE_RAW
+	MUSCLE_RAW,
+	MUSCLE_COMPLEX
 } muscle_datatype_t;
 
 

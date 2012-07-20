@@ -208,6 +208,8 @@ public class TcpIDManipulator implements IDManipulator {
 			else {
 				logger.log(Level.WARNING, "Failed to finish the {0} protocol for ID {1}", new Object[]{action, id});
 			}
+			in.cleanUp();
+			
 			return success;
 		}
 		

@@ -1,12 +1,6 @@
 #ifndef CMUSCLE_H
 #define CMUSCLE_H
 
-#ifndef MUSCLE_INIT_SUCCESS
-#define MUSCLE_INIT_SUCCESS 0
-#define MUSCLE_INIT_ERR_SPAWN 1
-#define MUSCLE_INIT_ERR_IO 2
-#endif
-
 #include "muscle_types.h"
 
 #include <stddef.h>
@@ -16,7 +10,7 @@ extern "C" {
 #endif
 
 
-int MUSCLE_Init(int* argc, char*** argv);
+muscle_error_t MUSCLE_Init(int* argc, char*** argv);
 void MUSCLE_Finalize(void);
 
 
@@ -24,7 +18,7 @@ const char* MUSCLE_Get_Kernel_Name(void);
 const char* MUSCLE_Get_Property(const char* name);
 int MUSCLE_Will_Stop(void);
 
-int MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type);
+muscle_error_t MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type);
 void* MUSCLE_Receive(const char *entrance_name, void *array, size_t *size, muscle_datatype_t type);
 
 

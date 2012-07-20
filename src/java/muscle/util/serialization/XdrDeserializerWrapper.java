@@ -15,6 +15,7 @@ import org.acplt.oncrpc.XdrDecodingStream;
  */
 public class XdrDeserializerWrapper implements DeserializerWrapper {
 	private final XdrDecodingStream xdrIn;
+	private boolean isClean = true;
 
 	public XdrDeserializerWrapper(XdrDecodingStream xdrIn) {
 		this.xdrIn = xdrIn;
@@ -22,10 +23,24 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 	
 	@Override
 	public void refresh() throws IOException {
+		this.cleanUp();
 		try {
 			xdrIn.beginDecoding();
+			this.isClean = false;
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not refresh", ex);
+			throw new IOException("Sending side hung up", ex);
+		}
+	}
+
+	@Override
+	public void cleanUp() throws IOException {
+		if (!isClean) {
+			try {
+				xdrIn.endDecoding();
+				this.isClean = true;
+			} catch (OncRpcException ex) {
+				throw new IllegalStateException("Can not clean up", ex);
+			}
 		}
 	}
 
@@ -34,7 +49,7 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 		try {
 			return xdrIn.xdrDecodeInt();
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not read int", ex);
+			throw new IllegalStateException("Message is depleted or next value is not an int", ex);
 		}
 	}
 
@@ -43,7 +58,7 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 		try {
 			return xdrIn.xdrDecodeBoolean();
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not read boolean", ex);
+			throw new IllegalStateException("Message is depleted or next value is not a boolean", ex);
 		}
 	}
 
@@ -52,7 +67,7 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 		try {
 			return xdrIn.xdrDecodeByteVector();
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not read bytes", ex);
+			throw new IllegalStateException("Message is depleted or next value is not a byte array", ex);
 		}
 	}
 	
@@ -61,7 +76,7 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 		try {
 			return xdrIn.xdrDecodeString();
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not read string", ex);
+			throw new IllegalStateException("Message is depleted or next value is not a string", ex);
 		}
 	}
 	
@@ -70,7 +85,7 @@ public class XdrDeserializerWrapper implements DeserializerWrapper {
 		try {
 			return xdrIn.xdrDecodeDouble();
 		} catch (OncRpcException ex) {
-			throw new IllegalStateException("Can not read double", ex);
+			throw new IllegalStateException("Message is depleted or next value is not an int", ex);
 		}
 	}
 

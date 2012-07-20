@@ -21,7 +21,12 @@ public class UnpackerWrapper implements DeserializerWrapper {
 	
 	@Override
 	public void refresh() throws IOException {
-		//nop
+		// nop
+	}
+	
+	@Override
+	public void cleanUp() throws IOException {
+		// nop
 	}
 
 	@Override

@@ -100,6 +100,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 			default:
 				break;
 		}
+		in.cleanUp();
 	
 		if (!shouldDetach) {
 			this.connectionHandler.resubmit(this);

@@ -2,17 +2,21 @@ package muscle.core.standalone;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import muscle.core.*;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;
+import muscle.util.data.SerializableData;
+import muscle.util.data.SerializableDatatype;
 
 
 public abstract class NativeKernel extends CAController  implements NativeGateway.CallListener {
 
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
+	private SerializableDatatype type;
 
 	private boolean isDone;
 	
@@ -30,24 +34,35 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	public NativeKernel() {
 		super();
 		isDone = false;
+		type = SerializableDatatype.NULL;
 	}
 	
-	public synchronized void sendDouble(String entranceName, double data[]) {
+	public synchronized void send(String entranceName, SerializableData data) {
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
 		if (ec == null || (entrance = ec.getEntrance()) == null)
 			throw new MUSCLERuntimeException("Unknown entrance: '" + entranceName + "' in " + getLocalName() + " (valid entrances are " + entrances.keySet() + ")");
 		
-		entrance.send(data);		
+		entrance.send(data.getValue());		
 	}
 	
-	public synchronized double[] receiveDouble(String exitName) {
+	public synchronized SerializableData receive(String exitName) {
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
 		if (ec == null || (exit = ec.getExit()) == null)
 			throw new MUSCLERuntimeException("Unknown exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
 		
-		return (double[])exit.receive();
+		Serializable data = exit.receive();
+		SerializableData sdata;
+		if (data == null) {
+			sdata = SerializableData.valueOf(null, SerializableDatatype.NULL);
+		} else if (type.getDataClass() == null || !type.getDataClass().isInstance(data)) {
+			sdata = SerializableData.valueOf(data);
+			type = sdata.getType();
+		} else {
+			sdata = SerializableData.valueOf(data, type);
+		}
+		return sdata;
 	}
 
 	public synchronized String getKernelName() {

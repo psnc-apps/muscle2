@@ -317,7 +317,13 @@ manager_pid = 0
 local_pid = 0
 
 if muscle_main_args.size != 0
+        tmpXmx = m.env['Xmx']
+        tmpXms = m.env['Xms']
+	m.env['Xms'] = '20m'
+	m.env['Xmx'] = '100m'
 	command = JVM.build_command(muscle_main_args, m.env).first
+	m.env['Xms'] = tmpXms
+	m.env['Xmx'] = tmpXmx
 	puts "Running MUSCLE2 Simulation Manager: " + command
 	manager_pid = Process.fork {exec(command)}
 end

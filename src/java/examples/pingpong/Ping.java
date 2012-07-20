@@ -88,27 +88,27 @@ public class Ping extends CAController {
 					// Enter synchronized conduit
 					//data = converter.copy(data);
 					// Serialize for sending
-//					SerializableData sdata = converter.serialize(data);
+					SerializableData sdata = converter.serialize(data);
 //					// 
-//					byte[] data2 = (byte[])sdata.getValue();
-//					for (int j = 0; j < data2.length; j++) {
-//						data[j] = data2[j];
-//					}
-//					byte[] data3 = new byte[data.length];
-//					for (int j = 0; j < data.length; j++) {
-//						data3[j] = data[j];
-//					}
+					byte[] data2 = (byte[])sdata.getValue();
+					for (int j = 0; j < data2.length; j++) {
+						data[j] = data2[j];
+					}
+					byte[] data3 = new byte[data.length];
+					for (int j = 0; j < data.length; j++) {
+						data3[j] = data[j];
+					}
 //                    
 //					// Enter synchronized conduit
-					//data = converter.copy(data);
-//					sdata = converter.serialize(data);
-//					data2 = (byte[])sdata.getValue();
-//					for (int j = 0; j < data2.length; j++) {
-//						data[j] = data2[j];
-//					}
-//					for (int j = 0; j < data2.length; j++) {
-//						data3[j] = data[j];
-//					}
+//					data = converter.copy(data);
+					sdata = converter.serialize(data3);
+					data2 = (byte[])sdata.getValue();
+					for (int j = 0; j < data2.length; j++) {
+						data3[j] = data2[j];
+					}
+					for (int j = 0; j < data2.length; j++) {
+						data[j] = data3[j];
+					}
 				}
 			}
 			sum += totalTimes[test] = System.nanoTime() - tAll;
