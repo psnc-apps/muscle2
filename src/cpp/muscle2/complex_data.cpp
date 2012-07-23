@@ -1,7 +1,7 @@
 #include "complex_data.hpp"
 #include "muscle_types.h"
 
-static const bool const is_muscle_complex_t_array[] = {
+static const bool is_muscle_complex_t_array[] = {
 false, true, true, // null, map, collection
 false, false, false, false, false, false, false, false, // string + simple types
 true, true, true, true, true, true, true, true,// string_arr + simple types array
@@ -11,7 +11,7 @@ false, false, false, false, false, false, false, // simple types matrix 4D
 true // java object
 };
 
-static const bool const is_muscle_complex_t_matrix[] = {
+static const bool is_muscle_complex_t_matrix[] = {
 false, false, false, // null, map, collection
 false, false, false, false, false, false, false, false, // string + simple types
 false, false, false, false, false, false, false, false,// string_arr + simple types array
@@ -20,7 +20,7 @@ true, true, true, true, true, true, true,// simple types matrix 3D
 true, true, true, true, true, true, true, // simple types matrix 4D
 false // java object
 };
-static const bool const is_muscle_complex_t_matrix3D[] = {
+static const bool is_muscle_complex_t_matrix3D[] = {
 false, false, false, // null, map, collection
 false, false, false, false, false, false, false, false, // string + simple types
 false, false, false, false, false, false, false, false,// string_arr + simple types array
@@ -29,7 +29,7 @@ true, true, true, true, true, true, true,// simple types matrix 3D
 false, false, false, false, false, false, false, // simple types matrix 4D
 false // java object
 };
-static const bool const is_muscle_complex_t_matrix4D[] = {
+static const bool is_muscle_complex_t_matrix4D[] = {
 false, false, false, // null, map, collection
 false, false, false, false, false, false, false, false, // string + simple types
 false, false, false, false, false, false, false, false,// string_arr + simple types array
@@ -39,7 +39,7 @@ true, true, true, true, true, true, true, // simple types matrix 4D
 false // java object
 };
 
-static const size_t const muscle_complex_t_sizeof[] = {
+static const size_t muscle_complex_t_sizeof[] = {
 0, 0, 0, // null, map, collection don't have inherent size, this is exported to the values of the keys.
 0, sizeof(bool), sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(float), sizeof(double), // string + simple types
 0, sizeof(bool), sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(float), sizeof(double),// string_arr + simple types array
