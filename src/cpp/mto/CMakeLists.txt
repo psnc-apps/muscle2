@@ -41,5 +41,7 @@ else(NOT Boost_FOUND)
 
     install(TARGETS ${MTO} DESTINATION bin)
     install(TARGETS ${TESTER} DESTINATION share/muscle/examples/mto)
+    install(FILES "${PROJECT_SOURCE_DIR}/mto-config.cfg.dist" DESTINATION etc)
+    install(FILES "${PROJECT_SOURCE_DIR}/mto-topology.cfg.dist" DESTINATION etc)
 
 endif(NOT Boost_FOUND)
