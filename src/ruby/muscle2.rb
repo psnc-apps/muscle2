@@ -134,6 +134,11 @@ args, cli_env = cli.parse ARGV
 # add cli muscle env
 m.add_env cli_env
 
+
+if ENV["MUSCLE_CLASSPATH"]
+	m.add_classpath ENV["MUSCLE_CLASSPATH"]
+end
+
 # !!!: load cxa configuration
 if m.env.has_key?('cxa_file')
 	cxa = Cxa.new(m.env['cxa_file'], m.env)
