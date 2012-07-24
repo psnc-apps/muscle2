@@ -134,7 +134,7 @@ public class SimulationManager {
 			mch.start();
 			sm.setConnectionHandler(mch);
 		} catch (Exception ex) {
-			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
+			logger.log(Level.SEVERE, "Could not start connection manager." + ex, ex);
 			if (mch != null) {
 				sm.dispose();
 				mch.dispose();
