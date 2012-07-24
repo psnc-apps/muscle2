@@ -103,6 +103,9 @@ void env::finalize(void)
 }
 
 int env::detect_mpi_rank() {
+#ifdef CPPMUSCLE_TRACE
+	cout << "muscle::env::detect_mpi_rank() " << endl;
+#endif
 	const std::string possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
 							"OMPI_MCA_ns_nds_vpid",
 	                        "PMI_RANK",
