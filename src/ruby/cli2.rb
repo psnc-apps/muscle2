@@ -32,11 +32,17 @@ class MuscleCli
 	#
 	def initialize
 		require 'optparse'
+		require 'memoryrange'
 
 		# build our cli-args parser
 		@env = {}
 		@parser = OptionParser.new
 	
+		# add Java heap ranges as an option type
+		@parser.accept(MemoryRange, /(\d+)([kKmMgGtT])\.\.(\d+)([kKmMgGtT])/) do |mem_range, from, from_quantity, to, to_quantity|
+			MemoryRange.new(from, from_quantity, to, to_quantity)
+		end
+
 		@parser.banner += "\nExample: muscle2 --cxa /opt/muscle/share/muscle/examples/cxa/SimpleExample.cxa.rb --main r w"
 
 		# MUSCLE flags
@@ -61,6 +67,10 @@ class MuscleCli
 		
 		@parser.separator "Local Manager flags:"		
 		@parser.on("--manager HOST:PORT", "IP or hostname:port where the MUSCLE Simulation Manager can be contacted") {|arg| @env['manager'] = arg; }
+		@parser.on("--heap RANGE", MemoryRange, "set range for JVM heap size (e.g. 42m..2g)") do |mem_range|
+			@env['Xms'] = mem_range.from_mem
+			@env['Xmx'] = mem_range.to_mem
+		end
 		
 		@parser.separator "MTO flags:"
 		@parser.on("--intercluster", "use Muscle Transport Overlay") { @env['intercluster'] = true }
