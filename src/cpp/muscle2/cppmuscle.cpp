@@ -47,6 +47,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
 	char host_str[16];
+	host_str[0] = '\0';
 	boost::asio::ip::address_v4 host;	
 	muscle_pid = -1;
 	
@@ -65,7 +66,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 			exit(1);
 		}
 	}
-	host = *host_str ? boost::asio::ip::address_v4::from_string(host_str) : boost::asio::ip::address_v4::loopback();
+	host = host_str[0] != '\0' ? boost::asio::ip::address_v4::from_string(host_str) : boost::asio::ip::address_v4::loopback();
 	
 	// Start communicating with MUSCLE instance
 	try
@@ -217,7 +218,10 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		char *port_str = getenv("MUSCLE_GATEWAY_PORT");
 		if (port_str != NULL) {
 			*port = boost::lexical_cast<unsigned short>(port_str);
-			strncpy(host, getenv("MUSCLE_GATEWAY_HOST"), 16);
+			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
+			if (host_str != NULL) {
+				strncpy(host, host_str, 16);
+			}
 		}
 	}
 	else
