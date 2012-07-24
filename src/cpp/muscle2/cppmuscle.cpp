@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
+#include <stdlib.h>
 #ifdef CPPMUSCLE_TRACE
 #include <iostream>
 #endif
@@ -38,6 +39,11 @@ muscle_error_t env::init(int *argc, char ***argv)
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::init() " << endl;
 #endif
+	int rank = env::detect_mpi_rank();
+	
+	// Only execute for rank 0
+	if (rank > 0) return MUSCLE_SUCCESS;
+	
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
 	char host_str[16];
@@ -94,6 +100,24 @@ void env::finalize(void)
 		}
 		else logger::severe("MUSCLE failed");
 	}
+}
+
+int env::detect_mpi_rank() {
+	const std::string possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
+							"OMPI_MCA_ns_nds_vpid",
+	                        "PMI_RANK",
+	                        "MP_CHILD",
+	                        "SLURM_PROCID",
+	                        "X10_PLACE",
+							"MP_CHILD"};
+	int irank = 0;
+	for (int i = 0; i < 7; i++) {
+		char *rank = getenv(possible_mpi_rank_vars[i].c_str());
+		if (rank != NULL) {
+			irank = atoi(rank);
+		}
+	}
+	return irank;
 }
 
 std::string cxa::kernel_name(void)

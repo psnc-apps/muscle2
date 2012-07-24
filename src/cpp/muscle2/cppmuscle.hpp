@@ -29,6 +29,7 @@ class env
 
 private:
 
+	static int detect_mpi_rank();
 	static pid_t spawn(char * const *argv);
 	static pid_t muscle2_spawn(int* argc, char ***argv);
 	static char * create_tmpfifo();
