@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "complex_data.hpp"
 #include "muscle_types.h"
 
