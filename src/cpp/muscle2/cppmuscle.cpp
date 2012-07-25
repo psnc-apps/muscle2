@@ -66,15 +66,20 @@ muscle_error_t env::init(int *argc, char ***argv)
 			exit(1);
 		}
 	}
-	host = host_str[0] != '\0' ? boost::asio::ip::address_v4::from_string(host_str) : boost::asio::ip::address_v4::loopback();
+	if (host_str[0] == '\0')
+	{
+		host = boost::asio::ip::address_v4::loopback();
+		strncpy(host_str, "localhost", 10);
+	}
+	else host = boost::asio::ip::address_v4::from_string(host_str);
 	
 	// Start communicating with MUSCLE instance
 	try
 	{
 		comm = new XdrCommunicator(host, port);
 	} catch (std::exception& e) {
-		logger::severe("Exception: %s", e.what());
-		return MUSCLE_ERR_IO;
+		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", host_str, port, e.what());
+		exit(1);
 	}
 	return MUSCLE_SUCCESS;
 }
@@ -220,6 +225,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 			*port = boost::lexical_cast<unsigned short>(port_str);
 			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
 			if (host_str != NULL) {
+				cout << "Host: " << host_str << endl;
 				strncpy(host, host_str, 16);
 			}
 		}
@@ -229,9 +235,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		FILE *fp = fopen(tmpfifo, "r");
 		if(fp == 0 || ferror(fp))
 		{	
-			string msg = "Could not open temporary file ";
-			msg += tmpfifo;
-			logger::severe(msg);
+			logger::severe("Could not open temporary file %s", tmpfifo);
 			return;
 		}
 		while (fscanf(fp, "%15[^:]:%hu", host, port) == EOF) {
@@ -241,10 +245,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		// Null terminated
 		//assert( strlen(host, 16) < 16 );
   
-
-		char msg[96];
-		sprintf(msg, "Will communicate with Java MUSCLE on %s:%d", host, *port);
-		logger::info(msg);
+		logger::info("Will communicate with Java MUSCLE on %s:%d", host, *port);
 	}
 }
 
@@ -261,9 +262,7 @@ char * env::create_tmpfifo()
 			break;
 		if (errno != EEXIST)
 		{
-			string msg = "Can not create temporary file; error ";
-			msg += strerror(errno);
-			logger::severe(msg);
+			logger::severe("Can not create temporary file; error %s", strerror(errno));
 			return NULL;
 		}
 	}
