@@ -139,6 +139,10 @@ if ENV["MUSCLE_CLASSPATH"]
 	m.add_classpath ENV["MUSCLE_CLASSPATH"]
 end
 
+if ENV["MUSCLE_LIBPATH"]
+	m.add_libpath ENV["MUSCLE_LIBPATH"]
+end
+
 # !!!: load cxa configuration
 if m.env.has_key?('cxa_file')
 	cxa = Cxa.new(m.env['cxa_file'], m.env)
