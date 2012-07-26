@@ -12,15 +12,17 @@ import muscle.client.communication.message.Message;
 import muscle.client.id.JadeIdentifier;
 import muscle.client.id.JadePortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.serialization.DataConverter;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,JadeMessage<T>,JadeIdentifier,JadePortalID> implements Receiver<T,JadeMessage<T>,JadeIdentifier,JadePortalID> {
+public class JadeReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,JadeMessage<T>,JadeIdentifier,JadePortalID> implements Receiver<T,JadeMessage<T>> {
 	private volatile BlockingQueue<Message<T>> queue;
 
-	public JadeReceiver() {
+	public JadeReceiver(DataConverter<Message<T>, JadeMessage<T>> converter, JadePortalID portalID) {
+		super(converter, portalID);
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>();
 	}
 

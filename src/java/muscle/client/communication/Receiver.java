@@ -5,14 +5,12 @@ package muscle.client.communication;
 
 import java.io.Serializable;
 import muscle.client.communication.message.Message;
-import muscle.id.Identifier;
-import muscle.id.PortalID;
 
 /**
  *
  * @author jborgdo1
  */
-public interface Receiver<E extends Serializable, F, Q extends Identifier, P extends PortalID<Q>> extends CommunicatingPoint<Message<E>,F,Q,P> {
+public interface Receiver<E extends Serializable, F> extends CommunicatingPoint {
 	/** Receives a message. Will return null if no more messages can be received */
 	public Message<E> receive();
 	

@@ -16,13 +16,9 @@ import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.client.instance.PassiveConduitExitController;
 import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
-import muscle.core.model.Observation;
 import muscle.id.*;
 import muscle.net.SocketFactory;
-import muscle.util.serialization.BasicMessageConverter;
-import muscle.util.serialization.ObservationConverter;
-import muscle.util.serialization.PipeConverter;
-import muscle.util.serialization.SerializableDataConverter;
+import muscle.util.serialization.*;
 
 /**
  *
@@ -39,10 +35,10 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(final ConduitExitControllerImpl<T> exit, final PortalID port) {
-		return new Callable<Receiver<T,?,?,?>>() {
+	protected <T extends Serializable> Callable<Receiver<T, ?>> getReceiverTask(final ConduitExitControllerImpl<T> exit, final PortalID port) {
+		return new Callable<Receiver<T,?>>() {
 			@SuppressWarnings("unchecked")
-			public Receiver<T, ?, ?, ?> call() throws Exception {
+			public Receiver<T, ?> call() throws Exception {
 				exit.start();
 				
 				@SuppressWarnings("unchecked")
@@ -50,16 +46,27 @@ public class TcpPortFactoryImpl extends PortFactory {
 				
 				boolean passive = exit instanceof PassiveConduitExitController;
 				
-				Receiver recv = passive ?  (PassiveConduitExitController)exit : new TcpReceiver<T>();
-				
-				recv.setComplementaryPort(instancePort);
+				Receiver recv;
+				DataConverter converter;
 				
 				Resolver res = getResolver();
 				if (res.isLocal(instancePort)) {
-					recv.setDataConverter(new PipeConverter());
+					converter = new PipeConverter();
+					if (passive) {
+						recv = (PassiveConduitExitController)exit;
+						((PassiveConduitExitController)recv).setDataConverter(converter);
+					} else {
+						recv = new TcpReceiver<T>(converter, instancePort);					
+					}
 					localMsgProcessor.addReceiver(exit.getIdentifier(), recv);				
 				} else {
-					recv.setDataConverter(new BasicMessageConverter(new SerializableDataConverter()));
+					converter = new BasicMessageConverter(new SerializableDataConverter());
+					if (passive) {
+						recv = (PassiveConduitExitController)exit;
+						((PassiveConduitExitController)recv).setDataConverter(converter);
+					} else {
+						recv = new TcpReceiver<T>(converter, instancePort);
+					}
 					messageProcessor.addReceiver(exit.getIdentifier(), recv);				
 				}
 				
@@ -73,10 +80,10 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
-		return new Callable<Transmitter<T,?,?,?>>() {
+	protected <T extends Serializable> Callable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
+		return new Callable<Transmitter<T,?>>() {
 			@SuppressWarnings("unchecked")
-			public Transmitter<T, ?, ?, ?> call() throws Exception {
+			public Transmitter<T, ?> call() throws Exception {
 				entrance.start();
 				if (!resolvePort(port)) {
 					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, entrance});
@@ -87,18 +94,13 @@ public class TcpPortFactoryImpl extends PortFactory {
 				Resolver res = getResolver();
 				Transmitter trans;
 				if (res.isLocal(instancePort)) {
-					trans = new LocalTransmitter<T>(localMsgProcessor);
-					ObservationConverter<T,T> copyPipe = new ObservationConverter<T,T>(new SerializableDataConverter()) {
-						public Observation<T> serialize(Observation<T> data) {
-							return data.copyWithNewData(this.converter.copy(data.getData()));
-						}
-					};
-					trans.setDataConverter(copyPipe);
+					ObservationConverter<T,T> copyPipe = new PipeObservationConverter<T>(new SerializableDataConverter());
+					trans = new LocalTransmitter<T>(localMsgProcessor, copyPipe, instancePort);
 				} else {
-					trans = new TcpTransmitter<T>(socketFactory);
-					trans.setDataConverter(new ObservationConverter(new SerializableDataConverter()));
+					ObservationConverter converter = new ObservationConverter(new SerializableDataConverter());
+					trans = new TcpTransmitter<T>(socketFactory, converter, instancePort);
+					((TcpTransmitter)trans).start();
 				}
-				trans.setComplementaryPort(instancePort);
 				entrance.setTransmitter(trans);
 				return trans;
 			}

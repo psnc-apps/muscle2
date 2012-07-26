@@ -12,15 +12,17 @@ import muscle.client.communication.message.Message;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.serialization.DataConverter;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage,InstanceID,PortalID<InstanceID>> {
+public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage> {
 	private volatile BlockingQueue<Message<T>> queue;
 	
-	public TcpReceiver() {
+	public TcpReceiver(DataConverter<Message<T>,BasicMessage> converter, PortalID<InstanceID> portalID) {
+		super(converter, portalID);
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>();
 	}
 	

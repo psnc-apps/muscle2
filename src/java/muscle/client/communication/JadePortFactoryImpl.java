@@ -10,7 +10,10 @@ import java.util.concurrent.Callable;
 import muscle.client.communication.message.JadeIncomingMessageProcessor;
 import muscle.client.id.JadeIdentifier;
 import muscle.client.id.JadePortalID;
-import muscle.client.instance.*;
+import muscle.client.instance.ConduitEntranceControllerImpl;
+import muscle.client.instance.ConduitExitControllerImpl;
+import muscle.client.instance.JadeInstanceController;
+import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
@@ -28,16 +31,16 @@ public class JadePortFactoryImpl extends PortFactory {
 	}
 	
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?, ?, ?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
+	protected <T extends Serializable> Callable<Receiver<T, ?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
 		return new JadePortFactoryImpl.ReceiverTask<T>(localInstance, otherSide);
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?, ?, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
+	protected <T extends Serializable> Callable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
 		return new JadePortFactoryImpl.TransmitterTask<T>(ic, localInstance, otherSide);
 	}
 	
-	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?,?,?>> {
+	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?>> {
 		private final JadePortalID port;
 		private final ThreadedConduitExitController<T> exit;
 
@@ -55,15 +58,13 @@ public class JadePortFactoryImpl extends PortFactory {
 		}
 		@Override
 		@SuppressWarnings("unchecked")
-		public Receiver<T, ?, ?, ?> call() throws Exception {
+		public Receiver<T, ?> call() throws Exception {
 			exit.start();
 			
 			//resolvePort(port);
 			
 			@SuppressWarnings("unchecked")
-			Receiver<T,T, JadeIdentifier, JadePortalID> recv = new JadeReceiver();
-			recv.setDataConverter(new PipeConverter());
-			recv.setComplementaryPort(port);
+			Receiver<T,T> recv = new JadeReceiver(new PipeConverter(), port);
 			exit.setReceiver(recv);
 			
 			messageProcessor.addReceiver(exit.getIdentifier(), recv);
@@ -73,7 +74,7 @@ public class JadePortFactoryImpl extends PortFactory {
 	}
 	
 	
-	private class TransmitterTask<T extends Serializable> implements Callable<Transmitter<T,?,?,?>> {
+	private class TransmitterTask<T extends Serializable> implements Callable<Transmitter<T,?>> {
 		private final JadePortalID port;
 		private final JadeInstanceController instance;
 		private final ConduitEntranceControllerImpl<T> entrance;
@@ -92,13 +93,11 @@ public class JadePortFactoryImpl extends PortFactory {
 			}
 		}
 		@Override
-		public Transmitter<T, ?, ?, ?> call() throws Exception {
+		public Transmitter<T, ?> call() throws Exception {
 			entrance.start();
 			resolvePort(port);
 			
-			Transmitter<T,byte[],JadeIdentifier, JadePortalID> trans = new JadeTransmitter<T>(instance);
-			trans.setDataConverter(new ByteJavaObjectConverter<Observation<T>>());
-			trans.setComplementaryPort(port);
+			Transmitter<T,byte[]> trans = new JadeTransmitter<T>(instance, new ByteJavaObjectConverter<Observation<T>>(), port);
 			entrance.setTransmitter(trans);
 			
 			return trans;

@@ -5,9 +5,7 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
@@ -21,7 +19,6 @@ import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
-import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.serialization.DataConverter;
@@ -30,7 +27,7 @@ import muscle.util.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage,InstanceID,PortalID<InstanceID>> {
+public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage> {
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<Observation<T>> queue;
 	private volatile boolean isDone;
@@ -112,7 +109,6 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		}
 	}
 
-	@Override
 	public void setDataConverter(DataConverter<Message<T>, BasicMessage> serializer) {
 		this.converter = serializer;
 	}
@@ -121,12 +117,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	public boolean isDisposed() {
 		return this.isDone;
 	}
-	
-		@Override
-	public void setComplementaryPort(PortalID<InstanceID> id) {
-		// Do nothing.
-	}
-	
+		
 	@Override
 	public Message<T> receive() {
 		throw new UnsupportedOperationException("Not supported.");

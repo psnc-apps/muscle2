@@ -26,7 +26,7 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
  * @author Joris Borgdorff
  */
 public class ThreadedConduitExitController<T extends Serializable> extends ThreadedPortal<T> implements ConduitExitControllerImpl<T> {
-	private Receiver<T, ?,?,?> receiver;
+	private Receiver<T, ?> receiver;
 	private ConduitExit<T> conduitExit;
 	private final BlockingQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ThreadedConduitExitController.class.getName());
@@ -61,7 +61,7 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 		return fc;
 	}
 
-	public synchronized void setReceiver(Receiver<T, ?,?,?> recv) {
+	public synchronized void setReceiver(Receiver<T, ?> recv) {
 		this.receiver = recv;
 		logger.log(Level.FINE, "ConduitExit <{0}> is now attached.", portalID);
 

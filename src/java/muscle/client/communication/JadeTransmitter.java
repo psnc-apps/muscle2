@@ -10,15 +10,17 @@ import muscle.client.communication.message.Signal;
 import muscle.client.id.JadeIdentifier;
 import muscle.client.id.JadePortalID;
 import muscle.core.model.Observation;
+import muscle.util.serialization.DataConverter;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class JadeTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, byte[],JadeIdentifier,JadePortalID> implements Transmitter<T, byte[],JadeIdentifier,JadePortalID> {
+public class JadeTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, byte[],JadeIdentifier,JadePortalID> implements Transmitter<T, byte[]> {
 	private Agent senderAgent;
 	
-	public JadeTransmitter(Agent senderAgent) {
+	public JadeTransmitter(Agent senderAgent, DataConverter<Observation<T>, byte[]> converter, JadePortalID portalID) {
+		super(converter, portalID);
 		this.senderAgent = senderAgent;
 	}
 	

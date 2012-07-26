@@ -43,7 +43,7 @@ an entrance sends data to the conduit exit through a transmitter
  */
 public class ThreadedConduitEntranceController<T extends Serializable> extends ThreadedPortal<T>  implements ConduitEntranceControllerImpl<T> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
-	private Transmitter<T,?,?,?> transmitter;
+	private Transmitter<T,?> transmitter;
 	private final static Logger logger = Logger.getLogger(ThreadedConduitEntranceController.class.getName());
 	private boolean processingMessage;
 	private final DataConverter<T,?> serializer;
@@ -61,7 +61,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	/** Set the transmitter that will be used to transmit messages. Before this
 	 * is called, the conduit will not be able to send messages.
 	 */
-	public synchronized void setTransmitter(Transmitter<T,?,?,?> trans) {
+	public synchronized void setTransmitter(Transmitter<T,?> trans) {
 		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
 		this.notifyAll();
@@ -127,7 +127,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
-	private synchronized Transmitter<T, ?,?,?> waitForTransmitter() throws InterruptedException {
+	private synchronized Transmitter<T, ?> waitForTransmitter() throws InterruptedException {
 		while (transmitter == null && !isDisposed()) {
 			if (logger.isLoggable(Level.FINE)) {
 				String msg = "ConduitEntrance <" + portalID + "> is waiting for connection to transmit ";
@@ -159,7 +159,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	 * Actually send message to transmitter.
 	 */
 	private void send(Observation<T> msg) throws InterruptedException {
-		Transmitter<T, ?,?,?> trans = waitForTransmitter();
+		Transmitter<T, ?> trans = waitForTransmitter();
 		if (trans != null) {
 			trans.transmit(msg);
 			increment();

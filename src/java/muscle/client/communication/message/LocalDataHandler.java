@@ -57,7 +57,7 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 		}
 	}
 	
-	public synchronized void put(Message msg) {
+	public final synchronized void put(Message msg) {
 		messages.add(msg);
 		this.trigger();
 	}

@@ -17,27 +17,26 @@ import muscle.id.PortalID;
 import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
+import muscle.util.serialization.DataConverter;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<SerializableData>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<SerializableData>,InstanceID,PortalID<InstanceID>> {
-	private AliveSocket liveSocket;
+public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<SerializableData>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<SerializableData>> {
+	private final AliveSocket liveSocket;
 	private final static Logger logger = Logger.getLogger(TcpTransmitter.class.getName());
 	private final static long socketKeepAlive = 5000*1000;
 	private final SocketFactory socketFactory;
 	
-	public TcpTransmitter(SocketFactory sf) {
+	public TcpTransmitter(SocketFactory sf, DataConverter<Observation<T>, Observation<SerializableData>> converter, PortalID<InstanceID> portalID) {
+		super(converter, portalID);
 		this.socketFactory = sf;
-		this.liveSocket = null;
+		this.liveSocket = new AliveSocket(socketFactory, ((TcpLocation)portalID.getLocation()).getSocketAddress(), socketKeepAlive);
 	}
-
-	@Override
-	public void setComplementaryPort(PortalID<InstanceID> port) {
-		super.setComplementaryPort(port);
-		this.liveSocket = new AliveSocket(socketFactory, ((TcpLocation)port.getLocation()).getSocketAddress(), socketKeepAlive);
+	
+	public void start() {
 		this.liveSocket.start();
 	}
 	

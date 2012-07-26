@@ -39,7 +39,7 @@ an entrance sends data to the conduit exit through a transmitter
  */
 public class PassiveConduitEntranceController<T extends Serializable> extends PassivePortal<T>  implements ConduitEntranceControllerImpl<T> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
-	private Transmitter<T,?,?,?> transmitter;
+	private Transmitter<T,?> transmitter;
 	private boolean transmitterFound;
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private volatile boolean processingMessage;
@@ -57,7 +57,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	/** Set the transmitter that will be used to transmit messages. Before this
 	 * is called, the conduit will not be able to send messages.
 	 */
-	public synchronized void setTransmitter(Transmitter<T,?,?,?> trans) {
+	public synchronized void setTransmitter(Transmitter<T,?> trans) {
 		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
 		this.notifyAll();
