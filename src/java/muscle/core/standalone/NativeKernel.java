@@ -114,8 +114,8 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 		getLogger().log(Level.FINE, "Contact information: {0}", port);		
 		Process child = pb.start();
 
-		StreamRipper stdoutR = new StreamRipper(System.out, child.getInputStream());
-		StreamRipper stderrR = new StreamRipper(System.err, child.getErrorStream());
+		StreamRipper stdoutR = new StreamRipper("stdout-reader-"+getLocalName(), System.out, child.getInputStream());
+		StreamRipper stderrR = new StreamRipper("stderr-reader-"+getLocalName(), System.err, child.getErrorStream());
 
 		stdoutR.start();
 		stderrR.start();

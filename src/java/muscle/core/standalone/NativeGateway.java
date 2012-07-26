@@ -22,6 +22,7 @@ public class NativeGateway  extends Thread {
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
 
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
+		super("NativeGateway-" + listener.getKernelName());
 		ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));
 		
 		this.listener = listener;
