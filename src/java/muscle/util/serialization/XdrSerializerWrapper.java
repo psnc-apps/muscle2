@@ -170,6 +170,9 @@ public class XdrSerializerWrapper implements SerializerWrapper {
 			case DOUBLE_ARR:
 				xdrOut.xdrEncodeDoubleVector((double[])newValue);
 				break;
+			case BYTE_ARR:
+				xdrOut.xdrEncodeByteVector((byte[])newValue);
+				break;
 			default:
 				throw new IllegalArgumentException("Datatype " + type + " not recognized");
 		}
