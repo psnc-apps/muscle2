@@ -8,7 +8,6 @@
 
 #include "muscle_types.h"
 #include "logger.hpp"
-#include "complex_data.hpp"
 
 namespace muscle {
 class env

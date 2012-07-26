@@ -20,7 +20,7 @@ public class NativeGateway  extends Thread {
 	protected ServerSocket ss;
 	protected CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	
+
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));
 		
@@ -46,9 +46,9 @@ public class NativeGateway  extends Thread {
 		public String getProperties();
 		/* OPCODE = 7 */
 		public String getTmpPath();
-		
-	}
-	
+			
+		}
+
 	public int getPort() {
 		return ss.getLocalPort();
 		
@@ -56,7 +56,7 @@ public class NativeGateway  extends Thread {
 	}
 	public InetAddress getInetAddress() {
 		return ss.getInetAddress();
-		
+	
 		//return "tcp://" + ss.getInetAddress() + ":" + ss.getLocalPort();
 	}
 	
@@ -70,8 +70,9 @@ public class NativeGateway  extends Thread {
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			
-			in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, 64 * 1024));
-			out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, 64 * 1024));
+			int buffer_size = 64*1024;
+			in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, buffer_size));
+			out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
 			
 			while (true) {
 				logger.finest("Starting decoding...");
@@ -184,5 +185,4 @@ public class NativeGateway  extends Thread {
 			}
 		}
 	}
-
 }

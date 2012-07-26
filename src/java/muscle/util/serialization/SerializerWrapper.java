@@ -6,6 +6,8 @@
 package muscle.util.serialization;
 
 import java.io.IOException;
+import java.io.Serializable;
+import muscle.util.data.SerializableDatatype;
 
 /**
  *
@@ -17,6 +19,7 @@ public interface SerializerWrapper {
 	public void writeByteArray(byte[] bytes) throws IOException;
 	public void writeString(String str) throws IOException;
 	public void writeDouble(double d) throws IOException;
+	public void writeValue(Serializable arr, SerializableDatatype type) throws IOException;
 	public void flush() throws IOException;
 	public void close() throws IOException;
 }

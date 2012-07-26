@@ -28,7 +28,7 @@ public class ConverterWrapperFactory {
 	public static SerializerWrapper getDataSerializer(Socket s) throws IOException {
 		if (isXdr) {
 			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, DATA_BUFFER_SIZE);
-			return new XdrSerializerWrapper(xdrOut);
+			return new XdrSerializerWrapper(xdrOut, DATA_BUFFER_SIZE);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();
@@ -40,7 +40,7 @@ public class ConverterWrapperFactory {
 	public static SerializerWrapper getControlSerializer(Socket s) throws IOException {
 		if (isXdr) {
 			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, CONTROL_BUFFER_SIZE);
-			return new XdrSerializerWrapper(xdrOut);
+			return new XdrSerializerWrapper(xdrOut, CONTROL_BUFFER_SIZE);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();

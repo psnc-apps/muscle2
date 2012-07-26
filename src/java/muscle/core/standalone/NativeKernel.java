@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.*;
 import muscle.core.kernel.CAController;
 import muscle.exception.MUSCLERuntimeException;
@@ -142,8 +143,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	}
 
 	@Override
-	protected void execute() {
-		
+	protected void execute() {		
 		try {
 			NativeGateway gateway = new NativeGateway(this);
 			gateway.start();
@@ -156,7 +156,7 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 				this.writeContactInformation(host, port);
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Logger.getLogger(NativeKernel.class.getName()).log(Level.SEVERE, "Could not start communicating with native code: " + ex, ex);
 		}
 		
 	}

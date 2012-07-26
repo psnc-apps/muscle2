@@ -7,6 +7,9 @@ package muscle.util.serialization;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
+import muscle.util.data.MatrixTool;
+import muscle.util.data.SerializableDatatype;
 import org.msgpack.packer.Packer;
 
 /**
@@ -63,5 +66,73 @@ public class PackerWrapper implements SerializerWrapper {
 	
 	public Packer getPacker() {
 		return this.packer;
+	}
+
+	@Override
+	public void writeValue(Serializable value, SerializableDatatype type) throws IOException {
+		if (type.typeOf().isArray()) {
+			int len = MatrixTool.lengthOfMatrix(value, type);
+			packer.writeArrayBegin(len);
+			switch (type.typeOf()) {
+				case STRING_ARR: {
+					String[] arr = (String[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case BOOLEAN_ARR: {
+					boolean[] arr = (boolean[]) value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case SHORT_ARR: {
+					short[] arr = (short[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case INT_ARR: {
+					int[] arr = (int[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case LONG_ARR: {
+					long[] arr = (long[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case FLOAT_ARR: {
+					float[] arr = (float[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+				case DOUBLE_ARR: {
+					double[] arr = (double[])value;
+					for (int i = 0; i < len; i++) {
+						packer.write(arr[i]);
+					}
+				}	break;
+			}
+			packer.writeArrayEnd();
+		} else {
+			switch (type) {
+				case BYTE:
+					packer.write((Byte)value);
+					break;
+				case SHORT:
+					packer.write((Short)value);
+					break;
+				case FLOAT:
+					packer.write((Float)value);
+					break;
+				case LONG:
+					packer.write((Long)value);
+					break;
+			}
+		}
 	}
 }

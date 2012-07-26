@@ -6,6 +6,8 @@
 package muscle.util.serialization;
 
 import java.io.IOException;
+import java.io.Serializable;
+import muscle.util.data.SerializableDatatype;
 
 /**
  *
@@ -26,6 +28,8 @@ public interface DeserializerWrapper {
 	public String readString() throws IOException;
 	/** Read a double; may only be called after refresh has been called, one refresh per flush of the sending side. */
 	public double readDouble() throws IOException;
+	
+	public Serializable readValue(SerializableDatatype type) throws IOException;
 	/** Close the deserializer, it can not be used again. */
 	public void close() throws IOException;
 }

@@ -6,6 +6,9 @@
 #include <cstring>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
+#include <cmath>
+
+#define M2_XDR_BUFSIZE (64*1024)
 
 namespace muscle {
 
@@ -43,53 +46,38 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		muscle_complex_t ctype = data->getType();
 		int itype = ctype;
 		assert( xdr_int(&xdro, &itype) == 1);
-		switch (ctype)
+		
+		if (ctype == COMPLEX_STRING)
 		{
-			case COMPLEX_DOUBLE_ARR:
-			case COMPLEX_DOUBLE_MATRIX_2D:
-			case COMPLEX_DOUBLE_MATRIX_3D:
-			case COMPLEX_DOUBLE_MATRIX_4D:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_double) == 1);
-				break;
-			case COMPLEX_FLOAT_ARR:
-			case COMPLEX_FLOAT_MATRIX_2D:
-			case COMPLEX_FLOAT_MATRIX_3D:
-			case COMPLEX_FLOAT_MATRIX_4D:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_float) == 1);
-				break;
-			case COMPLEX_INT_ARR:
-			case COMPLEX_INT_MATRIX_2D:
-			case COMPLEX_INT_MATRIX_3D:
-			case COMPLEX_INT_MATRIX_4D:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_int) == 1);
-				break;
-			case COMPLEX_LONG_ARR:
-			case COMPLEX_LONG_MATRIX_2D:
-			case COMPLEX_LONG_MATRIX_3D:
-			case COMPLEX_LONG_MATRIX_4D:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_long) == 1);
-				break;
-			case COMPLEX_STRING:
-				assert( xdr_string(&xdro, (char **)&msg, count_int) == 1);
-				break;
-			case COMPLEX_STRING_ARR:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_string) == 1);
-				break;
-			case COMPLEX_BOOLEAN_ARR:
-			case COMPLEX_BOOLEAN_MATRIX_2D:
-			case COMPLEX_BOOLEAN_MATRIX_3D:
-			case COMPLEX_BOOLEAN_MATRIX_4D:
-				assert( xdr_array(&xdro, (char **)&msg, &count_int, 65536, sz, (xdrproc_t)&xdr_bool) == 1);
-				break;
-			case COMPLEX_BYTE_ARR:
-			case COMPLEX_BYTE_MATRIX_2D:
-			case COMPLEX_BYTE_MATRIX_3D:
-			case COMPLEX_BYTE_MATRIX_4D:
-				assert( xdr_bytes(&xdro, (char **)&msg, &count_int, 65536) == 1);
-				break;
-			default:
-				muscle::logger::severe("Datatype number %d not supported in native code", ctype);
-				break;
+			assert( xdr_string(&xdro, (char **)&msg, count_int) == 1);
+		}
+		else
+		{
+			float tot_sz = count_int * (sz == 8 ? 8 : 4);
+			int chunks = ceil(tot_sz/M2_XDR_BUFSIZE);
+			assert( xdr_int(&xdro, &chunks) == 1);
+			if (chunks > 1)
+			{
+				int count_i = count_int;
+				assert( xdr_int(&xdro, &count_i) == 1);				
+			}
+		
+			unsigned int chunk_len = ceil(count_int/(float)chunks);
+			unsigned int first_chunk_len = count_int - (chunks - 1)*chunk_len;
+
+			xdrproc_t proc = get_proc(ctype);
+			if (proc) {
+				char *msg_ptr = (char *)msg;
+				assert( xdr_array(&xdro, (char **)&msg_ptr, &first_chunk_len, M2_XDR_BUFSIZE, sz, proc) == 1);
+				msg_ptr += first_chunk_len*sz;
+				
+				for (int i = 1; i < chunks; i++)
+				{
+					assert( xdrrec_endofrecord(&xdro, 1) == 1);
+					assert( xdr_array(&xdro, (char **)&msg_ptr, &chunk_len, M2_XDR_BUFSIZE, sz, proc) == 1);
+					msg_ptr += chunk_len*sz;
+				}
+			}
 		}
 		// Send dimensions
 		std::vector<int> dims = data->getDimensions();
@@ -115,53 +103,42 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			assert( xdr_int(&xdri, &complex_num) == 1);
 			muscle_complex_t ctype = (muscle_complex_t)complex_num;
 			size_t sz = ComplexData::sizeOfPrimitive(ctype);
-			switch (ctype)
+			
+			if (ctype == COMPLEX_STRING)
 			{
-				case COMPLEX_DOUBLE_ARR:
-				case COMPLEX_DOUBLE_MATRIX_2D:
-				case COMPLEX_DOUBLE_MATRIX_3D:
-				case COMPLEX_DOUBLE_MATRIX_4D:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_double) == 1);
-					break;
-				case COMPLEX_FLOAT_ARR:
-				case COMPLEX_FLOAT_MATRIX_2D:
-				case COMPLEX_FLOAT_MATRIX_3D:
-				case COMPLEX_FLOAT_MATRIX_4D:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_float) == 1);
-					break;
-				case COMPLEX_INT_ARR:
-				case COMPLEX_INT_MATRIX_2D:
-				case COMPLEX_INT_MATRIX_3D:
-				case COMPLEX_INT_MATRIX_4D:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_int) == 1);
-					break;
-				case COMPLEX_LONG_ARR:
-				case COMPLEX_LONG_MATRIX_2D:
-				case COMPLEX_LONG_MATRIX_3D:
-				case COMPLEX_LONG_MATRIX_4D:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_long) == 1);
-					break;
-				case COMPLEX_STRING:
-					assert( xdr_string(&xdri, (char **)result, *result_len) == 1);
-					break;
-				case COMPLEX_STRING_ARR:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_string) == 1);
-					break;
-				case COMPLEX_BOOLEAN_ARR:
-				case COMPLEX_BOOLEAN_MATRIX_2D:
-				case COMPLEX_BOOLEAN_MATRIX_3D:
-				case COMPLEX_BOOLEAN_MATRIX_4D:
-					assert( xdr_array(&xdri, (char **)result, &len, *result_len, sz, (xdrproc_t)&xdr_bool) == 1);
-					break;
-				case COMPLEX_BYTE_ARR:
-				case COMPLEX_BYTE_MATRIX_2D:
-				case COMPLEX_BYTE_MATRIX_3D:
-				case COMPLEX_BYTE_MATRIX_4D:
-					assert( xdr_bytes(&xdri, (char **)result, &len, *result_len) == 1);
-					break;
-				default:
-					muscle::logger::severe("Datatype number %d not supported in native code", ctype);
-					break;
+				assert( xdr_string(&xdri, (char **)result, M2_XDR_BUFSIZE) == 1);
+				break;
+			}
+			else
+			{
+				xdrproc_t proc = get_proc(ctype);
+				int chunks;
+				assert( xdr_int(&xdri, &chunks) == 1);
+				if (chunks > 1) {
+					int total_len;
+					assert( xdr_int(&xdri, &total_len) == 1);
+					
+					*(void **)result = malloc(total_len*sz);
+					char *result_ptr = *(char **)result;
+					if (!result_ptr)
+					{
+						muscle::logger::severe("Could not allocate buffer for receiving message");
+						return -1;
+					}
+					assert( xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+					result_ptr += len*sz;
+					for (int i = 1; i < chunks; i++) {
+						assert( xdrrec_skiprecord(&xdri) == 1);
+						assert( xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+						result_ptr += len*sz;
+					}
+					
+					len = total_len;
+				}
+				else
+				{
+					assert( xdr_array(&xdri, (char **)result, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+				}
 			}
 			
 			// Receive dimensions
@@ -203,7 +180,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			break;
 	}
 	
-	return 0;
+	return 1;
 }
 
 void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
@@ -216,6 +193,36 @@ void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
 	{
 		free(ptr);
 	}
+}
+
+xdrproc_t XdrCommunicator::get_proc(muscle_complex_t type)
+{
+	xdrproc_t proc = NULL;
+	switch (type)
+	{
+		case COMPLEX_DOUBLE_ARR: case COMPLEX_DOUBLE_MATRIX_2D: case COMPLEX_DOUBLE_MATRIX_3D: case COMPLEX_DOUBLE_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_double;
+			break;
+		case COMPLEX_FLOAT_ARR: case COMPLEX_FLOAT_MATRIX_2D: case COMPLEX_FLOAT_MATRIX_3D: case COMPLEX_FLOAT_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_float;
+			break;
+		case COMPLEX_INT_ARR: case COMPLEX_INT_MATRIX_2D: case COMPLEX_INT_MATRIX_3D: case COMPLEX_INT_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_int;
+			break;
+		case COMPLEX_LONG_ARR: case COMPLEX_LONG_MATRIX_2D: case COMPLEX_LONG_MATRIX_3D: case COMPLEX_LONG_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_long;
+			break;
+		case COMPLEX_BOOLEAN_ARR: case COMPLEX_BOOLEAN_MATRIX_2D: case COMPLEX_BOOLEAN_MATRIX_3D: case COMPLEX_BOOLEAN_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_bool;
+			break;
+		case COMPLEX_BYTE_ARR: case COMPLEX_BYTE_MATRIX_2D: case COMPLEX_BYTE_MATRIX_3D: case COMPLEX_BYTE_MATRIX_4D:
+			proc = (xdrproc_t)&xdr_char;
+			break;
+		default:
+			muscle::logger::severe("Datatype number %d not supported in native code", type);
+			break;
+	}
+	return proc;
 }
 
 } // EO namespace muscle
