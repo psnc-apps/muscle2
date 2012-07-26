@@ -89,7 +89,7 @@ JNIEXPORT void JNICALL Java_examples_transmutable_Kernel_callNative
 		delete exitA;
 		delete entranceA;
 	}
-	catch(std::runtime_error& e)
+	catch(std::exception& e)
 	{
 		std::cerr<<"\nRUNTIME ERROR: "<<e.what()<<"\n"<<std::endl;
 	}

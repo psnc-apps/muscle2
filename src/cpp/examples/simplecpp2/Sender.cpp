@@ -32,7 +32,8 @@ a native kernel which sends an array of double
 */
 int main(int argc, char **argv)
 {
-	double dataA[5];
+	int len = 64*1024;
+	double dataA[len];
 
 	try
 	{
@@ -44,19 +45,23 @@ int main(int argc, char **argv)
 		for(int time = 0; !muscle::env::will_stop(); time ++) {
 								
 			// process data
-			for(int i = 0; i < 5; i++) {
+			for(int i = 0; i < len; i++) {
 				dataA[i] = i;
 			}
 						
 			// dump to our portals
-			muscle::env::send("data", dataA, 5, MUSCLE_DOUBLE);
+			muscle::env::send("data", dataA, len, MUSCLE_DOUBLE);
 		}
 
 		muscle::env::finalize();
 	}
+	catch(exception& ex)
+	{
+		logger::severe("Error occurred in sender: %s", ex.what());
+	}
 	catch(...)
 	{
-		std::cerr << "Error occured" << std::endl;
+		cerr << "Error occured" << endl;
 	}
 	
 	return 0;

@@ -7,6 +7,7 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <cmath>
+#include <exception>
 
 #define M2_XDR_BUFSIZE (64*1024)
 
@@ -31,35 +32,49 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 {
 	// Encode
 	int op = opcode;
-	assert( xdr_int(&xdro, &op) == 1 );
+	if (!xdr_int(&xdro, &op)) throw new Communicator::io_exception("Can not write int");
 	
 	if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY)
 	{
 		char *cid = (char *)(*identifier).c_str(); //we are encoding only - so this is safe
-		assert( xdr_string(&xdro, &cid, (*identifier).length()) == 1 );
+		if (!xdr_string(&xdro, &cid, (*identifier).length())) throw new Communicator::io_exception("Can not write string");
 	}
 	if (opcode == PROTO_SEND)
 	{
-		ComplexData *data = type == MUSCLE_COMPLEX ? (ComplexData *)msg : new ComplexData(&msg, type, msg_len);
-		unsigned int count_int = data->length();
-		size_t sz = data->sizeOfPrimitive();
-		muscle_complex_t ctype = data->getType();
+		unsigned int count_int;
+		size_t sz;
+		muscle_complex_t ctype;
+		std::vector<int> dims;
+		if (type == MUSCLE_COMPLEX) {
+			ComplexData *data = (ComplexData *)msg;
+			count_int = data->length();
+			sz = data->sizeOfPrimitive();
+			ctype = data->getType();
+			dims = data->getDimensions();
+		}
+		else
+		{
+			count_int = msg_len;
+			ctype = ComplexData::getType(type);
+			sz = ComplexData::sizeOfPrimitive(ctype);
+			// No extra dimensions
+		}
 		int itype = ctype;
-		assert( xdr_int(&xdro, &itype) == 1);
+		if (!xdr_int(&xdro, &itype)) throw new Communicator::io_exception("Can not write message protocol");
 		
 		if (ctype == COMPLEX_STRING)
 		{
-			assert( xdr_string(&xdro, (char **)&msg, count_int) == 1);
+			if (!xdr_string(&xdro, (char **)&msg, count_int)) throw new Communicator::io_exception("Can not write identifier");
 		}
 		else
 		{
 			float tot_sz = count_int * (sz == 8 ? 8 : 4);
 			int chunks = ceil(tot_sz/M2_XDR_BUFSIZE);
-			assert( xdr_int(&xdro, &chunks) == 1);
+			if (!xdr_int(&xdro, &chunks)) throw new Communicator::io_exception("Can not write int");
 			if (chunks > 1)
 			{
 				int count_i = count_int;
-				assert( xdr_int(&xdro, &count_i) == 1);				
+				if (!xdr_int(&xdro, &count_i)) throw new Communicator::io_exception("Can not write int");
 			}
 		
 			unsigned int chunk_len = ceil(count_int/(float)chunks);
@@ -68,31 +83,31 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			xdrproc_t proc = get_proc(ctype);
 			if (proc) {
 				char *msg_ptr = (char *)msg;
-				assert( xdr_array(&xdro, (char **)&msg_ptr, &first_chunk_len, M2_XDR_BUFSIZE, sz, proc) == 1);
+				if (!xdr_array(&xdro, (char **)&msg_ptr, &first_chunk_len, M2_XDR_BUFSIZE, sz, proc)) throw new Communicator::io_exception("Can not write data chunk");;
 				msg_ptr += first_chunk_len*sz;
 				
 				for (int i = 1; i < chunks; i++)
 				{
-					assert( xdrrec_endofrecord(&xdro, 1) == 1);
-					assert( xdr_array(&xdro, (char **)&msg_ptr, &chunk_len, M2_XDR_BUFSIZE, sz, proc) == 1);
+					if (!xdrrec_endofrecord(&xdro, 1)) throw new Communicator::io_exception("Can not send data chunk");
+					if (!xdr_array(&xdro, (char **)&msg_ptr, &chunk_len, M2_XDR_BUFSIZE, sz, proc)) throw new Communicator::io_exception("Can not write data chunk");
 					msg_ptr += chunk_len*sz;
 				}
 			}
 		}
 		// Send dimensions
-		std::vector<int> dims = data->getDimensions();
+		
 		for (std::vector<int>::iterator it = dims.begin();; ++it)
 		{
 			// don't include last dimension, it can be derived from the length of the array.
 			if (it == dims.end()) break;
 			int val = *it;
-			assert( xdr_int(&xdro, &val) == 1);
+			if (!xdr_int(&xdro, &val)) throw new Communicator::io_exception("Can not write dimensions");
 		}
 	}
-	assert( xdrrec_endofrecord(&xdro, 1) == 1);
+	if (!xdrrec_endofrecord(&xdro, 1)) throw new Communicator::io_exception("Can not send data");
 	
 	// Decode
-	assert( xdrrec_skiprecord(&xdri) == 1);
+	if (!xdrrec_skiprecord(&xdri)) throw new Communicator::io_exception("Can not receive data");
 	
 	switch (opcode) {
 		case PROTO_SEND:
@@ -100,36 +115,37 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		case PROTO_RECEIVE: {
 			unsigned int len;
 			int complex_num;
-			assert( xdr_int(&xdri, &complex_num) == 1);
+			if (!xdr_int(&xdri, &complex_num)) throw new Communicator::io_exception("Can not read int");
 			muscle_complex_t ctype = (muscle_complex_t)complex_num;
 			size_t sz = ComplexData::sizeOfPrimitive(ctype);
 			
 			if (ctype == COMPLEX_STRING)
 			{
-				assert( xdr_string(&xdri, (char **)result, M2_XDR_BUFSIZE) == 1);
-				break;
+				if (!xdr_string(&xdri, (char **)result, M2_XDR_BUFSIZE)) throw new Communicator::io_exception("Can not read string");
 			}
 			else
 			{
 				xdrproc_t proc = get_proc(ctype);
 				int chunks;
-				assert( xdr_int(&xdri, &chunks) == 1);
+				if (!xdr_int(&xdri, &chunks)) throw new Communicator::io_exception("Can not read int");
+					
 				if (chunks > 1) {
 					int total_len;
-					assert( xdr_int(&xdri, &total_len) == 1);
+					if (!xdr_int(&xdri, &total_len)) throw new Communicator::io_exception("Can not read int");
 					
-					*(void **)result = malloc(total_len*sz);
+					if (!*(void **)result) {
+						*(void **)result = malloc(total_len*sz);
+					}
 					char *result_ptr = *(char **)result;
 					if (!result_ptr)
 					{
-						muscle::logger::severe("Could not allocate buffer for receiving message");
-						return -1;
+						logger::severe("Could not allocate buffer for receiving message");
 					}
-					assert( xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+					if (!xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc)) throw new Communicator::io_exception("Can not read data");
 					result_ptr += len*sz;
 					for (int i = 1; i < chunks; i++) {
-						assert( xdrrec_skiprecord(&xdri) == 1);
-						assert( xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+						if (!xdrrec_skiprecord(&xdri)) throw new Communicator::io_exception("Can not read int");
+						if (!xdr_array(&xdri, (char **)&result_ptr, &len, M2_XDR_BUFSIZE, sz, proc)) throw new Communicator::io_exception("Can not read data chunk");
 						result_ptr += len*sz;
 					}
 					
@@ -137,7 +153,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				}
 				else
 				{
-					assert( xdr_array(&xdri, (char **)result, &len, M2_XDR_BUFSIZE, sz, proc) == 1);
+					if (!xdr_array(&xdri, (char **)result, &len, M2_XDR_BUFSIZE, sz, proc))  throw new Communicator::io_exception("Can not read data");
 				}
 			}
 			
@@ -148,7 +164,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				std::vector<int> dims(dim_num);
 				for (int i = 0; i < dim_num - 1; i++)
 				{
-					assert( xdr_int(&xdri, &dim) == 1);
+					if (!xdr_int(&xdri, &dim)) throw new Communicator::io_exception("Can not read int");
 					dims.push_back(dim);
 					nprod *= dim;
 				}
@@ -161,7 +177,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			break;
 		case PROTO_WILL_STOP:
 			//decode answer
-			assert( xdr_bool(&xdri, (bool_t *)result) == 1);
+			if (!xdr_bool(&xdri, (bool_t *)result)) throw new Communicator::io_exception("Can not read boolean");
 			break;
 		case PROTO_PROPERTY:
 		case PROTO_KERNEL_NAME:
@@ -169,7 +185,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		case PROTO_PROPERTIES: {
 			//decode answer
 			char *name = NULL;
-			assert( xdr_string(&xdri, &name, *result_len) == 1);
+			if (!xdr_string(&xdri, &name, *result_len)) throw new Communicator::io_exception("Can not read string");
 			//convert to std:string
 			*((std::string **)result) = new std::string(name);
 			//and free the xdr allocated buf

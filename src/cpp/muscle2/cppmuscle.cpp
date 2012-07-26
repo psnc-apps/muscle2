@@ -225,7 +225,6 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 			*port = boost::lexical_cast<unsigned short>(port_str);
 			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
 			if (host_str != NULL) {
-				cout << "Host: " << host_str << endl;
 				strncpy(host, host_str, 16);
 			}
 		}
@@ -242,8 +241,6 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 			sleep(1);
 		}
 		fclose(fp);
-		// Null terminated
-		//assert( strlen(host, 16) < 16 );
   
 		logger::info("Will communicate with Java MUSCLE on %s:%d", host, *port);
 	}

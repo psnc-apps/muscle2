@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstring>
+#include <exception>
 #include <boost/asio.hpp>
 #include "logger.hpp"
 #include "muscle_types.h"
@@ -36,6 +37,15 @@ public:
 	virtual int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len) { return 0; }
 	std::string retrieve_string(muscle_protocol_t opcode, std::string *name);
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
+	
+	class io_exception : public std::exception {
+		public:
+			io_exception (std::string msg) throw() { desc = "I/O exception: " + msg; };
+			virtual const char* what() const throw() { return desc.c_str(); };
+			virtual ~io_exception() throw() {};
+		private:
+			std::string desc;
+	};
 protected:
 	void connect_socket(boost::asio::ip::address_v4 host, int port);
 	tcp::socket *s;

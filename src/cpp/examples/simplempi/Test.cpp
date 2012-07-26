@@ -30,8 +30,8 @@ JNIEXPORT void JNICALL Java_examples_simplempi_Test_callNative
 {
 	MPI::Init();
 	
-// 	try
-// 	{
+ 	try
+ 	{
 		cout << endl << "c++: begin " << __FILE__ << endl;
 
 // 		KernelController kernel(env, obj);
@@ -71,15 +71,15 @@ JNIEXPORT void JNICALL Java_examples_simplempi_Test_callNative
 		
 		
 		cout << endl << "c++: end " << __FILE__ << endl;
-// 	}
-// 	catch(std::runtime_error& e)
-// 	{
-// 		std::cerr<<"\nRUNTIME ERROR: "<<e.what()<<"\n"<<std::endl;
-// 	}
-// 	catch(...)
-// 	{
-// 		std::cerr<<"unknown error"<<std::endl;
-// 	}
+ 	}
+ 	catch(std::exception& e)
+ 	{
+ 		std::cerr<<"\nRUNTIME ERROR: "<<e.what()<<"\n"<<std::endl;
+ 	}
+ 	catch(...)
+ 	{
+ 		std::cerr<<"unknown error"<<std::endl;
+ 	}
 	
 	MPI::Finalize();
 	

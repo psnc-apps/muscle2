@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 		{
 			cout << "t: " << i << " " << endl;
 			/* initialize data */
-			size_t size = 42;
+			size_t size = 64*1024;
 			double *data = new double[size];
 			for (int j=1; j < size; j++)
 				data[j] = 0;

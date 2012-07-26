@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_examples_simplecpp_Sender_callNative
 			entrance->send(dataA);
 		}
 	}
-	catch(std::runtime_error& e)
+	catch(std::exception& e)
 	{
 		std::cerr<<"\nRUNTIME ERROR: "<<e.what()<<"\n"<<std::endl;
 	}
