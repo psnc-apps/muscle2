@@ -34,6 +34,7 @@ if (BUILD_CPP)
 	# Examples CPP
 	add_subdirectory(src/cpp/examples/simplecpp)
 	add_subdirectory(src/cpp/examples/simplecpp2)
+	add_subdirectory(src/cpp/examples/pingpongcpp)
 	add_subdirectory(src/cpp/examples/mpiring)
 	add_subdirectory(src/cpp/examples/transmutable)
 	add_subdirectory(src/cpp/examples/transmutable2)
