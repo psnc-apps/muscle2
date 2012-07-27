@@ -136,7 +136,7 @@ bool Identifier::operator<(const Identifier& other) const
 unsigned MtoHello::getSize()
 {
 #ifdef USE_TEXT_FOR_HELLO
-  return 20;
+  return 21;
 #else
    return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
           + sizeof(/* distance */ unsigned short)

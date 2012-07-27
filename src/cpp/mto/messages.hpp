@@ -46,6 +46,9 @@ struct Request
   
   /** Deserializes request from the given buffer */
   static Request deserialize(char * buf);
+public:
+  Request() : type(0), srcAddress(0), dstAddress(0), srcPort(0), dstPort(0), sessionId(0) {
+  }
 };
 
 
