@@ -54,7 +54,9 @@ m.add_classpath default_classpaths
 require 'utilities'
 assert_LIBPATHENV(ENV)
 m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
-m.add_libpath "#{base_dir}/lib"
+# Library path should be set in terminal, we will not append to it here.
+# Fixes issue where OS X can not find libjava.jnilib
+# m.add_libpath "#{base_dir}/lib"
 
 e = {
 "bootclass" => "muscle.client.JadeBoot",
