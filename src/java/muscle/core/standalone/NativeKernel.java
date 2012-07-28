@@ -41,8 +41,9 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	public synchronized void send(String entranceName, SerializableData data) {
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
-		if (ec == null || (entrance = ec.getEntrance()) == null)
+		if (ec == null || (entrance = ec.getEntrance()) == null) {
 			throw new MUSCLERuntimeException("Unknown entrance: '" + entranceName + "' in " + getLocalName() + " (valid entrances are " + entrances.keySet() + ")");
+		}
 		
 		entrance.send(data.getValue());		
 	}
@@ -50,8 +51,9 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	public synchronized SerializableData receive(String exitName) {
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
-		if (ec == null || (exit = ec.getExit()) == null)
+		if (ec == null || (exit = ec.getExit()) == null) {
 			throw new MUSCLERuntimeException("Unknown exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
+		}
 		
 		Serializable data = exit.receive();
 		SerializableData sdata;
@@ -88,13 +90,16 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 	}
 	
 	protected void buildCommand(List<String> command) {
-		if (CxADescription.ONLY.containsKey(getLocalName() + ":debugger"))
+		if (CxADescription.ONLY.containsKey(getLocalName() + ":debugger")) {
 			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":debugger"));
+		}
 		
-		if (CxADescription.ONLY.containsKey(getLocalName() + ":command"))
+		if (CxADescription.ONLY.containsKey(getLocalName() + ":command")) {
 			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":command"));
-		else
+		}
+		else {
 			throw new IllegalArgumentException("Missing property: " + getLocalName() + ":command" );
+		}
 		
 		if (CxADescription.ONLY.containsKey(getLocalName() + ":args")) {
 			String args[] = CxADescription.ONLY.getProperty(getLocalName() + ":args").split(" ");
@@ -122,10 +127,11 @@ public abstract class NativeKernel extends CAController  implements NativeGatewa
 
 		int exitCode = child.waitFor();
 
-		if (exitCode == 0)
-			getLogger().log(Level.INFO, "Command `{0}' finished.", pb.command());
-		else
-			getLogger().log(Level.WARNING, "Command `{0}' failed with exit code {1}.", new Object[]{pb.command(), exitCode});
+		if (exitCode == 0) {
+			getLogger().log(Level.INFO, "Command {0} finished.", pb.command());
+		} else {
+			getLogger().log(Level.WARNING, "Command {0} failed with exit code {1}.", new Object[]{pb.command(), exitCode});
+		}
 	}
 	
 	protected void writeContactInformation(String host, String port) throws InterruptedException, IOException {

@@ -5,6 +5,7 @@ package muscle.client.communication;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.DetachConduitSignal;
@@ -55,8 +56,9 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	// Synchronized: can only transmit one signal or message at a time.
 	public synchronized void signal(Signal signal) {
 		if (this.isDisposed()) {
-			if (!(signal instanceof DetachConduitSignal))
+			if (!(signal instanceof DetachConduitSignal)) {
 				logger.log(Level.WARNING, "Transmitter is disposed of; unable to send signal {0} to {1}", new Object[] {signal, portalID});
+			}
 
 			return;
 		}
@@ -78,6 +80,9 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 						sendSignal(out, signal);
 					}
 					sent = true;
+				} catch (SocketException ex) {
+					logger.log(Level.SEVERE, "Message not sent: socket was closed by " + portalID + ".", ex);
+					break;
 				} catch (IOException ex) {
 					logger.log(Level.SEVERE, "I/O failure to send message to " + portalID + "; tried " + tries + "/3 times.", ex);
 				} catch (Exception ex) {
@@ -93,8 +98,9 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	}
 	
 	private void sendMessage(SerializerWrapper out, Observation<SerializableData> obs) throws IOException {
-		if (logger.isLoggable(Level.FINEST))
+		if (logger.isLoggable(Level.FINEST)) {
 			logger.log(Level.FINEST, "Sending data message of type {0} to {1}", new Object[] {obs.getData().getType(), portalID});
+		}
 		out.writeInt(TcpDataProtocol.OBSERVATION.ordinal());
 		out.writeString(portalID.getName());
 		out.writeInt(portalID.getType().ordinal());
