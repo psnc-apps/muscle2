@@ -19,11 +19,12 @@ import org.acplt.oncrpc.XdrEncodingStream;
 public class XdrSerializerWrapper implements SerializerWrapper {
 	private final XdrEncodingStream xdrOut;
 	public final static int DEFAULT_BUFFER_SIZE=65536*9/10;
-	private final float buffer_size;
+	private final static float CHUNK_SIZE_MODIFIER = .9f;
+	private final float max_chunk_size;
 
 	public XdrSerializerWrapper(XdrEncodingStream xdrOut, int buffer_size) {
 		this.xdrOut = xdrOut;
-		this.buffer_size = buffer_size;
+		this.max_chunk_size = CHUNK_SIZE_MODIFIER*buffer_size;
 	}
 
 	@Override
@@ -97,7 +98,7 @@ public class XdrSerializerWrapper implements SerializerWrapper {
 				
 				// Take into account that char* is transmitted worse than expected (4 byte per char) in XDR
 				int size = Math.max(len*4+20,MatrixTool.deepSizeOf(newValue, type));
-				int chunks = (int)Math.ceil(size / buffer_size);
+				int chunks = (int)Math.ceil(size / max_chunk_size);
 				xdrOut.xdrEncodeInt(chunks);
 				
 				if (chunks > 1) {
