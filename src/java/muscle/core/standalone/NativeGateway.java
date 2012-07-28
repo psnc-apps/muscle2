@@ -2,27 +2,36 @@ package muscle.core.standalone;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
+import muscle.util.serialization.Xdr;
 import muscle.util.serialization.XdrDeserializerWrapper;
+import muscle.util.serialization.XdrNIODeserializerWrapper;
+import muscle.util.serialization.XdrNIOSerializerWrapper;
 import muscle.util.serialization.XdrSerializerWrapper;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 
 public class NativeGateway  extends Thread {
-	protected ServerSocket ss;
-	protected CallListener listener;
+	protected final ServerSocket ss;
+	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-
+	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
+//		ServerSocketChannel ssc = ServerSocketChannel.open();
+//		ss = ssc.socket();
+//		ss.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}), 0), 1);
 		ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));
 		
 		this.listener = listener;
@@ -67,11 +76,21 @@ public class NativeGateway  extends Thread {
 		DeserializerWrapper in = null;
 		SerializerWrapper out = null;
 		try {
+			// Async
+//			SocketChannel sc = ssc.accept();
+//			sc.configureBlocking(false);
+//			s = sc.socket;
+			// Sync
 			s = ss.accept();
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			
-			int buffer_size = 64*1024;
+			// Async
+//			int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
+//			in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
+//			out = new XdrNIOSerializerWrapper(new Xdr(sc, buffer_size), buffer_size);
+			// Sync
+			int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
 			in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, buffer_size));
 			out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
 			
@@ -158,9 +177,9 @@ public class NativeGateway  extends Thread {
 				in.cleanUp();
 			}
 		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error", ex);
+			logger.log(Level.SEVERE, "Communication error: " + ex, ex);
 		} catch (Throwable ex) {
-			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex.toString(), ex);
+			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex, ex);
 		} finally {
 			listener.isFinished();
 			if (s != null) {
