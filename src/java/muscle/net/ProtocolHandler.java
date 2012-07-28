@@ -7,6 +7,7 @@ package muscle.net;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,10 +83,13 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 
 				ret = executeProtocol(in, out);
 				succeeded = true;
+			} catch (SocketException ex) {
+				logger.log(Level.SEVERE, "Communication aborted: the other side hung up.", ex);
+				break;
 			} catch (IOException ex) {
-				logger.log(Level.WARNING, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
-			} catch (RuntimeException ex) {
-				logger.log(Level.WARNING, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
+				logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
+			} catch (Exception ex) {
+				logger.log(Level.SEVERE, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
 			}
 		}
 		if (this.closeSocket) {

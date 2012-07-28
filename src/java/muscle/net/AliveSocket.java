@@ -62,7 +62,9 @@ public class AliveSocket extends SafeTriggeredThread {
 	 * @return whether the lock succeeded
 	 */
 	public boolean lock() {
-		if (this.isDisposed()) return false;
+		if (this.isDisposed()) {
+			return false;
+		}
 		lock.lock();
 		if (this.isDisposed()) {
 			lock.unlock();
@@ -88,8 +90,9 @@ public class AliveSocket extends SafeTriggeredThread {
 	}
 	
 	protected void updateSocket() throws IOException {
-		if (!lock.isHeldByCurrentThread())
+		if (!lock.isHeldByCurrentThread()) {
 			throw new IllegalStateException("Can only use AliveSocket with a lock.");
+		}
 		
 		if (socket != null && socket.isClosed()) {
 			this.out = null;
@@ -136,7 +139,9 @@ public class AliveSocket extends SafeTriggeredThread {
 		}
 		try {
 			// Disposed, or there has been another unlock, and thus trigger.
-			if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) return;
+			if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) {
+				return;
+			}
 			lock.lock();
 			
 			if (isDisposed() || this.timeSinceUnlock.millisec() < this.keepAlive) {
@@ -149,14 +154,16 @@ public class AliveSocket extends SafeTriggeredThread {
 			logger.log(Level.SEVERE, "Exception occurred", ex);
 		} finally {
 			// lock may not yet be locked.
-			if (lock.isHeldByCurrentThread())
+			if (lock.isHeldByCurrentThread()) {
 				lock.unlock();
+			}
 		}
 	}
 	
 	public void reset() {
-		if (!lock.isHeldByCurrentThread())
+		if (!lock.isHeldByCurrentThread()) {
 			throw new IllegalStateException("Can only use AliveSocket with a lock.");
+		}
 
 		if (this.socket != null) {
 			if (!this.socket.isClosed()) {

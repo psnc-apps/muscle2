@@ -59,7 +59,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			try {
 				mtoAddr = InetAddress.getByName(System.getProperty(PROP_MTO_ADDRESS));
 			} catch (UnknownHostException e) {
-				logger.log(Level.SEVERE, "Provided MTO address unresolvable: {0}", e);
+				logger.log(Level.SEVERE, "Provided MTO address unresolvable: " + e, e);
 			}
 		}
 
@@ -92,8 +92,9 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			}
 
 			logger.info("Registered to MTO");
-		} else
-			logger.warning("Missing MTO address / port. MTO will not be used.");
+		} else {
+			logger.fine("Missing MTO address / port. MTO will not be used.");
+		}
 
 		if (port == magicPort) {
 			putConnectionData(InetAddress.getLocalHost()
@@ -109,11 +110,13 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		String sessionID = System.getenv(ENV_SESSION_ID);
 		StringBuilder message = new StringBuilder(4096);
 
-		if (coordinatorURL == null)
+		if (coordinatorURL == null) {
 			throw new IOException(ENV_COORDINATOR_URL + " env variable not set");
+		}
 
-		if (sessionID == null)
+		if (sessionID == null) {
 			throw new IOException(ENV_SESSION_ID + " env variable not set");
+		}
 
 		message.append(PUT_MSG_TEMPLATE_1);
 		message.append(sessionID);
@@ -136,7 +139,6 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		BufferedReader brd = null;
 
 		try {
-
 			logger.log(Level.FINEST, "Request Message: {0}", request);
 
 			conn.setDoOutput(true);
@@ -146,9 +148,10 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			osw.write(request);
 			osw.flush();
 
-			if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
+			if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
 				throw new IOException("Call to " + url + " failed with code "
 						+ conn.getResponseCode());
+			}
 
 			brd = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
@@ -163,11 +166,13 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			throw e;
 		} finally {
 
-			if (osw != null)
+			if (osw != null) {
 				osw.close();
+			}
 
-			if (brd != null)
+			if (brd != null) {
 				brd.close();
+			}
 		}
 
 		return response.toString();
@@ -180,11 +185,13 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 
 		logger.log(Level.FINE, "Acquiring connection data ({0})", coordinatorURL);
 
-		if (coordinatorURL == null)
+		if (coordinatorURL == null) {
 			throw new IOException(ENV_COORDINATOR_URL + " env variable not set");
+		}
 
-		if (sessionID == null)
+		if (sessionID == null) {
 			throw new IOException(ENV_SESSION_ID + " env variable not set");
+		}
 
 		URL url = new URL(coordinatorURL);
 
@@ -274,10 +281,12 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				throws IOException {
 			InetSocketAddress iaddr = (InetSocketAddress) endpoint;
 
-			if (iaddr.getPort() == magicPort)
+			if (iaddr.getPort() == magicPort) {
 				return getConnectionData();
-			else
+			}
+			else {
 				return endpoint;
+			}
 		}
 
 		private void mtoConnect(int timeout, InetSocketAddress processedEndpoint)
@@ -331,8 +340,9 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 
 		public void startElement(String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
-			if (qName.endsWith(selectorName))
+			if (qName.endsWith(selectorName)) {
 				activated = true;
+			}
 		}
 
 		public List<String> getParsedValues() {
@@ -354,11 +364,13 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		}
 		
 		// If one registers loopback, do it only if the MTO is on loopback as well
-		if(isa.getAddress().isLoopbackAddress() && ! mtoAddr.isLoopbackAddress())
+		if(isa.getAddress().isLoopbackAddress() && ! mtoAddr.isLoopbackAddress()) {
 			return;
+		}
 		
-		if( ! (isa.getAddress() instanceof Inet4Address ) )
+		if( ! (isa.getAddress() instanceof Inet4Address ) ) {
 			return;
+		}
 		
 		
 		MtoRequest r = new MtoRequest();
