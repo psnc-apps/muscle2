@@ -34,8 +34,10 @@ class JVM
 		# java VM args
 		command << env['java']
 		command << "-server"
-		if env['quiet']
-			command << "-Djava.util.logging.config.file="+env['logging_quiet_config_path'] if env.has_key?('logging_config_path')
+		if env['quiet'] and env.has_key?('logging_quiet_config_path')
+			command << "-Djava.util.logging.config.file="+env['logging_quiet_config_path']
+		elsif env['verbose'] and env.has_key?('logging_verbose_config_path')
+			command << "-Djava.util.logging.config.file="+env['logging_verbose_config_path']
 		else
 			command << "-Djava.util.logging.config.file="+env['logging_config_path'] if env.has_key?('logging_config_path')
 		end

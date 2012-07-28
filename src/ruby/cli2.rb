@@ -90,7 +90,7 @@ class MuscleCli
 		@parser.on("-h", "--help") { puts @parser.help; exit }
 		@parser.on("--print-env=[KEY0,KEY1,...]", Array, "prints the internal preferences, e.g. --print_env=CLASSPATH") {|val| if val.nil? then @env['print_env'] = true;else @env['print_env'] = val;end }
 		@parser.on("-v", "--verbose") { @env['verbose'] = true }
-		@parser.on("-d", "--debug", "produces more verbose logs and do not purges MUSCLE temporary directory") { @env['debug'] = true }
+		@parser.on("-d", "--debug", "produces more verbose logs and do not purges MUSCLE temporary directory") { @env['debug'] = true; @env['verbose'] = true }
 		
 		@parser.on("--quiet") { @env['quiet'] = true }
 		@parser.on("-p", "--print", "print command to stdout but do not execute it") { @env['execute'] = false; @env['verbose'] = true }
