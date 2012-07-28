@@ -7,13 +7,13 @@ package muscle.client.communication.message;
 
 import eu.mapperproject.jmml.util.ArrayMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
 import muscle.util.concurrency.SafeTriggeredThread;
-import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
  *
@@ -21,13 +21,13 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
  */
 public class LocalDataHandler extends SafeTriggeredThread implements IncomingMessageProcessor {
 	private final Map<Identifier,Receiver> listener;
-	private final BlockingQueue<Message> messages;
+	private final Queue<Message> messages;
 	private final static Logger logger = Logger.getLogger(LocalDataHandler.class.getName());
 
 	public LocalDataHandler() {
 		super("LocalDataHandler");
 		listener = new ArrayMap<Identifier,Receiver>();
-		messages = new SingleProducerConsumerBlockingQueue<Message>();
+		messages = new ConcurrentLinkedQueue<Message>();
 	}
 	
 	@Override
@@ -57,7 +57,7 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 		}
 	}
 	
-	public final synchronized void put(Message msg) {
+	public final void put(Message msg) {
 		messages.add(msg);
 		this.trigger();
 	}
