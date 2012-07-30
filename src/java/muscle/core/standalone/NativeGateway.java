@@ -26,13 +26,18 @@ public class NativeGateway  extends Thread {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
+	private final static boolean USE_ASYNC = true;
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
-//		ServerSocketChannel ssc = ServerSocketChannel.open();
-//		ss = ssc.socket();
-//		ss.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}), 0), 1);
-		ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));
+		
+		if (USE_ASYNC) {
+			ServerSocketChannel ssc = ServerSocketChannel.open();
+			ss = ssc.socket();
+			ss.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}), 0), 1);
+		} else {
+			ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));		
+		}
 		
 		this.listener = listener;
 		
@@ -76,23 +81,23 @@ public class NativeGateway  extends Thread {
 		DeserializerWrapper in = null;
 		SerializerWrapper out = null;
 		try {
-			// Async
-//			SocketChannel sc = ssc.accept();
-//			sc.configureBlocking(false);
-//			s = sc.socket;
-			// Sync
-			s = ss.accept();
+			if (USE_ASYNC) {
+				SocketChannel sc = ss.getChannel().accept();
+				sc.configureBlocking(false);
+				s = sc.socket();
+
+				int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
+				in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
+				out = new XdrNIOSerializerWrapper(new Xdr(sc, buffer_size), buffer_size);
+			} else {
+				s = ss.accept();
+
+				int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
+				in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, buffer_size));
+				out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
+			}
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
-			
-			// Async
-//			int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
-//			in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
-//			out = new XdrNIOSerializerWrapper(new Xdr(sc, buffer_size), buffer_size);
-			// Sync
-			int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
-			in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, buffer_size));
-			out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
 			
 			while (true) {
 				logger.finest("Starting decoding...");

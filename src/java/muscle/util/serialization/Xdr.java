@@ -77,36 +77,33 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		logger.log(Level.FINER, "Begin decoding {0} bytes", fragmentLength);
 	}
 	
-	private void fill(int minimal) throws IOException {
-//		if (fragmentLength < pos) {
-//			throw new IllegalStateException("Can not read beyond fragment border: f="+fragmentLength+"; p=" + buffer.position() + "; l=" + buffer.limit());
-//		} else
-		if (fragmentLength == buffer.position()) {
+	private int fill(int minimal) throws IOException {
+		int pos = buffer.position();
+		int remain = buffer.limit() - pos;
+		
+		if (fragmentLength == pos) {
 			if ( lastFragment ) {
 				// In case there is no more data in the current XDR record
 				// (as we already saw the last fragment), throw an exception.
 				throw(new IOException("Buffer underflow"));
 			}
+			// Reset buffer to 0
 			if (fragmentLength > 0) {
-				int newlim = buffer.limit() - buffer.position();
 				buffer.compact();
 				buffer.rewind();
-				buffer.limit(newlim);
+				buffer.limit(remain);
 				fragmentLength = 0;
 			}
 			
 			// Remove the header
-			read(minimal + 4, true);
-			buffer.get(intbuffer, 0, 4);
-			
-			// casting to unsigned with 0xFF.
-			fragmentLength = ((intbuffer[0] & 0xFF) << 24) |
-			                 ((intbuffer[1] & 0xFF) << 16) |
-			                 ((intbuffer[2] & 0xFF) <<  8) |
-			                  (intbuffer[3] & 0xFF);
+			if (remain < minimal + 4) {
+				read(minimal + 4, remain, true);
+			}
+			fragmentLength = buffer.getInt();
 
-			// XDR header is the last one if the sign is negative; the rest is the length of the fragment.
+			// XDR header is the last one if the sign is negative (& 0x80000000);
 			if ((fragmentLength & 0x80000000) != 0) {
+				// the rest is the length of the fragment
 				fragmentLength &= 0x7FFFFFFF;
 				lastFragment = true;
 			} else {
@@ -126,54 +123,47 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 				throw(new IOException("empty XDR fragment which is not a trailing fragment; header: " + Arrays.toString(intbuffer)));
 			}
 			
-			// Add header; it will be removed in the compact later
+			// Add header so we don't need to compact now; it will be removed in the compact later
 			fragmentLength += 4;
-//			System.out.println("Starting fragment length " + fragmentLength + " with buffer remaining " + buffer.remaining());
-		} else {
-			read(minimal, false);
+			remain = buffer.limit() - 4;
+			pos = 4;
+		} else if (remain < minimal) {
+			read(minimal, remain, false);
+			pos = 0;
+			remain = buffer.limit();
 		}
+		// return currently available ints
+		return (fragmentLength - pos < remain ? fragmentLength - pos : remain) / 4;
 	}
 	
-	private void read(int minimal, boolean mayConfigureBlocking) throws IOException {
-		// this will usually be true
-		if (buffer.remaining() >= minimal) {
-			return;
-		}
-		int remain = buffer.remaining();
-//		 bytes;
-//		System.out.println("Before compact: f="+fragmentLength+"; p=" + buffer.position() + "; l=" + buffer.limit());
+	private void read(int minimal, int remain, boolean mayConfigureBlocking) throws IOException {
 		// Move unread data to the beginning
 		fragmentLength -= buffer.position();
-//		if (fragmentLength < 0) {
-//			throw new IllegalStateException("Can not read beyond fragment border: f="+fragmentLength+"; p=" + buffer.position() + "; l=" + buffer.limit());
-//		}
+		// Prepare for reading data into the buffer
 		buffer.compact();
 		boolean configuredBlocking = false;
-//		buffer.rewind();
-		// And read unlimited data
+
+		// And read data until at least the minimal size is reached.
 		do {
 			int bytes = channel.read(buffer);
 			if (bytes > 0) {
 				remain += bytes;
-			} else if (bytes == 0 && mayConfigureBlocking && !configuredBlocking) {
+			} else if (mayConfigureBlocking && bytes == 0 && !configuredBlocking) {
 				channel.configureBlocking(true);
 				configuredBlocking = true;
 			} else if (bytes == -1) {
 				throw new IOException("Socket was disconnected");
 			}
 		} while (remain < minimal);
+		
 		if (configuredBlocking) {
 			channel.configureBlocking(false);
 		}
+		// Prepare for getting values out of the buffer.
 		buffer.flip();
-//		System.out.println("Fragment length after read " + fragmentLength + " with buffer remaining " + buffer.remaining() + " after");
-//		return remain;
 	}
 
 	public void endDecoding() throws IOException {
-//		System.out.println("Fragment length before enddecoding " + fragmentLength + " at pos " + buffer.position() + " with buffer remaining " + buffer.remaining() + " before");
-		
-
 		while (fragmentLength > 0 || !lastFragment) {
 			int pos = buffer.position();
 			int lim = buffer.limit();
@@ -196,7 +186,6 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 				fragmentLength = 0;
 			}
 		}
-//		System.out.println("Fragment length after enddecoding " + fragmentLength + " at pos " + buffer.position() + " with buffer remaining " + buffer.remaining() + " after");
 		
 		lastFragment = false;
 	}
@@ -210,12 +199,9 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	public void endEncoding() throws IOException {
 		// Position is the size, -4 for the header.
 		int size = buffer.position() - 4;
-		intbuffer[0] = (byte)((size >>> 24) | 0x80);
-		intbuffer[1] = (byte) (size >>> 16);
-		intbuffer[2] = (byte) (size >>> 8);
-		intbuffer[3] = (byte)  size;
 		buffer.rewind();
-		buffer.put(intbuffer);
+		// Send a negative value: we're only sending single fragments.
+		buffer.putInt(size | 0x80000000);
 		size += 4;
 		buffer.position(size);
 		buffer.flip();
@@ -244,23 +230,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public int xdrDecodeInt() throws IOException {
 		fill(4);
-		// Note: buffer[...] gives a byte, which is signed. So if we
-        // add it to the value (which is int), it has to be widened
-        // to 32 bit, so its sign is propagated. To avoid this sign
-        // madness, we have to "and" it with 0xFF, so all unwanted
-        // bits are cut off after sign extension.
-		buffer.get(intbuffer, 0, 4);
-//		int val = 
-//		 = (byte)(value >>> 24);
-//        intbuffer[bufferIndex++] = (byte)(value >>> 16);
-//        intbuffer[bufferIndex++] = (byte)(value >>>  8);
-//        intbuffer[bufferIndex++] = (byte) value;
-//		logger.log(Level.FINEST, "Decoding int {0}", val);
-		return ((intbuffer[0] & 0xFF) << 24) |
-		       ((intbuffer[1] & 0xFF) << 16) |
-		       ((intbuffer[2] & 0xFF) <<  8) |
-		        (intbuffer[3] & 0xFF);
-//		return buffer.getInt();
+		return buffer.getInt();
 	}
 
 	/**
@@ -271,10 +241,14 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	public int[] xdrDecodeIntVector() throws IOException {
 		int len = xdrDecodeInt();
 //		logger.log(Level.FINEST, "Decoding int array with len = {0}", len);
-
+		int avail = 0;
 		int[] ints = new int[len];
-		for (int i = 0; i < len; i++) {
-			ints[i] = xdrDecodeInt();
+
+		for (int i = 0; i < len; ++i) {
+			if (avail-- == 0) {
+				avail = fill(4) - 1;
+			}
+			ints[i] = buffer.getInt();
 		}
 		return ints;
 	}
@@ -286,12 +260,22 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public long[] xdrDecodeLongVector() throws IOException {
 
-		int len = xdrDecodeInt();
-		logger.log(Level.FINEST, "Decoding long array with len = {0}", len);
-
+		int avail = (fill(4) - 1) / 2;
+		int len = buffer.getInt();
+		
 		long[] longs = new long[len];
 		for (int i = 0; i < len; i++) {
-			longs[i] = xdrDecodeLong();
+			if (avail-- == 0) {
+				avail = fill(4) / 2 - 1;
+				longs[i] = ((long)buffer.getInt()) << 32;
+				// a long might be spread into two fragments
+				if (avail < 0) {
+					avail = (fill(4) - 1) / 2;
+				}
+				longs[i] |= buffer.getInt();
+			} else {
+				longs[i] = buffer.getLong();
+			}
 		}
 		return longs;
 	}
@@ -322,10 +306,23 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 * @return Decoded double vector.
 	 */
 	public double[] xdrDecodeDoubleVector() throws IOException {
-		int length = xdrDecodeInt();
+		int avail = (fill(4) - 1) / 2;
+		int length = buffer.getInt();
 		double[] value = new double[length];
+
 		for (int i = 0; i < length; ++i) {
-			value[i] = xdrDecodeDouble();
+			if (avail-- == 0) {
+				avail = fill(4) / 2 - 1;
+				long big = buffer.getInt();
+				// a double may be spread over two fragments
+				if (avail < 0) {
+					avail = (fill(4) - 1) / 2;
+				}
+				value[i] = Double.longBitsToDouble((big << 32) | (long)buffer.getInt());
+				
+			} else {
+				value[i] = Double.longBitsToDouble(buffer.getLong());
+			}
 		}
 		return value;
 	}
@@ -352,9 +349,14 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public float[] xdrDecodeFloatVector() throws IOException {
 		int length = xdrDecodeInt();
+		int avail = 0;
 		float[] value = new float[length];
+		
 		for (int i = 0; i < length; ++i) {
-			value[i] = xdrDecodeFloat();
+			if (avail-- == 0) {
+				avail = fill(4) - 1;
+			}
+			value[i] = Float.intBitsToFloat(xdrDecodeInt());
 		}
 		return value;
 	}
@@ -481,15 +483,22 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public byte[] xdrDecodeByteVector() throws IOException {
 		int length = xdrDecodeInt();
-		if (length > 0) {
-			byte[] bytes = new byte[length];
-			for (int i = 0; i < length; ++i) {
-				bytes[i] = xdrDecodeByte();
+		
+		int pos = buffer.position();
+		int avail = 0;
+		byte[] bytes = new byte[length];
+
+		for (int i = 0; i < length; ++i) {
+			if (avail-- == 0) {
+				buffer.position(pos);
+				avail = fill(4) - 1;
+				pos = buffer.position();
 			}
-			return bytes;
-		} else {
-			return new byte[0];
+			bytes[i] = buffer.get(pos + 3);
+			pos += 4;
 		}
+		buffer.position(pos);
+		return bytes;
 	}
 
 	/**
@@ -520,8 +529,8 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public byte xdrDecodeByte() throws IOException {
 		fill(4);
-		buffer.get(intbuffer, 0, 4);
-		return intbuffer[3];
+		buffer.position(buffer.position() + 3);
+		return buffer.get();
 	}
 
 	/**
@@ -783,16 +792,13 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public void xdrEncodeByteVector(byte[] value) {
 		int length = value.length; // well, silly optimizations appear here...
-		xdrEncodeInt(length);
-		if (length != 0) {
-			//
-			// For speed reasons, we do sign extension here, but the higher bits
-			// will be removed again when deserializing.
-			//
-			for (int i = 0; i < length; ++i) {
-				xdrEncodeByte(value[i]);
-			}
+		buffer.putInt(length);
+		int pos = buffer.position();
+		for (int i = 0; i < length; ++i) {
+			buffer.put(pos + 3, value[i]);
+			pos += 4;
 		}
+		buffer.position(pos);
 	}
 
 	/**
@@ -832,9 +838,8 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		// For speed reasons, we do sign extension here, but the higher bits
 		// will be removed again when deserializing.
 		//
-		intbuffer[0] = intbuffer[1] = intbuffer[2] = 0;
-		intbuffer[4] = value;
-		buffer.put(intbuffer, 0, 4);
+		buffer.position(buffer.position()+3);
+		buffer.put(value);
 	}
 
 	/**
@@ -883,9 +888,12 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	public void xdrEncodeBooleanVector(boolean[] bool) {
 		logger.log(Level.FINEST, "Encode bool array");
 		buffer.putInt(bool.length);
+		int pos = buffer.position();
 		for (boolean value: bool) {
-			xdrEncodeBoolean( value );
+			buffer.put(pos + 3, (byte)(value ? 1 : 0));
+			pos += 4;
 		}
+		buffer.position(pos);
 	}
 
 	@Override
@@ -904,12 +912,20 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	@Override
 	public boolean[] xdrDecodeBooleanVector() throws IOException {
 		int len = xdrDecodeInt();
-		logger.log(Level.FINEST, "Decoding bool array with len = {0}", len);
-
+		
+		int avail = 0;
+		int pos = buffer.position();
 		boolean[] arr = new boolean[len];
 		for (int i = 0; i < len; i++) {
-			arr[i] = xdrDecodeBoolean();
+			if (avail-- == 0) {
+				buffer.position(pos);
+				avail = fill(4) - 1;
+				pos = buffer.position();
+			}
+			arr[i] = buffer.get(pos+3) == (byte)1 ? true : false;
+			pos += 4;
 		}
+		buffer.position(pos);
 		return arr;
 	}
 
