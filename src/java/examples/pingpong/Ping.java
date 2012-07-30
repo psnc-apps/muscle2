@@ -45,13 +45,14 @@ public class Ping extends CAController {
 		for (int i = 0; i < prepare_steps; i++) {
 			entrance.send(data);
 			exit.receive();
-			if (i % 5 == 0)
+			if (i % 5 == 0) {
 				System.out.print(".");
+			}
 		}
 		System.out.println("\n\nValues are NOT divided by 2. Each value is calculated for RTT.");
 		System.out.println("Sending " + max_timesteps + " messages in total. For each data size, " + runs + " tests are performed, each sending " + steps + " messages.\n");
 		
-		System.out.printf("|=%10s|=%10s|=%10s|=%10s|=%10s|=%12s|=%10s|=%10s|=%12s|\n","Size (kiB)","Total (ms)","Avg (ms)","StdDev(ms)","StdDev(%)","Speed (MB/s)","Data (ms)","Avg (ms)","Speed (MB/s)");
+		System.out.printf("|=%10s|=%10s|=%10s|=%10s|=%10s|=%13s|=%10s|=%10s|=%13s|\n","Size (kiB)","Total (ms)","Avg (us)","StdDev(ms)","StdDev(%)","Speed (MiB/s)","Data (ms)","Avg (us)","Speed (MiB/s)");
 		
 		for (int i = 0; i < getIntProperty("tests_count"); i++) {
 			long sum1 = doComputation(true, size, totalTimes, runs, steps);
@@ -122,14 +123,15 @@ public class Ping extends CAController {
 		double avg2 = sum2/((double)(totalTimes.length * steps));
 		double stdDev = stdDev(totalTimes, avg1, steps);
 
-		// nano -> milli
-		avg1 /= 1000000d;
-		avg2 /= 1000000d;
-		stdDev /= 1000000d;
-		// MB/s -> 2*((Bytes/1000000)/(millisec/1000)) -> 2*(Bytes/1000)/millisec -> 2*(Bytes/(millisec*1000)) ->Bytes/(millisec*500)
-		double speed1 = size / (avg1 * 500d);
-		double speed2 = size / (avg2 * 500d);
-		System.out.printf("| %10d| %10d| %10.3f| %10.3f| %10.3f| %12.3f| %10d| %10.3f| %12.3f|\n", size/1024, sum1/1000000, avg1, stdDev, 100*stdDev/avg1, speed1 == 0 ? Double.NaN : speed1, sum2/1000000, avg2, speed2);
+		// nano -> micro
+		avg1 /= 1000d;
+		avg2 /= 1000d;
+		stdDev /= 1000d;
+		// MB/s -> 2*((KBytes/1024)/(micro/1000000)) -> 2*1000000*KBytes/1024*micro ->  15625*size / 8*avg
+		size /= 1024;
+		double speed1 = 15625 * size / (8*avg1);
+		double speed2 = 15625 * size / (8*avg2);
+		System.out.printf("| %10d| %10d| %10.0f| %10.0f| %10.1f| %13.1f| %10d| %10.0f| %13.1f|\n", size, sum1/1000000, avg1, stdDev, 100*stdDev/avg1, speed1 == 0 ? Double.NaN : speed1, sum2/1000000, avg2, speed2);
 	}
 
 	private double average(long[] times, int factor) {

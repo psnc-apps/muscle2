@@ -31,14 +31,16 @@ using namespace std;
 
 void do_computation(const int runs, const int steps)
 {
-    void *data = (void *)0;
+	void *data = (void *)0;
 	size_t count;
 
-    for (int test = 0; test < runs; test++) {
-        for (int i = 0; i < steps; i++) {
-            data = env::receive("in", data, count, MUSCLE_DOUBLE);
-			env::send("out", data, count, MUSCLE_DOUBLE);
-        }
+	for (int test = 0; test < runs; test++)
+	{
+		for (int i = 0; i < steps; i++)
+		{
+			data = env::receive("in", data, count, MUSCLE_RAW);
+			env::send("out", data, count, MUSCLE_RAW);
+		}
 	}
     
     env::free_data(data, MUSCLE_RAW);
@@ -71,13 +73,14 @@ int main(int argc, char **argv)
 		// Making noise in order to give time for JVM to stabilize
 		for (int i = 0; i < prepare_steps; i++)
 		{
-			data = env::receive("in", data, preparation_size, MUSCLE_DOUBLE);
-			env::send("out", data, preparation_size, MUSCLE_DOUBLE);
+			data = env::receive("in", data, preparation_size, MUSCLE_RAW);
+			env::send("out", data, preparation_size, MUSCLE_RAW);
 		}
 		cout << endl;
 		env::free_data(data, MUSCLE_RAW);
 		
-		for (int i = 0; i < tests_count; i++) {
+		for (int i = 0; i < tests_count; i++)
+		{
 			do_computation(runs, steps);
 		}
 		env::finalize();
