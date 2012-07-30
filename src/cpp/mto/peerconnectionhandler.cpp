@@ -499,7 +499,7 @@ void PeerConnectionHandler::replacePeer(PeerConnectionHandler* from, PeerConnect
 void PeerConnectionHandler::peerDied(PeerConnectionHandler* handler)
 {
   map<Identifier, PeerConnectionHandler*>::iterator it = fwdMap.begin();
-  for ( it != fwdMap.end() ) {
+  while ( it != fwdMap.end() ) {
     if(it->second == handler){
       Header h;
       h.dstAddress=it->first.dstAddress;
