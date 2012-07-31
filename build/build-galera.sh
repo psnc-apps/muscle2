@@ -8,6 +8,6 @@ export BOOST_LIBRARYDIR=/home/plgrid-groups/plggmuscle/deps/boost/lib/
 module load java
 module load openmpi
 
-cmake -DMUSCLE_INSTALL_PREFIX=/home/plgrid-groups/plggmuscle/2.0/devel ..
+cmake -DMUSCLE_INSTALL_PREFIX=/home/plgrid-groups/plggmuscle/2.0/devel -DCMAKE_BUILD_TYPE=Debug ..
 make
 make install
