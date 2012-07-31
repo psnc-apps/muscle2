@@ -199,9 +199,9 @@ if(m.env.has_key?('intercluster'))
 	else
 	  if(m.env.has_key?('qcg'))
 	  	if (m.env['main'])
-			m.env['localport'] = 22 #master
+			m.env['bindport'] = 22 #master
 		else
-			m.env['mainport'] = 22 #slave
+			m.env['manager'] = "localhost:22" #slave
 		end
 	  else
 		m.env['localport'] = 0 
