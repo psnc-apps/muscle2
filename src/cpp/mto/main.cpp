@@ -446,7 +446,8 @@ template <typename M, typename V> bool removeFirstKeyFromMap (M m, V v)
 
 void peerDied(PeerConnectionHandler* handler, bool reconnect)
 {
-  for(map< unsigned short, MtoPeer >::iterator it = peers.begin(); it != peers.end(); ++it)
+  map< unsigned short, MtoPeer >::iterator it = peers.begin();
+  while ( it != peers.end() )
   {
     int pos = -1;
     for(int i = 0; i < it->second.peerConnection.size(); ++i)
@@ -458,13 +459,17 @@ void peerDied(PeerConnectionHandler* handler, bool reconnect)
       
     if(pos!=-1)
     {
-      if(it->second.peerConnection.size()==1)
-        peers.erase(it);
+      if(it->second.peerConnection.size()==1) 
+      {
+        peers.erase(it++);
+        continue;
+      }
       else
       {
         it->second.peerConnection.erase(it->second.peerConnection.begin()+pos);
       } 
     }
+    it++;
   }
   
   removeFirstKeyFromMap(connectionsIncomming, handler);

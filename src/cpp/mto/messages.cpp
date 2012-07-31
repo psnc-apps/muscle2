@@ -118,12 +118,24 @@ bool Identifier::operator<(const Identifier& other) const
 {
   if(srcAddress<other.srcAddress)
     return true;
+  else if(srcAddress>other.srcAddress) 
+    return false;
+
   if(dstAddress<other.dstAddress)
     return true;
+  else if(dstAddress>other.dstAddress)
+    return true;
+
   if(srcPort<other.srcPort)
     return true;
+  else if (srcPort>other.srcPort)
+    return false;
+
   if(dstPort<other.dstPort)
     return true;
+  else if (dstPort>other.dstPort)
+    return false;
+
   return false;
 }
 

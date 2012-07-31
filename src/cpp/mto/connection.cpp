@@ -143,6 +143,7 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
 
 void Connection::clean()
 {
+  Logger::trace(Logger::MsgType_PeerConn, "Cleaning connection %p", this);
   if(!closing)
   {
     if(header.type!=Header::Register) 
@@ -221,7 +222,7 @@ void Connection::error(const boost::system::error_code& e)
       sock->shutdown(boost::asio::socket_base::shutdown_both, ec);
 
   if(ec)
-    Logger::trace(Logger::MsgType_ClientConn, "Could not shut down first socket - eror: %s", ec.message().c_str() );
+    Logger::trace(Logger::MsgType_ClientConn, "Could not shut down first socket - error: %s", ec.message().c_str() );
     
   clean();
 }
