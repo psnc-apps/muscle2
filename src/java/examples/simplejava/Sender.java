@@ -32,12 +32,7 @@ a simple java example kernel which sends data
 */
 public class Sender extends muscle.core.kernel.CAController {
 	private ConduitEntrance<double[]> entrance;
-	
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-	
+
 	protected void addPortals() {
 		entrance = addEntrance("data", double[].class);
 	}

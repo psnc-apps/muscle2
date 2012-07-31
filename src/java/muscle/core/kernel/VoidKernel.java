@@ -28,7 +28,7 @@ import muscle.core.model.Distance;
 kernel which does nothing, usefulf for testing purposes e.g. to use the QuitMonitor with a non empty CxA
 @author Jan Hegewald
 */
-public class VoidKernel extends RawKernel {
+public class VoidKernel extends RawInstance {
 	protected void addPortals() {
 		// add no portals
 	}

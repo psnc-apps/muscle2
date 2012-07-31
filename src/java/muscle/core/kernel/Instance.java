@@ -12,7 +12,7 @@ import muscle.core.*;
  * A generic MML instance.
  * @author Joris Borgdorff
  */
-public abstract class Instance extends RawKernel {
+public abstract class Instance extends RawInstance {
 	protected final static int SEND = 1;
 	protected final static int RECV = 2;
 	/**

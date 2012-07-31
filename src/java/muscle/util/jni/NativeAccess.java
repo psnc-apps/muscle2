@@ -43,7 +43,7 @@ public class NativeAccess {
 		+MakeNative.includeCode()
 		+"namespace muscle {"+nl
 		//
-		+(new MakeNative(muscle.core.kernel.RawKernel.class)).toClass()
+		+(new MakeNative(muscle.core.kernel.RawInstance.class)).toClass()
 		+(new MakeNative(muscle.util.LoggerTool.class)).toClass()
 		+(new MakeNative(java.util.logging.Logger.class)).toClass()
 		+(new MakeNative(muscle.core.JNIConduitEntrance.class)).toClass()

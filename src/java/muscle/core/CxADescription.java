@@ -42,7 +42,7 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 
 	public enum Key {
 
-		FINEST_DT("finest_dt"), COARSEST_DT("coarsest_dt"), MAX_TIMESTEPS("max_timesteps"), GUI("gui");
+		MAX_TIMESTEPS("max_timesteps"), GUI("gui");
 		private String str;
 
 		Key(String str) {
@@ -58,8 +58,6 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 
 	static {
 		// init default values for mandatory flags
-		DEFAULT_ENV.put(Key.FINEST_DT.toString(), 1);
-		DEFAULT_ENV.put(Key.COARSEST_DT.toString(), 1);
 		DEFAULT_ENV.put(Key.MAX_TIMESTEPS.toString(), 1);
 
 		// init default values for optional flags
@@ -69,7 +67,6 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 	public final static CxADescription ONLY = new CxADescription(); // handle for the singleton
 	private Location sharedLocation;
 	private File tmpDir;
-
 	{
 		putAll(DEFAULT_ENV);
 
@@ -80,8 +77,8 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 
 	// disallow instantiation from everywhere
 	protected CxADescription() {
-		initEnv();
-
+		tmpDir = JVM.ONLY.tmpDir();
+		logger.log(Level.INFO, "using tmp directory <{0}>", tmpDir);
 		// init default shared Location if any
 		sharedLocation = new ContainerID((String) get(Constant.Key.TRACE_DATA_TRANSFER, "Main-Container"/*default value*/), null);
 	}
@@ -99,7 +96,11 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 		return get(key).toString();
 	}
 
-	public String getPathProperty(String key) {
+	public Object getRawProperty(String key) {
+		return get(key);
+	}
+
+	public File getPathProperty(String key) {
 		return MiscTool.resolveTilde(getEnvAndAssert(key).toString());
 	}
 
@@ -114,6 +115,10 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 
 	public double getDoubleProperty(String key) {
 		return (Double) getEnvAndAssert(key);
+	}
+	
+	public boolean hasProperty(String name) {
+		return containsKey(name);
 	}
 
 	/**
@@ -132,26 +137,5 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 		}
 
 		return text.toString();
-	}
-
-	/**
-	configure this CxA from the muscle environment
-	 */
-	private void initEnv() {
-		// init tmp dir
-		String tmpDirPath = JVM.ONLY.tmpDir().toString();
-		if (tmpDirPath == null) {
-			tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			logger.log(Level.INFO, "using default tmp directory <{0}>", tmpDir);
-		} else {
-			tmpDir = new File(MiscTool.resolveTilde(tmpDirPath));
-		}
-		if (!tmpDir.isDirectory()) {
-			File oldTmp = tmpDir;
-			tmpDir = new File(System.getProperty("java.io.tmpdir"));
-			logger.log(Level.INFO, "omitting invalid tmp directory <{0}>, using default tmp directory <{1}>", new Object[]{oldTmp, tmpDir});
-		} else {
-			logger.log(Level.INFO, "using tmp directory <{0}>", tmpDir);
-		}
 	}
 }

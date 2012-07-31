@@ -21,14 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.util.data;
 
-import java.util.HashMap;
-import org.json.simple.JSONValue;
-import org.json.simple.JSONObject;
-import java.io.File;
-import java.net.URI;
 import java.io.Reader;
-import java.util.Map;
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 /**
 loads environment for multiple classes from a json file

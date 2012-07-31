@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.InstanceClass;
-import muscle.core.kernel.RawKernel;
+import muscle.core.kernel.RawInstance;
 
 /**
  *
@@ -90,7 +90,7 @@ public class LocalManagerOptions {
 					throw new ParameterException("Instance class " + s[1] + " of argument " + value + " is not found; make sure the cxa file and the class name match, and that all sources are included in the CLASSPATH.\nHINT: adjust the cxa file to include your build directory with\nm = Muscle.LAST\nm.add_classpath File.dirname(__FILE__)+\"[REL_PATH_TO_CLASSES]\"\n");
 				}
 			}
-			if (!RawKernel.class.isAssignableFrom(clazz)) {
+			if (!RawInstance.class.isAssignableFrom(clazz)) {
 				throw new ParameterException("Can only instantiate classes inhereting muscle.core.kernel.RawKernel");
 			}
 			return new InstanceClass(s[0], clazz);		

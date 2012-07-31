@@ -32,11 +32,6 @@ a simple java example kernel which receives data and prints its content to stdou
 public class ConsoleWriter extends muscle.core.kernel.CAController {
 	private ConduitExit<double[]> readerA;
 
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-
 	protected void addPortals() {	
 		readerA = addExit("data", double[].class);
 	}
@@ -45,17 +40,22 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 		while (!this.willStop()) {
 			// read from our portals
 			double[] dataA = readerA.receive();
-						
+			
+			int size = dataA.length;
 			// process data
-			for(int i = 0; i < dataA.length; i++) {
+			for(int i = 0; i < size; i++) {
 				doSomething(dataA);
 			}
 						
-			// dump to our portals at designated frequency
-			// we reduce our maximum available output frequency since it is not needed anywhere in the CxA (could also be done by the drop filter)
-			for(int i = 0; i < dataA.length; i++) {
-				System.out.println("got: "+dataA[i]);
+			for (int i = 0; i < 5 && i < size; i++) {
+				System.out.println("got: "+dataA[i]);				
 			}
+
+			if (size > 5) {
+				System.out.println("...");
+				System.out.println("got: "+dataA[dataA.length - 1]);
+			}
+			
 			System.out.println();
 		}
 	}

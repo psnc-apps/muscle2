@@ -32,6 +32,7 @@ cxa = Cxa.LAST
 cxa.env["max_timesteps"] = 2
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 cxa.env["w:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplecpp2/simplecpp2"
+cxa.env["r:dt"] = 1
 
 # declare kernels
 cxa.add_kernel('w', 'examples.simplecpp2.Sender')

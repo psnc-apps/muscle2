@@ -24,10 +24,13 @@ import eu.mapperproject.jmml.util.ArrayMap;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.*;
+import muscle.core.model.Distance;
 import muscle.core.model.Timestamp;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
@@ -43,8 +46,8 @@ import muscle.util.serialization.PipeConverter;
 A basic kernel, that all kernels must extend
 @author Jan Hegewald
  */
-public abstract class RawKernel {
-	private static final Logger logger = Logger.getLogger(RawKernel.class.getName());
+public abstract class RawInstance {
+	private static final Logger logger = Logger.getLogger(RawInstance.class.getName());
 	private Object[] arguments;
 	protected Map<String,ConduitEntranceController> entrances = new ArrayMap<String,ConduitEntranceController>();
 	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
@@ -127,7 +130,51 @@ public abstract class RawKernel {
 	return new Scale(dt,dx);
 	* return null if the kernel is dimensionless
 	 */
-	public abstract Scale getScale();
+	public Scale getScale() {
+		Distance dt, omegaT, next;
+		List<Distance> dx = new ArrayList<Distance>(3);
+		
+		dt = getScaleProperty("dt", "default_dt", true);
+		omegaT = getScaleProperty("T", "max_timesteps", true);
+		next = getScaleProperty("dx", "default_dx", false);
+		if (next != null) {
+			dx.add(next);
+		}
+		next = getScaleProperty("dy", "default_dy", false);
+		if (next != null) {
+			dx.add(next);
+		}
+		next = getScaleProperty("dz", "default_dz", false);
+		if (next != null) {
+			dx.add(next);
+		}
+		
+		return new Scale(dt, omegaT, dx);		
+	}
+	
+	private Distance getScaleProperty(String name, String global, boolean warn) {
+		Object raw = null;
+		Distance dist;
+		if (hasInstanceProperty(name)) {
+			raw = getRawProperty(name);
+		} else if (hasGlobalProperty(global)) {
+			raw = CxADescription.ONLY.getRawProperty(global);
+		}
+		
+		if (raw == null) {
+			if (warn) {
+				logger.log(Level.WARNING, "Time step (dt) of instance {0} could not be determined: properties ''{0}:{1}'' and ''{2}'' are not set; using dt = 1s.", new Object[] {getLocalName(), name, global});
+				dist = new Distance(1);
+			} else {
+				dist = null;
+			}
+		} else if (raw instanceof Double) {
+			dist = new Distance((Double)raw);
+		} else {
+			dist = Distance.valueOf(raw.toString());
+		}
+		return dist;
+	}
 
 	protected <T extends Serializable> ConduitExit<T> addExit(String portName, Class<T> dataClass) {
 		ConduitExitController<T> ec = controller.createConduitExit(false, portName, new DataTemplate<T>(dataClass));
@@ -193,8 +240,7 @@ public abstract class RawKernel {
 	do not change signature! (used from native code)
 	 */
 	public String getTmpPath() {
-		String tmpPath = MiscTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), OSTool.portableFileName(controller.getLocalName(), ""));
-		File tmpDir = new File(tmpPath);
+		File tmpDir = MiscTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), OSTool.portableFileName(controller.getLocalName(), ""));
 		// create our kernel tmp dir if not already there
 		tmpDir.mkdir();
 		if (!tmpDir.isDirectory()) {
@@ -243,19 +289,82 @@ public abstract class RawKernel {
 		return arguments;
 	}
 	
-	public String getProperty(String key) {
-		return CxADescription.ONLY.getProperty(key);
+	public boolean hasProperty(String name) {
+		return hasInstanceProperty(name) || hasGlobalProperty(name);
 	}
-	public int getIntProperty(String key) {
-		return CxADescription.ONLY.getIntProperty(key);
+	public boolean hasInstanceProperty(String name) {
+		return CxADescription.ONLY.hasProperty(getLocalName() + ":" + name);
 	}
-	public double getDoubleProperty(String key) {
-		return CxADescription.ONLY.getDoubleProperty(key);
-	}
-	public boolean getBooleanProperty(String key) {
-		return CxADescription.ONLY.getBooleanProperty(key);
+	public boolean hasGlobalProperty(String name) {
+		return CxADescription.ONLY.hasProperty(name);
 	}
 	
+	public String getProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	
+	
+	public Object getRawProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getRawProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getRawProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	
+	public int getIntProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getIntProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getIntProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	public double getDoubleProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getDoubleProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getDoubleProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	public boolean getBooleanProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getBooleanProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getBooleanProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	
+	public String getGlobalProperty(String name) {
+		return CxADescription.ONLY.getProperty(name);
+	}
+	public int getGlobalIntProperty(String name) {
+		return CxADescription.ONLY.getIntProperty(name);
+	}
+	public double getGlobalDoubleProperty(String name) {
+		return CxADescription.ONLY.getDoubleProperty(name);
+	}
+	public boolean getGlobalBooleanProperty(String name) {
+		return CxADescription.ONLY.getBooleanProperty(name);
+	}
 	
 	// ==============MANAGEMENT====================//
 	
@@ -267,9 +376,9 @@ public abstract class RawKernel {
 	/**
 	prints info about a given kernel to stdout
 	 */
-	public static String info(Class<? extends RawKernel> controllerClass) {
+	public static String info(Class<? extends RawInstance> controllerClass) {
 		// instantiates a controller which is not intended to run as a JADE agent
-		RawKernel kernel = null;
+		RawInstance kernel = null;
 		try {
 			kernel = controllerClass.newInstance();
 		} catch (java.lang.InstantiationException e) {
@@ -304,7 +413,7 @@ public abstract class RawKernel {
 	}
 	
 	/**
-	helper method to create a scale object where dt is a multiple of the kernel scale
+	Returns null. helper method to create a scale object where dt is a multiple of the kernel scale
 	* @deprecated use MML to specify this
 	 */
 	@Deprecated
@@ -325,19 +434,19 @@ public abstract class RawKernel {
 	public static void main(String[] args) throws java.lang.ClassNotFoundException {
 
 		if (args.length > 0) {
-			ArrayList<Class<? extends RawKernel>> classes = new ArrayList<Class<? extends RawKernel>>();
+			ArrayList<Class<? extends RawInstance>> classes = new ArrayList<Class<? extends RawInstance>>();
 			for (String arg : args) {
 				try {
 					@SuppressWarnings("unchecked")
-					Class<? extends RawKernel> c = (Class<? extends RawKernel>) Class.forName(arg);
+					Class<? extends RawInstance> c = (Class<? extends RawInstance>) Class.forName(arg);
 					classes.add(c);
 				} catch (ClassCastException e) {
-					Logger.getLogger(RawKernel.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
+					Logger.getLogger(RawInstance.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
 				}
 			}
 
-			for (Class<? extends RawKernel> c : classes) {
-				System.out.println(RawKernel.info(c) + "\n");
+			for (Class<? extends RawInstance> c : classes) {
+				System.out.println(RawInstance.info(c) + "\n");
 			}
 
 		}

@@ -29,7 +29,7 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 # configure cxa properties
 cxa = Cxa.LAST
 
-cxa.env.merge!('max_timesteps' => 5,'coarsest_dt' => 1, 'finest_dt' => 1)
+cxa.env.merge!('max_timesteps' => 5)
 
 cxa.env['CONNECTION_SCHEME_CLASS'] = "muscle.core.Sandbox$SandboxConnectionScheme"
 cxa.env[cxa.env['CONNECTION_SCHEME_CLASS']] = Proc.new {Cxa.LAST.env['muscle.core.ConnectionScheme']}

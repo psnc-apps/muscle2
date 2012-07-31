@@ -30,6 +30,8 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 4
+cxa.env["r:dt"] = 1;
+cxa.env["w:dt"] = 1;
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels

@@ -21,73 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.kernel;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import muscle.core.CxADescription;
-
-
-// coast sk:coast.cxa.test.sandbox.Kernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
-
 /**
-JADE agent to wrap a kernel (e.g. CA or MABS)
-@author Jan Hegewald
-*/
-public abstract class CAController extends RawKernel {
-	/**
-	 * Returns path to the directory which contains CxA specific files.
-	 * 
-	 * Do not change signature! (used from native code)
-	 */
-	@Deprecated
-	static public String getCxAPath() {
-		
-		Logger.getLogger(CAController.class.getName()).fine("using deprecated method muscle.core.kernel.CAController#getCxAPath()");
-
-		return CxADescription.ONLY.getPathProperty("cxa_path");
-	}
-
-
-	/**
-	 * Returns path to the directory which contains a class.
-	 *
-	 * If the class is bundled in a jar file an empty string is returned. 
-	 */
-	@Deprecated
-	static public String getKernelPath(Class<?> cls) {
-
-		java.net.URL rsrc = cls.getResource(""); // -> null if class is in jar bundle
-		
-		String path = "";
-		if(rsrc != null)
-			path = rsrc.getPath();
-		else
-			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "no kernel path ({0}) for class ({1})", new Object[]{path, cls});
-			
-		cls.getResource("").getPath();
-		if(cls.getPackage() == null) {
-			Logger.getLogger(CAController.class.getName()).log(Level.WARNING, "ambiguous kernel path ({0}) for class ({1})", new Object[]{path, cls});
-		}
-		
-		return path;
-	}
-
-
-	/**
-	returns path to the directory which contains files specific for this kernel<br>
-	do not change signature! (used from native code)<br>
-	if the current class is not assigned to a package, this method will return the first directory of the CLASSPATH
-	*/
-	public String getKernelPath() {
-
-		return getKernelPath(getClass());
-	}
-
-
-   /**
-	returns properties as ASCII<br>
-	do not change signature! (used from native code)
-	*/
-	static public String getLegacyProperties() {
-		return CxADescription.ONLY.getLegacyProperties();
-	}
+ * Override CAController to make a Cellular Automaton.
+ */
+public abstract class CAController extends Instance {
 }

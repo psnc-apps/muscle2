@@ -14,11 +14,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.client.communication.PortFactory;
-import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.core.*;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
-import muscle.core.kernel.RawKernel;
+import muscle.core.kernel.RawInstance;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
@@ -44,7 +43,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private final ResolverFactory resolverFactory;
 	private final PortFactory portFactory;
 	
-	private RawKernel instance;
+	private RawInstance instance;
 	private boolean execute;
 	private File infoFile;
 	private InstanceController mainController;
@@ -84,7 +83,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		this.entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
 		
 		try {
-			instance = (RawKernel) this.instanceClass.newInstance();
+			instance = (RawInstance) this.instanceClass.newInstance();
 
 			instance.setInstanceController(this.mainController);
 
@@ -154,14 +153,17 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		PortDescription port = null;
 		Map<String,? extends PortDescription> descriptions = entrance ? entranceDescriptions : exitDescriptions;
 		
-		if (descriptions != null)
+		if (descriptions != null) {
 			port = descriptions.get(id.getPortName());
-		if (port == null)
+		}
+		if (port == null) {
 			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
-		else
+		} else {
 			desc = port.getConduitDescription();
-		if (desc == null)
+		}
+		if (desc == null) {
 			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
+		}
 
 		if (entrance) {
 			return desc.getExitDescription().getID();
@@ -213,35 +215,23 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		
 	private void beforeExecute() {
 		// write info file
-		infoFile = new File(MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX));
+		infoFile = MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX);
 
-		String nl = System.getProperty("line.separator");
-		FileWriter writer = null;
+		PrintWriter out = null;
 		try {
-			writer = new FileWriter(infoFile);
-
-			writer.write("this is file <" + infoFile + "> created by <" + getClass() + ">" + nl);
-			writer.write("start date: " + (new java.util.Date()) + nl);
-			writer.write("agent name: " + getLocalName() + nl);
-			writer.write("coarsest log level: " + logger.getLevel() + nl);
-			writer.write(nl);
-			writer.write("executing ..." + nl);
-
-			writer.close();
+			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		} catch (RuntimeException e) {
-			throw e;
-		} finally {
-			if (writer != null) {
-				try {
-					writer.close();
-				} catch (java.io.IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
 		}
 		
+		out.println("this is file <" + infoFile + "> created by <" + getClass() + ">");
+		out.println("start date: " + (new java.util.Date()));
+		out.println("agent name: " + getLocalName());
+		out.println("coarsest log level: " + logger.getLevel());
+		out.println();
+		out.println("executing ...");
+		
+		out.close();
 		synchronized (this) {
 			this.isExecuting = true;
 		}
@@ -254,31 +244,20 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 		// write info file
 		assert infoFile != null;
-		String nl = System.getProperty("line.separator");
-		FileWriter writer = null;
+		
+		PrintWriter out = null;
 		try {
-			writer = new FileWriter(infoFile, true);
-
-			writer.write(nl);
-			writer.write("... done" + nl);
-			writer.write(nl);
-			writer.write("end date: " + (new java.util.Date()) + nl);
-
-			writer.close();
+			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		} catch (RuntimeException e) {
-			throw e;
-		} finally {
-			if (writer != null) {
-				try {
-					writer.close();
-				} catch (java.io.IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
 		}
 
+		out.println();
+		out.println("... done");
+		out.println();
+		out.println("end date: " + (new java.util.Date()));
+		
+		out.close();
 	}
 	
 	private boolean register() {

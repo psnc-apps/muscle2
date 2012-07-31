@@ -21,20 +21,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.simplecpp2;
 
-import muscle.core.Scale;
-import muscle.core.model.Distance;
-
 /**
 example of a kernel which is using native code to send and receive data using a new Native MUSCLE API
 @author Mariusz Mamonski
 */
 public class Sender extends muscle.core.standalone.NativeKernel {
 
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-	
 	public void addPortals() {
 		addEntrance("data", double[].class);
 	}

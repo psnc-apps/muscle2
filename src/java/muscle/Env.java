@@ -39,9 +39,9 @@ public class Env extends muscle.util.data.Env {
 	
 	private static Env create() {		
 		// use java property like:
-		// -Dmuscle.core.Env="file:/path/to/json_file"
+		// -Dmuscle.Env="file:/path/to/json_file"
 		// or a json formatted string
-		// -Dmuscle.core.Env={\"cs_file\":\"/path/to/custom/cs\"}
+		// -Dmuscle.Env={\"cs_file\":\"/path/to/custom/cs\"}
 		String rawEnv = System.getProperty(muscle.util.ClassTool.getName(Env.class));
 		
 		if(rawEnv != null) {

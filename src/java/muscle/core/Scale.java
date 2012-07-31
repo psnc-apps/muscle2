@@ -21,8 +21,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.measure.DecimalMeasure;
 import javax.measure.quantity.Length;
 import javax.measure.unit.SI;
@@ -35,30 +37,26 @@ represents time and spatial scale according to SSM in SI units
 */
 public class Scale implements java.io.Serializable {
 
-	private Distance dt; // time scale (must be seconds when used without quantity)
-	private ArrayList<Distance> dx; // scale(s) in space (must be meter when used without quantity)
+	private final Distance dt; // time step (must be seconds when used without quantity)
+	private final Distance omegaT; // total time
+	private final List<Distance> dx; // scale(s) in space
 	
-	public Scale(Distance newDt) {
-		dt = newDt;
-
-		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
-		// this is probably because there are no generic c-style arrays in java
-		// so we check the types for each vararr item to be a DecimalMeasure<Length>
-		dx = new ArrayList<Distance>();
+	public Scale(Distance newDt, Distance newOmegaT, Distance ... newDx) {
+		this(newDt, newOmegaT, new ArrayList<Distance>(Arrays.asList(newDx)));
 	}
-
-	public Scale(Distance newDt, Distance ... newDx) {
-		dt = newDt;
-
-		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
-		// this is probably because there are no generic c-style arrays in java
-		// so we check the types for each vararr item to be a DecimalMeasure<Length>
-		dx = new ArrayList<Distance>(Arrays.asList(newDx));
+	
+	public Scale(Distance newDt, Distance newOmegaT, List<Distance> newDx) {
+		this.dt = newDt.withDimension(Dimension.TIME);
+		this.omegaT = newOmegaT.withDimension(Dimension.TIME);
+		this.dx = newDx;
 	}
-
 	
 	public Distance getDt() {
 		return this.dt;
+	}
+
+	public Distance getOmegaT() {
+		return this.omegaT;
 	}
 	
 	public Distance getDx(int index) {
@@ -82,17 +80,19 @@ public class Scale implements java.io.Serializable {
 			Scale other = (Scale)obj;
 			
 			// test number of dimensions in space
-			if(getDimensions() != other.getDimensions())
+			if(getDimensions() != other.getDimensions()) {
 				return false;
+			}
 
 			// test scale for every dimension in space
 			for(int i = 0; i < getDimensions(); i++) {
-				if(!getDx(i).equals(other.getDx(i)))
+				if(!getDx(i).equals(other.getDx(i))) {
 					return false;
+				}
 			}
 			
 			// test timescale
-			return dt.equals(other.dt);
+			return dt.equals(other.dt) && omegaT.equals(other.dt);
 		}
 		return false;
 	}
@@ -109,28 +109,29 @@ public class Scale implements java.io.Serializable {
 	
 	@Deprecated
 	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
-		this(new muscle.core.model.Distance(newDt.doubleValue(SI.SECOND)), newDx);
+		this(new Distance(newDt.doubleValue(SI.SECOND)), newDx);
 	}
 	
 	@Deprecated
 	public Scale(Distance newDt, DecimalMeasure ... newDx) {
-		dt = newDt;
-
+		dt = newDt.withDimension(Dimension.TIME);
+		this.omegaT = null;
 		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
 		// this is probably because there are no generic c-style arrays in java
 		// so we check the types for each vararr item to be a DecimalMeasure<Length>
 		dx = new ArrayList<Distance>();
 		for(DecimalMeasure m : newDx) {
-			dx.add(new Distance(m.doubleValue(SI.METER)));
+			dx.add(new Distance(m.doubleValue(SI.METER), Dimension.SPACE));
 		}
 	}
 
 	@Deprecated
-	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, ArrayList<DecimalMeasure<Length>> newDx) {
-		dt = new muscle.core.model.Distance(newDt.doubleValue(SI.SECOND));
+	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, List<DecimalMeasure<Length>> newDx) {
+		dt = new Distance(newDt.doubleValue(SI.SECOND), Dimension.TIME);
+		this.omegaT = null;
 		dx = new ArrayList<Distance>();
 		for(DecimalMeasure m : newDx) {
-			dx.add(new Distance(m.doubleValue(SI.METER)));
+			dx.add(new Distance(m.doubleValue(SI.METER), Dimension.SPACE));
 		}
 	}
 }

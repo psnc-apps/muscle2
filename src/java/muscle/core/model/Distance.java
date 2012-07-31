@@ -25,6 +25,10 @@ public class Distance extends SIUnit {
 		super(t, sc);
 	}
 	
+	private Distance(SIUnit unit) {
+		super(unit);
+	}
+	
 	public String toString() {
 		return "delta=" + doubleValue() + " s";
 	}
@@ -34,5 +38,13 @@ public class Distance extends SIUnit {
 	}
 	public Distance div(double factor) {
 		return new Distance(value / factor, scale);
+	}
+	
+	public static Distance valueOf(String siunit) {
+		return new Distance(SIUnit.valueOf(siunit));
+	}
+	
+	public Distance withDimension(Dimension dim) {
+		return new Distance(value, scale.withDimension(dim));
 	}
 }
