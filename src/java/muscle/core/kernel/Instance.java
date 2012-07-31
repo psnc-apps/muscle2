@@ -13,6 +13,7 @@ import muscle.core.*;
  * @author Joris Borgdorff
  */
 public abstract class Instance extends RawInstance {
+	protected final static int NONE = 0;
 	protected final static int SEND = 1;
 	protected final static int RECV = 2;
 	/**

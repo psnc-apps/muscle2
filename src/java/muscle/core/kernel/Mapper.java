@@ -12,10 +12,12 @@ import muscle.core.Scale;
  */
 public abstract class Mapper extends Instance {
 	@Override
-	protected void execute() {
+	protected final void execute() {
 		while (true) {
 			this.operationsAllowed = RECV;
 			if (!readAll()) break;
+			this.operationsAllowed = NONE;
+			if (!performMapping()) break;
 			this.operationsAllowed = SEND;
 			if (!writeAll()) break;
 		}
@@ -37,4 +39,10 @@ public abstract class Mapper extends Instance {
 	public Scale getScale() {
 		return null;
 	}
+
+	/**
+	 * Perform a mapping based on the received data.
+	 * @return whether the mapper should quit before writing.
+	 */
+	protected abstract boolean performMapping();
 }
