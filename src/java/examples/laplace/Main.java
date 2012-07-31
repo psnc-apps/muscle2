@@ -21,7 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.laplace;
 
-import java.awt.FlowLayout;
 import javax.swing.JFrame;
 
 /**
