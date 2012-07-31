@@ -69,10 +69,10 @@ struct Header : Request
   /** Serializes the Header to an existing char* of size at least of getSize */
   void serialize(char* buf) const;
   
-  Header(){};
+  Header(): length(0) {};
   
   /** Constructs the header basing on the given request */
-  Header(const Request & r);
+  Header(const Request & r) : Request(r), length(0) {};
 };
 
 
@@ -84,7 +84,7 @@ struct Identifier
   unsigned int srcAddress, dstAddress;
   unsigned short srcPort, dstPort;
   
-  Identifier(){};
+  Identifier() : srcAddress(0), dstAddress(0), srcPort(0), dstPort(0) {};
   Identifier(const Request & r) : srcAddress(r.srcAddress),dstAddress(r.dstAddress), srcPort(r.srcPort), dstPort(r.dstPort){};
   
   bool operator==(const Identifier & other) const;
@@ -106,6 +106,8 @@ struct MtoHello
   
   /** Indicates if other hellos follow */
   bool isLastMtoHello;
+
+  MtoHello() : portLow(0), portHigh(0), distance(0) {};
   
   /** Size, in bytes, of the serialized MtoHello */
   static unsigned getSize();

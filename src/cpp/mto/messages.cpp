@@ -94,10 +94,6 @@ Header Header::deserialize(char * buf)
   return h;
 }
 
-Header::Header(const Request & r): Request(r)
-{
-}
-
 void Header::serialize(char* buf) const
 {
   Request::serialize(buf);

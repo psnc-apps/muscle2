@@ -322,7 +322,7 @@ void Connection::replacePeer(PeerConnectionHandler* from, PeerConnectionHandler*
 
 void Connection::Bufferfreeer::operator ()(const error_code& e, size_t)
 {
-  delete data;
+  delete [] data;
   if(thiz){
     thiz->referenceCount--;
     if(thiz->closing) { thiz->clean(); return;}
