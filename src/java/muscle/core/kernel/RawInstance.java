@@ -299,6 +299,17 @@ public abstract class RawInstance {
 		return CxADescription.ONLY.hasProperty(name);
 	}
 	
+	public File getPathProperty(String name) {
+		String lname = getLocalName() + ":" + name;
+		if (CxADescription.ONLY.hasProperty(lname)) {
+			return CxADescription.ONLY.getPathProperty(lname);
+		} else if (CxADescription.ONLY.hasProperty(name)) {
+			return CxADescription.ONLY.getPathProperty(name);
+		} else {
+			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
+		}
+	}
+	
 	public String getProperty(String name) {
 		String lname = getLocalName() + ":" + name;
 		if (CxADescription.ONLY.hasProperty(lname)) {
@@ -351,6 +362,10 @@ public abstract class RawInstance {
 		} else {
 			throw new NoSuchElementException("Property " + name + " does not exist in instance " + getLocalName());
 		}
+	}
+	
+	public File getGlobalPathProperty(String name) {
+		return CxADescription.ONLY.getPathProperty(name);
 	}
 	
 	public String getGlobalProperty(String name) {
