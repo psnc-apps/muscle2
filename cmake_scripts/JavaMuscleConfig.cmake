@@ -184,7 +184,7 @@ else()
   find_package_handle_standard_args(Java
     REQUIRED_VARS Java_JAVA_EXECUTABLE Java_JAR_EXECUTABLE Java_JAVAC_EXECUTABLE
                   Java_JAVAH_EXECUTABLE Java_JAVADOC_EXECUTABLE
-    VERSION_VAR Java_VERSION
+#    VERSION_VAR Java_VERSION
     )
 endif()
 
