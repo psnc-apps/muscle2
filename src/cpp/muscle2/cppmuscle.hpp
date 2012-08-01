@@ -45,6 +45,3 @@ class cxa
 
 } // EO namespace muscle
 #endif
-
-
-

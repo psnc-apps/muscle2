@@ -3,7 +3,7 @@
 
 #include "logger.hpp"
 #include "communicator.hpp"
-#include "complex_data.hpp"
+#include "muscle_complex_data.hpp"
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 

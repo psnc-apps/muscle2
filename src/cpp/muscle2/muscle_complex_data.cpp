@@ -1,6 +1,7 @@
 #include <stdlib.h>
-#include "complex_data.hpp"
+#include "muscle_complex_data.hpp"
 #include "muscle_types.h"
+#include "logger.hpp"
 
 static const bool is_muscle_complex_t_array[] = {
 false, true, true, // null, map, collection
@@ -93,10 +94,10 @@ ComplexData::ComplexData(void *data, muscle_datatype_t type, size_t len)
 
 ComplexData::~ComplexData()
 {
-	free((void *)value);
+	free(value);
 }
 
-const void * ComplexData::getData()
+void * ComplexData::getData()
 {
 	return value;
 }

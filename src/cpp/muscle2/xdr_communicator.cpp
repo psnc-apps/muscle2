@@ -2,7 +2,7 @@
 #include "cppmuscle.hpp"
 #include "logger.hpp"
 #include "muscle_types.h"
-#include "complex_data.hpp"
+#include "muscle_complex_data.hpp"
 #include <cstring>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
@@ -47,6 +47,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		std::vector<int> dims;
 		if (type == MUSCLE_COMPLEX) {
 			ComplexData *data = (ComplexData *)msg;
+			msg = data->getData();
 			count_int = data->length();
 			sz = data->sizeOfPrimitive();
 			ctype = data->getType();
@@ -69,7 +70,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		else
 		{
 			float tot_sz = count_int * (sz == 8 ? 8 : 4);
-			int chunks = ceil(tot_sz/M2_XDR_BUFSIZE);
+			int chunks = (int)ceil(tot_sz/M2_XDR_BUFSIZE);
 			if (!xdr_int(&xdro, &chunks)) throw new Communicator::io_exception("Can not write int");
 			if (chunks > 1)
 			{
@@ -77,7 +78,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				if (!xdr_int(&xdro, &count_i)) throw new Communicator::io_exception("Can not write int");
 			}
 		
-			unsigned int chunk_len = ceil(count_int/(float)chunks);
+			unsigned int chunk_len = (unsigned int)ceil(count_int/(float)chunks);
 			unsigned int first_chunk_len = count_int - (chunks - 1)*chunk_len;
 
 			xdrproc_t proc = get_proc(ctype);
@@ -165,12 +166,12 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				for (int i = 0; i < dim_num - 1; i++)
 				{
 					if (!xdr_int(&xdri, &dim)) throw new Communicator::io_exception("Can not read int");
-					dims.push_back(dim);
+					dims[i] = dim;
 					nprod *= dim;
 				}
-				dims.push_back(len/nprod);
+				dims[dim_num - 1] = len/nprod;
 				ComplexData *cdata = new ComplexData(*(void **)result, ctype, &dims);
-				result = &cdata;
+				*(void **)result = cdata;
 			}
 			*result_len = len;
 		}

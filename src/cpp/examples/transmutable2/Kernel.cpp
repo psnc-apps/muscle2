@@ -20,8 +20,10 @@ This file is part of muscle (Multiscale Coupling Library and Environment).
 */
 #include <exception>
 #include <iostream>
+#include <vector>
 
 #include <cppmuscle.hpp>
+#include <muscle_complex_data.hpp>
 
 using namespace muscle;
 using namespace std;
@@ -47,24 +49,33 @@ int main(int argc, char **argv)
 		{
 			cout << "t: " << i << " " << endl;
 			/* initialize data */
-			size_t size = 64*1024;
-			double *data = new double[size];
-			for (int j=1; j < size; j++)
-				data[j] = 0;
+			size_t size = 1024;
+			size_t size2 = size*size;
+			char *data = (char *)malloc(size*size*sizeof(char));
+			for (int j=0; j < size; j++) {
+				for (int k=0; k < size; k++) {
+					data[j*size+k] = 15;
+				}
+			}
 
-			data[0] = 0.42;
-			data[size-1] = 4200.99;
+			data[0] = 65;
+			data[size2-1] = 77;
+			vector<int> dims(2);
+			dims[0] = size;
+			dims[1] = size;
+
+			ComplexData cdata(data, COMPLEX_BYTE_MATRIX_2D, &dims);
 
 			/* send */
-			muscle::env::send("writer", data, size, MUSCLE_DOUBLE);
+			muscle::env::send("writer", &cdata, size2, MUSCLE_COMPLEX);
 
 			/* receive */
-			double *data2 = (double *)muscle::env::receive("reader", (void *)0, size, MUSCLE_DOUBLE);
+			ComplexData *cdata2 = (ComplexData *)muscle::env::receive("reader", (void *)0, size2, MUSCLE_COMPLEX);
+			char *data2 = (char *)(cdata2->getData());
+			logger::info("data in c++ : %d %d", data2[0], data2[size2-1]);
 
-			cout << "data in c++ : " << data2[0] << " " << data2[size-1] << endl;
-
-			delete [] data;
-			muscle::env::free_data(data2, MUSCLE_DOUBLE); /* we must use muscle:free because the array was allocated by muscle::receive() */
+			// char **data is freed by destructor of ComplexData
+			muscle::env::free_data(cdata2, MUSCLE_COMPLEX); /* we must use muscle:free because the array was allocated by muscle::receive() */
 		}
 
 

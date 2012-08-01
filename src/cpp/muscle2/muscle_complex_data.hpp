@@ -1,5 +1,5 @@
-#ifndef COMPLEX_DATA_HPP
-#define COMPLEX_DATA_HPP
+#ifndef MUSCLE_COMPLEX_DATA_HPP
+#define MUSCLE_COMPLEX_DATA_HPP
 
 #include <vector>
 #include <cstring>
@@ -23,7 +23,7 @@ class ComplexData {
 		ComplexData(void *data, muscle_complex_t type, std::vector<int>* dimensions);
 		ComplexData(void *data, muscle_datatype_t type, size_t len);
 		~ComplexData();
-		const void *getData();
+		void *getData();
 		muscle_complex_t getType();
 		std::vector<int>& getDimensions();
 		int length();
@@ -33,7 +33,7 @@ class ComplexData {
 		static muscle_complex_t getType(muscle_datatype_t type);
 	private:
 		muscle_complex_t type;
-		const void *value;
+		void *value;
 		std::vector<int> dims;
 };
 
