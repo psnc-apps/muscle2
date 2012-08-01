@@ -129,7 +129,7 @@ public class SimulationManager {
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
 			SocketFactory sf = new CrossSocketFactory();
-			ServerSocket ss = sf.createServerSocket(0, 10, addr);
+			ServerSocket ss = sf.createServerSocket(Integer.parseInt(System.getProperty("muscle.manager.bindport","0")), 10, addr);
 			mch = new ManagerConnectionHandler(sm, ss);
 			mch.start();
 			sm.setConnectionHandler(mch);

@@ -143,7 +143,13 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
 
 void Connection::clean()
 {
-  Logger::trace(Logger::MsgType_PeerConn, "Cleaning connection %p", this);
+  Logger::trace(Logger::MsgType_PeerConn, "Cleaning connection between %s:%hu and %s:%hu (ptr=%p)",
+                    ip::address_v4(header.dstAddress).to_string().c_str(),
+                    header.dstPort,
+                    ip::address_v4(header.srcAddress).to_string().c_str(),
+                    header.srcPort,
+                    this);
+
   if(!closing)
   {
     if(header.type!=Header::Register) 
