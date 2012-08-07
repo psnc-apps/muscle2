@@ -33,7 +33,7 @@ example of a kernel which is using native code to send and receive data
 */
 public class Sender extends CAController {
 	static {
-		System.loadLibrary("example_simplecpp");
+		System.loadLibrary("simplecpp");
 	}
 
 	private JNIConduitEntrance<double[],double[]> entrance;

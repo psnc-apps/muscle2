@@ -26,6 +26,9 @@ Jan Hegewald
 # configuration file for a MUSCLE CxA
 abort "this is a configuration file for to be used with the MUSCLE bootstrap utility" if __FILE__ == $0
 
+m = Muscle.LAST
+m.add_libpath File.dirname(__FILE__)+"/../simplecpp"
+
 # configure cxa properties
 cxa = Cxa.LAST
 

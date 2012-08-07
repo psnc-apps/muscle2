@@ -37,7 +37,7 @@ this example uses a Transmutable to map cpp data to a Java class
 public class Kernel extends muscle.core.kernel.CAController {
 
 	static {
-		System.loadLibrary("example_transmutable");
+		System.loadLibrary("transmutable");
 	}
 
 	private JNIConduitEntrance<double[],String> entrance;
