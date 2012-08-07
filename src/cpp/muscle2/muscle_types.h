@@ -34,8 +34,8 @@ typedef enum {
 	MUSCLE_ERR_NET,
 	MUSCLE_ERR_IO,
 	MUSCLE_ERR_SER,
-	MUSCLE_ERR_DESER,
-} muscle_error_t; /* one to one mapping to Java logger */
+	MUSCLE_ERR_DESER
+} muscle_error_t; /* error codes for initialization */
 
 #ifdef __cplusplus
 }
