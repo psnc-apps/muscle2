@@ -439,7 +439,7 @@ public abstract class RawInstance {
 	
 	public String infoText() {
 		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
-		sb.append(getLocalName()).append(": exits: ").append(exits).append("; entrances: ").append(entrances);
+		sb.append(getLocalName()).append(": exits: ").append(exits.values()).append("; entrances: ").append(entrances.values());
 		return sb.toString();
 	}
 
