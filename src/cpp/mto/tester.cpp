@@ -37,9 +37,9 @@ void doListen(char ** argv){
  buf = new char[1024];
  while(1){
   size_t cnt = sock.read_some(buffer(buf, 1024));
-  cout << string(buf, cnt) << flush;
-  for(int i = 0 ; i < cnt; ++i)
-    buf[i]=toupper(buf[i]);
+  //cout << string(buf, cnt) << flush;
+  //for(int i = 0 ; i < cnt; ++i)
+  //  buf[i]=toupper(buf[i]);
   write(sock, buffer(buf, cnt), transfer_all());
  }
 }
@@ -85,8 +85,12 @@ void doConnect(char ** argv)
   write(s, buffer(x), transfer_all());
   buf = new char[x.size()]; 
   read(s, buffer(buf, x.size()), transfer_all());
-  string y(buf, x.size());
-  cout << y << flush;
+  if (memcmp(x.c_str(), buf, x.size()) != 0) {
+    cout << "data courruption detected. Exiting" << endl;
+    exit(1);
+  }
+  //string y(buf, x.size());
+  //cout << y << flush;
  }
 }
 
