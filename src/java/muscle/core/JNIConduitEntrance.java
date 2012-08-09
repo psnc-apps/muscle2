@@ -24,8 +24,8 @@ package muscle.core;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import muscle.util.serialization.DataConverter;
 import muscle.util.jni.JNIMethod;
+import muscle.util.serialization.DataConverter;
 
 /**
 entrance which can directly be called from native code<br>

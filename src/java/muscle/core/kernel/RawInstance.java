@@ -75,12 +75,12 @@ public abstract class RawInstance {
 		}
 		Timestamp portalTime = maxTime;
 
-		boolean isFiner = logger.isLoggable(Level.FINER);
-		Object[] msg = isFiner ? new Object[2] : null;
+		final boolean isLogFiner = logger.isLoggable(Level.FINER);
+		Object[] msg = isLogFiner ? new Object[2] : null;
 		
 		// search for the smallest "time" in our portals
 		for (ConduitEntranceController p : entrances.values()) {
-			if (isFiner) {
+			if (isLogFiner) {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", msg);
 			}
@@ -89,7 +89,7 @@ public abstract class RawInstance {
 			}
 		}
 		for (ConduitExitController p : exits.values()) {
-			if (isFiner) {
+			if (isLogFiner) {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Exit SI Time of {0} is {1}", msg);
 			}

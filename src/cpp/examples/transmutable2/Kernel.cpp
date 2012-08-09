@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 
 		muscle::env::init(&argc, &argv);
 
+		cout << "kernel name" << muscle::cxa::kernel_name() << endl;
 		cout << "kernel tmp path: " << muscle::env::get_tmp_path() << endl;
 		cout << "CxA property 'max_timesteps': " << muscle::cxa::get_property("max_timesteps") << endl;
 		cout << "CxA properties:\n" << muscle::cxa::get_properties() <<endl;

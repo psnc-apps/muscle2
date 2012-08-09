@@ -29,17 +29,12 @@ utility methods for OS specific stuff
 @author Jan Hegewald
 */
 public class OSTool {
-
 	// forbidden ASCII chars
 	//		windows: [/\:*?"<>|]
 	//		mac: [/]
-	private static final String filenameRegex = "[/\\:*?\"<>|]";
+	private final static Pattern filenameRegex = Pattern.compile("[/\\:*?\"<>|]");
 
-
-	// TODO test if name is too long
 	public static String portableFileName(String rawName, String replacement) {
-
-		return Pattern.compile(filenameRegex).matcher(rawName).replaceAll(replacement);
+		return filenameRegex.matcher(rawName).replaceAll(replacement);
 	}
-	
 }

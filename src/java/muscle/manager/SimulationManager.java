@@ -59,7 +59,7 @@ public class SimulationManager {
 	}
 	
 	public synchronized boolean propagate(Identifier id) {
-		logger.log(Level.FINE, "Propagating ID {0}", id);
+		logger.log(Level.FINER, "Propagating ID {0}", id);
 		if (!this.registered.containsKey(id.getName())) {
 			logger.log(Level.WARNING, "Propagating ID {0} failed: can only propagate registered ID's.", id);
 			return false;
@@ -67,7 +67,7 @@ public class SimulationManager {
 		else {
 			this.available.add(id.getName());
 			this.notifyAll();
-			logger.log(Level.INFO, "Propagated ID {0}", id);
+			logger.log(Level.FINE, "Propagated ID {0}", id);
 			return true;
 		}		
 	}
