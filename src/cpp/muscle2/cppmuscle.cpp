@@ -31,6 +31,7 @@ namespace muscle {
 Communicator *muscle_comm;
 pid_t muscle_pid;
 const char *muscle_tmpfifo;
+std::string* muscle_kernel_name;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -81,6 +82,8 @@ muscle_error_t env::init(int *argc, char ***argv)
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", host_str, port, e.what());
 		exit(1);
 	}
+	muscle_kernel_name = &muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
+	logger::setName(*muscle_kernel_name);
 	return MUSCLE_SUCCESS;
 }
 
@@ -91,6 +94,7 @@ void env::finalize(void)
 #endif
 	muscle_comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
 	delete muscle_comm;
+	delete muscle_kernel_name;
 
 	if (muscle_pid > 0)
 	{
@@ -129,23 +133,21 @@ int env::detect_mpi_rank() {
 	return irank;
 }
 
-std::string cxa::kernel_name(void)
+std::string& cxa::kernel_name(void)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::kernel_name() " << endl;
 #endif
-	std::string name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
-	logger::setName(name);
-	return name;
+	return *muscle_kernel_name;
 }
 
-std::string cxa::get_property(std::string name)
+std::string& cxa::get_property(std::string name)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_property(" << name << ") " << endl;
 #endif
 
-	std::string prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
+	std::string& prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_property[" << name << "] -> " << prop_value_str << endl;
@@ -153,7 +155,7 @@ std::string cxa::get_property(std::string name)
 	return prop_value_str;
 }
 
-std::string cxa::get_properties()
+std::string& cxa::get_properties()
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_properties()" << endl;
@@ -161,7 +163,7 @@ std::string cxa::get_properties()
 	return muscle_comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
-std::string env::get_tmp_path()
+std::string& env::get_tmp_path()
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::get_tmp_path()" << endl;

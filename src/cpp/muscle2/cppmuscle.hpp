@@ -24,7 +24,7 @@ class env
 
 	static void free_data(void *ptr, muscle_datatype_t type);
 
-	static std::string get_tmp_path(void);
+	static std::string& get_tmp_path(void);
 
 private:
 
@@ -38,9 +38,9 @@ private:
 class cxa
 {
 	public:
-	static std::string kernel_name(void);
-	static std::string get_property(std::string name);
-	static std::string get_properties(void);
+	static std::string& kernel_name(void);
+	static std::string& get_property(std::string name);
+	static std::string& get_properties(void);
 };
 
 } // EO namespace muscle
