@@ -14,7 +14,7 @@ import muscle.util.data.SerializableData;
 import muscle.util.data.SerializableDatatype;
 
 
-public abstract class NativeKernel extends CAController  implements NativeGateway.CallListener {
+public class NativeKernel extends CAController  implements NativeGateway.CallListener {
 
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
 	private SerializableDatatype type;
