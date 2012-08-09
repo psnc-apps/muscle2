@@ -206,6 +206,10 @@ void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
 	{
 		delete (ComplexData *)ptr;
 	}
+	else if (type == MUSCLE_STRING)
+	{
+		delete (std::string *)ptr;
+	}
 	else
 	{
 		free(ptr);
