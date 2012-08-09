@@ -28,9 +28,9 @@ using namespace std;
 
 namespace muscle {
 
-Communicator *comm;
+Communicator *muscle_comm;
 pid_t muscle_pid;
-const char *tmpfifo;
+const char *muscle_tmpfifo;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -76,7 +76,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	// Start communicating with MUSCLE instance
 	try
 	{
-		comm = new XdrCommunicator(host, port);
+		muscle_comm = new XdrCommunicator(host, port);
 	} catch (std::exception& e) {
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", host_str, port, e.what());
 		exit(1);
@@ -89,8 +89,8 @@ void env::finalize(void)
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::finalize() " << endl;
 #endif
-	comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
-	delete comm;
+	muscle_comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
+	delete muscle_comm;
 
 	if (muscle_pid > 0)
 	{
@@ -134,7 +134,9 @@ std::string cxa::kernel_name(void)
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::kernel_name() " << endl;
 #endif
-	return comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
+	std::string name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
+	logger::setName(name);
+	return name;
 }
 
 std::string cxa::get_property(std::string name)
@@ -143,7 +145,7 @@ std::string cxa::get_property(std::string name)
 	cout << "muscle::cxa::get_property(" << name << ") " << endl;
 #endif
 
-	std::string prop_value_str = comm->retrieve_string(PROTO_PROPERTY, &name);
+	std::string prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_property[" << name << "] -> " << prop_value_str << endl;
@@ -156,7 +158,7 @@ std::string cxa::get_properties()
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_properties()" << endl;
 #endif
-	return comm->retrieve_string(PROTO_PROPERTIES, NULL);
+	return muscle_comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
 std::string env::get_tmp_path()
@@ -164,7 +166,7 @@ std::string env::get_tmp_path()
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::get_tmp_path()" << endl;
 #endif
-	return comm->retrieve_string(PROTO_TMP_PATH, NULL);
+	return muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
 }
 
 bool env::will_stop(void)
@@ -174,7 +176,7 @@ bool env::will_stop(void)
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::will_stop()" << endl;
 #endif
-	comm->execute_protocol(PROTO_WILL_STOP, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_will_stop, NULL);
+	muscle_comm->execute_protocol(PROTO_WILL_STOP, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_will_stop, NULL);
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::will_stop -> " << is_will_stop << endl;
 #endif
@@ -182,13 +184,13 @@ bool env::will_stop(void)
 	return is_will_stop;
 }
 
-void env::send(std::string entrance_name, void *data, size_t count, muscle_datatype_t type)
+void env::send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::send()" << endl;
 #endif
 
-	comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
+	muscle_comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
 }
 
 
@@ -198,7 +200,7 @@ void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_dat
 	cout << "muscle::env::receive()" << endl;
 #endif
 
-	comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
+	muscle_comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
 
 	return data;
 }
@@ -208,7 +210,6 @@ void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_dat
  * This implementation always returns the fixed port 50210 after a sleep of 10 seconds.
  * @param pid of the created MUSCLE instance
  * @return port number
- * @todo implement some means of retrieving the MUSCLE port number.
  */
 void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 {
@@ -231,10 +232,10 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	}
 	else
 	{
-		FILE *fp = fopen(tmpfifo, "r");
+		FILE *fp = fopen(muscle_tmpfifo, "r");
 		if(fp == 0 || ferror(fp))
 		{	
-			logger::severe("Could not open temporary file %s", tmpfifo);
+			logger::severe("Could not open temporary file %s", muscle_tmpfifo);
 			return;
 		}
 		while (fscanf(fp, "%15[^:]:%hu", host, port) == EOF) {
@@ -304,7 +305,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 		exit(1);
 	}
 	
-	tmpfifo = env::create_tmpfifo();
+	muscle_tmpfifo = env::create_tmpfifo();
 	
 	// Size:                           1            | i - 1                     | 1    | *argc - (i + 1)          | 3
 	// Number of arguments for muscle: muscle2      +                                    all arguments after "--" + tmparg + tmpdir + null terminator
@@ -318,7 +319,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 	// Copy all arguments after "--"
 	memcpy(&argv_new[1], &(*argv)[term+1], (argc_new - (new_args + 1))*sizeof(char *));
 	argv_new[argc_new - 3] = "--native-tmp-file";
-	argv_new[argc_new - 2] = tmpfifo;
+	argv_new[argc_new - 2] = muscle_tmpfifo;
 	argv_new[argc_new - 1] = NULL;
 
 	// Spawn Java MUSCLE
@@ -364,7 +365,7 @@ pid_t env::spawn(char * const *argv)
 
 void env::free_data(void *ptr, muscle_datatype_t type)
 {
-	comm->free_data(ptr, type);
+	muscle_comm->free_data(ptr, type);
 }
 
 

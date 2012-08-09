@@ -19,7 +19,7 @@ class env
 
 	static bool will_stop(void);
 
-	static void send(std::string entrance_name, void *data, size_t count, muscle_datatype_t type);
+	static void send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type);
 	static void* receive(std::string exit_name, void *data, size_t &count, muscle_datatype_t type);
 
 	static void free_data(void *ptr, muscle_datatype_t type);

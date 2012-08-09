@@ -11,6 +11,8 @@ using namespace std;
 
 namespace muscle {
 
+const char *muscle_name = 0;
+	
 void logger::log_message(muscle_loglevel_t level, string message, ...)
 {
 	va_list args;
@@ -107,9 +109,21 @@ void logger::format(muscle_loglevel_t level, string message, va_list *args)
 		break;
 	}
 
-	printf("[%7s] ", level_str);
+	if (muscle_name)
+	{
+		printf("[%8s: %7s] ", muscle_name, level_str);
+	}
+	else
+	{
+		printf("[%7s] ", level_str);
+	}
 	vprintf(message.c_str(), *args);
 	printf("\n");
+}
+
+void logger::setName(std::string _name)
+{
+	muscle_name = _name.c_str();
 }
 
 } // EO namespace muscle
