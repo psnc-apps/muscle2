@@ -5,12 +5,11 @@
 package muscle.core.kernel;
 
 import java.io.Serializable;
-import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
-import muscle.core.ConduitExitController;
 
 /**
- *
+ * A fan-out mapper.
+ * Use the value variable in to send in writeAll().
  * @author Joris Borgdorff
  */
 public abstract class FanOutMapper extends Mapper {
@@ -31,7 +30,7 @@ public abstract class FanOutMapper extends Mapper {
 	}
 	
 	@Override
-	protected void readAll() {
+	protected final void receiveAll() {
 		value = onlyExit.receive();
 	}
 }

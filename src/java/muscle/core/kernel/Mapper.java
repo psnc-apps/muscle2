@@ -25,9 +25,9 @@ public abstract class Mapper extends Instance {
 		this.operationsAllowed = NONE;
 		while (continueComputation()) {
 			this.operationsAllowed = RECV;
-			readAll();
+			receiveAll();
 			this.operationsAllowed = SEND;
-			writeAll();
+			sendAll();
 			this.operationsAllowed = NONE;
 		}
 	}
@@ -35,12 +35,12 @@ public abstract class Mapper extends Instance {
 	/**
 	 * Read from all conduits.
 	 */
-	protected abstract void readAll();
+	protected abstract void receiveAll();
 
 	/**
 	 * Write to all conduits.
 	 */
-	protected abstract void writeAll();
+	protected abstract void sendAll();
 
 	/**
 	 * Whether the mapper should continue computation.

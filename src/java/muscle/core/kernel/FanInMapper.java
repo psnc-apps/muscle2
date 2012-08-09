@@ -9,7 +9,8 @@ import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 
 /**
- *
+ * A fan-in mapper.
+ * Set the value variable in readAll(), this will be sent.
  * @author Joris Borgdorff
  */
 public abstract class FanInMapper extends Mapper {
@@ -26,7 +27,7 @@ public abstract class FanInMapper extends Mapper {
 	}
 
 	@Override
-	protected void writeAll() {
+	protected final void sendAll() {
 		onlyEntrance.send(value);
 	}
 }
