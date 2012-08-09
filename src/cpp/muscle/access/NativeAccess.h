@@ -465,7 +465,7 @@ public: jobject stopJNIMethod()
 public: static muscle::NativeAccessMethod _stopJNIMethod()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("muscle/core/kernel/CAController", "stopJNIMethod", false, "Lutilities/jni/JNIMethod;", argTypes);
+return muscle::NativeAccessMethod("muscle/core/kernel/CAController", "stopJNIMethod", false, "Lmuscle/util/jni/JNIMethod;", argTypes);
 }
 public: static jmethodID _stopJNIMethod(JNIEnv*& env, bool& isStatic)
 {
@@ -4225,544 +4225,6 @@ class _notifyAll_Caller : public muscle::CallerAttributes<void>
 };
 };
 /**
-cpp counterpart class to access the java class javatool.LoggerTool
-function names prefixed with an underscore _ are cpp only utility functions which do not exist in the java class
-\author Jan Hegewald
-*/
-class javatool_LoggerTool
-{
-/**
-function which returns the classname as a cpp jni signature (e.g. java_lang_String)
-*/
-	public: static std::string _CLASSNAME()
-	{
-		return "javatool/LoggerTool";
-	}
-	public: javatool_LoggerTool(JNIEnv* newEnv, jobject newDelegate)
-	: jenv(newEnv), delegate(newDelegate)
-{
-	// init jvm pointer
-	jint result = newEnv->GetJavaVM(&jvm);
-	if(result < 0)
-		throw std::runtime_error("error obtaining JVM");
-	// see if we got the right jobject
-	muscle::JNITool::assertInstanceOf(newEnv, newDelegate, _CLASSNAME(), __FILE__, __LINE__);
-}
-private: JNIEnv* jenv;
-private: JavaVM* jvm;
-private: jobject delegate;
-/**
-returns a reference to the JNIEnv pointer belonging to the current thread
-*/
-public: JNIEnv*& _GETJNIENV()
-{
-	jint result = jvm->AttachCurrentThread((void **)&jenv, NULL);
-	if(result != JNI_OK)
-		throw std::runtime_error("error obtaining Java env");
-	return jenv;
-}
-//
-public: jobject loggableLevel_Logger(jobject A0)
-{
-	javatool_LoggerTool::_loggableLevel_Logger_Caller caller(_GETJNIENV());
-	return caller.call(A0);
-}
-public: static jobject loggableLevel_Logger(JNIEnv*& env, jobject A0)
-{
-	javatool_LoggerTool::_loggableLevel_Logger_Caller caller(env);
-	return caller.call(A0);
-}
-public: static muscle::NativeAccessMethod _loggableLevel_Logger()
-{
-	std::vector<std::string> argTypes;
-argTypes.push_back( "Ljava/util/logging/Logger;" );
-return muscle::NativeAccessMethod("javatool/LoggerTool", "loggableLevel", true, "Ljava/util/logging/Level;", argTypes);
-}
-public: static jmethodID _loggableLevel_Logger(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = true;
-	jmethodID mid = _loggableLevel_Logger().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<jobject> > _loggableLevel_Logger(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _loggableLevel_Logger(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return std::tr1::shared_ptr<muscle::MethodCallerStatic<jobject> >( new muscle::MethodCallerStatic<jobject>(env, cls, _CLASSNAME(), mid) );
-}
-public: std::tr1::shared_ptr<muscle::AbstractMethodCaller<jobject> > _loggableLevel_Logger(JNIEnv*& env)
-{
-	bool isStatic;
-	jmethodID mid = _loggableLevel_Logger(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return std::tr1::shared_ptr<muscle::MethodCallerStatic<jobject> >( new muscle::MethodCallerStatic<jobject>(env, cls, _CLASSNAME(), mid) );
-}
-/**
-helper class to cache a static jni method invocation procedure
-this caller can be used to invoke a static method on the target java class javatool.LoggerTool
-it should be used if there is no object of the target class javatool_LoggerTool (which is not required for static calls) and the method needs to be invoked frequently
-\author Jan Hegewald
-*/
-class _loggableLevel_Logger_Caller : public muscle::CallerStaticAttributes<jobject>
-{
-	public: _loggableLevel_Logger_Caller(JNIEnv* env)
-	: muscle::CallerStaticAttributes<jobject>(env, env->FindClass(javatool_LoggerTool::_CLASSNAME().c_str()), javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_loggableLevel_Logger(env, isStatic))
-	{
-		assert(isStatic == true);
-	}
-	jobject call(jobject A0)
-	{
-		return muscle::CallerStaticAttributes<jobject>::call(muscle::VABEGIN::FIRST, A0);
-	}
-	private: bool isStatic;
-};
-//
-public: void wait_long_int(jlong A0, jint A1)
-{
-	javatool_LoggerTool::_wait_long_int_Caller caller(_GETJNIENV(), delegate);
-	return caller.call(A0, A1);
-}
-public: static muscle::NativeAccessMethod _wait_long_int()
-{
-	std::vector<std::string> argTypes;
-argTypes.push_back( "J" );
-argTypes.push_back( "I" );
-return muscle::NativeAccessMethod("javatool/LoggerTool", "wait", false, "", argTypes);
-}
-public: static jmethodID _wait_long_int(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _wait_long_int().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<void> > _wait_long_int(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _wait_long_int(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<void> >( new muscle::MethodCaller<void>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _wait_long_int_Caller : public muscle::CallerAttributes<void>
-{
-	public: _wait_long_int_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<void>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_wait_long_int(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	void call(jlong A0, jint A1)
-	{
-		muscle::CallerAttributes<void>::call(muscle::VABEGIN::FIRST, A0, A1);
-	}
-	private: bool isStatic;
-};
-//
-public: void wait()
-{
-	javatool_LoggerTool::_wait_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _wait()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "wait", false, "", argTypes);
-}
-public: static jmethodID _wait(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _wait().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<void> > _wait(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _wait(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<void> >( new muscle::MethodCaller<void>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _wait_Caller : public muscle::CallerAttributes<void>
-{
-	public: _wait_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<void>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_wait(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	void call()
-	{
-		muscle::CallerAttributes<void>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-//
-public: void wait_long(jlong A0)
-{
-	javatool_LoggerTool::_wait_long_Caller caller(_GETJNIENV(), delegate);
-	return caller.call(A0);
-}
-public: static muscle::NativeAccessMethod _wait_long()
-{
-	std::vector<std::string> argTypes;
-argTypes.push_back( "J" );
-return muscle::NativeAccessMethod("javatool/LoggerTool", "wait", false, "", argTypes);
-}
-public: static jmethodID _wait_long(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _wait_long().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<void> > _wait_long(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _wait_long(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<void> >( new muscle::MethodCaller<void>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _wait_long_Caller : public muscle::CallerAttributes<void>
-{
-	public: _wait_long_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<void>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_wait_long(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	void call(jlong A0)
-	{
-		muscle::CallerAttributes<void>::call(muscle::VABEGIN::FIRST, A0);
-	}
-	private: bool isStatic;
-};
-//
-public: jint hashCode()
-{
-	javatool_LoggerTool::_hashCode_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _hashCode()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "hashCode", false, "I", argTypes);
-}
-public: static jmethodID _hashCode(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _hashCode().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<jint> > _hashCode(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _hashCode(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<jint> >( new muscle::MethodCaller<jint>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _hashCode_Caller : public muscle::CallerAttributes<jint>
-{
-	public: _hashCode_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<jint>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_hashCode(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	jint call()
-	{
-		return muscle::CallerAttributes<jint>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-//
-public: jclass getClass()
-{
-	javatool_LoggerTool::_getClass_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _getClass()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "getClass", false, "Ljava/lang/Class;", argTypes);
-}
-public: static jmethodID _getClass(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _getClass().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<jclass> > _getClass(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _getClass(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<jclass> >( new muscle::MethodCaller<jclass>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _getClass_Caller : public muscle::CallerAttributes<jclass>
-{
-	public: _getClass_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<jclass>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_getClass(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	jclass call()
-	{
-		return muscle::CallerAttributes<jclass>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-//
-public: jboolean equals_Object(jobject A0)
-{
-	javatool_LoggerTool::_equals_Object_Caller caller(_GETJNIENV(), delegate);
-	return caller.call(A0);
-}
-public: static muscle::NativeAccessMethod _equals_Object()
-{
-	std::vector<std::string> argTypes;
-argTypes.push_back( "Ljava/lang/Object;" );
-return muscle::NativeAccessMethod("javatool/LoggerTool", "equals", false, "Z", argTypes);
-}
-public: static jmethodID _equals_Object(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _equals_Object().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<jboolean> > _equals_Object(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _equals_Object(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<jboolean> >( new muscle::MethodCaller<jboolean>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _equals_Object_Caller : public muscle::CallerAttributes<jboolean>
-{
-	public: _equals_Object_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<jboolean>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_equals_Object(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	jboolean call(jobject A0)
-	{
-		return muscle::CallerAttributes<jboolean>::call(muscle::VABEGIN::FIRST, A0);
-	}
-	private: bool isStatic;
-};
-//
-public: jstring toString()
-{
-	javatool_LoggerTool::_toString_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _toString()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "toString", false, "Ljava/lang/String;", argTypes);
-}
-public: static jmethodID _toString(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _toString().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<jstring> > _toString(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _toString(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<jstring> >( new muscle::MethodCaller<jstring>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _toString_Caller : public muscle::CallerAttributes<jstring>
-{
-	public: _toString_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<jstring>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_toString(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	jstring call()
-	{
-		return muscle::CallerAttributes<jstring>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-//
-public: void notify()
-{
-	javatool_LoggerTool::_notify_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _notify()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "notify", false, "", argTypes);
-}
-public: static jmethodID _notify(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _notify().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<void> > _notify(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _notify(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<void> >( new muscle::MethodCaller<void>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _notify_Caller : public muscle::CallerAttributes<void>
-{
-	public: _notify_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<void>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_notify(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	void call()
-	{
-		muscle::CallerAttributes<void>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-//
-public: void notifyAll()
-{
-	javatool_LoggerTool::_notifyAll_Caller caller(_GETJNIENV(), delegate);
-	return caller.call();
-}
-public: static muscle::NativeAccessMethod _notifyAll()
-{
-	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("javatool/LoggerTool", "notifyAll", false, "", argTypes);
-}
-public: static jmethodID _notifyAll(JNIEnv*& env, bool& isStatic)
-{
-	jclass cls = env->FindClass(_CLASSNAME().c_str());
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	isStatic = false;
-	jmethodID mid = _notifyAll().getMethodID(env, cls);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	return mid;
-}
-public: static std::tr1::shared_ptr<muscle::AbstractMethodCaller<void> > _notifyAll(JNIEnv*& env, jobject& obj)
-{
-	muscle::JNITool::assertInstanceOf(env, obj, _CLASSNAME(), __FILE__, __LINE__);
-	bool isStatic;
-	jmethodID mid = _notifyAll(env, isStatic);
-	muscle::JNITool::catchJREException(env, __FILE__, __LINE__);
-	
-	return std::tr1::shared_ptr<muscle::MethodCaller<void> >( new muscle::MethodCaller<void>(env, obj, _CLASSNAME(), mid) );
-}
-/**
-internal helper class to cache a jni method invocation procedure
-this caller can be used to invoke a method on the target java object of type javatool.LoggerTool
-do not instantiate this class manually, better use a javatool_LoggerTool objectand call this function directly
-\author Jan Hegewald
-*/
-class _notifyAll_Caller : public muscle::CallerAttributes<void>
-{
-	public: _notifyAll_Caller(JNIEnv* env, jobject& obj)
-	: muscle::CallerAttributes<void>(env, obj, javatool_LoggerTool::_CLASSNAME(), javatool_LoggerTool::_notifyAll(env, isStatic))
-	{
-		assert(isStatic == false);
-	}
-	void call()
-	{
-		muscle::CallerAttributes<void>::call(muscle::VABEGIN::FIRST);
-	}
-	private: bool isStatic;
-};
-};
-/**
 cpp counterpart class to access the java class java.util.logging.Logger
 function names prefixed with an underscore _ are cpp only utility functions which do not exist in the java class
 \author Jan Hegewald
@@ -7590,7 +7052,7 @@ public: jobject toJavaJNIMethod()
 public: static muscle::NativeAccessMethod _toJavaJNIMethod()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("muscle/core/JNIConduitEntrance", "toJavaJNIMethod", false, "Lutilities/jni/JNIMethod;", argTypes);
+return muscle::NativeAccessMethod("muscle/core/JNIConduitEntrance", "toJavaJNIMethod", false, "Lmuscle/util/jni/JNIMethod;", argTypes);
 }
 public: static jmethodID _toJavaJNIMethod(JNIEnv*& env, bool& isStatic)
 {
@@ -8839,7 +8301,7 @@ public: jobject fromJavaJNIMethod()
 public: static muscle::NativeAccessMethod _fromJavaJNIMethod()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("muscle/core/JNIConduitExit", "fromJavaJNIMethod", false, "Lutilities/jni/JNIMethod;", argTypes);
+return muscle::NativeAccessMethod("muscle/core/JNIConduitExit", "fromJavaJNIMethod", false, "Lmuscle/util/jni/JNIMethod;", argTypes);
 }
 public: static jmethodID _fromJavaJNIMethod(JNIEnv*& env, bool& isStatic)
 {
@@ -10100,7 +9562,7 @@ function which returns the classname as a cpp jni signature (e.g. java_lang_Stri
 */
 	public: static std::string _CLASSNAME()
 	{
-		return "utilities/jni/JNIMethod";
+		return "muscle/util/jni/JNIMethod";
 	}
 	public: utilities_jni_JNIMethod(JNIEnv* newEnv, jobject newDelegate)
 	: jenv(newEnv), delegate(newDelegate)
@@ -10134,7 +9596,7 @@ public: jstring toString()
 public: static muscle::NativeAccessMethod _toString()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "toString", false, "Ljava/lang/String;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "toString", false, "Ljava/lang/String;", argTypes);
 }
 public: static jmethodID _toString(JNIEnv*& env, bool& isStatic)
 {
@@ -10182,7 +9644,7 @@ public: jstring getName()
 public: static muscle::NativeAccessMethod _getName()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "getName", false, "Ljava/lang/String;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "getName", false, "Ljava/lang/String;", argTypes);
 }
 public: static jmethodID _getName(JNIEnv*& env, bool& isStatic)
 {
@@ -10230,7 +9692,7 @@ public: jobject getMethod()
 public: static muscle::NativeAccessMethod _getMethod()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "getMethod", false, "Ljava/lang/reflect/Method;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "getMethod", false, "Ljava/lang/reflect/Method;", argTypes);
 }
 public: static jmethodID _getMethod(JNIEnv*& env, bool& isStatic)
 {
@@ -10278,7 +9740,7 @@ public: jstring getDescriptor()
 public: static muscle::NativeAccessMethod _getDescriptor()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "getDescriptor", false, "Ljava/lang/String;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "getDescriptor", false, "Ljava/lang/String;", argTypes);
 }
 public: static jmethodID _getDescriptor(JNIEnv*& env, bool& isStatic)
 {
@@ -10326,7 +9788,7 @@ public: jobject getDelegate()
 public: static muscle::NativeAccessMethod _getDelegate()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "getDelegate", false, "Ljava/lang/Object;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "getDelegate", false, "Ljava/lang/Object;", argTypes);
 }
 public: static jmethodID _getDelegate(JNIEnv*& env, bool& isStatic)
 {
@@ -10376,7 +9838,7 @@ public: static muscle::NativeAccessMethod _wait_long_int()
 	std::vector<std::string> argTypes;
 argTypes.push_back( "J" );
 argTypes.push_back( "I" );
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "wait", false, "", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "wait", false, "", argTypes);
 }
 public: static jmethodID _wait_long_int(JNIEnv*& env, bool& isStatic)
 {
@@ -10424,7 +9886,7 @@ public: void wait()
 public: static muscle::NativeAccessMethod _wait()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "wait", false, "", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "wait", false, "", argTypes);
 }
 public: static jmethodID _wait(JNIEnv*& env, bool& isStatic)
 {
@@ -10473,7 +9935,7 @@ public: static muscle::NativeAccessMethod _wait_long()
 {
 	std::vector<std::string> argTypes;
 argTypes.push_back( "J" );
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "wait", false, "", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "wait", false, "", argTypes);
 }
 public: static jmethodID _wait_long(JNIEnv*& env, bool& isStatic)
 {
@@ -10521,7 +9983,7 @@ public: jint hashCode()
 public: static muscle::NativeAccessMethod _hashCode()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "hashCode", false, "I", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "hashCode", false, "I", argTypes);
 }
 public: static jmethodID _hashCode(JNIEnv*& env, bool& isStatic)
 {
@@ -10569,7 +10031,7 @@ public: jclass getClass()
 public: static muscle::NativeAccessMethod _getClass()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "getClass", false, "Ljava/lang/Class;", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "getClass", false, "Ljava/lang/Class;", argTypes);
 }
 public: static jmethodID _getClass(JNIEnv*& env, bool& isStatic)
 {
@@ -10618,7 +10080,7 @@ public: static muscle::NativeAccessMethod _equals_Object()
 {
 	std::vector<std::string> argTypes;
 argTypes.push_back( "Ljava/lang/Object;" );
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "equals", false, "Z", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "equals", false, "Z", argTypes);
 }
 public: static jmethodID _equals_Object(JNIEnv*& env, bool& isStatic)
 {
@@ -10666,7 +10128,7 @@ public: void notify()
 public: static muscle::NativeAccessMethod _notify()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "notify", false, "", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "notify", false, "", argTypes);
 }
 public: static jmethodID _notify(JNIEnv*& env, bool& isStatic)
 {
@@ -10714,7 +10176,7 @@ public: void notifyAll()
 public: static muscle::NativeAccessMethod _notifyAll()
 {
 	std::vector<std::string> argTypes;
-return muscle::NativeAccessMethod("utilities/jni/JNIMethod", "notifyAll", false, "", argTypes);
+return muscle::NativeAccessMethod("muscle/util/jni/JNIMethod", "notifyAll", false, "", argTypes);
 }
 public: static jmethodID _notifyAll(JNIEnv*& env, bool& isStatic)
 {

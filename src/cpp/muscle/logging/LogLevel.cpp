@@ -76,20 +76,6 @@ jobject LogLevel::javaLevel(JNIEnv *env, const std::tr1::shared_ptr<LogLevel> & 
 	return jLevel;
 }
 
-
-/**
-returns current coarsest loggable level of given java logger
-*/
-LogLevel LogLevel::coarsestLoggableLevel(JNIEnv *env, jobject& javaLogger)
-{
-	JNITool::assertInstanceOf(env, javaLogger, java_util_logging_Logger::_CLASSNAME(), __FILE__, __LINE__);
-
-	jobject jLevel = javatool_LoggerTool::loggableLevel_Logger(env, javaLogger);
-
-	return LogLevel::cppLevel(env, jLevel);
-}
-
-
 /**
 converts a java.util.logging.Level to a muscle::logging::LogLevel 
 */

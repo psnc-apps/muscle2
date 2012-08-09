@@ -73,11 +73,9 @@ Logger& KernelController::getLogger()
 		JNITool::catchJREException(getEnv(), __FILE__, __LINE__);
 		
 		// determine current coarsest loggable level of the java logger
-		LogLevel level = LogLevel::coarsestLoggableLevel(getEnv(), javaLogger); 
 		
 		std::tr1::shared_ptr<LogHandler> handler( new JavaLogHandler(getEnv(), javaLogger) );		
-		std::tr1::shared_ptr<LogLevel> level_ptr( new LogLevel(level.name, level.value) );
-		logger = new Logger(handler, level_ptr);
+		logger = new Logger(handler, LogLevel::FINER);
 	}
 	
 	return (*logger);

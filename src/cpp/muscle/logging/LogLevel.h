@@ -58,8 +58,6 @@ public:
 	}
 
 	static jobject javaLevel(JNIEnv *env, const std::tr1::shared_ptr<LogLevel> & cppLevel);
-	static LogLevel coarsestLoggableLevel(JNIEnv *env, jobject& javaLogger);
-
 //
 private:
 	static LogLevel cppLevel(JNIEnv*& env, jobject& jLevel);
