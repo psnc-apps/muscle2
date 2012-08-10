@@ -24,7 +24,6 @@ import muscle.util.concurrency.SafeThread;
  * @author Joris Borgdorff
  */
 public abstract class AbstractConnectionHandler<T> extends SafeThread {
-	public final static String PROP_NUM_CONNECTIONS = "muscle.net.num_connections";
 	protected final ServerSocket ss;
 	protected final T listener;
 	protected final ExecutorService executor;
@@ -34,9 +33,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		super("ConnectionHandler-" + ss);
 		this.ss = ss;
 		this.listener = listener;
-		String prop_num_connections = System.getProperty(PROP_NUM_CONNECTIONS);
-		int numConnections = prop_num_connections == null ? 5 : Integer.valueOf(prop_num_connections);
-		executor = Executors.newFixedThreadPool(numConnections);
+		executor = Executors.newCachedThreadPool();
 	}
 
 	@Override
