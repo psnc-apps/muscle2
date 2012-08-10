@@ -53,7 +53,9 @@ public abstract class RawInstance {
 	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
-	private Timestamp maxTime = null;
+	protected Timestamp maxTime = null;
+	protected Timestamp originTime = null;
+	private Scale currentScale = null;
 	
 	/**
 	 * Get the local name of the current kernel. This call is delegated to the InstanceController.
@@ -69,22 +71,28 @@ public abstract class RawInstance {
 	do not change signature! (used from native code)
 	 */
 	public boolean willStop() {
-		if (maxTime == null) {
-			int maxSeconds = CxADescription.ONLY.getIntProperty(CxADescription.Key.MAX_TIMESTEPS.toString());
-			maxTime = new Timestamp(maxSeconds);
+		if (originTime == null) {
+			originTime = Timestamp.ZERO;
 		}
-		Timestamp portalTime = maxTime;
+		if (maxTime == null) {
+			maxTime = Timestamp.valueOf(CxADescription.ONLY.getProperty(CxADescription.Key.MAX_TIMESTEPS.toString()));
+		}
+		Timestamp omegaT = originTime.add(getScale().getOmegaT());
+		if (maxTime.compareTo(omegaT) > 0) {
+			omegaT = maxTime;
+		}
+		Timestamp portalTime = originTime;
 
 		final boolean isLogFiner = logger.isLoggable(Level.FINER);
 		Object[] msg = isLogFiner ? new Object[2] : null;
 		
-		// search for the smallest "time" in our portals
+		// search for the maximum "time" in our portals
 		for (ConduitEntranceController p : entrances.values()) {
 			if (isLogFiner) {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", msg);
 			}
-			if (p.getSITime().compareTo(portalTime) < 0) {
+			if (p.getSITime().compareTo(portalTime) > 0) {
 				portalTime = p.getSITime();
 			}
 		}
@@ -93,12 +101,12 @@ public abstract class RawInstance {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Exit SI Time of {0} is {1}", msg);
 			}
-			if (p.getSITime().compareTo(portalTime) < 0) {
+			if (p.getSITime().compareTo(portalTime) > 0) {
 				portalTime = p.getSITime();
 			}
 		}
 
-		return portalTime.compareTo(maxTime) > -1;
+		return portalTime.compareTo(omegaT) >= 0;
 	}
 
 	// in case we want do do custom initialization where we need e.g. the JADE services already activated
@@ -122,7 +130,7 @@ public abstract class RawInstance {
 	}
 
 	/**
-	 * SI Scale will be specified using MML, not in MUSCLE.
+	 * SI Scale will be specified in the CxA file, not in MUSCLE.
 	return the SI scale of a kernel<br>
 	for a 1D kernel with dx=1meter and dt=1second this would e.g. be<br>
 	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
@@ -131,25 +139,32 @@ public abstract class RawInstance {
 	* return null if the kernel is dimensionless
 	 */
 	public Scale getScale() {
-		Distance dt, omegaT, next;
-		List<Distance> dx = new ArrayList<Distance>(3);
-		
-		dt = getScaleProperty("dt", "default_dt", true);
-		omegaT = getScaleProperty("T", "max_timesteps", true);
-		next = getScaleProperty("dx", "default_dx", false);
-		if (next != null) {
-			dx.add(next);
+		if (this.currentScale == null) {
+			Distance dt, omegaT, next;
+			List<Distance> dx = new ArrayList<Distance>(3);
+
+			dt = getScaleProperty("dt", "default_dt", true);
+			omegaT = getScaleProperty("T", "max_timesteps", true);
+			next = getScaleProperty("dx", "default_dx", false);
+			if (next != null) {
+				dx.add(next);
+			}
+			next = getScaleProperty("dy", "default_dy", false);
+			if (next != null) {
+				dx.add(next);
+			}
+			next = getScaleProperty("dz", "default_dz", false);
+			if (next != null) {
+				dx.add(next);
+			}
+
+			currentScale = new Scale(dt, omegaT, dx);
 		}
-		next = getScaleProperty("dy", "default_dy", false);
-		if (next != null) {
-			dx.add(next);
-		}
-		next = getScaleProperty("dz", "default_dz", false);
-		if (next != null) {
-			dx.add(next);
-		}
-		
-		return new Scale(dt, omegaT, dx);		
+		return currentScale;
+	}
+	
+	protected void setScale(Scale scale) {
+		this.currentScale = scale;
 	}
 	
 	private Distance getScaleProperty(String name, String global, boolean warn) {
@@ -164,7 +179,7 @@ public abstract class RawInstance {
 		if (raw == null) {
 			if (warn) {
 				logger.log(Level.WARNING, "Time step (dt) of instance {0} could not be determined: properties ''{0}:{1}'' and ''{2}'' are not set; using dt = 1s.", new Object[] {getLocalName(), name, global});
-				dist = new Distance(1);
+				dist = Distance.ONE;
 			} else {
 				dist = null;
 			}
@@ -202,8 +217,8 @@ public abstract class RawInstance {
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
 
-		Scale sc = getScale();
-		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, sc);
+		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
 		ec.setEntrance(e);
 		addEntranceToList(portName, ec);
 
@@ -213,8 +228,8 @@ public abstract class RawInstance {
 	protected <T extends Serializable> ConduitEntrance<T> addSynchronizedEntrance(String portName, Class<T> dataClass) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
 
-		Scale sc = getScale();
-		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, sc);
+		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
 		ec.setEntrance(e);
 		addEntranceToList(portName, ec);
 
@@ -224,8 +239,8 @@ public abstract class RawInstance {
 	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<R> jniClass, Class<T> dataClass, DataConverter<R, T> transmuter) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
 
-		Scale sc = getScale();
-		JNIConduitEntrance<R,T> e = new JNIConduitEntrance<R,T>(transmuter, jniClass, ec, sc);
+		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
+		JNIConduitEntrance<R,T> e = new JNIConduitEntrance<R,T>(transmuter, jniClass, ec, originTime == null ? Timestamp.ZERO : originTime, dt);
 		ec.setEntrance(e);
 		addEntranceToList(portName, ec);
 

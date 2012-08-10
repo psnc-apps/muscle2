@@ -56,7 +56,7 @@ public abstract class PassivePortal<T extends Serializable> implements Serializa
 		return customSITime;
 	}
 	
-	public synchronized void setNextTimestamp(Timestamp t) {
+	public synchronized void resetTime(Timestamp t) {
 		this.customSITime = t;
 	}
 	

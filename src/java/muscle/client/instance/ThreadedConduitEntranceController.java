@@ -183,7 +183,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 		}
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
-		this.setNextTimestamp(msg.getNextTimestamp());
+		this.resetTime(msg.getNextTimestamp());
 
 		// Make available for processing
 		this.trigger();

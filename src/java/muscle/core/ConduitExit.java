@@ -53,7 +53,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 
 	/**
 	 * Whether the next call to hasNext or receive will return without blocking.
-	 * This is a non-blocking function. If it returns true, that does not guarantee that there is a next message.
+	 * This is a non-blocking function. If it returns true, that does not guarantee that hasNext returns true.
 	 */
 	public boolean ready() {
 		return !this.queue.isEmpty();
@@ -71,14 +71,20 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 */
 	public boolean hasNext() {
 		// As long as receive() is not called, return true.
-		if (this.nextElem != null) return true;
-		if (this.isDone) return false;
+		if (this.nextElem != null) {
+			return true;
+		}
+		if (this.isDone) {
+			return false;
+		}
 		try {
 			this.nextElem = this.queue.take();
 		} catch (InterruptedException ex) {
 			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
 		}
-		if (this.nextElem == null) this.isDone = true;
+		if (this.nextElem == null) {
+			this.isDone = true;
+		}
 		
 		return !isDone;
 	}
@@ -93,7 +99,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 */
 	public T receive() {
 		if (!hasNext()) {
-			throw new MUSCLEConduitExhaustedException("This submodel is stopping; its conduit can no longer be used.");
+			throw new MUSCLEConduitExhaustedException("Can not receive from conduit: the other submodel has stopped.");
 		}
 		
 		// Indicate to the controller that the message is received, so it can
@@ -102,5 +108,26 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		T data = this.nextElem.getData();
 		this.nextElem = null;
 		return data;
+	}
+	
+	/**
+	 * Receive one observation, containing data, the timestamp it belongs to and the timestamp of the next message.
+	 * The call is blocking, meaning that it won't return until data is
+	 * received. Data returned does not need to be copied.
+	 * 
+	 * @throws MUSCLEConduitExhaustedException if hasNext would produce false.
+	 * @return a piece of data
+	 */
+	public Observation<T> receiveObservation() {
+		if (!hasNext()) {
+			throw new MUSCLEConduitExhaustedException("Can not receive from conduit: the other submodel has stopped.");
+		}
+		
+		// Indicate to the controller that the message is received, so it can
+		// do last minute edits.
+		this.controller.messageReceived(nextElem);
+		Observation<T> tmp = this.nextElem;
+		this.nextElem = null;
+		return tmp;
 	}
 }

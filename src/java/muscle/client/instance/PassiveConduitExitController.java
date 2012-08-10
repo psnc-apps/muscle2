@@ -86,7 +86,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 
 	@Override
 	public void messageReceived(Observation<T> obs) {
-		this.setNextTimestamp(obs.getNextTimestamp());
+		this.resetTime(obs.getNextTimestamp());
 	}
 
 	@Override

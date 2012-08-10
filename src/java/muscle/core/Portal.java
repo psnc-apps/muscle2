@@ -9,4 +9,5 @@ import muscle.core.model.Timestamp;
 public interface Portal {
 	public String getLocalName();
 	public Timestamp getSITime();
+	public void resetTime(Timestamp time);
 }

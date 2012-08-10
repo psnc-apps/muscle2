@@ -5,7 +5,6 @@
 package muscle.core.kernel;
 
 import java.util.logging.Logger;
-import muscle.core.ConduitExit;
 import muscle.core.ConduitExitController;
 import muscle.core.Scale;
 

@@ -133,6 +133,6 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 
 	@Override
 	public void messageReceived(Observation<T> obs) {
-		this.setNextTimestamp(obs.getNextTimestamp());
+		this.resetTime(obs.getNextTimestamp());
 	}
 }

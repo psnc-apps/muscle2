@@ -137,7 +137,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		Observation<T> msg = new Observation<T>(data, currentTime, next);
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
-		this.setNextTimestamp(msg.getNextTimestamp());
+		this.resetTime(next);
 		this.send(msg);
 
 		synchronized (this) {

@@ -38,7 +38,7 @@ public class VoidKernel extends RawInstance {
 	}
 
 	public Scale getScale() {
-		Distance delta = new Distance(1);
+		Distance delta = Distance.ONE;
 		return new Scale(delta,delta);
 	}
 }

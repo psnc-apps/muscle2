@@ -6,6 +6,7 @@ package muscle.core.kernel;
 
 import java.io.Serializable;
 import muscle.core.ConduitExit;
+import muscle.core.model.Observation;
 
 /**
  * A fan-out mapper.
@@ -14,7 +15,7 @@ import muscle.core.ConduitExit;
  */
 public abstract class FanOutMapper extends Mapper {
 	protected ConduitExit onlyExit;
-	protected Serializable value;
+	protected Observation value;
 
 	public void addPortals() {
 		super.addPortals();
@@ -31,6 +32,6 @@ public abstract class FanOutMapper extends Mapper {
 	
 	@Override
 	protected final void receiveAll() {
-		value = onlyExit.receive();
+		value = onlyExit.receiveObservation();
 	}
 }

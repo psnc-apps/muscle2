@@ -24,6 +24,8 @@ package muscle.core;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import muscle.core.model.Distance;
+import muscle.core.model.Timestamp;
 import muscle.util.jni.JNIMethod;
 import muscle.util.serialization.DataConverter;
 
@@ -36,8 +38,8 @@ public class JNIConduitEntrance<R,C extends Serializable> extends ConduitEntranc
 	private Class<R> jniClass;
 	private DataConverter<R,C> transmuter;
 
-	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, ConduitEntranceController<C> controller, Scale sc) {
-		super(controller, sc);
+	public JNIConduitEntrance(DataConverter<R,C> newTransmuter, Class<R> newJNIClass, ConduitEntranceController<C> controller, Timestamp origin, Distance dt) {
+		super(controller, origin, dt);
 		transmuter = newTransmuter;
 		jniClass = newJNIClass;
 	}

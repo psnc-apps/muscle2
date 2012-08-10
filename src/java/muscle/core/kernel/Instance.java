@@ -6,6 +6,8 @@ package muscle.core.kernel;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.*;
 
 /**
@@ -13,6 +15,7 @@ import muscle.core.*;
  * @author Joris Borgdorff
  */
 public abstract class Instance extends RawInstance {
+	private final static Logger logger = Logger.getLogger(Instance.class.getName());
 	protected final static int NONE = 0;
 	protected final static int SEND = 1;
 	protected final static int RECV = 2;
@@ -32,15 +35,17 @@ public abstract class Instance extends RawInstance {
 		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
 		if (ports != null) {
 			for (PortDescription entrance : ports.values()) {
-				this.addEntrance(entrance.getID().getPortName(), Serializable.class);
+				this.addSynchronizedEntrance(entrance.getID().getPortName(), Serializable.class);
 			}
 		}
+		logger.log(Level.FINE, "{0}: added all conduit entrances", getLocalName());
 		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
 		if (ports != null) {
 			for (PortDescription exit : ports.values()) {
 				this.addExit(exit.getID().getPortName(), Serializable.class);
 			}
 		}
+		logger.log(Level.FINE, "{0}: added all conduit exits", getLocalName());
 	}
 
 	/**

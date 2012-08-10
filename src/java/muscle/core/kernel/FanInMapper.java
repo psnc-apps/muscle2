@@ -7,6 +7,7 @@ package muscle.core.kernel;
 import java.io.Serializable;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
+import muscle.core.model.Observation;
 
 /**
  * A fan-in mapper.
@@ -15,7 +16,7 @@ import muscle.core.ConduitExit;
  */
 public abstract class FanInMapper extends Mapper {
 	protected ConduitEntrance onlyEntrance;
-	protected Serializable value;
+	protected Observation value;
 
 	@Override
 	public void addPortals() {

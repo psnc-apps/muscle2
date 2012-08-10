@@ -59,7 +59,7 @@ public abstract class ThreadedPortal<T extends Serializable> extends SafeTrigger
 		return customSITime;
 	}
 	
-	public synchronized void setNextTimestamp(Timestamp t) {
+	public synchronized void resetTime(Timestamp t) {
 		this.customSITime = t;
 	}
 	

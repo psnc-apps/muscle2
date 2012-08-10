@@ -13,7 +13,7 @@ import muscle.core.ConduitEntranceController;
 public class DuplicationMapper extends FanOutMapper {
 	protected void sendAll() {
 		for (ConduitEntranceController ec : this.entrances.values()) {
-			ec.getEntrance().send(value);
+			ec.getEntrance().send(value.getData(), value.getTimestamp(), value.getNextTimestamp());
 		}
 	}
 }
