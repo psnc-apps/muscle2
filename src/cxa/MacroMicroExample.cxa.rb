@@ -28,16 +28,22 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 4
-cxa.env["default_dt"] = 1
+cxa.env["macro:dt"] = 1
+cxa.env["micro:dt"] = "1 ms"
+cxa.env["micro:T"] = "1 ms"
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels
-cxa.add_kernel('w', 'examples.simplesubmodel.Sender')
-cxa.add_kernel('r', 'examples.simplesubmodel.ConsoleWriter')
+cxa.add_kernel('macro', 'examples.macromicrosubmodel.Macro')
+cxa.add_kernel('micro', 'examples.macromicrosubmodel.Micro')
 
 # configure connection scheme
 cs = cxa.cs
 
-cs.attach('w' => 'r') {
-	tie('data', 'data')
+cs.attach('macro' => 'micro') {
+	tie('macroObs', 'macroObs')
+}
+
+cs.attach('micro' => 'macro') {
+	tie('microObs', 'microObs')
 }

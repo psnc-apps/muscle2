@@ -4,9 +4,8 @@
 
 package examples.simplesubmodel;
 
-import muscle.core.Scale;
 import muscle.core.kernel.Submodel;
-import muscle.core.model.Distance;
+import muscle.core.model.Timestamp;
 
 /**
  *
@@ -15,15 +14,12 @@ import muscle.core.model.Distance;
 public class Sender extends Submodel {
 	private double[][] data;
 	
-	protected void init() {
+	protected Timestamp init(Timestamp previousTime) {
 		data = new double[][] {{2, 1}, {3, 2}};
+		return super.init(previousTime);
 	}
 	
 	protected void intermediateObservation() {
 		out("data").send(data);
-	}
-	
-	public Scale getScale() {
-		return new Scale(new Distance(1d));
 	}
 }
