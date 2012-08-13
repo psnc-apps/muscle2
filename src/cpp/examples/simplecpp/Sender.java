@@ -22,10 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package examples.simplecpp;
 
 import muscle.core.JNIConduitEntrance;
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.model.Distance;
-
 
 /**
 example of a kernel which is using native code to send and receive data
@@ -38,12 +35,7 @@ public class Sender extends CAController {
 
 	private JNIConduitEntrance<double[],double[]> entrance;
 
-	private native void callNative(JNIConduitEntrance entranceJref);	
-
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
+	private native void callNative(JNIConduitEntrance entranceJref);
 
 	public void addPortals() {
 		entrance = addJNIEntrance("data", double[].class);

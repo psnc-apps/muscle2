@@ -2,9 +2,7 @@ package examples.pingpong;
 
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.model.Distance;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.SerializableDataConverter;
 
@@ -152,11 +150,5 @@ public class Ping extends CAController {
 			dev -= (time/(double)factor - avg) * (avg - time/(double)factor);
 		}
 		return Math.sqrt(dev / (times.length - 1));
-	}
-
-	@Override
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
 	}
 }

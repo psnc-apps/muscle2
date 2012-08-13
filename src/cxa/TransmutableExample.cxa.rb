@@ -33,6 +33,7 @@ m.add_libpath File.dirname(__FILE__)+"/../transmutable"
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 3
+cxa.env["default_dt"] = 1
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels

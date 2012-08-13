@@ -30,6 +30,7 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 2
+cxa.env["default_dt"] = 1
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 cxa.env["w:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplecpp2/simplecpp2"
 cxa.env["r:dt"] = 1

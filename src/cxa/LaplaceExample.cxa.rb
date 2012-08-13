@@ -30,6 +30,7 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 10000
+cxa.env["default_dt"] = 1
 cxa.env["nx"] = 200/2
 cxa.env["ny"] = 50
 cxa.env["dx"] = 2

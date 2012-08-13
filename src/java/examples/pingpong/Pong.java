@@ -2,9 +2,7 @@ package examples.pingpong;
 
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.model.Distance;
 
 /**
  * Receives at 'in' exit byte array and writes them to 'out' exit
@@ -30,11 +28,5 @@ public class Pong extends CAController {
 			byte[] ba = exit.receive();
 			entrance.send(ba);
 		}
-	}
-
-	@Override
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
 	}
 }

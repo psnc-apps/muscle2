@@ -22,9 +22,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package examples.pingpongjava;
 
 import muscle.core.ConduitExit;
-import muscle.core.Scale;
 import muscle.core.kernel.CAController;
-import muscle.core.model.Distance;
 
 /**
 a simple java example kernel which receives data and prints its content to stdout
@@ -32,12 +30,6 @@ a simple java example kernel which receives data and prints its content to stdou
 */
 public class Pong extends CAController {
 	private ConduitExit<double[]> readerA;
-
-	@Override
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
 
 	@Override
 	protected void addPortals() {

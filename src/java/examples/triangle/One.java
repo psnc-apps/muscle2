@@ -23,23 +23,14 @@ package examples.triangle;
 
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
-
 
 /**
 @author Bartosz Bosak
 */
 public class One extends muscle.core.kernel.CAController {
-
 	private ConduitEntrance<double[]> writer1;
 	private ConduitExit<double[]> reader1;
 	
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-
 	protected void addPortals() {
 		writer1 = addEntrance("data", double[].class);
 		reader1 = addExit("data", double[].class);

@@ -23,8 +23,6 @@ package examples.transmutable;
 
 import muscle.core.JNIConduitEntrance;
 import muscle.core.JNIConduitExit;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
 import muscle.util.serialization.DataConverter;
 import muscle.util.serialization.DoubleStringConverter;
 
@@ -44,11 +42,6 @@ public class Kernel extends muscle.core.kernel.CAController {
 	private JNIConduitExit<String,double[]> exit;
 	
 	private native void callNative(int length, JNIConduitExit exitJref, JNIConduitEntrance entranceJref);
-	
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
 
 	public void addPortals() {
 		DataConverter<double[], String> dc = new DoubleStringConverter();

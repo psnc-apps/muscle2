@@ -5,10 +5,6 @@ abort "this is a configuration file for to be used with the MUSCLE bootstrap uti
 # configure cxa properties
 cxa = Cxa.LAST
 
-# #safe
-#cxa.env["max_timesteps"] = 16*10 
-
-#unsafe
 cxa.env["same_size_runs"] = 30;
 
 cxa.env["cxa_path"] = File.dirname(__FILE__)
@@ -18,6 +14,7 @@ cxa.env["steps"] = 10
 cxa.env["tests_count"] = 5
 cxa.env["preparation_steps"]=cxa.env["steps"]*cxa.env["same_size_runs"]
 cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["preparation_steps"];
+cxa.env["default_dt"] = 1
 
 cxa.env["start_kiB_per_message"] = 0;
 

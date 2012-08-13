@@ -6,8 +6,6 @@ import com.sun.jna.Native;
 import com.sun.jna.ptr.DoubleByReference;
 import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
 
 public class LHC extends muscle.core.kernel.CAController {
 	
@@ -36,11 +34,6 @@ public class LHC extends muscle.core.kernel.CAController {
 
 	static {
 		ring = (MPIRING) Native.loadLibrary("mpiring", MPIRING.class);
-	}
-
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
 	}
 
 	public void addPortals() {

@@ -21,21 +21,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package examples.pingpongcpp;
 
-import muscle.core.Scale;
-import muscle.core.model.Distance;
 import muscle.core.standalone.NativeKernel;
 
 /**
 example of a kernel which is using native code to send and receive data using a new Native MUSCLE API
 @author Mariusz Mamonski
 */
-public class Pong extends NativeKernel {
-
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-	
+public class Pong extends NativeKernel {	
 	public void addPortals() {
 		addSynchronizedEntrance("out", byte[].class);
 		addExit("in", byte[].class);

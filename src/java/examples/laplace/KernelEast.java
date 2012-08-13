@@ -39,12 +39,6 @@ public class KernelEast extends muscle.core.kernel.CAController {
 	private ConduitEntrance<double[]> writerWest;
 	private Temperature t;
 	
-	
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
-
 	/**
 	init the temperature calculator
 	*/

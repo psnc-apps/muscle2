@@ -32,6 +32,7 @@ m = Muscle.LAST
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 2
+cxa.env["default_dt"] = 1
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels

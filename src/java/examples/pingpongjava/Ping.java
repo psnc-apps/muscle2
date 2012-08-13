@@ -22,9 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package examples.pingpongjava;
 
 import muscle.core.ConduitEntrance;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
-
 
 /**
 a simple java example kernel which sends data
@@ -32,12 +29,6 @@ a simple java example kernel which sends data
 */
 public class Ping extends muscle.core.kernel.CAController {
 	private ConduitEntrance<double[]> entrance;
-
-	@Override
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
 
 	@Override
 	protected void addPortals() {

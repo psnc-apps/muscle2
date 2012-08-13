@@ -33,6 +33,7 @@ m.add_libpath File.dirname(__FILE__)+"/../simplecpp"
 cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 4
+cxa.env["default_dt"] = 1
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels

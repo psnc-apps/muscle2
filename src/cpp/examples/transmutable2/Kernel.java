@@ -45,11 +45,6 @@ public class Kernel extends NativeKernel {
 
 	private JNIConduitEntrance<double[],String> entrance;
 	private JNIConduitExit<String,double[]> exit;
-
-	public Scale getScale() {
-		Distance delta = new Distance(1);
-		return new Scale(delta,delta);
-	}
 	
 	public void addPortals() {
 		DataConverter<double[], String> dc = new DoubleStringConverter();
@@ -57,5 +52,4 @@ public class Kernel extends NativeKernel {
 
 		exit = addJNIExit("reader", String.class, double[].class, dc);
 	}
-
 }
