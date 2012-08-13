@@ -261,11 +261,11 @@ public abstract class RawInstance {
 	do not change signature! (used from native code)
 	 */
 	public String getTmpPath() {
-		File tmpDir = MiscTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), OSTool.portableFileName(controller.getLocalName(), ""));
+		File tmpDir = MiscTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), OSTool.portableFileName(getLocalName(), ""));
 		// create our kernel tmp dir if not already there
 		tmpDir.mkdir();
 		if (!tmpDir.isDirectory()) {
-			getLogger().log(Level.SEVERE, "invalid tmp path <{0}> for kernel <{1}>", new Object[]{tmpDir, controller.getLocalName()});
+			getLogger().log(Level.SEVERE, "invalid tmp path <{0}> for kernel <{1}>", new Object[]{tmpDir, getLocalName()});
 		}
 
 		return tmpDir.getPath();

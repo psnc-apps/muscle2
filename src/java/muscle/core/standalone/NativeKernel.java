@@ -81,7 +81,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	}
 	
 	public synchronized String getTmpPath() {
-		return CxADescription.ONLY.getTmpRootPath();
+		return super.getTmpPath();
 	}
 	
 	public synchronized void isFinished() {
