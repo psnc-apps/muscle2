@@ -77,9 +77,15 @@ public abstract class RawInstance {
 		if (maxTime == null) {
 			maxTime = Timestamp.valueOf(CxADescription.ONLY.getProperty(CxADescription.Key.MAX_TIMESTEPS.toString()));
 		}
-		Timestamp omegaT = originTime.add(getScale().getOmegaT());
-		if (maxTime.compareTo(omegaT) > 0) {
+		Distance omegaInterval = getScale().getOmegaT();
+		Timestamp omegaT;
+		if (omegaInterval == null) {
 			omegaT = maxTime;
+		} else {
+			omegaT = originTime.add(omegaInterval);
+			if (maxTime.compareTo(omegaT) < 0) {
+				omegaT = maxTime;
+			}
 		}
 		Timestamp portalTime = originTime;
 
