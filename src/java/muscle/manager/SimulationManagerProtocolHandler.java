@@ -54,10 +54,11 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				// Flush, to indicate that we are waiting to resolve the location
 				out.flush();
 				try {
-					listener.resolve(id);
-					success = true;
-					out.writeBoolean(true);
-					encodeLocation(out, id.getLocation());
+					success = listener.resolve(id);
+					out.writeBoolean(success);
+					if (success) {
+						encodeLocation(out, id.getLocation());
+					}
 				} catch (InterruptedException ex) {
 					out.writeBoolean(false);
 					logger.log(Level.SEVERE, "Could not resolve identifier", ex);

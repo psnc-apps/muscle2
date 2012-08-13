@@ -96,7 +96,7 @@ public class SimulationManager {
 		return this.available.remove(id.getName());
 	}
 	
-	public synchronized void resolve(Identifier id) throws InterruptedException {
+	public synchronized boolean resolve(Identifier id) throws InterruptedException {
 		logger.log(Level.FINE, "Resolving location of ID {0}", id);
 		while (!id.isResolved() && !this.available.contains(id.getName()) && !this.isDone) {
 			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", id);
@@ -106,13 +106,16 @@ public class SimulationManager {
 			Identifier resolvedId = this.registered.get(id.getName());
 			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
 			id.resolveLike(resolvedId);
+			return true;
 		}
+		return false;
 	}
 	
 	public synchronized void dispose() {
 		this.isDone = true;
-		if (this.connections != null)
+		if (this.connections != null) {
 			this.connections.dispose();
+		}
 		notifyAll();
 	}
 	
