@@ -119,6 +119,7 @@ void logger::format(muscle_loglevel_t level, string message, va_list *args)
 	}
 	vprintf(message.c_str(), *args);
 	printf("\n");
+	fflush(stdout);
 }
 
 void logger::setName(std::string _name)
