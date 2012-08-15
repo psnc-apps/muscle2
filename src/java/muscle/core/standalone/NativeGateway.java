@@ -26,7 +26,7 @@ public class NativeGateway  extends Thread {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	private final static boolean USE_ASYNC = true;
+	private final static boolean USE_ASYNC = false;
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
