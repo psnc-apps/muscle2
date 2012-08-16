@@ -121,11 +121,11 @@ inline void logger::format(const muscle_loglevel_t level, string message, va_lis
 
 	if (logger_name)
 	{
-		printf("[%8s: %7s] ", logger_name, level_str);
+		printf("[%7s:%7s] ", logger_name, level_str);
 	}
 	else
 	{
-		printf("[%7s] ", level_str);
+		printf("[       %7s] ", level_str);
 	}
 	vprintf(message.c_str(), *args);
 	printf("\n");
