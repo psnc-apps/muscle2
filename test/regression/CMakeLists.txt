@@ -1,20 +1,20 @@
 
 enable_testing()
 
-set(CTEST_TEST_TIMEOUT 20)
-
 add_test(MuscleVersion muscle --version)
 
 macro (do_test cxa result)
   set (CXA_FILE "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/cxa/${cxa}")
   add_test (MuscleTest-${cxa} muscle --cxa_file ${CXA_FILE} --main --allkernels --autoquit)
   set_tests_properties (MuscleTest-${cxa} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
+  set_tests_properties (MuscleTest-${cxa} PROPERTIES TIMEOUT 30)
 endmacro (do_test)
 
 macro (do_test2 cxa result)
   set (CXA_FILE "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/cxa/${cxa}")
   add_test (Muscle2Test-${cxa} muscle2 --cxa ${CXA_FILE} --main --allkernels)
   set_tests_properties (Muscle2Test-${cxa} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
+  set_tests_properties (Muscle2Test-${cxa} PROPERTIES TIMEOUT 30)
 endmacro (do_test2)
 
 macro (do_test2_exec exec cxa result)
@@ -22,6 +22,7 @@ macro (do_test2_exec exec cxa result)
   set (CXA_EXEC "${CMAKE_INSTALL_PREFIX}/share/muscle/examples/${exec}/${exec}")
   add_test (Muscle2ExecTest-${cxa} ${CXA_EXEC} -- --cxa ${CXA_FILE} --main --allkernels)
   set_tests_properties (Muscle2ExecTest-${cxa} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
+  set_tests_properties (Muscle2ExecTest-${cxa} PROPERTIES TIMEOUT 30)
 endmacro (do_test2_exec)
 
 do_test("SimpleExample.cxa.rb" ] "got: 2.0")
