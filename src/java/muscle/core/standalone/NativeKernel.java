@@ -73,7 +73,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	}
 	
 	public synchronized String getProperty(String name) {
-		return CxADescription.ONLY.getProperty(name);
+		return super.getProperty(name);
 	}
 	
 	public synchronized String getProperties() {
@@ -90,19 +90,19 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	}
 	
 	protected void buildCommand(List<String> command) {
-		if (CxADescription.ONLY.containsKey(getLocalName() + ":debugger")) {
-			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":debugger"));
+		if (hasInstanceProperty("debugger")) {
+			command.add(getProperty("debugger"));
 		}
 		
-		if (CxADescription.ONLY.containsKey(getLocalName() + ":command")) {
-			command.add(CxADescription.ONLY.getProperty(getLocalName() + ":command"));
+		if (hasInstanceProperty("command")) {
+			command.add(getProperty("command"));
 		}
 		else {
 			throw new IllegalArgumentException("Missing property: " + getLocalName() + ":command" );
 		}
 		
-		if (CxADescription.ONLY.containsKey(getLocalName() + ":args")) {
-			String args[] = CxADescription.ONLY.getProperty(getLocalName() + ":args").split(" ");
+		if (hasInstanceProperty("args")) {
+			String args[] = getProperty("args").split(" ");
 			command.addAll(Arrays.asList(args));
 		}
 	}
