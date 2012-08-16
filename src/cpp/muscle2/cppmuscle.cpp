@@ -18,6 +18,7 @@
 #include <sys/wait.h>
 #include <sys/errno.h>
 #include <stdlib.h>
+#include <stdexcept>
 #ifdef CPPMUSCLE_TRACE
 #include <iostream>
 #endif
@@ -31,7 +32,8 @@ namespace muscle {
 Communicator *muscle_comm;
 pid_t muscle_pid;
 const char *muscle_tmpfifo;
-std::string* muscle_kernel_name;
+std::string muscle_kernel_name;
+bool env::is_main_processor = false;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -44,6 +46,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	
 	// Only execute for rank 0
 	if (rank > 0) return MUSCLE_SUCCESS;
+	is_main_processor = true;
 	
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
@@ -82,20 +85,20 @@ muscle_error_t env::init(int *argc, char ***argv)
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", host_str, port, e.what());
 		exit(1);
 	}
-	muscle_kernel_name = &muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
-	logger::setName(*muscle_kernel_name);
+	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
+	logger::setName(muscle_kernel_name);
 	return MUSCLE_SUCCESS;
 }
 
 void env::finalize(void)
 {
+	if (!is_main_processor) return;
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::finalize() " << endl;
 #endif
 	muscle_comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
 	delete muscle_comm;
-	delete muscle_kernel_name;
-
+	
 	if (muscle_pid > 0)
 	{
 		int status;
@@ -133,21 +136,23 @@ int env::detect_mpi_rank() {
 	return irank;
 }
 
-std::string& cxa::kernel_name(void)
+std::string cxa::kernel_name(void)
 {
+	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::kernel_name() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::kernel_name() " << endl;
 #endif
-	return *muscle_kernel_name;
+	return muscle_kernel_name;
 }
 
-std::string& cxa::get_property(std::string name)
+std::string cxa::get_property(std::string name)
 {
+	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_property(" << name << ") " << endl;
 #endif
 
-	std::string& prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
+	std::string prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
 
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_property[" << name << "] -> " << prop_value_str << endl;
@@ -155,16 +160,18 @@ std::string& cxa::get_property(std::string name)
 	return prop_value_str;
 }
 
-std::string& cxa::get_properties()
+std::string cxa::get_properties()
 {
+	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::cxa::get_properties()" << endl;
 #endif
 	return muscle_comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
-std::string& env::get_tmp_path()
+std::string env::get_tmp_path()
 {
+	if (!env::is_main_processor) throw runtime_error("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::get_tmp_path()" << endl;
 #endif
@@ -173,6 +180,8 @@ std::string& env::get_tmp_path()
 
 bool env::will_stop(void)
 {
+	if (!env::is_main_processor) throw runtime_error("can only call muscle::env::will_stop() from main MPI processor (MPI rank 0)");
+
 	bool_t is_will_stop = false;
 	
 #ifdef CPPMUSCLE_TRACE
@@ -188,6 +197,9 @@ bool env::will_stop(void)
 
 void env::send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type)
 {
+	// No error: simply ignore send in all MPI processes except 0.
+	if (!env::is_main_processor) return;
+
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::send()" << endl;
 #endif
@@ -198,6 +210,9 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 
 void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_datatype_t type)
 {
+	// No error: simply ignore send in all MPI processes except 0.
+	if (!env::is_main_processor) return (void *)0;
+
 #ifdef CPPMUSCLE_TRACE
 	cout << "muscle::env::receive()" << endl;
 #endif
@@ -367,6 +382,10 @@ pid_t env::spawn(char * const *argv)
 
 void env::free_data(void *ptr, muscle_datatype_t type)
 {
+	// No error: simply ignore send in all MPI processes except 0
+	// we did not create any data in other ranks to free.
+	if (!env::is_main_processor) return;
+	
 	muscle_comm->free_data(ptr, type);
 }
 

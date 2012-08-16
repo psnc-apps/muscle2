@@ -6,6 +6,7 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
+#include "cppmuscle.hpp"
 
 using namespace std;
 
@@ -15,6 +16,8 @@ const char *logger_name = 0;
 	
 void logger::log_message(muscle_loglevel_t level, string message, ...)
 {
+	if (!env::is_main_processor) return;
+
 	va_list args;
 	va_start(args, message);
 	logger::format(level, message, &args);
@@ -23,6 +26,7 @@ void logger::log_message(muscle_loglevel_t level, string message, ...)
 
 void logger::severe(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_SEVERE, message, &args);
@@ -31,6 +35,7 @@ void logger::severe(string message, ...)
 
 void logger::warning(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_WARNING, message, &args);
@@ -39,6 +44,7 @@ void logger::warning(string message, ...)
 
 void logger::info(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_INFO, message, &args);
@@ -47,6 +53,7 @@ void logger::info(string message, ...)
 
 void logger::config(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_CONFIG, message, &args);
@@ -55,6 +62,7 @@ void logger::config(string message, ...)
 
 void logger::fine(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINE, message, &args);
@@ -63,6 +71,7 @@ void logger::fine(string message, ...)
 
 void logger::finer(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINER, message, &args);
@@ -71,13 +80,14 @@ void logger::finer(string message, ...)
 
 void logger::finest(string message, ...)
 {
+	if (!env::is_main_processor) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINEST, message, &args);
 	va_end(args);
 }
 
-void logger::format(muscle_loglevel_t level, string message, va_list *args)
+inline void logger::format(const muscle_loglevel_t level, string message, va_list *args)
 {
 	const char *level_str;
 

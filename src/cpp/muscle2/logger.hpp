@@ -19,7 +19,7 @@ namespace muscle {
 		static void finest(std::string message, ...);
 		static void setName(std::string _name);
 	private:
-		static void format(muscle_loglevel_t level, std::string message, va_list *args);
+		static void format(const muscle_loglevel_t level, std::string message, va_list *args);
 	};
 
 } // EO namespace muscle

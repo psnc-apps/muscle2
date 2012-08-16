@@ -28,11 +28,13 @@ void Communicator::connect_socket(boost::asio::ip::address_v4 host, int port)
 	s->connect(tcp::endpoint(host, port));
 }
 
-std::string& Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {
-	std::string *str_out = NULL;
+std::string Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {
+	char *str = (char *)0;
 	size_t len = 65536;
-	execute_protocol(opcode, name, MUSCLE_STRING, NULL, 0, &str_out, &len);
-	return *str_out;
+	execute_protocol(opcode, name, MUSCLE_STRING, NULL, 0, &str, &len);
+	std::string str_out(str);
+	free_data(str, MUSCLE_STRING);
+	return str_out;
 }
 
 }

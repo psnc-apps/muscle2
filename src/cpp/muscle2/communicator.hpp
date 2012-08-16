@@ -35,7 +35,7 @@ public:
 	Communicator() {}
 	virtual ~Communicator() { }
 	virtual int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len) { return 0; }
-	std::string& retrieve_string(muscle_protocol_t opcode, std::string *name);
+	std::string retrieve_string(muscle_protocol_t opcode, std::string *name);
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
 	
 	class io_exception : public std::exception {

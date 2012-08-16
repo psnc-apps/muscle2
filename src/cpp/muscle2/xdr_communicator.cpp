@@ -183,15 +183,9 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		case PROTO_PROPERTY:
 		case PROTO_KERNEL_NAME:
 		case PROTO_TMP_PATH:
-		case PROTO_PROPERTIES: {
+		case PROTO_PROPERTIES:
 			//decode answer
-			char *name = NULL;
-			if (!xdr_string(&xdri, &name, *result_len)) throw new Communicator::io_exception("Can not read string");
-			//convert to std:string
-			*((std::string **)result) = new std::string(name);
-			//and free the xdr allocated buf
-			xdr_free((xdrproc_t)&xdr_string,(char*) &name);
-		}
+			if (!xdr_string(&xdri, (char **)result, *result_len)) throw new Communicator::io_exception("Can not read string");
 			break;
 		case PROTO_FINALIZE:
 			break;
@@ -208,7 +202,7 @@ void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
 	}
 	else if (type == MUSCLE_STRING)
 	{
-		delete (std::string *)ptr;
+		xdr_free((xdrproc_t)&xdr_string,(char*)&ptr);
 	}
 	else
 	{
