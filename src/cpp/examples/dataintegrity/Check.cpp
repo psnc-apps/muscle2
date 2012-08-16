@@ -147,32 +147,33 @@ int main(int argc, char **argv)
 		
 		bool all_succeed = true;
 		
-		// Prime
-		srandom(3761);
-		
-		{
-			logger::info("Testing MUSCLE_BOOLEAN");
-			const int test_sizes[] = {0, 1, 8, 50, 1024, 1024*64, 1024*1024};
-			const int num_tests = 7;
-			bool succeed = true;
-			bool arr[1024*1024];
-			for (int i = 0; i < 1024*1024; i++) {
-				arr[i] = (random() & 01) == 01;
+		for (int seed = 0; seed < 5; seed++) {
+			srandom(seed);
+
+			{
+				logger::info("Testing MUSCLE_BOOLEAN");
+				const int test_sizes[] = {0, 1, 8, 50, 1024, 1024*64, 1024*1024};
+				const int num_tests = 7;
+				bool succeed = true;
+				bool arr[1024*1024];
+				for (int i = 0; i < 1024*1024; i++) {
+					arr[i] = (random() & 01) == 01;
+				}
+				for (int i = 0; i < num_tests; i++) {
+					succeed = do_test((const char *)arr, MUSCLE_BOOLEAN, 1, test_sizes[i]) && succeed;
+				}
+				all_succeed = succeed && all_succeed;
+				logger::info("Testing MUSCLE_BOOLEAN %s", succeed ? "succeeded" : "failed");
 			}
-			for (int i = 0; i < num_tests; i++) {
-				succeed = do_test((const char *)arr, MUSCLE_BOOLEAN, 1, test_sizes[i]) && succeed;
-			}
-			all_succeed = succeed && all_succeed;
-			logger::info("Testing MUSCLE_BOOLEAN %s", succeed ? "succeeded" : "failed");
+
+
+			all_succeed = do_test_suite("MUSCLE_RAW", MUSCLE_RAW, 1) && all_succeed;
+			all_succeed = do_test_suite("MUSCLE_INT32", MUSCLE_INT32, 4) && all_succeed;
+			all_succeed = do_test_suite("MUSCLE_FLOAT", MUSCLE_FLOAT, 4) && all_succeed;
+			all_succeed = do_test_suite("MUSCLE_DOUBLE", MUSCLE_DOUBLE, 8) && all_succeed;
+			all_succeed = do_test_suite("MUSCLE_INT64", MUSCLE_INT64, 8) && all_succeed;
+			//all_succeed = do_test_suite("MUSCLE_STRING", MUSCLE_STRING, 1) && all_succeed;
 		}
-		
-		
-		all_succeed = do_test_suite("MUSCLE_RAW", MUSCLE_RAW, 1) && all_succeed;
-		all_succeed = do_test_suite("MUSCLE_INT32", MUSCLE_INT32, 4) && all_succeed;
-		all_succeed = do_test_suite("MUSCLE_FLOAT", MUSCLE_FLOAT, 4) && all_succeed;
-		all_succeed = do_test_suite("MUSCLE_DOUBLE", MUSCLE_DOUBLE, 8) && all_succeed;
-		all_succeed = do_test_suite("MUSCLE_INT64", MUSCLE_INT64, 8) && all_succeed;
-		//all_succeed = do_test_suite("MUSCLE_STRING", MUSCLE_STRING, 1) && all_succeed;
 		
 		// Stop Bounce
 		int datatype = -1;
