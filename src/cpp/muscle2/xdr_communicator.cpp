@@ -234,7 +234,7 @@ xdrproc_t XdrCommunicator::get_proc(muscle_complex_t type)
 			proc = (xdrproc_t)&xdr_long;
 			break;
 		case COMPLEX_BOOLEAN_ARR: case COMPLEX_BOOLEAN_MATRIX_2D: case COMPLEX_BOOLEAN_MATRIX_3D: case COMPLEX_BOOLEAN_MATRIX_4D:
-			proc = (xdrproc_t)&xdr_bool;
+			proc = (xdrproc_t)&xdr_char;
 			break;
 		case COMPLEX_BYTE_ARR: case COMPLEX_BYTE_MATRIX_2D: case COMPLEX_BYTE_MATRIX_3D: case COMPLEX_BYTE_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_char;
