@@ -51,6 +51,7 @@ class MuscleCli
 		@parser.on("--tmp-path ARG", "set root of the tmp path where kernel output will go in dedicated subdirectories") {|arg| @env['tmp_path'] = File.expand_path(arg) }
 		@parser.on("--allkernels", "automatically launches all kernels") { @env["allkernels"] = true }
 		@parser.on("--mpi", "checks the MPI rank, and runs MUSCLE on rank 0, and calls the kernel 'execute()' on others") { @env['use_mpi'] = true }
+		@parser.on("--reverse", "start kernel binary first (standalone native kernels)") { @env['reverse'] = true }
 		@parser.on("--version", "shows info about this MUSCLE version") do
 		
 

@@ -78,14 +78,23 @@ void doConnect(char ** argv)
    return;
  }
  
- 
+ int bytes_read = 0; 
+
+ char buf_in[1024*1024]; 
+ char buf_out[1024*1024]; 
+
  while(1){
-  string x;
-  getline(cin, x);
-  write(s, buffer(x), transfer_all());
-  buf = new char[x.size()]; 
-  read(s, buffer(buf, x.size()), transfer_all());
-  if (memcmp(x.c_str(), buf, x.size()) != 0) {
+  bytes_read = read(0, buf_in, sizeof(buf_in));
+
+  if (bytes_read == 0) {
+    cout << "finishing..." << endl;
+    sleep(20);
+    exit(0);
+  }
+
+  assert(write(s, buffer(buf_in, bytes_read), transfer_all()) == bytes_read);
+  assert(read(s, buffer(buf_out, bytes_read), transfer_all()) == bytes_read);
+  if (memcmp(buf_in, buf_out, bytes_read) != 0) {
     cout << "data courruption detected. Exiting" << endl;
     exit(1);
   }

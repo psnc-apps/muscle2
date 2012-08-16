@@ -128,6 +128,7 @@ end
 
 m = Muscle.new
 
+ARGV_COPY = ARGV.dup #this line is needed by --reverse mode
 args, cli_env = cli.parse ARGV
 
 
@@ -290,6 +291,63 @@ kernels_names = kernels.collect {|k| k.name}
 
 muscle_main_args = []
 muscle_local_args = []
+
+
+if m.env['reverse']
+	puts "starting kernel in REVERSE mode"
+	requested_kernels = []
+
+	if m.env['allkernels']
+        	kernels.each { |kernel| requested_kernels <<  kernel.name }
+
+        elsif args.size > 0
+                args.each { |arg| kernels.each { |kernel| requested_kernels << kernel.name if kernel.name == arg } }
+        end
+
+	if requested_kernels.size != 1
+		puts "exactly one kernel name must be specified"
+		exit 1
+	end
+	kernel_name = requested_kernels[0]
+	reverse_command = []
+	puts "Kernel: " + kernel_name
+
+	if cxa.env[ kernel.name + ":mpiexec_command"] 
+		puts "Mpiexec commmand: " + cxa.env[ kernel.name + ":mpiexec_command"] 
+		reverse_command << cxa.env[ kernel.name + ":mpiexec_command"]
+	end
+
+	if cxa.env[ kernel.name + ":mpiexec_args"] 
+		puts "Mpiexec args: " + cxa.env[ kernel.name + ":mpiexec_args"] 
+		reverse_command << cxa.env[ kernel.name + ":mpiexec_args"].split(" ")
+	end
+
+	if cxa.env[ kernel.name + ":debugger"] 
+		puts "Debugger: " + cxa.env[ kernel.name + ":debugger"] 
+		reverse_command << cxa.env[ kernel.name + ":debugger"]
+	end
+
+	if cxa.env[ kernel.name + ":command"] 
+		puts "Command: " + cxa.env[ kernel.name + ":command"] 
+		reverse_command << cxa.env[ kernel.name + ":command"]
+	else
+		puts "Missing " + kernel.name + ":command property"
+		exit 1
+	end
+
+	if cxa.env[ kernel.name + ":args"] 
+		puts "Args: " + cxa.env[ kernel.name + ":args"] 
+		reverse_command << cxa.env[ kernel.name + ":args"].split(" ")
+	end
+	
+	ARGV_COPY.delete("--reverse");
+
+	reverse_command << "--"
+	reverse_command << "muscle2"
+	reverse_command << ARGV_COPY
+	puts "Final command: " + reverse_command.join(" ")
+	Process.exec(reverse_command.join(" "))
+end
 
 if m.env['main']
 	muscle_main_args << "muscle.manager.SimulationManager"
