@@ -130,4 +130,9 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		this.nextElem = null;
 		return tmp;
 	}
+	
+	@Override
+	public String toString() {
+		return this.controller.toString();
+	}
 }

@@ -19,16 +19,15 @@ import muscle.core.model.Timestamp;
  * @author Joris Borgdorff
  */
 public class ConduitEntrance<T extends Serializable> {
-	private final ConduitEntranceController<T> consumer;
+	private final ConduitEntranceController<T> controller;
 	protected Timestamp nextTime;
 	protected Distance dt;
-	private BlockingQueue<Observation<T>> queue;
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Distance timeStep) {
 		this.nextTime = origin;
 		this.dt = timeStep;
 		
-		this.consumer = controller;
+		this.controller = controller;
 	}
 	
 	/**
@@ -67,7 +66,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
 		this.nextTime = next;
-		this.consumer.send(data, currentTime, next);
+		this.controller.send(data, currentTime, next);
 	}
 	
 	/**
@@ -77,6 +76,11 @@ public class ConduitEntrance<T extends Serializable> {
 	 */
 	public void send(Observation<T> obs) {
 		this.nextTime = obs.getNextTimestamp();
-		this.consumer.send(obs.getData(), obs.getTimestamp(), this.nextTime);
+		this.controller.send(obs.getData(), obs.getTimestamp(), this.nextTime);
+	}
+	
+	@Override
+	public String toString() {
+		return this.controller.toString();
 	}
 }
