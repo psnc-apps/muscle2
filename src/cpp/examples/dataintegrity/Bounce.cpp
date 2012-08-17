@@ -46,9 +46,6 @@ int main(int argc, char **argv)
 			}
 			muscle_datatype_t muscle_t = (muscle_datatype_t)datatype_i;
 			void *data = muscle::env::receive("in", (void *)0, sz, muscle_t);
-			if (muscle_t == MUSCLE_STRING) {
-				logger::fine("String received of size %u", sz);
-			}
 			muscle::env::send("out", data, sz, muscle_t);
 			muscle::env::free_data(data, muscle_t);
 		}
@@ -58,11 +55,13 @@ int main(int argc, char **argv)
 	catch(exception& ex)
 	{
 		logger::severe("Error occurred in Bounce: %s", ex.what());
+		env::finalize();
 		return 1;
 	}
 	catch(...)
 	{
 		logger::severe("Error occured in Bounce");
+		env::finalize();
 		return 1;
 	}
 	

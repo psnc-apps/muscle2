@@ -30,18 +30,11 @@ example of a kernel which is using native code to send and receive data using a 
 @author Mariusz Mamonski
 */
 public class Check extends NativeKernel {
-//	
+	
 //	@Override
 //	public void send(String entranceName, SerializableData data) {
-//		if (data.getType() == SerializableDatatype.BOOLEAN_ARR) {
-//			boolean[] arr = (boolean[]) data.getValue();
-//			int pos = 0;
-//			for (int i = 0; i < arr.length; i++) {
-//				if (arr[i]) {
-//					pos++;
-//				}
-//			}
-//			System.out.println("Check: " + pos + "/" + arr.length);
+//		if (data.getType() == SerializableDatatype.STRING) {
+//			System.out.println("Sending string '" + data.getValue() + "' of size " + data.getSize());
 //		}
 //		super.send(entranceName, data);
 //	}
