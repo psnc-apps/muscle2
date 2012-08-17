@@ -27,8 +27,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <cmath>
 #include <vector>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <time.h>
 #include <cppmuscle.hpp>
 #include <stdexcept>
 
@@ -232,19 +230,8 @@ int main(int argc, char **argv)
 		env::init(&argc, &argv);
 		
 		bool all_succeed = true;
-		
-		{
-			logger::info("Trying to find file to read from");
-			string testfile = cxa::get_property("testfile");
-			vector<double> data = readDoubleFile(testfile);
-			logger::info("Testing MUSCLE_DOUBLE from file %s", testfile.c_str());
-			all_succeed = do_test((const unsigned char *)&data[0], MUSCLE_DOUBLE, 8, data.size()) && all_succeed;
-			logger::info("Testing MUSCLE_DOUBLE from file %s %s", testfile.c_str(), all_succeed ? "succeeded" : "failed");
-		}
 
-		time_t seconds;
-		time(&seconds);
-		for (int seed = (int)seconds; seed < (int)seconds + 5; seed++) {
+		for (int seed = 0; seed < 5; seed++) {
 			srandom(seed);
 
 			all_succeed = do_test_suite("MUSCLE_BOOLEAN", MUSCLE_BOOLEAN, 1) && all_succeed;
