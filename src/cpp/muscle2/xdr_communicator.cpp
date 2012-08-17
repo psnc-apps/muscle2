@@ -117,12 +117,21 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			unsigned int len;
 			int complex_num;
 			if (!xdr_int(&xdri, &complex_num)) throw new Communicator::io_exception("Can not read int");
+			if (complex_num == -1) throw new std::runtime_error("Can not receive: conduit disconnected; sending side has quit");
+			
 			muscle_complex_t ctype = (muscle_complex_t)complex_num;
 			size_t sz = ComplexData::sizeOfPrimitive(ctype);
 			
 			if (ctype == COMPLEX_STRING)
 			{
 				if (!xdr_string(&xdri, (char **)result, M2_XDR_BUFSIZE)) throw new Communicator::io_exception("Can not read string");
+				len = strnlen(*(char **)result, M2_XDR_BUFSIZE) + 1;
+				if (len == M2_XDR_BUFSIZE + 1)
+				{
+					// Truncate the string if it is too long.
+					(*(char **)result)[M2_XDR_BUFSIZE - 1] = 0;
+					len = M2_XDR_BUFSIZE;
+				}
 			}
 			else
 			{
