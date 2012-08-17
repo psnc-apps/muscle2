@@ -16,6 +16,7 @@ import muscle.util.data.SerializableDatatype;
 
 public class NativeKernel extends CAController  implements NativeGateway.CallListener {
 
+	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
 	private SerializableDatatype type;
 
@@ -55,17 +56,25 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			throw new MUSCLERuntimeException("Unknown exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
 		}
 		
-		Serializable data = exit.receive();
-		SerializableData sdata;
-		if (data == null) {
-			sdata = SerializableData.valueOf(null, SerializableDatatype.NULL);
-		} else if (type.getDataClass() == null || !type.getDataClass().isInstance(data)) {
-			sdata = SerializableData.valueOf(data);
-			type = sdata.getType();
+		if (exit.hasNext()) {
+			Serializable data = exit.receive();
+			SerializableData sdata;
+			if (data == null) {
+				logger.log(Level.WARNING, "Null values, from exit {0}, are not supported in native code.", exit);
+				sdata = SerializableData.valueOf(null, SerializableDatatype.NULL);
+			} else if (type.getDataClass() == null || !type.getDataClass().isInstance(data)) {
+				sdata = SerializableData.valueOf(data);
+				type = sdata.getType();
+			} else {
+				sdata = SerializableData.valueOf(data, type);
+			}
+			if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
+				logger.log(Level.WARNING, "Received Java object {0}, from exit {1}, not supported in native code.", new Object[] {data, exit});
+			}
+			return sdata;
 		} else {
-			sdata = SerializableData.valueOf(data, type);
+			return null;
 		}
-		return sdata;
 	}
 
 	public synchronized String getKernelName() {
