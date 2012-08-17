@@ -267,12 +267,12 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		for (int i = 0; i < len; i++) {
 			if (avail-- == 0) {
 				avail = fill(4) / 2 - 1;
-				longs[i] = ((long)buffer.getInt()) << 32;
+				long big = buffer.getInt() & 0xffffffffL;
 				// a long might be spread into two fragments
 				if (avail < 0) {
 					avail = (fill(4) - 1) / 2;
 				}
-				longs[i] |= buffer.getInt();
+				longs[i] = (big << 32) | (buffer.getInt() & 0xffffffffL);
 			} else {
 				longs[i] = buffer.getLong();
 			}
@@ -313,12 +313,12 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		for (int i = 0; i < length; ++i) {
 			if (avail-- == 0) {
 				avail = fill(4) / 2 - 1;
-				long big = buffer.getInt();
+				long big = buffer.getInt() & 0xffffffffL;
 				// a double may be spread over two fragments
 				if (avail < 0) {
 					avail = (fill(4) - 1) / 2;
 				}
-				value[i] = Double.longBitsToDouble((big << 32) | (long)buffer.getInt());
+				value[i] = Double.longBitsToDouble((big << 32) | (buffer.getInt() & 0xffffffffL));
 				
 			} else {
 				value[i] = Double.longBitsToDouble(buffer.getLong());
@@ -384,11 +384,16 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 * @param offset in the buffer.
 	 * @param len number of bytes to read.
 	 */
-	public void xdrDecodeOpaque(byte[] buf, int offset, int len) throws IOException {
+	public void xdrDecodeOpaque(byte[] buf, int offset, int len) throws IOException {		
 		int padding = (4 - (len & 3)) & 3;
-		fill(len + padding);
-//		logger.log(Level.FINEST, "padding zeros: {0}", padding);
-		buffer.get(buf, offset, len);
+
+		while (len > 0) {
+			int avail = Math.min(fill(4)*4, len);
+			buffer.get(buf, offset, avail);
+			len -= avail;
+			offset += avail;
+		}
+
 		buffer.position(buffer.position() + padding);
 	}
 
@@ -398,7 +403,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 
 	public byte[] xdrDecodeOpaque(int len) throws IOException {
 		byte[] opaque = new byte[len];
-		xdrDecodeOpaque(opaque, len);
+		xdrDecodeOpaque(opaque, 0, len);
 		return opaque;
 	}
 
@@ -424,20 +429,16 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 * @return decoded string
 	 */
 	public String xdrDecodeString() throws IOException {
-		String ret;
-
 		int len = xdrDecodeInt();
 		logger.log(Level.FINEST, "Decoding string with len = {0}", len);
 
 		if (len > 0) {
 			byte[] bytes = new byte[len];
 			xdrDecodeOpaque(bytes, 0, len);
-			ret = new String(bytes);
+			return new String(bytes);
 		} else {
-			ret = "";
+			return "";
 		}
-
-		return ret;
 	}
 
 	public boolean xdrDecodeBoolean() throws IOException {
@@ -452,7 +453,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 * @return Decoded long value.
 	 */
 	public long xdrDecodeLong() throws IOException {
-		return (((long)xdrDecodeInt()) << 32) | (long)xdrDecodeInt();
+		return ((xdrDecodeInt() & 0xffffffffL) << 32) | (xdrDecodeInt() & 0xffffffffL);
 	}
 
 	public ByteBuffer xdrDecodeByteBuffer() throws IOException {
