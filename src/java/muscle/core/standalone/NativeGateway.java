@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -26,7 +27,7 @@ public class NativeGateway  extends Thread {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	private final static boolean USE_ASYNC = false;
+	private final static boolean USE_ASYNC = true;
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
@@ -98,91 +99,100 @@ public class NativeGateway  extends Thread {
 			}
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
-			
+			final boolean isFinestLog = logger.isLoggable(Level.FINEST);
 			while (true) {
-				logger.finest("Starting decoding...");
+				if (isFinestLog) logger.finest("Starting decoding...");
 				in.refresh();
 
 				int operationCode = in.readInt();
-				logger.log(Level.FINEST, "Operation code = {0}", operationCode);
+				if (isFinestLog) logger.log(Level.FINEST, "Operation code = {0}", operationCode);
 				
 				switch (operationCode) {
 					case 0:
 					{
-						logger.finest("finalize() request.");
+						if (isFinestLog) logger.finest("finalize() request.");
 						in.close();
 						out.close();
 						listener.isFinished();
-						logger.finest("Native Process Gateway exiting...");
+						if (isFinestLog) logger.finest("Native Process Gateway exiting...");
 						return;
 					}	
 					case 1:
 					{
-						logger.finest("getKernelName() request.");
+						if (isFinestLog) logger.finest("getKernelName() request.");
 						out.writeString(listener.getKernelName());
-						logger.log(Level.FINEST, "Kernel name sent : {0}", listener.getKernelName());
+						if (isFinestLog) logger.log(Level.FINEST, "Kernel name sent : {0}", listener.getKernelName());
 						break;
 					}
 					case 2:
 					{
-						logger.finest("getProperty() request.");
+						if (isFinestLog) logger.finest("getProperty() request.");
 						String value = listener.getProperty(in.readString());
+						if (isFinestLog) logger.log(Level.FINEST, "Property value read: {0}", value);
 						out.writeString(value);
-						logger.log(Level.FINEST, "Property value sent: {0}", value);
+						if (isFinestLog) logger.log(Level.FINEST, "Property value sent: {0}", value);
 						break;
 					}
 					case 3:
 					{
-						logger.finest("willStop() request.");
+						if (isFinestLog) logger.finest("willStop() request.");
 						boolean stop = listener.willStop();
 						out.writeBoolean(stop);
-						logger.log(Level.FINEST, "Stop?: {0}", stop);
+						if (isFinestLog) logger.log(Level.FINEST, "Stop?: {0}", stop);
 						break;
 					}
 					case 4:
 					{
-						logger.finest("sendDouble() request.");
+						if (isFinestLog) logger.finest("sendDouble() request.");
 						String entranceName = in.readString();
 						SerializableData data = SerializableData.parseData(in);
-						logger.log(Level.FINEST, "entranceName = {0}, data = {1}", new Object[]{entranceName, data});
+						if (isFinestLog) logger.log(Level.FINEST, "entranceName = {0}, data = {1}", new Object[]{entranceName, data});
 						listener.send(entranceName, data);
-						logger.finest("data sent");
+						if (isFinestLog) logger.finest("data sent");
 						break;
 					}
 					case 5:
 					{
-						logger.finest("receiveDouble() request.");
+						if (isFinestLog) logger.finest("receiveDouble() request.");
 						String exitName = in.readString();
-						logger.log(Level.FINEST, "exitName = {0}", exitName);
+						if (isFinestLog) logger.log(Level.FINEST, "exitName = {0}", exitName);
 						SerializableData data =  listener.receive(exitName);
-						logger.log(Level.FINEST, "exitName = {0}, data = {1}", new Object[]{exitName, data});
-						data.encodeData(out);
-						logger.finest("data encoded");
+						if (data == null) {
+							logger.log(Level.FINE, "Conduit {0} is disconnected; passing on signal to native code.", exitName);
+							out.writeInt(-1);
+						}
+						else {
+							if (isFinestLog) logger.log(Level.FINEST, "exitName = {0}, data = {1}", new Object[]{exitName, data});
+							data.encodeData(out);
+						}
+						if (isFinestLog) logger.finest("data encoded");
 						break;
 					}
 					case 6:
 					{
-						logger.finest("getProperties() request.");
+						if (isFinestLog) logger.finest("getProperties() request.");
 						out.writeString(listener.getProperties());
 						break;
 					}
 					case 7:
 					{
-						logger.finest("getTmpPath() request.");
+						if (isFinestLog) logger.finest("getTmpPath() request.");
 						out.writeString(listener.getTmpPath());
 						break;
 					}
 					default:
 						throw new IOException("Unknown operation code " + operationCode);	
 				}
-				logger.finest("flushing response");
+				if (isFinestLog) logger.finest("flushing response");
 				out.flush();
 				
-				logger.finest("proceeding to next native call");
+				if (isFinestLog) logger.finest("proceeding to next native call");
 				in.cleanUp();
 			}
+		} catch (SocketException ex) {
+			logger.log(Level.SEVERE, "Connection of " + listener.getKernelName() + " failed; most likely the native code exited.", ex);
 		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error: " + ex, ex);
+			logger.log(Level.SEVERE, "Communication error in " + listener.getKernelName() + ": " + ex, ex);
 		} catch (Throwable ex) {
 			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex, ex);
 		} finally {
