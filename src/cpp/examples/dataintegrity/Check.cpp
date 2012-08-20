@@ -110,6 +110,7 @@ bool dataMatches(const unsigned char *data, const unsigned char *newdata, const 
 	}
 	else if (memcmp(data, newdata, sz*d_sz) != 0)
 	{
+		int misfits = 0;
 		for (int i = 0; i < sz; i += d_sz) {
 			unsigned long value = 0, newvalue = 0;
 			for (int j = 0; j < d_sz; j++) {
@@ -117,10 +118,12 @@ bool dataMatches(const unsigned char *data, const unsigned char *newdata, const 
 				newvalue = (newvalue << 8) | newdata[i+j];
 			}
 			if (newvalue != value) {
-				logger::fine("%d:   from %lx to %lx", i, value, newvalue);
+				misfits++;
+//				logger::fine("%d:   from %lx to %lx", i, value, newvalue);
 			}
 		}
 
+		logger::info("Failed %d/%u", misfits, sz);
 		matches = false;
 	}
 		
@@ -222,7 +225,7 @@ int main(int argc, char **argv)
 		
 		bool all_succeed = true;
 
-		for (int seed = 0; seed < 5; seed++) {
+		for (int seed = 1; seed <= 5; seed++) {
 			srandom(seed);
 
 			all_succeed = do_test_suite("MUSCLE_BOOLEAN", MUSCLE_BOOLEAN, 1) && all_succeed;
@@ -231,7 +234,19 @@ int main(int argc, char **argv)
 			all_succeed = do_test_suite("MUSCLE_FLOAT", MUSCLE_FLOAT, 4) && all_succeed;
 			all_succeed = do_test_suite("MUSCLE_DOUBLE", MUSCLE_DOUBLE, 8) && all_succeed;
 			all_succeed = do_test_suite("MUSCLE_INT64", MUSCLE_INT64, 8) && all_succeed;
-			all_succeed = do_test_suite("MUSCLE_STRING", MUSCLE_STRING, 1) && all_succeed;
+		}
+		
+		{
+			logger::info("Testing MUSCLE_STRING");
+			const char *test_strs[] = {"", "some simple", "&!!9121234567';:><{}][@#$%^&*-=_+QWERTYUIOPASDFGHJKLZXCVBNM,."};
+			bool success = true;
+			for (int i = 0; i < 3; i++) {
+				const char *str = test_strs[i];
+				char *newstr = (char *)sendRecv(str, MUSCLE_STRING, 1, strlen(str)+1);
+				success = dataMatches((const unsigned char *)str, (const unsigned char *)newstr, MUSCLE_STRING, 1, strlen(str)+1);
+			}
+			logger::info("Testing MUSCLE_STRING %s", success ? "succeeded" : "failed");
+			all_succeed = success && all_succeed;
 		}
 		
 		{
