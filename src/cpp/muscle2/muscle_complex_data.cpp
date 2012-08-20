@@ -127,9 +127,9 @@ std::vector<int> ComplexData::getDimensions()
 int ComplexData::length()
 {
 	int nprod = 1;
-	for(int i = 0; i < dims.size(); i++)
+	for(std::vector<int>::iterator it = dims.begin(); it != dims.end(); ++it)
 	{
-		nprod *= dims[i];
+		nprod *= *it;
 	}
 	return nprod;
 }
