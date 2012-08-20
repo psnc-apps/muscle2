@@ -25,17 +25,17 @@ class ComplexData {
 		~ComplexData();
 		void *getData();
 		muscle_complex_t getType();
-		std::vector<int>& getDimensions();
+		std::vector<int> getDimensions();
 		int length();
 		size_t sizeOfPrimitive();
 		/** Get the index of the returned array. This will give an exception if it is out of bounds, or the wrong number of dimensions. */
 		int index(int x, int y);
 		int index(int x, int y, int z);
 		int index(int x, int y, int z, int zz);
-		/** Fast get the index of the returned array. This does not do any bounds checking. */
-		int fidx(int x, int y);
-		int fidx(int x, int y, int z);
-		int fidx(int x, int y, int z, int zz);
+		/** Fast get the index of the returned array. This is inlined and does not do any bounds checking. */
+		int fidx(int x, int y) { return x*dims[1]+y; }
+		int fidx(int x, int y, int z) { return (x*dims[1] + y)*dims[2]+z; }
+		int fidx(int x, int y, int z, int zz) { return ((x*dims[1] + y)*dims[2]+z)*dims[3]+zz; }
 		// properties of muscle_complex_t
 		static size_t sizeOfPrimitive(muscle_complex_t type);
 		static int dimensions(muscle_complex_t type);

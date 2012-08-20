@@ -20,7 +20,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 */
 
 #include <iostream>
-#include <fstream>
+//#include <fstream>
 #include <climits>
 #include <cstring>
 #include <stdio.h>
@@ -29,6 +29,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <stdlib.h>
 #include <cppmuscle.hpp>
 #include <stdexcept>
+#include <muscle_complex_data.hpp>
 
 using namespace muscle;
 using namespace std;
@@ -42,109 +43,104 @@ union ufloat {
   unsigned u;
 };
 
-vector<double> readDoubleFile(string filename) {
-        ifstream infile(filename.c_str());
-        vector <double> ret;
-        
-        while (infile.good()) {
-                string s;
-                getline(infile, s, ' ');
-                double d = atof(s.c_str());
-                if (std::isnan(d)) logger::severe("Found a nan: %s", s.c_str());
-                ret.push_back(atof(s.c_str()));
-        }
-        if (!infile.eof()) {
-                logger::severe("Could not read file");
-                throw runtime_error("no file");
-        }
-        // Removing last zero value, from reading stream
-        ret.pop_back();
-        
-        return ret;
-}
-
-bool do_test(const unsigned char *data, const muscle_datatype_t type, const size_t d_sz, const size_t sz)
+void *sendRecv(const void *data, const muscle_datatype_t type, const size_t d_sz, const size_t sz)
 {
 	const int datatype_i = type;
 	size_t msg_sz = 1;
 	
 	muscle::env::send("datatype", &datatype_i, msg_sz, MUSCLE_INT32);
 	muscle::env::send("out", data, sz, type);
-	unsigned char *newdata = (unsigned char *)muscle::env::receive("in", (void *)0, msg_sz, type);
-	
-	bool matches = true;
-	if (sz != msg_sz) {
+	void *newdata = muscle::env::receive("in", (void *)0, msg_sz, type);
+
+	if (sz == msg_sz) {
+		return newdata;
+	} else
+	{
 		if (type == MUSCLE_STRING)
 			logger::severe("Size %u of sent data '%s' with sizeof %u is not equal to size %u of received data '%s'", sz, data, d_sz, msg_sz, newdata);
 		else
 			logger::severe("Size %u of sent data %d with sizeof %u is not equal to size %u of received data", sz, datatype_i, d_sz, msg_sz);
-		matches = false;	
+		return (void *)0;
 	}
-	if (matches)
+}
+
+bool dataMatches(const unsigned char *data, const unsigned char *newdata, const muscle_datatype_t type, const size_t d_sz, const size_t sz)
+{
+	bool matches = true;
+	if (type == MUSCLE_FLOAT)
 	{
-		if (type == MUSCLE_FLOAT)
+		float *fdata = (float *)data;
+		float *fnewdata = (float *)newdata;
+		bool isn;
+		for (int i = 0; i < sz; i++)
 		{
-			float *fdata = (float *)data;
-			float *fnewdata = (float *)newdata;
-			bool isn;
-			for (int i = 0; i < sz; i++)
+			isn = isnan(fdata[i]);
+			if (isn != isnan(fnewdata[i]) || (!isn && fdata[i] != fnewdata[i]))
 			{
-				isn = isnan(fdata[i]);
-				if (isn != isnan(fnewdata[i]) || (!isn && fdata[i] != fnewdata[i]))
-				{
-					ufloat uf, unf;
-					uf.f = fdata[i];
-					unf.f = fnewdata[i];
-					logger::fine("%d:  from %x to %x", i, uf.u, unf.u);
-					matches = false;
-				}
-			}
-			if (!matches) {
-				logger::severe("Float data sent with size %u does not match what is received (taking into account multiple representations of NaN).", sz);
-			}
-		} else if (type == MUSCLE_DOUBLE)
-		{
-			double *ddata = (double *)data;
-			double *dnewdata = (double *)newdata;
-
-			for (int i = 0; i < sz; i++)
-			{
-				bool isn = isnan(ddata[i]);
-				if (isn != isnan(dnewdata[i]) || (!isn && ddata[i] != dnewdata[i]))
-				{
-					udouble ud, und;
-					ud.d = ddata[i];
-					und.d = dnewdata[i];
-					logger::fine("%d:  from %lx to %lx", i, ud.u, und.u);
-					matches = false;
-				}
-			}
-			if (!matches) {
-				logger::severe("Double data sent with size %u does not match what is received (taking into account multiple representations of NaN).", sz);
+				ufloat uf, unf;
+				uf.f = fdata[i];
+				unf.f = fnewdata[i];
+				logger::fine("%d:  from %x to %x", i, uf.u, unf.u);
+				matches = false;
 			}
 		}
-		else if (memcmp(data, newdata, sz*d_sz) != 0)
-		{
-			for (int i = 0; i < sz; i += d_sz) {
-				unsigned long value = 0, newvalue = 0;
-				for (int j = 0; j < d_sz; j++) {
-					value = (value << 8) | data[i+j];
-					newvalue = (newvalue << 8) | newdata[i+j];
-				}
-				if (newvalue != value) {
-					logger::fine("%d:   from %lx to %lx", i, value, newvalue);
-				}
-			}
+		if (!matches) {
+			logger::severe("Float data sent with size %u does not match what is received (taking into account multiple representations of NaN).", sz);
+		}
+	} else if (type == MUSCLE_DOUBLE)
+	{
+		double *ddata = (double *)data;
+		double *dnewdata = (double *)newdata;
 
-			matches = false;
+		for (int i = 0; i < sz; i++)
+		{
+			bool isn = isnan(ddata[i]);
+			if (isn != isnan(dnewdata[i]) || (!isn && ddata[i] != dnewdata[i]))
+			{
+				udouble ud, und;
+				ud.d = ddata[i];
+				und.d = dnewdata[i];
+				logger::fine("%d:  from %lx to %lx", i, ud.u, und.u);
+				matches = false;
+			}
+		}
+		if (!matches) {
+			logger::severe("Double data sent with size %u does not match what is received (taking into account multiple representations of NaN).", sz);
 		}
 	}
-	
-	muscle::env::free_data(newdata, type);
-	
+	else if (memcmp(data, newdata, sz*d_sz) != 0)
+	{
+		for (int i = 0; i < sz; i += d_sz) {
+			unsigned long value = 0, newvalue = 0;
+			for (int j = 0; j < d_sz; j++) {
+				value = (value << 8) | data[i+j];
+				newvalue = (newvalue << 8) | newdata[i+j];
+			}
+			if (newvalue != value) {
+				logger::fine("%d:   from %lx to %lx", i, value, newvalue);
+			}
+		}
+
+		matches = false;
+	}
+		
 	return matches;
 }
 
+void *generateRandom(const size_t sz) {
+	size_t l_sz = sz/8;
+	if (l_sz * 8 < sz) {
+		l_sz++;
+	}
+	unsigned long *data = (unsigned long *)malloc(l_sz*8);
+	
+	for (int i = 0; i < l_sz; i++) {
+		// random returns 31 bits, we need 64, so we'll use three calls to random.
+		data[i] = (((unsigned long)random()) << 62) | (((unsigned long)random()) << 31) | ((unsigned long)random());
+	}
+	
+	return data;
+}
 
 bool do_full_test(const muscle_datatype_t type, const size_t d_sz, const size_t sz)
 {
@@ -181,21 +177,16 @@ bool do_full_test(const muscle_datatype_t type, const size_t d_sz, const size_t 
 		}
 		else
 		{
-			const size_t l_sz = sz*d_sz / sizeof(long);
-			send_size = l_sz*sizeof(long)/d_sz;
-			unsigned long *l_data = (unsigned long *)malloc(l_sz*sizeof(long));
-			for (int i = 0; i < l_sz; i++) {
-				// random returns one bit too little, so we need three randoms
-				l_data[i] = (((unsigned long)random()) << 62) | (((unsigned long)random()) << 31) | ((unsigned long)random());
-			}
-			c_data = (unsigned char *)l_data;
+			c_data = (unsigned char *)generateRandom(sz*d_sz);
 		}
 	}
 	// Excludes empty string
 	if (c_data) {
 		data = (const unsigned char *)c_data;
 	}
-	bool matches = do_test(data, type, d_sz, send_size);
+	unsigned char *newdata = (unsigned char *)sendRecv(data, type, d_sz, send_size);
+	bool matches = dataMatches(data, newdata, type, d_sz, send_size);
+	muscle::env::free_data(newdata, type);
 	
 	// Excludes empty string
 	if (c_data) {
@@ -243,6 +234,49 @@ int main(int argc, char **argv)
 			all_succeed = do_test_suite("MUSCLE_STRING", MUSCLE_STRING, 1) && all_succeed;
 		}
 		
+		{
+			bool success = true;
+			logger::info("Testing COMPLEX_DOUBLE_MATRIX_3D");
+			 int i_dims[] = {15,30,21};
+			vector<int> dims(i_dims, i_dims + sizeof(i_dims) / sizeof(int));
+			size_t len = dims[0]*dims[1]*dims[2];
+			
+			double *data = (double *)generateRandom(len*8);
+			ComplexData cdata(data, COMPLEX_DOUBLE_MATRIX_3D, &dims);
+			ComplexData *cnewdata = (ComplexData *)sendRecv(&cdata, MUSCLE_COMPLEX, 8, len);
+			
+			double *olddata = (double *)cdata.getData();
+			double *newdata = (double *)cnewdata->getData();
+			
+			int prevIdx = -1;
+			for (int i = 0; i < dims[0] && success; i++) {
+				for (int j = 0; j < dims[1] && success; j++) {
+					for (int k = 0; k < dims[2] && success; k++) {
+						int idx = cdata.fidx(i, j, k);
+						if (idx == prevIdx + 1) {
+							prevIdx++;
+						} else {
+							logger::severe("Index (%d, %d, %d) = %d does not follow previous index %d", i, j, k, idx, prevIdx);
+							success = false;
+						}
+						if (idx != cnewdata->index(i, j, k)) {
+							logger::severe("Index (%d, %d, %d) = %d of sent data does not match index %d of received data", i, j, k, idx, cnewdata->index(i, j, k));
+							success = false;
+						}
+						bool isn = isnan(olddata[idx]);
+						if (isn != isnan(newdata[idx]) || (!isn && olddata[idx] != newdata[idx])) {
+							udouble ud, und;
+							ud.d = olddata[i];
+							und.d = newdata[i];
+							logger::fine("%d:  from %lx to %lx", i, ud.u, und.u);
+							success = false;
+						}
+					}
+				}
+			}
+			logger::info("Testing COMPLEX_DOUBLE_MATRIX_3D %s", success ? "succeeded" : "failed");
+			all_succeed = success && all_succeed;
+		}
 		
 		// Stop Bounce
 		int datatype = -1;
@@ -272,3 +306,25 @@ int main(int argc, char **argv)
 	
 	return 0;
 }
+
+
+//vector<double> readDoubleFile(string filename) {
+//        ifstream infile(filename.c_str());
+//        vector <double> ret;
+//        
+//        while (infile.good()) {
+//                string s;
+//                getline(infile, s, ' ');
+//                double d = atof(s.c_str());
+//                if (std::isnan(d)) logger::severe("Found a nan: %s", s.c_str());
+//                ret.push_back(atof(s.c_str()));
+//        }
+//        if (!infile.eof()) {
+//                logger::severe("Could not read file");
+//                throw runtime_error("no file");
+//        }
+//        // Removing last zero value, from reading stream
+//        ret.pop_back();
+//        
+//        return ret;
+//}

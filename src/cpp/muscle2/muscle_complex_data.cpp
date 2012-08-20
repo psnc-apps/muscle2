@@ -79,8 +79,8 @@ ComplexData::ComplexData(void *data, muscle_complex_t type, std::vector<int>* di
 	this->type = type;
 	if (dimensions != NULL) {
 		this->dims = *dimensions;
-		ComplexData::checkDimensions(type, dimensions);
 	}
+	ComplexData::checkDimensions(type, &this->dims);
 }
 
 ComplexData::ComplexData(void *data, muscle_datatype_t type, size_t len)
@@ -91,7 +91,6 @@ ComplexData::ComplexData(void *data, muscle_datatype_t type, size_t len)
 		this->value = cdata->value;
 		this->type = cdata->type;
 		this->dims = cdata->dims;
-		ComplexData::checkDimensions(this->type, &this->dims);
 	}
 	else
 	{
@@ -101,8 +100,8 @@ ComplexData::ComplexData(void *data, muscle_datatype_t type, size_t len)
 		{
 			this->dims.push_back(len);
 		}
-		ComplexData::checkDimensions(this->type, &this->dims);
 	}
+	ComplexData::checkDimensions(this->type, &this->dims);
 }
 
 ComplexData::~ComplexData()
@@ -120,7 +119,7 @@ muscle_complex_t ComplexData::getType()
 	return type;
 }
 
-std::vector<int>& ComplexData::getDimensions()
+std::vector<int> ComplexData::getDimensions()
 {
 	return dims;
 }
@@ -128,9 +127,9 @@ std::vector<int>& ComplexData::getDimensions()
 int ComplexData::length()
 {
 	int nprod = 1;
-	for(std::vector<int>::iterator it = dims.begin(); it != dims.end(); ++it)
+	for(int i = 0; i < dims.size(); i++)
 	{
-		nprod *= *it;
+		nprod *= dims[i];
 	}
 	return nprod;
 }
@@ -192,19 +191,6 @@ int ComplexData::index(int x, int y, int z, int zz)
 		throw std::range_error("zz is larger than the column size");
 	}
 	return fidx(x, y, z, zz);
-}
-
-int ComplexData::fidx(int x, int y)
-{
-	return x*dims[0]+y;
-}
-int ComplexData::fidx(int x, int y, int z)
-{
-	return (x*dims[0] + y)*dims[1]+z;
-}
-int ComplexData::fidx(int x, int y, int z, int zz)
-{
-	return ((x*dims[0] + y)*dims[1]+z)*dims[2]+zz;
 }
 
 size_t ComplexData::sizeOfPrimitive()

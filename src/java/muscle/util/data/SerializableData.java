@@ -204,7 +204,7 @@ public class SerializableData implements Serializable {
 	public void encodeData(SerializerWrapper out) throws IOException {
 		out.writeInt(type.ordinal());
 		
-		Object newValue = MatrixTool.matrixToArray(value, type);
+		Serializable newValue = MatrixTool.matrixToArray(value, type);
 		
 		switch (type.typeOf()) {
 			case NULL:
@@ -242,7 +242,7 @@ public class SerializableData implements Serializable {
 				out.writeDouble((Double)newValue);
 				break;
 			default:
-				out.writeValue(value, type);
+				out.writeValue(newValue, type);
 				break;
 		}
 		if (type.isMatrix()) {
@@ -262,7 +262,8 @@ public class SerializableData implements Serializable {
 		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
 			byte[] byteValue = (byte[])(value instanceof byte[] ? value : serialize(value, type));
 			return byteValue.length;
-		} else switch (type.typeOf()) {
+		} else {
+			switch (type.typeOf()) {
 			case NULL:
 				break;
 			case MAP:				
@@ -314,6 +315,7 @@ public class SerializableData implements Serializable {
 				break;
 			default:
 				throw new IllegalArgumentException("Datatype " + type + " not recognized");
+			}
 		}
 		
 		return size;
