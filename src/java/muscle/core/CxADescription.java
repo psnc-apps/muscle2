@@ -78,7 +78,7 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 	// disallow instantiation from everywhere
 	protected CxADescription() {
 		tmpDir = JVM.ONLY.tmpDir();
-		logger.log(Level.INFO, "using tmp directory <{0}>", tmpDir);
+		logger.log(Level.INFO, "Using directory <{0}>", tmpDir);
 		// init default shared Location if any
 		sharedLocation = new ContainerID((String) get(Constant.Key.TRACE_DATA_TRANSFER, "Main-Container"/*default value*/), null);
 	}

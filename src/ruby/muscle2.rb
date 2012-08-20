@@ -287,19 +287,22 @@ if cxa == nil
 end
 
 kernels = cxa.known_agents.find_all {|a| a.kind_of?(KernelAgent)}
-kernels_names = kernels.collect {|k| k.name}
+kernel_names = kernels.collect {|k| k.name}
+
+if kernels.empty?
+	puts "Specify at least one kernel in the configuration file."
+	exit 1
+end
 
 muscle_main_args = []
 muscle_local_args = []
-
 
 if m.env['reverse']
 	puts "starting kernel in REVERSE mode"
 	requested_kernels = []
 
 	if m.env['allkernels']
-        	kernels.each { |kernel| requested_kernels <<  kernel.name }
-
+		kernels.each { |kernel| requested_kernels <<  kernel.name }
         elsif args.size > 0
                 args.each { |arg| kernels.each { |kernel| requested_kernels << kernel.name if kernel.name == arg } }
         end
@@ -351,47 +354,58 @@ end
 
 if m.env['main']
 	muscle_main_args << "muscle.manager.SimulationManager"
-	muscle_main_args << kernels_names
+	muscle_main_args << kernel_names
 end
 
 if m.env['allkernels'] || args.size > 0
-	muscle_local_args << "muscle.client.LocalManager"	
-	if m.env['manager']
-		muscle_local_args << "-m"
-		muscle_local_args << m.env['manager']
-	elsif m.env['main']
-		puts "Running both manager and kernels"
-	else
-		puts "no --manager contact information given"
-		exit 1
-	end
+	using_kernels = []
 	if m.env['allkernels']
-		muscle_local_args << kernels
+		using_kernels << kernels
 	elsif args.size > 0
-		args.each { |arg| kernels.each { |kernel| muscle_local_args << kernel if kernel.name == arg } }
+		args.each { |arg| kernels.each { |kernel| using_kernels << kernel if kernel.name == arg } }
+	end
+
+	if using_kernels.size != 0
+		muscle_local_args << "muscle.client.LocalManager"
+		if m.env['manager']
+			muscle_local_args << "-m"
+			muscle_local_args << m.env['manager']
+		elsif m.env['main']
+			puts "Running both manager and kernels"
+		else
+			puts "Either specify --main or give --manager contact information"
+			exit 1
+		end
+		muscle_local_args = muscle_local_args + using_kernels
 	end
 end
-
 if muscle_main_args.size == 0 && muscle_local_args.size == 0
-	puts "No kernel(s) name given"
+	puts "No kernel names given. Possible kernel names:\n--------\n", kernel_names
+	puts "--------\nTo run all kernels use the --allkernels flag."
 	exit 1
 end
 
 
-at_exit {puts "\n\ttmp dir was: <#{Muscle.LAST.env['tmp_path']}>"}
+at_exit {puts "\n\tExecuted in <#{Muscle.LAST.env['tmp_path']}>"}
 
 manager_pid = 0
 local_pid = 0
 
 if muscle_main_args.size != 0
-    tmpXmx = m.env['Xmx']
-    tmpXms = m.env['Xms']
+	tmpXmx = m.env['Xmx']
+	tmpXms = m.env['Xms']
 	m.env['Xms'] = '20m'
 	m.env['Xmx'] = '100m'
 	command = JVM.build_command(muscle_main_args, m.env).first
 	m.env['Xms'] = tmpXms
 	m.env['Xmx'] = tmpXmx
-	puts "Running MUSCLE2 Simulation Manager: " + command
+	if muscle_local_args.empty?
+		puts "Only starting MUSCLE2 Simulation Manager; not running any kernels."
+	end
+	puts "=== Running MUSCLE2 Simulation Manager ==="
+	if m.env['verbose']
+		puts command
+	end
 	manager_pid = Process.fork {exec(command)}
 end
 
@@ -419,7 +433,10 @@ if muscle_local_args.size != 0
 		muscle_local_args << contact_addr
 	end
 	command = JVM.build_command(muscle_local_args, m.env).first
-	puts "Running MUSCLE2 Local Manager: " + command
+	puts "=== Running MUSCLE2 Simulation ==="
+	if m.env['verbose']
+		puts command
+	end
 	local_pid = Process.fork {exec(command)}
 end
 

@@ -19,7 +19,9 @@ import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
- *
+ * A socket that opens or closes when requested.
+ * After a timeout, it disconnects and tries to reconnect at the next opportunity.
+ * 
  * @author Joris Borgdorff
  */
 public class AliveSocket extends SafeTriggeredThread {
@@ -73,6 +75,7 @@ public class AliveSocket extends SafeTriggeredThread {
 		return true;
 	}
 	
+	/** Get a output serializer. */
 	public SerializerWrapper getOutput() throws IOException {				
 		this.updateSocket();
 		if (this.out == null) {
@@ -81,6 +84,7 @@ public class AliveSocket extends SafeTriggeredThread {
 		return this.out;
 	}
 
+	/** Get a input deserializer. */
 	public DeserializerWrapper getInput() throws IOException {
 		this.updateSocket();
 		if (this.in == null) {
@@ -89,6 +93,10 @@ public class AliveSocket extends SafeTriggeredThread {
 		return this.in;
 	}
 	
+	/**
+	 * Try to use the current socket, or create a new one if it is expired. 
+	 * @throws IllegalStateException if the lock on the socket is not held when calling
+	 */
 	protected void updateSocket() throws IOException {
 		if (!lock.isHeldByCurrentThread()) {
 			throw new IllegalStateException("Can only use AliveSocket with a lock.");
@@ -160,6 +168,11 @@ public class AliveSocket extends SafeTriggeredThread {
 		}
 	}
 	
+	/**
+	 * Close the active socket, if any.
+	 * The next call to AliveSocket will have to open a new connection.
+	 * @throws IllegalStateException if the lock on this alivesocket is not held
+	 */
 	public void reset() {
 		if (!lock.isHeldByCurrentThread()) {
 			throw new IllegalStateException("Can only use AliveSocket with a lock.");

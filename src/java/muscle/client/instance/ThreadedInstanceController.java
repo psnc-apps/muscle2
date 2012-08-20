@@ -76,7 +76,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	
 	@Override
 	public void run() {		
-		logger.log(Level.INFO, "{0}: starting kernel", getLocalName());
+		logger.log(Level.INFO, "{0}: connecting...", getLocalName());
 		
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
