@@ -267,11 +267,13 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		for (int i = 0; i < len; i++) {
 			if (avail-- == 0) {
 				avail = fill(4) / 2 - 1;
+				// The & is necessery to make sure the int is read as unsigned
 				long big = buffer.getInt() & 0xffffffffL;
 				// a long might be spread into two fragments
 				if (avail < 0) {
 					avail = (fill(4) - 1) / 2;
 				}
+				// The & is necessery to make sure the int is read as unsigned
 				longs[i] = (big << 32) | (buffer.getInt() & 0xffffffffL);
 			} else {
 				longs[i] = buffer.getLong();
@@ -313,11 +315,13 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 		for (int i = 0; i < length; ++i) {
 			if (avail-- == 0) {
 				avail = fill(4) / 2 - 1;
+				// The & is necessery to make sure the int is read as unsigned
 				long big = buffer.getInt() & 0xffffffffL;
 				// a double may be spread over two fragments
 				if (avail < 0) {
 					avail = (fill(4) - 1) / 2;
 				}
+				// The & is necessery to make sure the int is read as unsigned
 				value[i] = Double.longBitsToDouble((big << 32) | (buffer.getInt() & 0xffffffffL));
 				
 			} else {
@@ -453,6 +457,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 * @return Decoded long value.
 	 */
 	public long xdrDecodeLong() throws IOException {
+		// The & is necessery to make sure the int is read as unsigned
 		return ((xdrDecodeInt() & 0xffffffffL) << 32) | (xdrDecodeInt() & 0xffffffffL);
 	}
 
