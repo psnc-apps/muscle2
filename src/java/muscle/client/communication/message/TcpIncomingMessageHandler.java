@@ -50,7 +50,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 			return null;
 		}
 		if (magic_number != TcpDataProtocol.MAGIC_NUMBER) {
-			logger.warning("Unrecognized protocol for data messages: " magic_number + " != " + TcpDataProtocol.MAGIC_NUMBER);
+			logger.warning("Unrecognized protocol for data messages: " + magic_number + " != " + TcpDataProtocol.MAGIC_NUMBER);
 			return null;
 		}
 		int protoNum = in.readInt();
