@@ -143,7 +143,7 @@ public class NativeGateway  extends Thread {
 					}
 					case 4:
 					{
-						if (isFinestLog) logger.finest("sendDouble() request.");
+						if (isFinestLog) logger.finest("sendData() request.");
 						String entranceName = in.readString();
 						SerializableData data = SerializableData.parseData(in);
 						if (isFinestLog) logger.log(Level.FINEST, "entranceName = {0}, data = {1}", new Object[]{entranceName, data});
@@ -153,7 +153,7 @@ public class NativeGateway  extends Thread {
 					}
 					case 5:
 					{
-						if (isFinestLog) logger.finest("receiveDouble() request.");
+						if (isFinestLog) logger.finest("receiveData() request.");
 						String exitName = in.readString();
 						if (isFinestLog) logger.log(Level.FINEST, "exitName = {0}", exitName);
 						SerializableData data =  listener.receive(exitName);
