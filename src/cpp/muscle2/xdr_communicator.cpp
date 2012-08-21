@@ -124,12 +124,18 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			
 			if (ctype == COMPLEX_STRING)
 			{
+				// cast for easier use
 				if (!xdr_string(&xdri, (char **)result, M2_XDR_BUFSIZE)) throw new Communicator::io_exception("Can not read string");
-				len = strnlen(*(char **)result, M2_XDR_BUFSIZE) + 1;
-				if (len == M2_XDR_BUFSIZE + 1)
-				{
-					// Truncate the string if it is too long.
-					(*(char **)result)[M2_XDR_BUFSIZE - 1] = 0;
+
+				char *result_ptr = *(char **)result;
+				
+				// search for nul character, within the maximum bounds of the buffer
+				char *null_ptr = (char *)memchr(result_ptr, 0, M2_XDR_BUFSIZE);
+				if (null_ptr) {
+					len = null_ptr - result_ptr + 1;
+				} else {
+					// nul not found, so add the nul character at the maximum buffer length
+					result_ptr[M2_XDR_BUFSIZE - 1] = 0;
 					len = M2_XDR_BUFSIZE;
 				}
 			}
