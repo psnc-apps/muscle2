@@ -125,7 +125,14 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		pb.environment().put("MUSCLE_GATEWAY_HOST", host);
 	
 		getLogger().log(Level.INFO, "Spawning standalone kernel: {0}", pb.command());
-		getLogger().log(Level.FINE, "Contact information: {0}", port);		
+		getLogger().log(Level.FINE, "Contact information: {0}", port);	
+		
+		if (getLogger().isLoggable(Level.FINEST)) {
+			for (String envName : pb.environment().keySet()) {
+				getLogger().log(Level.FINEST, "Env: {0}={1}", new Object[]{ envName, pb.environment().get(envName)});	
+			}
+		}
+		
 		Process child = pb.start();
 
 		StreamRipper stdoutR = new StreamRipper("stdout-reader-"+getLocalName(), System.out, child.getInputStream());

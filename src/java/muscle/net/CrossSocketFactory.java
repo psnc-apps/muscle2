@@ -86,7 +86,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				int bread = in.read(b, off, len);
 				
 				if (bread != -1)
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}", new Object[] {id, bread, off, (char)b[off], off+bread-1, (char)b[off+bread-1]});
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}", new Object[] {id, bread, off, b[off], off+bread-1, b[off+bread-1]});
 				else 
 					logger.log(Level.FINEST, "id = {0},  bread = {1}", new Object[] {id, bread});
 
