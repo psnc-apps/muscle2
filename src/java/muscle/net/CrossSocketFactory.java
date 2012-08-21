@@ -23,79 +23,83 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.JICP.SocketFactory {
 	
-	protected class LoggableOutputStream extends OutputStream {
-		protected OutputStream os;
+	protected class LoggableOutputStream extends FilterOutputStream {
 		protected String id;
 		
-		public LoggableOutputStream(String id, OutputStream os) {
-			this.os = os;
+		public LoggableOutputStream(String id, OutputStream out) {
+			super(out);
 			this.id = id;
 		}
 		@Override
 		public void write(int b) throws IOException {
 			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
-			os.write(b);
+			out.write(b);
 		}
 		@Override
 		public void close() throws IOException {
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
-			os.close();
+			out.close();
 		}
 		@Override
 		public void flush() throws IOException {
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
-			os.flush();
+			out.flush();
 		}
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
 			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}", new Object[] {id, off, len, b[off], b[off+len-1]});
-			os.write(b, off, len);
+			out.write(b, off, len);
 		}
-		@Override
-		public void write(byte[] b) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, len = {1}, b[0] = {2}, b[last] = {3}", new Object[] {id, b.length, b[0], b[b.length - 1]});
-			os.write(b);
-		}
+
 		
 	}
 
-	protected class LoggableInputStream extends InputStream {
-		protected InputStream is;
+	protected class LoggableInputStream extends FilterInputStream {
 		protected String id;
 		
-		public LoggableInputStream(String id, InputStream os) {
-			this.is = os;
+		public LoggableInputStream(String id, InputStream in) {
+			super(in);
 			this.id = id;
 		}
 		@Override
 		public int read() throws IOException {
-			int b = is.read();
+			int b = in.read();
 			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
 			return b;
 		}
 		@Override
 		public void close() throws IOException {
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
-			is.close();
+			in.close();
 		}
 		@Override
 		public int available() throws IOException {
-			int av = is.available();
+			int av = in.available();
 			logger.log(Level.FINEST, "id = {0}, available bytes = {1}", new Object[] {id, av});
 			return av;
 		}
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
-			int bread = is.read(b, off, len);
-			logger.log(Level.FINEST, "id = {0}, off = {1}, bread = {2}, b[off] = {3}, b[last] = {4}", new Object[] {id, off, bread, b[off], b[off+bread-1]});
-			return bread;
-		}
-		@Override
-		public int read(byte[] b) throws IOException {
-			int bread = is.read(b);
-			logger.log(Level.FINEST, "id = {0}, bread = {1}, b[0] = {2}, b[last] = {3}", new Object[] {id, bread, b[0], b[bread - 1]});
-			return bread;
-		}
+			logger.log(Level.FINEST, "trying to read: id = {0}, off = {1}, len = {2} ", new Object[] {id, off, len});
+			
+			try {
+				int bread = in.read(b, off, len);
+				
+				if (bread != -1)
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}", new Object[] {id, bread, off, (char)b[off], off+bread-1, (char)b[off+bread-1]});
+				else 
+					logger.log(Level.FINEST, "id = {0},  bread = {1}", new Object[] {id, bread});
+
+				return bread;
+			} catch (IOException ex) {
+				logger.log(Level.WARNING, "read failed: {0}", new Object[] {ex});
+				throw ex;
+			} catch (Exception ex) {
+				logger.log(Level.SEVERE, "Unchecked exception: {0}", new Object[] {ex});
+				throw new AssertionError(ex);
+			}
+			/* not reached */
+		}	
 	}
 	
 	private final static Logger logger = Logger.getLogger(CrossSocketFactory.class.getName());
