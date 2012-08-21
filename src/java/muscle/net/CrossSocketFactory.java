@@ -33,27 +33,27 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		}
 		@Override
 		public void write(int b) throws IOException {
-			logger.log(Level.FINEST, "writeI: id = {}, b = {}", new Object[] {id, b});
+			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
 			os.write(b);
 		}
 		@Override
 		public void close() throws IOException {
-			logger.log(Level.FINEST, "close: id = {}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			os.close();
 		}
 		@Override
 		public void flush() throws IOException {
-			logger.log(Level.FINEST, "flush: id = {}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			os.flush();
 		}
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "writeO: id = {}, off = {}, len = {}, b[off] = {}, b[last] = {}", new Object[] {id, off, len, b[off], b[off+len-1]});
+			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}", new Object[] {id, off, len, b[off], b[off+len-1]});
 			os.write(b, off, len);
 		}
 		@Override
 		public void write(byte[] b) throws IOException {
-			logger.log(Level.FINEST, "write: id = {}, len = {}, b[0] = {}, b[last] = {}", new Object[] {id, b.length, b[0], b[b.length - 1]});
+			logger.log(Level.FINEST, "id = {0}, len = {1}, b[0] = {2}, b[last] = {3}", new Object[] {id, b.length, b[0], b[b.length - 1]});
 			os.write(b);
 		}
 		
@@ -70,30 +70,30 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		@Override
 		public int read() throws IOException {
 			int b = is.read();
-			logger.log(Level.FINEST, "readI: id = {}, b = {}", new Object[] {id, b});
+			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
 			return b;
 		}
 		@Override
 		public void close() throws IOException {
-			logger.log(Level.FINEST, "close: id = {}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			is.close();
 		}
 		@Override
 		public int available() throws IOException {
 			int av = is.available();
-			logger.log(Level.FINEST, "available: id = {}, available bytes = {}", new Object[] {id, av});
+			logger.log(Level.FINEST, "id = {0}, available bytes = {1}", new Object[] {id, av});
 			return av;
 		}
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
 			int bread = is.read(b, off, len);
-			logger.log(Level.FINEST, "readO: id = {}, off = {}, bread = {}, b[off] = {}, b[last] = {}", new Object[] {id, off, bread, b[off], b[off+bread-1]});
+			logger.log(Level.FINEST, "id = {0}, off = {1}, bread = {2}, b[off] = {3}, b[last] = {4}", new Object[] {id, off, bread, b[off], b[off+bread-1]});
 			return bread;
 		}
 		@Override
 		public int read(byte[] b) throws IOException {
 			int bread = is.read(b);
-			logger.log(Level.FINEST, "read: id = {}, bread = {}, b[0] = {}, b[last] = {}", new Object[] {id, bread, b[0], b[bread - 1]});
+			logger.log(Level.FINEST, "id = {0}, bread = {1}, b[0] = {2}, b[last] = {3}", new Object[] {id, bread, b[0], b[bread - 1]});
 			return bread;
 		}
 	}
