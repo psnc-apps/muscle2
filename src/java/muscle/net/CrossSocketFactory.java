@@ -3,6 +3,7 @@ package muscle.net;
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -338,6 +339,8 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 
 	private class CrossSocket extends Socket {
 		protected InetSocketAddress processedEndpoint;
+		
+		@Override
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
 			logger.log(Level.FINE, "connecting to: {0}", endpoint);
@@ -358,25 +361,34 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			}
 		}
 		
-		
-
 		@Override
 		public InputStream getInputStream() throws IOException {
 			if (System.getProperty(PROP_MTO_TRACE) == null )
 				return super.getInputStream();
-			else
+			else {
+				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
 				return new LoggableInputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getInputStream());
+			}
 		}
 
 		@Override
 		public OutputStream getOutputStream() throws IOException {
+			logger.log(Level.FINE, "connected via MTO: {0}:{1}", new Object[]{mtoAddr, mtoPort});
 			if (System.getProperty(PROP_MTO_TRACE) == null )
 				return super.getOutputStream();
-			else
-				return new LoggableOutputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getOutputStream());		
+			else {
+				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
+				return new LoggableOutputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getOutputStream());
+			}
+		}
+		
+		@Override
+		public SocketChannel getChannel() {
+			logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
+			return super.getChannel();
 		}
 
-
+		@Override
 		public void connect(SocketAddress endpoint) throws IOException {
 			connect(endpoint, 0);
 		}
@@ -420,6 +432,8 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				close();
 				throw new IOException("MTO denied connection");
 			}
+			
+			logger.log(Level.FINE, "connected via MTO: {0}:{1}", new Object[]{mtoAddr, mtoPort});
 		}
 
 	}
