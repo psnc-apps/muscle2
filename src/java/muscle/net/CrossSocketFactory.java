@@ -28,6 +28,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		
 		public LoggableOutputStream(String id, OutputStream out) {
 			super(out);
+			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			this.id = id;
 		}
 		@Override
@@ -59,6 +60,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		
 		public LoggableInputStream(String id, InputStream in) {
 			super(in);
+			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			this.id = id;
 		}
 		@Override
