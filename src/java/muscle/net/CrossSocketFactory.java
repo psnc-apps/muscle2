@@ -22,11 +22,89 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 
 public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.JICP.SocketFactory {
+	
+	protected class LoggableOutputStream extends OutputStream {
+		protected OutputStream os;
+		protected String id;
+		
+		public LoggableOutputStream(String id, OutputStream os) {
+			this.os = os;
+			this.id = id;
+		}
+		@Override
+		public void write(int b) throws IOException {
+			logger.log(Level.FINEST, "writeI: id = {}, b = {}", new Object[] {id, b});
+			os.write(b);
+		}
+		@Override
+		public void close() throws IOException {
+			logger.log(Level.FINEST, "close: id = {}", new Object[] {id});
+			os.close();
+		}
+		@Override
+		public void flush() throws IOException {
+			logger.log(Level.FINEST, "flush: id = {}", new Object[] {id});
+			os.flush();
+		}
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			logger.log(Level.FINEST, "writeO: id = {}, off = {}, len = {}, b[off] = {}, b[last] = {}", new Object[] {id, off, len, b[off], b[off+len-1]});
+			os.write(b, off, len);
+		}
+		@Override
+		public void write(byte[] b) throws IOException {
+			logger.log(Level.FINEST, "write: id = {}, len = {}, b[0] = {}, b[last] = {}", new Object[] {id, b.length, b[0], b[b.length - 1]});
+			os.write(b);
+		}
+		
+	}
+
+	protected class LoggableInputStream extends InputStream {
+		protected InputStream is;
+		protected String id;
+		
+		public LoggableInputStream(String id, InputStream os) {
+			this.is = os;
+			this.id = id;
+		}
+		@Override
+		public int read() throws IOException {
+			int b = is.read();
+			logger.log(Level.FINEST, "readI: id = {}, b = {}", new Object[] {id, b});
+			return b;
+		}
+		@Override
+		public void close() throws IOException {
+			logger.log(Level.FINEST, "close: id = {}", new Object[] {id});
+			is.close();
+		}
+		@Override
+		public int available() throws IOException {
+			int av = is.available();
+			logger.log(Level.FINEST, "available: id = {}, available bytes = {}", new Object[] {id, av});
+			return av;
+		}
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			int bread = is.read(b, off, len);
+			logger.log(Level.FINEST, "readO: id = {}, off = {}, bread = {}, b[off] = {}, b[last] = {}", new Object[] {id, off, bread, b[off], b[off+bread-1]});
+			return bread;
+		}
+		@Override
+		public int read(byte[] b) throws IOException {
+			int bread = is.read(b);
+			logger.log(Level.FINEST, "read: id = {}, bread = {}, b[0] = {}, b[last] = {}", new Object[] {id, bread, b[0], b[bread - 1]});
+			return bread;
+		}
+	}
+	
 	private final static Logger logger = Logger.getLogger(CrossSocketFactory.class.getName());
 	
 	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
 	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
 	public static final String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
+	public static final String PROP_MTO_TRACE = "pl.psnc.mapper.muscle.mto.trace";
+
 
 	public static final String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
 	public static final String ENV_SESSION_ID = "SESSION_ID";
@@ -253,10 +331,11 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 	}
 
 	private class CrossSocket extends Socket {
+		protected InetSocketAddress processedEndpoint;
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
 			logger.log(Level.FINE, "connecting to: {0}", endpoint);
-			InetSocketAddress processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
+			processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
 
 			int port = processedEndpoint.getPort();
 			if (port >= portMin && port <= portMax) {
@@ -272,6 +351,25 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				mtoConnect(timeout, processedEndpoint);
 			}
 		}
+		
+		
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			if (System.getProperty(PROP_MTO_TRACE) == null )
+				return super.getInputStream();
+			else
+				return new LoggableInputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getInputStream());
+		}
+
+		@Override
+		public OutputStream getOutputStream() throws IOException {
+			if (System.getProperty(PROP_MTO_TRACE) == null )
+				return super.getOutputStream();
+			else
+				return new LoggableOutputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getOutputStream());		
+		}
+
 
 		public void connect(SocketAddress endpoint) throws IOException {
 			connect(endpoint, 0);
@@ -299,11 +397,11 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			req.setDestination(processedEndpoint);
 			req.type = MtoRequest.TYPE_CONNECT;
 
-			getOutputStream().write(req.write().array());
+			super.getOutputStream().write(req.write().array());
 
 			// Read answer
 			ByteBuffer buffer = ByteBuffer.allocate(MtoRequest.byteSize());
-			getInputStream().read(buffer.array());
+			super.getInputStream().read(buffer.array());
 			MtoRequest res = MtoRequest.read(buffer);
 
 			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
@@ -311,7 +409,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
-			int response = new DataInputStream(getInputStream()).readInt();
+			int response = new DataInputStream(super.getInputStream()).readInt();
 			if (response != 0) {
 				close();
 				throw new IOException("MTO denied connection");
