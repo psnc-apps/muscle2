@@ -2,7 +2,7 @@
 
 /* from local */
 Connection::Connection(tcp::socket* s, char* requestBuffer)
-   : sock(s), reqBuf(requestBuffer), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0)
+   : sock(s), reqBuf(requestBuffer), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0), currentlyWriting(false)
 {
   cacheEndpoint();
 }
@@ -273,7 +273,18 @@ void Connection::localToRemoteW(const error_code& e, size_t count)
 void Connection::remoteToLocal(char * data, int length )
 {
   referenceCount++;
-  async_write(*sock, buffer(data, length), Bufferfreeer(data, this));
+
+  if (currentlyWriting) {
+	    Logger::trace(Logger::MsgType_PeerConn, "[__Q] Queuing %u bytes on %s. Already %d messages in queue", length,
+	    sockEndp.address().to_string().c_str(),
+		sendQueue.size());
+
+	    sendQueue.push(pair<char*, size_t>(data, length));
+  } else {
+	  Logger::trace(Logger::MsgType_PeerConn, "[__W] Sending directly %u bytes on %s", length, sockEndp.address().to_string().c_str());
+	  currentlyWriting = true;
+	  async_write(*sock, buffer(data, length), Bufferfreeer(data, this));
+  }
 }
 
 void Connection::connectedRemote(Header h)
@@ -335,6 +346,19 @@ void Connection::Bufferfreeer::operator ()(const error_code& e, size_t)
     if(thiz->closing) { thiz->clean(); return;}
     if(e)
       thiz->error(e);
+  } else {
+	  return;
+  }
+
+  if(thiz->sendQueue.empty()) {
+    Logger::trace(Logger::MsgType_PeerConn, "[__W] Send queue empty on %s", thiz->sockEndp.address().to_string().c_str());
+    thiz->currentlyWriting=false;
+  } else {
+	  data = thiz->sendQueue.front().first;
+	  size_t newlen = thiz->sendQueue.front().second;
+	  thiz->sendQueue.pop();
+	  Logger::trace(Logger::MsgType_PeerConn, "[__W] Sending from queue %u bytes on %s", newlen, thiz->sockEndp.address().to_string().c_str());
+	  async_write(*(thiz->sock), buffer(data, newlen),  Bufferfreeer(data, thiz) );
   }
 };
 

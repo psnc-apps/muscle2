@@ -432,22 +432,21 @@ void PeerConnectionHandler::Sender::send(char * _data, size_t len, function< voi
   
   parent->updateLastOperationTimer();
   
-  if(currentlyWriting){
-    Logger::trace(Logger::MsgType_PeerConn, "Qeueing %u bytes on %s. Already %d messages in queue", len, 
+  if (currentlyWriting) {
+    Logger::trace(Logger::MsgType_PeerConn, "Queuing %u bytes on %s. Already %d messages in queue", len,
 	parent->remoteEndpoint().address().to_string().c_str(), 
 	sendQueue.size());
 
     sendQueue.push(sendPair(pair<char*, size_t>(_data,len), callback));
-    return;
+  } else {
+	Logger::trace(Logger::MsgType_PeerConn, "Sending directly %u bytes on %s", len, parent->remoteEndpoint().address().to_string().c_str());
+  
+	currentlyWriting = true;
+	data = _data;
+	currentCallback = callback;
+	parent->pendingOperatons++;
+	async_write(*(parent->socket), buffer(data,len), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
   }
-  
-  Logger::trace(Logger::MsgType_PeerConn, "Sending directly %u bytes on %s", len, parent->remoteEndpoint().address().to_string().c_str());
-  
-  currentlyWriting = true;
-  data = _data;
-  currentCallback = callback;
-  parent->pendingOperatons++;
-  async_write(*(parent->socket), buffer(data,len), bind(&PeerConnectionHandler::Sender::dataSent, this, _1, _2));
 }
 
 

@@ -7,6 +7,7 @@
 #include <boost/bind.hpp>
 #include <set>
 #include <map>
+#include <queue>
 
 #include "main.hpp"
 #include "options.hpp"
@@ -63,6 +64,10 @@ protected:
   /** If the connections should close / is just closing */
   bool closing;
   
+  /* send queue Remote to Local */
+  queue< pair<char*, size_t> > sendQueue;
+  bool currentlyWriting;
+
   /** Deletes underlying data buffer once the operation completes */
   struct Bufferfreeer {
   private:
