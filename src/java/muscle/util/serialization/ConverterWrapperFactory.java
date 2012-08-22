@@ -8,8 +8,12 @@ package muscle.util.serialization;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+
+import muscle.net.CrossSocketFactory;
+
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 import org.msgpack.MessagePack;
@@ -55,7 +59,9 @@ public class ConverterWrapperFactory {
 			return new XdrDeserializerWrapper(xdrIn);
 		} else {
 			MessagePack msgPack = new MessagePack();
-			Unpacker unpacker = msgPack.createUnpacker(new BufferedInputStream(s.getInputStream(), DATA_BUFFER_SIZE));
+			InputStream socketStream = System.getProperty(CrossSocketFactory.PROP_MTO_TRACE) == null ? s.getInputStream() : 
+				new CrossSocketFactory.LoggableInputStream(s.getRemoteSocketAddress().toString(), s.getInputStream()); // * temporary, there is no way to do it in cleaner way */
+			Unpacker unpacker = msgPack.createUnpacker(new BufferedInputStream(socketStream, DATA_BUFFER_SIZE));
 			unpacker.setArraySizeLimit(Integer.MAX_VALUE);
 			unpacker.setMapSizeLimit(Integer.MAX_VALUE);
 			// 2 GB

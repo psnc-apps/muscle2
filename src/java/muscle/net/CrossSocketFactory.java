@@ -24,7 +24,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.JICP.SocketFactory {
 	
-	protected class LoggableOutputStream extends FilterOutputStream {
+	public static class LoggableOutputStream extends FilterOutputStream {
 		protected String id;
 		
 		public LoggableOutputStream(String id, OutputStream out) {
@@ -56,7 +56,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		
 	}
 
-	protected class LoggableInputStream extends FilterInputStream {
+	public static class LoggableInputStream extends FilterInputStream {
 		protected String id;
 		
 		public LoggableInputStream(String id, InputStream in) {
@@ -336,8 +336,9 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		logger.fine("creating new client socket");
 		return new CrossSocket();
 	}
+	
 
-	private class CrossSocket extends Socket {
+	protected class CrossSocket extends Socket {
 		protected InetSocketAddress processedEndpoint;
 		
 		@Override
@@ -373,7 +374,6 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 
 		@Override
 		public OutputStream getOutputStream() throws IOException {
-			logger.log(Level.FINE, "connected via MTO: {0}:{1}", new Object[]{mtoAddr, mtoPort});
 			if (System.getProperty(PROP_MTO_TRACE) == null )
 				return super.getOutputStream();
 			else {
