@@ -30,15 +30,21 @@ formats log messages
 @author Joris Borgdorff
 */
 public class MuscleFormatter extends SimpleFormatter {
-	private final static String format = "[%tT %6.6s] %s%s\n";
+	private final static String format = "[%tT %6.6s] %s%s\n%s";
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
 
 	public synchronized String format(LogRecord record) {
-		String pkg = record.getLoggerName();
-		if (pkg == null) {
-			pkg = "?";
+		String loggerName = record.getLoggerName();
+		if (loggerName == null) {
+			loggerName = "?";
+		} else if (!loggerName.startsWith("muscle")) {
+			// Use class name
+			int classIndex = loggerName.lastIndexOf('.');
+			if (classIndex >= 0) {
+				 loggerName = loggerName.substring(classIndex + 1);
+			}
 		}
 		
 		int intLevel = record.getLevel().intValue();
@@ -63,6 +69,6 @@ public class MuscleFormatter extends SimpleFormatter {
 			err = "                         (" + thrown.getClass().getName() + ": " + thrown.getMessage() + ")\n";
 		}
 		
-		return String.format(format, System.currentTimeMillis(), pkg, level, msg, err);
+		return String.format(format, System.currentTimeMillis(), loggerName, level, msg, err);
 	}
 }
