@@ -26,21 +26,29 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 	
 	public static class LoggableOutputStream extends FilterOutputStream {
 		protected String id;
+		protected long pos = 0;
+		protected FileOutputStream traceFile;
 		
-		public LoggableOutputStream(String id, OutputStream out) {
+		public LoggableOutputStream(String id, OutputStream out) throws IOException {
 			super(out);
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			this.id = id;
+			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
 		}
+		
 		@Override
 		public void write(int b) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
+			logger.log(Level.FINEST, "id = {0}, b = {1}, pos = {2}", new Object[] {id, b, pos});
 			out.write(b);
+			pos++;
+			
+			traceFile.write(b);
 		}
 		@Override
 		public void close() throws IOException {
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			out.close();
+			traceFile.close();
 		}
 		@Override
 		public void flush() throws IOException {
@@ -49,8 +57,11 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 		}
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}", new Object[] {id, off, len, b[off], b[off+len-1]});
+			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}, pos = {5}", new Object[] {id, off, len, b[off], b[off+len-1], pos});
 			out.write(b, off, len);
+			pos+=len;
+			
+			traceFile.write(b, off, len);
 		}
 
 		
@@ -58,22 +69,32 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 
 	public static class LoggableInputStream extends FilterInputStream {
 		protected String id;
+		protected long pos = 0;
+		protected FileOutputStream traceFile;
 		
-		public LoggableInputStream(String id, InputStream in) {
+		public LoggableInputStream(String id, InputStream in) throws IOException {
 			super(in);
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			this.id = id;
+			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
 		}
 		@Override
 		public int read() throws IOException {
 			int b = in.read();
-			logger.log(Level.FINEST, "id = {0}, b = {1}", new Object[] {id, b});
+			
+			logger.log(Level.FINEST, "id = {0}, b = {1}, pos = {2}", new Object[] {id, b, pos});
+			if (b != -1)
+				pos++;
+			
+			traceFile.write(b);
+			
 			return b;
 		}
 		@Override
 		public void close() throws IOException {
 			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
 			in.close();
+			traceFile.close();
 		}
 		@Override
 		public int available() throws IOException {
@@ -88,10 +109,13 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			try {
 				int bread = in.read(b, off, len);
 				
-				if (bread != -1)
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}", new Object[] {id, bread, off, b[off], off+bread-1, b[off+bread-1]});
-				else 
-					logger.log(Level.FINEST, "id = {0},  bread = {1}", new Object[] {id, bread});
+				if (bread != -1) {
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}, pos = {6}", new Object[] {id, bread, off, b[off], off+bread-1, b[off+bread-1], pos});
+					traceFile.write(b, off, bread);
+					pos+=bread;
+				} else {
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, pos = {2}", new Object[] {id, bread, pos});
+				}
 
 				return bread;
 			} catch (IOException ex) {
