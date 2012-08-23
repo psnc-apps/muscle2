@@ -4,6 +4,7 @@
 //#define CPPMUSCLE_TRACE  
 
 #include <string>
+#include <vector>
 #include <sys/types.h>
 
 #include "muscle_types.h"
@@ -20,7 +21,10 @@ public:
 	static bool will_stop(void);
 
 	static void send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type);
+	static void sendDoubleVector(std::string entrance_name, const std::vector<double>& data);
+
 	static void* receive(std::string exit_name, void *data, size_t &count, muscle_datatype_t type);
+	static std::vector<double> receiveDoubleVector(std::string exit_name);
 
 	static void free_data(void *ptr, muscle_datatype_t type);
 

@@ -196,6 +196,10 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			if (!xdr_bool(&xdri, (bool_t *)result)) throw new Communicator::io_exception("Can not read boolean");
 			break;
 		case PROTO_PROPERTY:
+			bool_t success;
+			if (!xdr_bool(&xdri, &success)) throw new Communicator::io_exception("Can not read property success status");
+			if (!success) throw new std::runtime_error("Property does not exist");
+			// no break
 		case PROTO_KERNEL_NAME:
 		case PROTO_TMP_PATH:
 		case PROTO_PROPERTIES:

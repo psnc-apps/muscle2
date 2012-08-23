@@ -40,7 +40,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	using boost::lexical_cast;
 
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::init() " << endl;
+	logger::finest("muscle::env::init() ");
 #endif
 	int rank = env::detect_mpi_rank();
 	
@@ -94,7 +94,7 @@ void env::finalize(void)
 {
 	if (!is_main_processor) return;
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::finalize() " << endl;
+	logger::finest("muscle::env::finalize() ");
 #endif
 	muscle_comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
 	delete muscle_comm;
@@ -117,7 +117,7 @@ void env::finalize(void)
 
 int env::detect_mpi_rank() {
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::detect_mpi_rank() " << endl;
+	logger::finest("muscle::env::detect_mpi_rank() ");
 #endif
 	const std::string possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
 							"OMPI_MCA_ns_nds_vpid",
@@ -140,7 +140,7 @@ std::string cxa::kernel_name(void)
 {
 	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::kernel_name() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::cxa::kernel_name() " << endl;
+	logger::finest("muscle::cxa::kernel_name() ");
 #endif
 	return muscle_kernel_name;
 }
@@ -149,13 +149,13 @@ std::string cxa::get_property(std::string name)
 {
 	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::cxa::get_property(" << name << ") " << endl;
+	logger::finest("muscle::cxa::get_property(%s) ", name.c_str());
 #endif
 
 	std::string prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
 
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::cxa::get_property[" << name << "] -> " << prop_value_str << endl;
+	logger::finest("muscle::cxa::get_property(%s) = %s", name.c_str(), prop_value_str.c_str());
 #endif
 	return prop_value_str;
 }
@@ -164,7 +164,7 @@ std::string cxa::get_properties()
 {
 	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::cxa::get_properties()" << endl;
+	logger::finest("muscle::cxa::get_properties()");
 #endif
 	return muscle_comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
@@ -173,7 +173,7 @@ std::string env::get_tmp_path()
 {
 	if (!env::is_main_processor) throw runtime_error("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::get_tmp_path()" << endl;
+	logger::finest("muscle::env::get_tmp_path()");
 #endif
 	return muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
 }
@@ -185,11 +185,11 @@ bool env::will_stop(void)
 	bool_t is_will_stop = false;
 	
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::will_stop()" << endl;
+	logger::finest("muscle::env::will_stop()");
 #endif
 	muscle_comm->execute_protocol(PROTO_WILL_STOP, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_will_stop, NULL);
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::will_stop -> " << is_will_stop << endl;
+	logger::finest("muscle::env::will_stop -> %d", is_will_stop);
 #endif
 
 	return is_will_stop;
@@ -201,25 +201,53 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 	if (!env::is_main_processor) return;
 
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::send()" << endl;
+	logger::finest("muscle::env::send()");
 #endif
 
 	muscle_comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
 }
 
+void env::sendDoubleVector(std::string entrance_name, const std::vector<double>& data)
+{
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::send()");
+#endif
+
+	env::send(entrance_name, &data[0], data.size(), MUSCLE_DOUBLE);
+}
 
 void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_datatype_t type)
 {
-	// No error: simply ignore send in all MPI processes except 0.
+	// No error: simply ignore receive in all MPI processes except 0.
 	if (!env::is_main_processor) return (void *)0;
 
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::receive()" << endl;
+	logger::finest("muscle::env::receive()");
 #endif
 
 	muscle_comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
 
 	return data;
+}
+
+std::vector<double> env::receiveDoubleVector(std::string exit_name)
+{
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::receive()");
+#endif
+	size_t sz;
+	double *ddata = (double *)env::receive(exit_name, (void *)0, sz, MUSCLE_DOUBLE);
+	if (ddata)
+	{
+		// data received or in main processor
+		std::vector<double> data(ddata, ddata + sz);
+		env::free_data(ddata, MUSCLE_DOUBLE);
+		return data;
+	} else
+	{
+		std::vector<double> data;
+		return data;
+	}
 }
 
 /**
@@ -233,7 +261,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	*port = 0;
 
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::muscle2_tcp_location()" << endl;
+	logger::finest("muscle::env::muscle2_tcp_location()");
 #endif
 	
 	if (pid < 0)
@@ -267,7 +295,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 char * env::create_tmpfifo()
 {
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::create_tmpfifo()" << endl;
+	logger::finest("muscle::env::create_tmpfifo()");
 #endif
 
 	char *tmppath;
@@ -301,7 +329,7 @@ char * env::create_tmpfifo()
 pid_t env::muscle2_spawn(int* argc, char ***argv)
 {
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::muscle2_spawn()" << endl;
+	logger::finest("muscle::env::muscle2_spawn()");
 #endif
 
 	pid_t pid = -2;
@@ -359,7 +387,7 @@ pid_t env::spawn(char * const *argv)
 	pid_t pid;
 	
 #ifdef CPPMUSCLE_TRACE
-	cout << "muscle::env::spawn(" << argv[0] << ")" << endl;
+	logger::finest("muscle::env::spawn(%s)", argv[0]);
 #endif
 	pid = fork();
 	if (pid == -1)
