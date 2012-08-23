@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import muscle.core.CxADescription;
 
-public abstract class MPIKernel extends NativeKernel {
+public class MPIKernel extends NativeKernel {
 
 	/**
 	 *  Default serial versionUID
