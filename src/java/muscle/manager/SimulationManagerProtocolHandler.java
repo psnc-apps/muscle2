@@ -91,5 +91,10 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 		
 		return success;
 	}
+
+	@Override
+	public String getName() {
+		return "ManagerProtocolHandler";
+	}
 	
 }

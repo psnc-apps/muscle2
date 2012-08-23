@@ -168,7 +168,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			try {
 				mtoAddr = InetAddress.getByName(System.getProperty(PROP_MTO_ADDRESS));
 			} catch (UnknownHostException e) {
-				logger.log(Level.SEVERE, "Provided MTO address unresolvable: " + e, e);
+				logger.log(Level.SEVERE, "Provided MTO address unresolvable.", e);
 			}
 		}
 
@@ -197,7 +197,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			try {
 				mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
 			} catch (IOException ex) {
-				throw new IOException("Could not register a server socket at the MTO: " + ex.getMessage());
+				throw new IOException("Could not register a server socket at the MTO", ex);
 			}
 
 			logger.info("Registered to MTO");
@@ -335,7 +335,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			host = saxHandler.getParsedValues().get(0);
 			port = Integer.parseInt(saxHandler.getParsedValues().get(1));
 		} catch (SAXException ex) {
-			throw new IOException("Failed to parse coordinator response: " + ex);
+			throw new IOException("Failed to parse coordinator response.", ex);
 		} catch (ParserConfigurationException ex) {
 			throw new AssertionError(ex);
 		}

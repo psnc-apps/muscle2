@@ -6,7 +6,6 @@
 package muscle.client.communication;
 
 import java.io.Serializable;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.IncomingMessageProcessor;
@@ -18,6 +17,7 @@ import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
 import muscle.id.*;
 import muscle.net.SocketFactory;
+import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.*;
 
 /**
@@ -35,8 +35,8 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?>> getReceiverTask(final ConduitExitControllerImpl<T> exit, final PortalID port) {
-		return new Callable<Receiver<T,?>>() {
+	protected <T extends Serializable> NamedCallable<Receiver<T, ?>> getReceiverTask(final ConduitExitControllerImpl<T> exit, final PortalID port) {
+		return new NamedCallable<Receiver<T,?>>() {
 			@SuppressWarnings("unchecked")
 			public Receiver<T, ?> call() throws Exception {
 				exit.start();
@@ -76,12 +76,17 @@ public class TcpPortFactoryImpl extends PortFactory {
 			
 				return recv;
 			}
+
+			@Override
+			public String getName() {
+				return "TCPReceiverLocator-" + port;
+			}
 		};
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
-		return new Callable<Transmitter<T,?>>() {
+	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
+		return new NamedCallable<Transmitter<T,?>>() {
 			@SuppressWarnings("unchecked")
 			public Transmitter<T, ?> call() throws Exception {
 				entrance.start();
@@ -103,6 +108,11 @@ public class TcpPortFactoryImpl extends PortFactory {
 				}
 				entrance.setTransmitter(trans);
 				return trans;
+			}
+			
+			@Override
+			public String getName() {
+				return "TCPTransmitterLocator-" + port;
 			}
 		};
 	}

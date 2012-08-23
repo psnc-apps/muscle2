@@ -4,9 +4,6 @@
 package muscle.client.communication;
 
 import java.io.Serializable;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +16,8 @@ import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
 import muscle.util.concurrency.Disposable;
+import muscle.util.concurrency.NamedCallable;
+import muscle.util.concurrency.NamedExecutor;
 
 /**
  * Assigns Receivers and Transmitters to Portals.
@@ -26,7 +25,7 @@ import muscle.util.concurrency.Disposable;
  * @author Joris Borgdorff
  */
 public abstract class PortFactory implements Disposable {
-	protected final ExecutorService executor;
+	protected final NamedExecutor executor;
 	protected final ResolverFactory resolverFactory;
 	private Resolver resolver;
 	protected final IncomingMessageProcessor messageProcessor;
@@ -62,17 +61,17 @@ public abstract class PortFactory implements Disposable {
 	 * 
 	 * In this task, the receiver must also be added to the messageProcessor, and the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> Callable<Receiver<T,?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> NamedCallable<Receiver<T,?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide);
 	
 	/**
 	 * Creates a task that will assign a transmitter to a ConduitEntranceController.
 	 * 
 	 * In this task, the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> Callable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide);
 	
 	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
-		this.executor = Executors.newCachedThreadPool();
+		this.executor = new NamedExecutor();
 		this.resolverFactory = rf;
 		this.messageProcessor = msgProcessor;
 		this.resolver = null;

@@ -12,7 +12,7 @@ public class Ping extends CAController {
 
 	@Override
 	protected void addPortals() {
-		entrance = addSynchronizedEntrance("out", byte[].class);
+		entrance = addEntrance("out", byte[].class);
 		exit = addExit("in", byte[].class);
 	}
 

@@ -91,6 +91,8 @@ public class SimulationManager {
 			if (stillActive.isEmpty()) {
 				logger.info("All ID's have finished, quitting MUSCLE now.");
 				this.dispose();
+			} else {
+				this.notifyAll();
 			}
 		}
 		return this.available.remove(id.getName());
@@ -98,15 +100,24 @@ public class SimulationManager {
 	
 	public synchronized boolean resolve(Identifier id) throws InterruptedException {
 		logger.log(Level.FINE, "Resolving location of ID {0}", id);
-		while (!id.isResolved() && !this.available.contains(id.getName()) && !this.isDone) {
-			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", id);
+		String idName = id.getName();
+		// Exit this loop if 1) the ID is resolved; 2) the ID became available; 3) the ID in question quit; 4) the simulationManager quit
+		while (!id.isResolved() && !this.available.contains(idName) && stillActive.contains(idName) && !this.isDone) {
+			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", idName);
 			wait();
 		}
-		if (!isDone && !id.isResolved()) {
-			Identifier resolvedId = this.registered.get(id.getName());
-			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
-			id.resolveLike(resolvedId);
-			return true;
+		if (!isDone) {
+			if (this.available.contains(idName)) {
+				if (!id.isResolved()) {
+					Identifier resolvedId = this.registered.get(idName);
+					logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
+					id.resolveLike(resolvedId);
+				}
+				return true;
+			} else {
+				// The ID already quit
+				logger.log(Level.FINE, "Location of ID {0} not available: it already quit.", id);		
+			}
 		}
 		return false;
 	}
@@ -137,7 +148,7 @@ public class SimulationManager {
 			mch.start();
 			sm.setConnectionHandler(mch);
 		} catch (Exception ex) {
-			logger.log(Level.SEVERE, "Could not start connection manager." + ex, ex);
+			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
 			if (mch != null) {
 				sm.dispose();
 				mch.dispose();

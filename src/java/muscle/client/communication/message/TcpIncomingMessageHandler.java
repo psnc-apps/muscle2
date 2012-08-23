@@ -122,4 +122,9 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		}
 		return null;
 	}
+
+	@Override
+	public String getName() {
+		return "TcpIncomingMessageHandler";
+	}
 }

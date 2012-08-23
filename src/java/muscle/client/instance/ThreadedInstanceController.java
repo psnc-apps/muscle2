@@ -47,7 +47,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private boolean execute;
 	private File infoFile;
 	private InstanceController mainController;
-	private boolean isDone, isExecuting;
+	private volatile boolean isDone;
+	private boolean isExecuting;
 	
 	private Map<String, ExitDescription> exitDescriptions;
 	private Map<String, EntranceDescription> entranceDescriptions;
@@ -74,6 +75,10 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		return this.isExecuting;
 	}
 	
+	public boolean isDisposed() {
+		return isDone;
+	}
+	
 	@Override
 	public void run() {		
 		logger.log(Level.INFO, "{0}: connecting...", getLocalName());
@@ -93,7 +98,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 			if (!register()) {
 				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. Submodel execution aborted.", getLocalName());
-				if (this.disposeNoDeregister()) {
+				if (!this.isDisposed()) {
+					this.disposeNoDeregister();
 					listener.isFinished(this);
 				}
 				return;
@@ -173,7 +179,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	public void dispose() {
-		if (this.disposeNoDeregister()) {
+		if (!isDisposed()) {
+			isDone = true;
 			// Deregister with the resolver
 			try {
 				Resolver r = resolverFactory.getResolver();
@@ -183,21 +190,17 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			}
 
 			listener.isFinished(this);
+			
+			this.disposeNoDeregister();
 		}
 	}
 	
 	/** Disposes the current instance, without deregistering it.
 	 *   It will only be executed once per instance, after this it becomes a no-op.
-	 * @return whether the method was executed, false if it was a no-op.
 	 */
-	private boolean disposeNoDeregister() {
-		synchronized (this) {
-			if (isDone) {
-				return false;
-			} else {
-				isDone = true;
-			}
-		}
+	private void disposeNoDeregister() {
+		isDone = true;
+		
 		for (ConduitExitControllerImpl<?> source : exits) {
 			portFactory.removeReceiver(source.getIdentifier());
 			source.dispose();
@@ -210,7 +213,6 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			// probably the agent has been killed and did not call its afterExecute
 			afterExecute();
 		}
-		return true;
 	}
 		
 	private void beforeExecute() {

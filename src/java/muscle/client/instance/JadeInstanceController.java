@@ -82,4 +82,9 @@ public class JadeInstanceController extends MultiDataAgent implements InstanceCo
 	public boolean isExecuting() {
 		return this.realController.isExecuting();
 	}
+
+	@Override
+	public boolean isDisposed() {
+		return this.realController.isDisposed();
+	}
 }

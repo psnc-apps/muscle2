@@ -11,6 +11,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.util.concurrency.Disposable;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
@@ -23,11 +24,13 @@ import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 
-public class NativeGateway  extends Thread {
+public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
 	private final static boolean USE_ASYNC = true;
+	private volatile boolean isDone;
+	private boolean isDisposed;
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
@@ -44,6 +47,22 @@ public class NativeGateway  extends Thread {
 		
 		setDaemon(true);
 	}
+
+	@Override
+	public void dispose() {
+		this.isDone = true;
+		try {
+			// The only way to abort an accept method
+			ss.close();
+		} catch (IOException ex) {
+			Logger.getLogger(NativeGateway.class.getName()).log(Level.SEVERE, listener.getKernelName() + " could not close connection with native code.", ex);
+		}
+	}
+
+	@Override
+	public boolean isDisposed() {
+		return this.isDone;
+	}
 	
 	public interface CallListener {
 		/* OPCODE = 0 */
@@ -52,6 +71,7 @@ public class NativeGateway  extends Thread {
 		public String getKernelName();
 		/* OPCODE = 2 */
 		public String getProperty(String name);
+		public boolean hasProperty(String name);
 		/* OPCODE = 3 */
 		public boolean willStop();
 		/* OPCODE = 4 */
@@ -100,7 +120,7 @@ public class NativeGateway  extends Thread {
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
 			final boolean isFinestLog = logger.isLoggable(Level.FINEST);
-			while (true) {
+			while (!isDisposed) {
 				if (isFinestLog) logger.finest("Starting decoding...");
 				in.refresh();
 
@@ -127,10 +147,17 @@ public class NativeGateway  extends Thread {
 					case 2:
 					{
 						if (isFinestLog) logger.finest("getProperty() request.");
-						String value = listener.getProperty(in.readString());
-						if (isFinestLog) logger.log(Level.FINEST, "Property value read: {0}", value);
-						out.writeString(value);
-						if (isFinestLog) logger.log(Level.FINEST, "Property value sent: {0}", value);
+						String name = in.readString();
+						if (listener.hasProperty(name)) {
+							String value = listener.getProperty(name);
+							if (isFinestLog) logger.log(Level.FINEST, "Property value read: {0}", value);
+							out.writeBoolean(true);
+							out.writeString(value);
+							if (isFinestLog) logger.log(Level.FINEST, "Property value sent: {0}", value);
+						} else {
+							if (isFinestLog) logger.log(Level.WARNING, "Property ''{0}'' for instance {1} does not exist", new Object[] {name, listener.getKernelName()});
+							out.writeBoolean(false);
+						}
 						break;
 					}
 					case 3:
@@ -143,7 +170,7 @@ public class NativeGateway  extends Thread {
 					}
 					case 4:
 					{
-						if (isFinestLog) logger.finest("sendData() request.");
+						if (isFinestLog) logger.finest("send() request.");
 						String entranceName = in.readString();
 						SerializableData data = SerializableData.parseData(in);
 						if (isFinestLog) logger.log(Level.FINEST, "entranceName = {0}, data = {1}", new Object[]{entranceName, data});
@@ -153,7 +180,7 @@ public class NativeGateway  extends Thread {
 					}
 					case 5:
 					{
-						if (isFinestLog) logger.finest("receiveData() request.");
+						if (isFinestLog) logger.finest("receive() request.");
 						String exitName = in.readString();
 						if (isFinestLog) logger.log(Level.FINEST, "exitName = {0}", exitName);
 						SerializableData data =  listener.receive(exitName);
@@ -192,9 +219,9 @@ public class NativeGateway  extends Thread {
 		} catch (SocketException ex) {
 			logger.log(Level.SEVERE, "Connection of " + listener.getKernelName() + " failed; most likely the native code exited.", ex);
 		} catch (IOException ex) {
-			logger.log(Level.SEVERE, "Communication error in " + listener.getKernelName() + ": " + ex, ex);
+			logger.log(Level.SEVERE, "Communication error with " + listener.getKernelName(), ex);
 		} catch (Throwable ex) {
-			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code: " + ex, ex);
+			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code.", ex);
 		} finally {
 			listener.isFinished();
 			if (s != null) {

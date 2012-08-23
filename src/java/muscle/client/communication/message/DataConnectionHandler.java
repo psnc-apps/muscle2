@@ -7,7 +7,6 @@ package muscle.client.communication.message;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,6 +14,7 @@ import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
 import muscle.id.ResolverFactory;
 import muscle.net.AbstractConnectionHandler;
+import muscle.util.concurrency.NamedCallable;
 
 /**
  *
@@ -31,7 +31,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 	}
 	
 	@Override
-	protected Callable<?> createProtocolHandler(Socket s) {
+	protected NamedCallable<?> createProtocolHandler(Socket s) {
 		try {
 			return new TcpIncomingMessageHandler(s, listener, resolverFactory, this);
 		} catch (InterruptedException ex) {

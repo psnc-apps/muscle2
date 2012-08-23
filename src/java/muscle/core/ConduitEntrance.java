@@ -79,6 +79,11 @@ public class ConduitEntrance<T extends Serializable> {
 		this.controller.send(obs.getData(), obs.getTimestamp(), this.nextTime);
 	}
 	
+	/** Indicate that no more messages will be sent over the current conduit. */
+	public void close() {
+		this.controller.dispose();
+	}
+	
 	@Override
 	public String toString() {
 		return this.controller.toString();

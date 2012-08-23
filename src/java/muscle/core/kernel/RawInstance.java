@@ -207,6 +207,7 @@ public abstract class RawInstance {
 		return e;
 	}
 	
+	@Deprecated
 	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
 		ConduitExitController<T> ec = controller.createConduitExit(true, portName, new DataTemplate<T>(dataClass));
 
@@ -216,12 +217,13 @@ public abstract class RawInstance {
 
 		return e;		
 	}
+	@Deprecated
 	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String portName, Class<T> dataClass, Class<T> jniClass) {
 		return addJNIExit(portName, dataClass, jniClass, new PipeConverter<T>());
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
 
 		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
@@ -231,6 +233,7 @@ public abstract class RawInstance {
 		return e;
 	}
 	
+	@Deprecated
 	protected <T extends Serializable> ConduitEntrance<T> addSynchronizedEntrance(String portName, Class<T> dataClass) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
 
@@ -252,6 +255,7 @@ public abstract class RawInstance {
 
 		return e;		
 	}
+	@Deprecated
 	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String portName, Class<T> dataClass) {
 		return addJNIEntrance(portName, dataClass, dataClass, new PipeConverter<T>());
 	}

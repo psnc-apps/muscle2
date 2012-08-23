@@ -15,6 +15,8 @@ public interface Resolver extends Disposable {
 	/** removes blocks */
 	public void addResolvedIdentifier(Identifier id);
 	/** removes blocks */
+	public void canNotResolveIdentifier(Identifier id);
+	/** removes blocks */
 	public void removeIdentifier(String name, IDType type);
 	/** blocking */
 	public void resolveIdentifier(Identifier id) throws InterruptedException;

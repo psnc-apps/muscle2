@@ -62,6 +62,7 @@ public class SimpleDelegatingResolver implements Resolver {
 	/**
 	 * Resolves an identifier, waiting until this is finished.
 	 * 
+	 * @param id will be resolved if there is no error. Always check isResolved() function afterwards.
 	 * @throws InterruptedException if the process was interrupted before the id was resolved.
 	 */
 	public void resolveIdentifier(Identifier id) throws InterruptedException  {
@@ -79,8 +80,8 @@ public class SimpleDelegatingResolver implements Resolver {
 			// add a search only if this instance is not already searchd for
 			if (!searchingNow.contains(fullName) && !resolvedIdCache.containsKey(fullName)) {
 				logger.log(Level.FINE, "Searching to resolve identifier {0}", id);
-				searchingNow.add(fullName);
 				delegate.search(id);
+				searchingNow.add(fullName);
 			}
 			// Whether a new search was conducted or not, there is a search going
 			while (!isDone && !id.isResolved() && !resolvedIdCache.containsKey(fullName)) {
@@ -91,7 +92,10 @@ public class SimpleDelegatingResolver implements Resolver {
 				throw new InterruptedException("Resolver interrupted");
 			}
 			if (!id.isResolved()) {
-				id.resolveLike(resolvedIdCache.get(fullName));
+				Identifier resolvedId = resolvedIdCache.get(fullName);
+				if (resolvedId.isResolved()) {
+					id.resolveLike(resolvedIdCache.get(fullName));
+				}
 			}
 			logger.log(Level.FINE, "Identifier {0} resolved", id);
 		}
@@ -157,7 +161,9 @@ public class SimpleDelegatingResolver implements Resolver {
 	 * Removes the identifier with given name and type from the resolver.
 	 */
 	public synchronized void removeIdentifier(String name, IDType type) {
-		this.resolvedIdCache.remove(name(name, type));
+		String fullName = name(name, type);
+		// Still know that it was known, but make it inactive.
+		this.resolvedIdCache.get(fullName).unResolve();
 	}
 	
 	/** Add an identifier to the resolver. This also removes it from any 
@@ -165,6 +171,16 @@ public class SimpleDelegatingResolver implements Resolver {
 	 */
 	public synchronized void addResolvedIdentifier(Identifier id) {
 		if (!id.isResolved()) throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
+		
+		String fullName = name(id.getName(), id.getType());
+		resolvedIdCache.put(fullName, id);
+		searchingNow.remove(fullName);
+		
+		notifyAll();
+	}
+	
+	public synchronized void canNotResolveIdentifier(Identifier id) {
+		if (id.isResolved()) throw new IllegalArgumentException("ID " + id + " is resolved, so it can be resolved.");
 		
 		String fullName = name(id.getName(), id.getType());
 		resolvedIdCache.put(fullName, id);

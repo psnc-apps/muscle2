@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.id.TcpLocation;
 import muscle.id.Location;
+import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.ConverterWrapperFactory;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
@@ -26,7 +27,7 @@ import muscle.util.serialization.SerializerWrapper;
  * 
  * @author Joris Borgdorff
  */
-public abstract class ProtocolHandler<S,T> implements Callable<S> {
+public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	protected final T listener;
 	protected final Socket socket;
 	private final static Logger logger = Logger.getLogger(ProtocolHandler.class.getName());
@@ -136,4 +137,6 @@ public abstract class ProtocolHandler<S,T> implements Callable<S> {
 		int port = in.readInt();
 		return new TcpLocation(inetAddr, port);
 	}
+	
+	public abstract String getName();
 }

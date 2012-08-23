@@ -165,9 +165,11 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	}
 
 	@Override
-	protected void execute() {		
+	protected void execute() {
+		NativeGateway gateway = null;
+
 		try {
-			NativeGateway gateway = new NativeGateway(this);
+			gateway = new NativeGateway(this);
 			gateway.start();
 			String port = Integer.toString(gateway.getPort());
 			String host = gateway.getInetAddress().getHostAddress();
@@ -178,8 +180,12 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 				this.writeContactInformation(host, port);
 			}
 		} catch (Exception ex) {
-			Logger.getLogger(NativeKernel.class.getName()).log(Level.SEVERE, "Could not start communicating with native code: " + ex, ex);
+			Logger.getLogger(NativeKernel.class.getName()).log(Level.SEVERE, getLocalName() + " could not start communicating with native code", ex);
+		} finally {
+			// Make sure the gateway thread quits
+			if (gateway != null) {
+				gateway.dispose();
+			}
 		}
-		
 	}
 }

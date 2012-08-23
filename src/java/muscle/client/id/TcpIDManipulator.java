@@ -17,6 +17,8 @@ import muscle.id.*;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
+import muscle.util.concurrency.NamedCallable;
+import muscle.util.concurrency.NamedExecutor;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
@@ -25,14 +27,14 @@ import muscle.util.serialization.SerializerWrapper;
  */
 public class TcpIDManipulator implements IDManipulator {
 	private final static Logger logger = Logger.getLogger(TcpIDManipulator.class.getName());
-	private final ExecutorService executor;
+	private final NamedExecutor executor;
 	private final SocketFactory sockets;
 	private Resolver resolver;
 	private final InetSocketAddress managerAddr;
 	private final Location location;
 	
 	public TcpIDManipulator(SocketFactory sf, InetSocketAddress managerAddr, Location loc) {
-		this.executor = Executors.newCachedThreadPool();
+		this.executor = new NamedExecutor();
 		this.sockets = sf;
 		this.managerAddr = managerAddr;
 		this.resolver = null;
@@ -206,6 +208,9 @@ public class TcpIDManipulator implements IDManipulator {
 				logger.log(Level.FINE, "Successfully finished the {0} protocol for ID {1}", new Object[]{action, id});
 			}
 			else {
+				if (action == SimulationManagerProtocol.LOCATE) {
+					resolver.canNotResolveIdentifier(this.id);
+				}
 				logger.log(Level.WARNING, "Failed to finish the {0} protocol for ID {1}", new Object[]{action, id});
 			}
 			in.cleanUp();
@@ -215,6 +220,11 @@ public class TcpIDManipulator implements IDManipulator {
 		
 		Boolean wasSuccessful() {
 			return successful;
+		}
+
+		@Override
+		public String getName() {
+			return "ManagerProtocol-" + action + "(" + id + ")";
 		}
 	}
 }

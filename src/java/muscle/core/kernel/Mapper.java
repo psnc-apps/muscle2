@@ -22,12 +22,13 @@ public abstract class Mapper extends Instance {
 	@Override
 	protected final void execute() {
 		this.operationsAllowed = NONE;
+		init();
+		this.operationsAllowed = RECV;
 		while (continueComputation()) {
-			this.operationsAllowed = RECV;
 			receiveAll();
 			this.operationsAllowed = SEND;
 			sendAll();
-			this.operationsAllowed = NONE;
+			this.operationsAllowed = RECV;
 		}
 	}
 	
@@ -65,4 +66,7 @@ public abstract class Mapper extends Instance {
 	public Scale getScale() {
 		return null;
 	}
+
+	/** Initialize the Mapper. */
+	protected void init() {}
 }

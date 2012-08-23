@@ -18,6 +18,7 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
 import muscle.id.ResolverFactory;
+import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.ByteJavaObjectConverter;
 import muscle.util.serialization.PipeConverter;
 
@@ -31,16 +32,16 @@ public class JadePortFactoryImpl extends PortFactory {
 	}
 	
 	@Override
-	protected <T extends Serializable> Callable<Receiver<T, ?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
+	protected <T extends Serializable> NamedCallable<Receiver<T, ?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
 		return new JadePortFactoryImpl.ReceiverTask<T>(localInstance, otherSide);
 	}
 
 	@Override
-	protected <T extends Serializable> Callable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
+	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
 		return new JadePortFactoryImpl.TransmitterTask<T>(ic, localInstance, otherSide);
 	}
 	
-	private class ReceiverTask<T extends Serializable> implements Callable<Receiver<T,?>> {
+	private class ReceiverTask<T extends Serializable> implements NamedCallable<Receiver<T,?>> {
 		private final JadePortalID port;
 		private final ThreadedConduitExitController<T> exit;
 
@@ -71,10 +72,15 @@ public class JadePortFactoryImpl extends PortFactory {
 			
 			return recv;
 		}
+
+		@Override
+		public String getName() {
+			return "JadeReceiverLocator-" + port;
+		}
 	}
 	
 	
-	private class TransmitterTask<T extends Serializable> implements Callable<Transmitter<T,?>> {
+	private class TransmitterTask<T extends Serializable> implements NamedCallable<Transmitter<T,?>> {
 		private final JadePortalID port;
 		private final JadeInstanceController instance;
 		private final ConduitEntranceControllerImpl<T> entrance;
@@ -101,6 +107,11 @@ public class JadePortFactoryImpl extends PortFactory {
 			entrance.setTransmitter(trans);
 			
 			return trans;
+		}
+	
+		@Override
+		public String getName() {
+			return "JadeTransmitterLocator-" + port;
 		}
 	}
 }

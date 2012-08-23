@@ -14,10 +14,10 @@ import jade.proto.SubscriptionInitiator;
 import jade.util.leap.Iterator;
 import java.util.logging.Logger;
 import muscle.Constant;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.id.Identifier;
 import muscle.id.Location;
 import muscle.id.Resolver;
-import muscle.exception.MUSCLERuntimeException;
 
 /**
  * Looks for agents

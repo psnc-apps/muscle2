@@ -7,11 +7,10 @@ package muscle.net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.util.concurrency.NamedCallable;
+import muscle.util.concurrency.NamedExecutor;
 import muscle.util.concurrency.SafeThread;
 
 /**
@@ -26,14 +25,14 @@ import muscle.util.concurrency.SafeThread;
 public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
-	protected final ExecutorService executor;
+	protected final NamedExecutor executor;
 	private final static Logger logger = Logger.getLogger(AbstractConnectionHandler.class .getName());
 
 	public AbstractConnectionHandler(ServerSocket ss, T listener) {
 		super("ConnectionHandler-" + ss);
 		this.ss = ss;
 		this.listener = listener;
-		executor = Executors.newCachedThreadPool();
+		executor = new NamedExecutor();
 	}
 
 	@Override
@@ -58,7 +57,7 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		}
 	}
 	
-	protected abstract Callable<?> createProtocolHandler(Socket s);
+	protected abstract NamedCallable<?> createProtocolHandler(Socket s);
 	
 	public synchronized void dispose() {
 		super.dispose();

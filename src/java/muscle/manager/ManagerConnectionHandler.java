@@ -32,10 +32,6 @@ public class ManagerConnectionHandler extends AbstractConnectionHandler<Simulati
 		return new SimulationManagerProtocolHandler(s, this.listener);
 	}
 	
-	public void dispose() {
-		super.dispose();
-	}
-	
 	void writeLocation() {
 		String hostport = ss.getInetAddress().getHostAddress()  +":" + ss.getLocalPort();
 		logger.log(Level.INFO, "Started the connection handler, listening on {0}", hostport);

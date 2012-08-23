@@ -35,7 +35,7 @@ public abstract class Instance extends RawInstance {
 		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
 		if (ports != null) {
 			for (PortDescription entrance : ports.values()) {
-				this.addSynchronizedEntrance(entrance.getID().getPortName(), Serializable.class);
+				this.addEntrance(entrance.getID().getPortName(), Serializable.class);
 			}
 		}
 		logger.log(Level.FINE, "{0}: added all conduit entrances", getLocalName());
