@@ -303,9 +303,9 @@ if m.env['reverse']
 
 	if m.env['allkernels']
 		kernels.each { |kernel| requested_kernels <<  kernel.name }
-        elsif args.size > 0
-                args.each { |arg| kernels.each { |kernel| requested_kernels << kernel.name if kernel.name == arg } }
-        end
+  elsif args.size > 0
+    args.each { |arg| kernels.each { |kernel| requested_kernels << kernel.name if kernel.name == arg } }
+  end
 
 	if requested_kernels.size != 1
 		puts "exactly one kernel name must be specified"
@@ -315,38 +315,38 @@ if m.env['reverse']
 	reverse_command = []
 	puts "Kernel: " + kernel_name
 
-	if cxa.env[ kernel.name + ":mpiexec_command"] 
+	if cxa.env[ kernel_name + ":mpiexec_command"] 
 		puts "Mpiexec commmand: " + cxa.env[ kernel.name + ":mpiexec_command"] 
-		reverse_command << cxa.env[ kernel.name + ":mpiexec_command"]
+		reverse_command << cxa.env[ kernel_name + ":mpiexec_command"]
 	end
 
-	if cxa.env[ kernel.name + ":mpiexec_args"] 
-		puts "Mpiexec args: " + cxa.env[ kernel.name + ":mpiexec_args"] 
-		reverse_command << cxa.env[ kernel.name + ":mpiexec_args"].split(" ")
+	if cxa.env[ kernel_name + ":mpiexec_args"] 
+		puts "Mpiexec args: " + cxa.env[ kernel_name + ":mpiexec_args"] 
+		reverse_command << cxa.env[ kernel_name + ":mpiexec_args"].split(" ")
 	end
 
-	if cxa.env[ kernel.name + ":debugger"] 
-		puts "Debugger: " + cxa.env[ kernel.name + ":debugger"] 
-		reverse_command << cxa.env[ kernel.name + ":debugger"]
+	if cxa.env[ kernel_name + ":debugger"] 
+		puts "Debugger: " + cxa.env[ kernel_name + ":debugger"] 
+		reverse_command << cxa.env[ kernel_name + ":debugger"]
 	end
 
-	if cxa.env[ kernel.name + ":command"] 
-		puts "Command: " + cxa.env[ kernel.name + ":command"] 
-		reverse_command << cxa.env[ kernel.name + ":command"]
+	if cxa.env[ kernel_name + ":command"] 
+		puts "Command: " + cxa.env[ kernel_name + ":command"] 
+		reverse_command << cxa.env[ kernel_name + ":command"]
 	else
-		puts "Missing " + kernel.name + ":command property"
+		puts "Missing " + kernel_name + ":command property"
 		exit 1
 	end
 
-	if cxa.env[ kernel.name + ":args"] 
-		puts "Args: " + cxa.env[ kernel.name + ":args"] 
-		reverse_command << cxa.env[ kernel.name + ":args"].split(" ")
+	if cxa.env[ kernel_name + ":args"] 
+		puts "Args: " + cxa.env[ kernel_name + ":args"] 
+		reverse_command << cxa.env[ kernel_name + ":args"].split(" ")
 	end
 	
 	ARGV_COPY.delete("--reverse");
 
 	reverse_command << "--"
-	reverse_command << "muscle2"
+#	reverse_command << "muscle2"
 	reverse_command << ARGV_COPY
 	puts "Final command: " + reverse_command.join(" ")
 	Process.exec(reverse_command.join(" "))
