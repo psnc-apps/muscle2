@@ -70,6 +70,11 @@ class Cxa
 		add KernelAgent.new(*args)
 	end
 	
+	# convenience method for config file
+	def add_terminal(*args)
+		add TerminalAgent.new(*args)
+	end
+
 	def add(x)
 		if x.kind_of?(JadeAgent)
 			known_agents << x
@@ -77,7 +82,14 @@ class Cxa
 			puts "#{__FILE__}:#{__LINE__} error: do not know how to add #{x}"
 		end
 	end
-		
+	
+	def generate_cs_file
+	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, "w") do |f|
+      f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"
+      f.puts cs.to_s
+    end
+  end
+  
 	# visibility
 	attr_reader :env, :cs, :known_agents
 end

@@ -109,10 +109,12 @@ class MuscleCli
 		
 		return args, @env
 	end
-	
-	
+
 	#
 	def help
+	  puts "This is the bootstrap utility for MUSCLE  2.0 (Multiscale Coupling Library and Environment)."
+    puts "[1] http://apps.man.poznan.pl/trac/muscle"
+    puts "[2] http://mapper-project.eu"
 		@parser.help
 	end
 	

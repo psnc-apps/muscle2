@@ -474,5 +474,64 @@ def escape(text)
 end
 
 
+def detect_mpi_rank
+  possible_mpi_rank_vars=["OMPI_MCA_orte_ess_vpid",
+	                        "OMPI_MCA_ns_nds_vpid",
+	                        "PMI_RANK",
+	                        "MP_CHILD",
+	                        "SLURM_PROCID",
+	                        "X10_PLACE",
+							"MP_CHILD"]
+	rank = nil
+	
+	possible_mpi_rank_vars.each do |var|
+		value = ENV[var]
+		if value
+			rank = value
+		end
+	end
+	return rank
+end
+
+def kill_process(pid, signal, name)
+	if pid
+    	begin
+			puts "sending #{signal} signal to #{name} (pid=#{pid})"
+			Process.kill(signal, pid)
+		rescue Errno::ESRCH
+			puts "#{name} already finished."
+		end
+    end
+end
+
+def kill_processes(procs)
+  begin
+  	statuses = Process.waitall
+  	statuses.each { |status| exit status[1].exitstatus if status[1].exitstatus !=0 } #exit with no zero value if only one process had non-zero exit value
+  rescue Interrupt
+  	puts "Interrupt received..."
+  	exit_val = 1
+
+    procs.each { |proc| kill_process(proc[:pid], 'SIGINT', proc[:name]) }
+
+  	# After 30 seconds, do a full kill.
+  	begin
+  		Timeout::timeout(30) {
+  			begin
+  				Process.waitall
+  			rescue Interrupt
+          procs.each { |proc| kill_process(proc[:pid], 'SIGKILL', proc[:name]) }
+			    Process.waitall
+  			end
+  		}
+  	rescue Timeout::Error
+      procs.each { |proc| kill_process(proc[:pid], 'SIGKILL', proc[:name]) }
+	    Process.waitall
+  	end
+    
+    exit exit_val
+  end
+end
+
 end # module MuscleUtils
 

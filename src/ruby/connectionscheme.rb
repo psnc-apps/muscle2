@@ -70,7 +70,6 @@ class ConnectionScheme
 
 	# call with (entrance, exit, [conduit])
 	def tie_single_args(entrance_name, exit_name, conduit)
-
 		entrance = ConduitEntrance.new(@current_src_kernel, entrance_name)
 		exit = ConduitExit.new(@current_tgt_kernel, exit_name)
 

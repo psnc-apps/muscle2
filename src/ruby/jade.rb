@@ -203,7 +203,20 @@ class KernelAgent < JadeAgent
 	attr :env
 end
 
+#
+class TerminalAgent < JadeAgent
 
+	#@@m = $m
+
+	def initialize(*args)
+		super
+		@env = {}
+		#@env = {:properties_loader_class=>@@m.env[:muscle_kernelpropertiesloader_class]}
+	end
+	
+	# visibility
+	attr :env
+end
 
 # test
 if $0 == __FILE__
