@@ -22,11 +22,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import java.io.Serializable;
-import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEConduitExhaustedException;
+import muscle.util.data.Takeable;
 
 /**
  * A ConduitExit outputs messages that are sent over a conduit.
@@ -38,7 +38,7 @@ import muscle.exception.MUSCLEConduitExhaustedException;
  * @author Joris Borgdorff
 */
 public class ConduitExit<T extends Serializable> { // generic T will be the underlying unwrapped data, e.g. double[]
-	private final BlockingQueue<Observation<T>> queue;
+	private final Takeable<Observation<T>> queue;
 	private final ConduitExitController<T> controller;
 	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
 	private boolean isDone;
@@ -98,16 +98,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 * @return a piece of data
 	 */
 	public T receive() {
-		if (!hasNext()) {
-			throw new MUSCLEConduitExhaustedException("Can not receive from conduit: the other submodel has stopped.");
-		}
-		
-		// Indicate to the controller that the message is received, so it can
-		// do last minute edits.
-		this.controller.messageReceived(nextElem);
-		T data = this.nextElem.getData();
-		this.nextElem = null;
-		return data;
+		return receiveObservation().getData();
 	}
 	
 	/**

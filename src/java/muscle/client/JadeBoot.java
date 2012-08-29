@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.client;
 
+import muscle.core.ConnectionScheme;
 import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,7 +31,6 @@ import muscle.Constant;
 import muscle.Version;
 import muscle.client.id.JadeAgentIDManipulator;
 import muscle.client.instance.JadeInstanceController;
-import muscle.core.ConnectionScheme;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
 import muscle.util.JVM;

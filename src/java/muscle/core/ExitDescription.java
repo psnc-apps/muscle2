@@ -21,6 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
+import java.util.List;
 import muscle.id.PortalID;
 
 // a leaf in our connection scheme tree
@@ -30,7 +31,7 @@ stores info necessary to setup an exit
 @author Jan Hegewald
 */
 public class ExitDescription extends PortDescription {
-	public ExitDescription(PortalID newID) {
-		super(newID);
+	public ExitDescription(PortalID newID, List<String> args) {
+		super(newID, args);
 	}
 }

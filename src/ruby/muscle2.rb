@@ -87,7 +87,7 @@ end
 # Generate the connection scheme file
 cxa.generate_cs_file
 
-kernels = cxa.known_agents.find_all {|a| a.kind_of?(KernelAgent)}
+kernels = cxa.get_kernels
 kernel_names = kernels.collect {|k| k.name}
 
 if kernels.empty?
@@ -124,8 +124,11 @@ end
 
 at_exit {puts "\n\tExecuted in <#{Muscle.LAST.env['tmp_path']}>"}
 
-# if using MPI, check rank and execute different command on all 
-if m.env['use_mpi']
+if m.env['reverse']
+  puts "starting kernel in REVERSE mode"
+	m.exec_reverse(active_kernels.first.name, ARGV_COPY)
+elsif m.env['use_mpi']
+  # if using MPI, check rank and execute different command on all 
   rank = detect_mpi_rank
 	
 	if rank == nil
@@ -140,9 +143,6 @@ if m.env['use_mpi']
 		m.exec_mpi([runner, active_kernels.first.cls])
 	end
 # --reverse and MPI are mutually exclusive
-elsif m.env['reverse']
-  puts "starting kernel in REVERSE mode"
-	m.exec_reverse(active_kernels.first.name, ARGV_COPY)
 end
 
 manager_pid = 0

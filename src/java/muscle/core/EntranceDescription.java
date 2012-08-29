@@ -20,6 +20,7 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import java.util.List;
 import muscle.id.PortalID;
 
 /**
@@ -27,7 +28,7 @@ stores info necessary to setup an entrance
 @author Jan Hegewald
  */
 public class EntranceDescription extends PortDescription {
-	public EntranceDescription(PortalID newID) {
-		super(newID);
+	public EntranceDescription(PortalID newID, List<String> args) {
+		super(newID, args);
 	}
 }

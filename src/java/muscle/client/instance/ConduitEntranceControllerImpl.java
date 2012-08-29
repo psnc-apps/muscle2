@@ -12,8 +12,7 @@ import muscle.util.concurrency.Disposable;
  *
  * @author jborgdo1
  */
-public interface ConduitEntranceControllerImpl<T extends Serializable> extends ConduitEntranceController<T>, Disposable {
+public interface ConduitEntranceControllerImpl<T extends Serializable> extends ConduitEntranceController<T> {
 	public void start();
 	public void setTransmitter(Transmitter<T,?> trans);
-	public boolean waitUntilEmpty() throws InterruptedException;
 }

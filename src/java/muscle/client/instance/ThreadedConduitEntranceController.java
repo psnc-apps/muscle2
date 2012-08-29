@@ -102,7 +102,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 				continue;
 			}
 			
-			this.send(elem);
+			this.transmit(elem);
 			synchronized (this) {
 				this.processingMessage = false;
 				running = queue != null && !queue.isEmpty();
@@ -158,7 +158,7 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	/**
 	 * Actually send message to transmitter.
 	 */
-	private void send(Observation<T> msg) throws InterruptedException {
+	private void transmit(Observation<T> msg) throws InterruptedException {
 		Transmitter<T, ?> trans = waitForTransmitter();
 		if (trans != null) {
 			trans.transmit(msg);
@@ -171,10 +171,9 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	}
 
 	@Override
-	public void send(T data, Timestamp currentTime, Timestamp next) {
+	public void send(Observation<T> dmsg) {
 		// We need to copy the data so that the sending process can modify the data again.
-		T dataCopy = serializer.copy(data);
-		Observation<T> msg = new Observation<T>(dataCopy, currentTime, next);
+		Observation<T> msg  = dmsg.copyWithNewData(serializer.copy(dmsg.getData()));
 		
 		try {
 			this.queue.put(msg);

@@ -56,9 +56,9 @@ int main(int argc, char **argv)
 			vector<int> dims(2);
 			dims[0] = size;
 			dims[1] = size;
-
+			
 			ComplexData cdata(data, COMPLEX_BYTE_MATRIX_2D, &dims);
-
+			
 			for (int j=0; j < size; j++) {
 				for (int k=0; k < size; k++) {
 					data[cdata.fidx(j, k)] = 15;

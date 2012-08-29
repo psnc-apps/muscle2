@@ -6,17 +6,15 @@
 package muscle.core;
 
 import java.io.Serializable;
-import muscle.core.model.Timestamp;
-import muscle.id.Identifiable;
-import muscle.id.PortalID;
+import muscle.core.model.Observation;
 
 /**
  *
  * @author Joris Borgdorff
  */
-public interface ConduitEntranceController<T extends Serializable> extends Identifiable<PortalID>, Portal {
-	public void dispose();
-	void send(T data, Timestamp currentTime, Timestamp next);
+public interface ConduitEntranceController<T extends Serializable> extends Portal {
+	void send(Observation<T> msg);
 	public ConduitEntrance getEntrance();
 	public void setEntrance(ConduitEntrance<T> entrance);
+	public boolean waitUntilEmpty() throws InterruptedException;
 }

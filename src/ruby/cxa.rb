@@ -83,6 +83,18 @@ class Cxa
 		end
 	end
 	
+	def get(name)
+	  return known_agents.find {|k| k.name == name}
+  end
+	
+	def get_kernels
+	  return known_agents.find_all {|a| a.kind_of?(KernelAgent)}
+	end
+
+	def get_terminals
+	  return known_agents.find_all {|a| a.kind_of?(TerminalAgent)}
+	end
+	
 	def generate_cs_file
 	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, "w") do |f|
       f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"

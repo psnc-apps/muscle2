@@ -4,6 +4,7 @@
 
 package muscle.core.kernel;
 
+import muscle.core.ConnectionScheme;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.logging.Level;

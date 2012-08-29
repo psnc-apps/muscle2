@@ -5,6 +5,7 @@
 
 package muscle.client;
 
+import muscle.core.ConnectionScheme;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -21,7 +22,6 @@ import muscle.client.id.SimpleDelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
-import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.*;

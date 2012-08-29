@@ -29,7 +29,6 @@ import muscle.core.ConduitEntrance;
 import muscle.core.DataTemplate;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
-import muscle.core.model.Timestamp;
 import muscle.id.PortalID;
 
 /**
@@ -107,7 +106,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	/**
 	 * Actually send message to transmitter.
 	 */
-	private void send(Observation<T> msg) {
+	private void transmit(Observation<T> msg) {
 		try {
 			if (!transmitterFound && !waitForTransmitter()) {
 				logger.log(Level.SEVERE, "ConduitEntrance {0} quit before message could be sent.", portalID);
@@ -127,18 +126,17 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	}
 
 	@Override
-	public void send(T data, Timestamp currentTime, Timestamp next) {
+	public void send(Observation<T> msg) {
 		synchronized (this) {
 			if (this.isDisposed()) {
 				throw new IllegalStateException("Can not send message over disposed ConduitEntrance");
 			}
 			this.processingMessage = true;
 		}
-		Observation<T> msg = new Observation<T>(data, currentTime, next);
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
-		this.resetTime(next);
-		this.send(msg);
+		this.resetTime(msg.getNextTimestamp());
+		this.transmit(msg);
 
 		synchronized (this) {
 			this.processingMessage = false;

@@ -5,7 +5,6 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
@@ -20,6 +19,7 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.data.TakeableQueue;
 
 /**
  *
@@ -28,7 +28,7 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
 public class ThreadedConduitExitController<T extends Serializable> extends ThreadedPortal<T> implements ConduitExitControllerImpl<T> {
 	private Receiver<T, ?> receiver;
 	private ConduitExit<T> conduitExit;
-	private final BlockingQueue<Observation<T>> queue;
+	private final TakeableQueue<Observation<T>> queue;
 	private static final Logger logger = Logger.getLogger(ThreadedConduitExitController.class.getName());
 	private boolean isDetached;
 	private final FilterChain filters;
@@ -42,13 +42,14 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 		this.filters = createFilterChain();
 	}
 	
-	
 	/** Create a filter chain from the given arguments */
 	private FilterChain createFilterChain() {
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
 		List<String> args = cd.getArgs();
-		if (args.isEmpty()) return null;
+		if (args.isEmpty()) {
+			return null;
+		}
 		
 		FilterChain fc = new FilterChain() {
 			@SuppressWarnings("unchecked")
@@ -127,7 +128,7 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 	}
 
 	@Override
-	public BlockingQueue<Observation<T>> getMessageQueue() {
+	public TakeableQueue<Observation<T>> getMessageQueue() {
 		return this.queue;
 	}
 

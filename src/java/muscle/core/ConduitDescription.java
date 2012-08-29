@@ -28,46 +28,21 @@ stores info necessary to setup a conduit
 @author Jan Hegewald
  */
 public class ConduitDescription implements Serializable {
-	private String className;
-	private String id;
-	List<String> additionalArgs;
-	private EntranceDescription entrance;
-	private ExitDescription exit;
+	private final List<String> additionalArgs;
+	private final EntranceDescription entrance;
+	private final ExitDescription exit;
 	
-	public boolean equals(Object b) {
-		return b != null && getClass().equals(b.getClass())
-				&& id.equals(((ConduitDescription)b).id);
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 79 * hash + (this.id != null ? this.id.hashCode() : 0);
-		return hash;
-	}
-
-	public ConduitDescription(String newClassName, String newID, List<String> newAdditionalArgs, EntranceDescription newEntrance, ExitDescription newExit) {
-		className = newClassName;
-		id = newID;
+	public ConduitDescription(List<String> newAdditionalArgs, EntranceDescription newEntrance, ExitDescription newExit) {
 		additionalArgs = newAdditionalArgs;
 		entrance = newEntrance;
 		exit = newExit;
-	}
-
-	public String getClassName() {
-		return className;
-	}
-
-	public String getID() {
-		return id;
+		if (entrance == null || exit == null) {
+			throw new IllegalArgumentException("Entrance and exit may not be null for ConduitDescription");
+		}
 	}
 
 	public List<String> getArgs() {
 		return additionalArgs;
-	}
-
-	public String toString() {
-		return entrance.getID().getName() + " -> " + exit.getID().getName();
 	}
 
 	public EntranceDescription getEntranceDescription() {
@@ -77,4 +52,23 @@ public class ConduitDescription implements Serializable {
 	public ExitDescription getExitDescription() {
 		return this.exit;
 	}
+	
+	public String toString() {
+		return entrance.getID().getName() + " -> " + exit.getID().getName();
+	}
+
+	public boolean equals(Object b) {
+		return b != null && getClass().equals(b.getClass())
+				&& entrance.equals(((ConduitDescription)b).entrance)
+				&& exit.equals(((ConduitDescription)b).exit);
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 79 * hash + this.entrance.hashCode();
+		hash = 79 * hash + this.exit.hashCode();
+		return hash;
+	}
+
 }

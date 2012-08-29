@@ -21,11 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import muscle.id.PortalID;
-import muscle.id.ResolverFactory;
-import muscle.id.Identifier;
-import muscle.id.Resolver;
-import muscle.id.IDType;
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.File;
@@ -37,6 +32,15 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
+import muscle.core.ConduitDescription;
+import muscle.core.CxADescription;
+import muscle.core.EntranceDescription;
+import muscle.core.ExitDescription;
+import muscle.id.IDType;
+import muscle.id.Identifier;
+import muscle.id.PortalID;
+import muscle.id.Resolver;
+import muscle.id.ResolverFactory;
 import muscle.util.MiscTool;
 import muscle.util.data.Env;
 
@@ -54,7 +58,7 @@ public class ConnectionScheme implements Serializable {
 	private final ResolverFactory rf;
 	public List<String> kernelList; // for otf
 	public List<String> conduitList; // for otf
-	private static final Boolean instanceLock = Boolean.FALSE;
+	private static final Object instanceLock = new Object();
 	
 	{
 		this.env = CxADescription.ONLY.subenv(this.getClass());
@@ -130,68 +134,74 @@ public class ConnectionScheme implements Serializable {
 					logger.severe("connection scheme has unknown format");
 					return;
 				}
+				List<String> exitArgs = new FastArrayList<String>(1);
+				List<String> conduitArgs = new FastArrayList<String>(3);
+				List<String> entranceArgs = new FastArrayList<String>(1);
 
+				String exit = parseItem(items[0], exitArgs);
+				String entrance = parseItem(items[2], entranceArgs);
+				parseItem(items[1], conduitArgs);
 				// get conduit class,id,args from item[1] which is e.g.: conduit.foo.bar#42(arg1,arg2)
-				String[] parts = items[1].split("[#()]");
-				assert parts.length > 0;
-				assert parts.length <= 3;
-				assert items[1].indexOf('#') != (items[1].indexOf('(')-1) : "Error: empty id, omit # for an empty id";
-				assert items[1].indexOf('#') != (items[1].length()-1) : "Error: empty id, omit # for an empty id";
-				assert items[1].indexOf('(') != (items[1].indexOf(')')-1) : "Error: empty (), omit the '()' for an empty arg list";
-
-				String conduitClassName = parts[0];
-				String conduitID = null;
-				List<String> conduitArgs = null;
-
-				if(parts.length > 1) {
-					if(items[1].indexOf('#') > -1) {
-						conduitID = parts[1];
-					}
-					if(items[1].indexOf('(') > -1 ) {
-						assert items[1].indexOf(')') > -1;
-						conduitArgs = new FastArrayList<String>(parts[parts.length-1].split(",")); // last are the args, if any (parts[1] or parts[2])
-					}
-				}
-
-				if(conduitID == null) {
-					conduitID = UUID.randomUUID().toString();
-				}
-				if(conduitArgs == null) {
-					conduitArgs = new FastArrayList<String>(0);
-				}
 				
-				this.addConnection(items[2], conduitClassName, conduitID, conduitArgs, items[0]);
+				
+				this.addConnection(entrance, entranceArgs, conduitArgs, exit, exitArgs);
 			}
 		} catch (InterruptedException ex) {
 			Logger.getLogger(ConnectionScheme.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
-
+	
+	private String parseItem(String item, List<String> args) {
+		assert item.indexOf('(') != 0 : "Error: can not start parenthesis at first character";
+		assert item.indexOf('(') != (item.indexOf(')')-1) : "Error: empty (), omit the '()' for an empty arg list";
+		String[] parts = item.split("[()]");
+		assert parts.length > 0;
+		assert parts.length <= 2;
+		
+		if(parts.length > 1) {
+			String[] sArgs = parts[1].split(",");
+			args.addAll(Arrays.asList(sArgs));
+		}
+		return parts[0];
+	}
+	
 	/**
 	declares a new edge (entrance->conduit->exit) of our graph
 	*/
-	public void addConnection(String entranceID, String conduitClassName, String conduitID, List<String> conduitArgs, String exitID) throws InterruptedException {
+	public void addConnection(String entranceID, List<String> entranceArgs, List<String> conduitArgs, String exitID, List<String> exitArgs) throws InterruptedException {
 		Resolver r = rf.getResolver();
-		PortalID pid = (PortalID)r.getIdentifier(entranceID, IDType.port);
-		Identifier ownerID = pid.getOwnerID();
-		EntranceDescription entrance = new EntranceDescription(pid);
-		if (!this.conduitEntrances.containsKey(ownerID)) this.conduitEntrances.put(ownerID, new ArrayMap<String,EntranceDescription>());
-		this.conduitEntrances.get(ownerID).put(pid.getPortName(), entrance);
-
-		pid = (PortalID)r.getIdentifier(exitID, IDType.port);
-		ownerID = pid.getOwnerID();
-		ExitDescription exit = new ExitDescription(pid);
-		if (!this.conduitExits.containsKey(ownerID)) this.conduitExits.put(ownerID, new ArrayMap<String,ExitDescription>());
-		this.conduitExits.get(ownerID).put(pid.getPortName(), exit);
-
-		ConduitDescription conduit = new ConduitDescription(conduitClassName, conduitID, conduitArgs, entrance, exit);
+		EntranceDescription entrance = addEntrance((PortalID)r.getIdentifier(entranceID, IDType.port), entranceArgs);
+		ExitDescription exit = addExit((PortalID)r.getIdentifier(exitID, IDType.port), exitArgs);
+		ConduitDescription conduit = new ConduitDescription(conduitArgs, entrance, exit);
 
 		exit.setConduitDescription(conduit);
-		this.targetExitDescriptions.add(exit);
-
 		entrance.setConduitDescription(conduit);
+
+		this.targetExitDescriptions.add(exit);
 	}
 
+	
+	private EntranceDescription addEntrance(PortalID pid, List<String> args) {
+		Identifier ownerID = pid.getOwnerID();
+		EntranceDescription entrance = new EntranceDescription(pid, args);
+		if (!this.conduitEntrances.containsKey(ownerID)) {
+			this.conduitEntrances.put(ownerID, new ArrayMap<String,EntranceDescription>());
+		}
+		this.conduitEntrances.get(ownerID).put(pid.getPortName(), entrance);
+		return entrance;
+	}
+	
+	
+	private ExitDescription addExit(PortalID pid, List<String> args) {
+		Identifier ownerID = pid.getOwnerID();
+		ExitDescription exit = new ExitDescription(pid, args);
+		if (!this.conduitExits.containsKey(ownerID)) {
+			this.conduitExits.put(ownerID, new ArrayMap<String,ExitDescription>());
+		}
+		this.conduitExits.get(ownerID).put(pid.getPortName(), exit);
+		return exit;
+	}
+	
 	public Map<String,EntranceDescription> entranceDescriptionsForIdentifier(Identifier id) {
 		return this.conduitEntrances.get(id);
 	}
@@ -203,14 +213,20 @@ public class ConnectionScheme implements Serializable {
 	
 	public EntranceDescription entranceDescriptionForPortal(PortalID id) {
 		Map<String, EntranceDescription> map = this.conduitEntrances.get(id.getOwnerID());
-		if (map == null) return null;
-		else return map.get(id.getPortName());
+		if (map == null) {
+			return null;
+		} else {
+			return map.get(id.getPortName());
+		}
 	}
 	
 	public ExitDescription exitDescriptionForPortal(PortalID id) {
 		Map<String, ExitDescription> map = this.conduitExits.get(id.getOwnerID());
-		if (map == null) return null;
-		else return map.get(id.getPortName());
+		if (map == null) {
+			return null;
+		} else {
+			return map.get(id.getPortName());
+		}
 	}
 	
 	public LinkedList<ExitDescription> getConnectionSchemeRoot() {
@@ -230,11 +246,8 @@ public class ConnectionScheme implements Serializable {
 			ConduitDescription conduit = exit.getConduitDescription();
 			EntranceDescription entrance = conduit.getEntranceDescription();
 
-			String args = MiscTool.joinItems(java.util.Arrays.asList(conduit.getArgs()), ",");
-			if(args == null) {
-				args = "";
-			}
-			out.printf("  %-20s <- %-60s -< %-20s\n", exit.getID(), conduit.getClassName()+"#"+conduit.getID()+"("+args+")", entrance.getID());
+			List<String> args = new FastArrayList<String>(conduit.getArgs().toArray(new String[0]));
+			out.printf("  %-20s -- %-20s -> %-20s\n", exit.getID(), args, entrance.getID());
 		}
 		
 		out.println("==========");
@@ -251,8 +264,9 @@ public class ConnectionScheme implements Serializable {
 			conduitList.add(exit.getID().getName());
 			conduitList.add(entrance.getID().getName());
 
-			if (dstSink.equals(exit.getID().getName()))
+			if (dstSink.equals(exit.getID().getName())) {
 				return (entrance.getID().getName());
+			}
 		}
 		return "";
 	}
@@ -281,10 +295,11 @@ public class ConnectionScheme implements Serializable {
 
 
 			String temp1 = exitName.substring(exitName.indexOf("@") + 1);
-			if (!kernelList.contains(temp1))
+			if (!kernelList.contains(temp1)) {
 				kernelList.add(temp1);
+			}
 
-			String temp2 = null;
+			String temp2;
 			try{
 				String entranceName = entrance.getID().getName();
 				temp2 = entranceName.substring(entranceName.indexOf("@") + 1);

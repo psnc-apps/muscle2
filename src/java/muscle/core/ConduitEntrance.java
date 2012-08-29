@@ -5,7 +5,6 @@
 package muscle.core;
 
 import java.io.Serializable;
-import java.util.concurrent.BlockingQueue;
 import muscle.core.model.Distance;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
@@ -46,7 +45,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 * before sending.
 	 */
 	public void send(T data) {
-		this.send(data, nextTime);
+		this.send(data, nextTime, nextTime.add(dt));
 	}
 	
 	/**
@@ -55,8 +54,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 * @see send(T)
 	 */
 	public void send(T data, Timestamp currentTime) {
-		Timestamp next = currentTime.add(dt);
-		this.send(data, currentTime, next);
+		this.send(data, currentTime, currentTime.add(dt));
 	}
 
 	/**
@@ -66,7 +64,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
 		this.nextTime = next;
-		this.controller.send(data, currentTime, next);
+		this.controller.send(new Observation<T>(data, currentTime, next));
 	}
 	
 	/**
@@ -76,7 +74,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 */
 	public void send(Observation<T> obs) {
 		this.nextTime = obs.getNextTimestamp();
-		this.controller.send(obs.getData(), obs.getTimestamp(), this.nextTime);
+		this.controller.send(obs);
 	}
 	
 	/** Indicate that no more messages will be sent over the current conduit. */

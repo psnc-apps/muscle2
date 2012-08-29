@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import muscle.Constant;
 import muscle.client.communication.PortFactory;
 import muscle.core.*;
+import muscle.core.conduit.terminal.Sink;
+import muscle.core.conduit.terminal.Source;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.core.kernel.RawInstance;
@@ -36,8 +38,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	
 	private final Class<?> instanceClass;
 	private final Identifier id;
-	private final List<ConduitExitControllerImpl<?>> exits = new ArrayList<ConduitExitControllerImpl<?>>(); // these are the conduit exits
-	private final List<ConduitEntranceControllerImpl<?>> entrances = new ArrayList<ConduitEntranceControllerImpl<?>>(); //these are the conduit entrances
+	private final List<ConduitExitController<?>> exits = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
+	private final List<ConduitEntranceController<?>> entrances = new ArrayList<ConduitEntranceController<?>>(); //these are the conduit entrances
 	private final InstanceControllerListener listener;
 	private final Object[] args;
 	private final ResolverFactory resolverFactory;
@@ -130,7 +132,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 					logger.log(Level.SEVERE, "{0} was terminated due to an error: {1}\n====TRACE====\n{2}==END TRACE==", new Object[]{getLocalName(), ex, sw});
 				}
 				try {
-					for (ConduitEntranceControllerImpl ec : entrances) {
+					for (ConduitEntranceController ec : entrances) {
 						if (!ec.waitUntilEmpty()) {
 							logger.log(Level.WARNING, "After executing {0}, waiting for conduit {1}  was ended prematurely", new Object[]{getLocalName(), ec.getLocalName()});
 						}
@@ -201,11 +203,11 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private void disposeNoDeregister() {
 		isDone = true;
 		
-		for (ConduitExitControllerImpl<?> source : exits) {
+		for (ConduitExitController<?> source : exits) {
 			portFactory.removeReceiver(source.getIdentifier());
 			source.dispose();
 		}
-		for (ConduitEntranceControllerImpl<?> sink : entrances) {
+		for (ConduitEntranceController<?> sink : entrances) {
 			sink.dispose();
 		}
 		
@@ -329,20 +331,77 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	@Override
 	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate) {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
-		ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController(currentID, this, newDataTemplate) : new PassiveConduitEntranceController(currentID, this, newDataTemplate);
-		PortalID other = getOtherPortalID(currentID, ENTRANCE);
-		portFactory.<T>getTransmitter(this.mainController, s, other);
-		entrances.add(s);
-		return s;
+		PortalID otherID = getOtherPortalID(currentID, ENTRANCE);
+		ConduitEntranceController<T> entrance;
+		ExitDescription desc = ConnectionScheme.getInstance().exitDescriptionForPortal(otherID);
+		if (desc == null) {
+			throw new IllegalArgumentException("Can not create ConduitEntrance " + currentID + ": it is not defined in the CxA file.");
+		}
+		List<String> portArgs = desc.getArgs();
+		if (portArgs.isEmpty()) {
+			ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController<T>(currentID, this, newDataTemplate) : new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate);
+			portFactory.<T>getTransmitter(this.mainController, s, otherID);
+			entrance = s;
+		} else {
+			String portName = portArgs.get(0);
+			try {
+				Object sinkObj =Class.forName(portName).newInstance();
+				if (!(sinkObj instanceof Sink)) {
+					throw new IllegalArgumentException("Given class " + portName + " is not a Sink ");
+				}
+				@SuppressWarnings("unchecked")
+				Sink<T> sink = (Sink<T>) sinkObj;
+				sink.setIdentifier(otherID);
+				sink.beforeExecute();
+				entrance = sink;
+			} catch (ClassNotFoundException ex) {
+				throw new IllegalArgumentException("Can not find class for Sink '" + portName + "' for " + currentID, ex);
+			} catch (InstantiationException ex) {
+				throw new IllegalArgumentException("Can not instantiate Sink '" + portName + "' for " + currentID, ex);
+			} catch (IllegalAccessException ex) {
+				throw new IllegalArgumentException("Can not access Sink '" + portName + "' for " + currentID, ex);
+			}
+		}
+		entrances.add(entrance);
+		return entrance;
 	}
 
 	@Override
 	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
-		ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController(currentID, this, newDataTemplate) : new PassiveConduitExitController(currentID, this, newDataTemplate);
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
-		portFactory.<T>getReceiver(s, otherID);
-		exits.add(s);
-		return s;
+		
+		EntranceDescription desc = ConnectionScheme.getInstance().entranceDescriptionForPortal(otherID);
+		if (desc == null) {
+			throw new IllegalArgumentException("Can not create ConduitExit " + currentID + ": it is not defined in the CxA file.");
+		}
+		List<String> portArgs = desc.getArgs();
+		ConduitExitController<T> exit;
+		if (portArgs.isEmpty()) {
+			ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController<T>(currentID, this, newDataTemplate) : new PassiveConduitExitController<T>(currentID, this, newDataTemplate);
+			portFactory.<T>getReceiver(s, otherID);
+			exit = s;
+		} else {
+			String portName = portArgs.get(0);
+			try {
+				Object srcObj =Class.forName(portName).newInstance();
+				if (!(srcObj instanceof Source)) {
+					throw new IllegalArgumentException("Given class " + portName + " is not a Source ");
+				}
+				@SuppressWarnings("unchecked")
+				Source<T> src = (Source<T>) srcObj;
+				src.setIdentifier(otherID);
+				src.beforeExecute();
+				exit = src;
+			} catch (ClassNotFoundException ex) {
+				throw new IllegalArgumentException("Can not find class for Source '" + portName + "' for " + currentID, ex);
+			} catch (InstantiationException ex) {
+				throw new IllegalArgumentException("Can not instantiate Source '" + portName + "' for " + currentID, ex);
+			} catch (IllegalAccessException ex) {
+				throw new IllegalArgumentException("Can not access Source '" + portName + "' for " + currentID, ex);
+			}
+		}
+		exits.add(exit);
+		return exit;
 	}
 }

@@ -5,7 +5,6 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
@@ -21,6 +20,8 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.data.Takeable;
+import muscle.util.data.TakeableQueue;
 import muscle.util.serialization.DataConverter;
 
 /**
@@ -29,7 +30,7 @@ import muscle.util.serialization.DataConverter;
  */
 public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage> {
 	private ConduitExit<T> conduitExit;
-	private final BlockingQueue<Observation<T>> queue;
+	private final TakeableQueue<Observation<T>> queue;
 	private volatile boolean isDone;
 	protected DataConverter<Message<T>,BasicMessage> converter;
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
@@ -80,7 +81,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	@Override
-	public BlockingQueue<Observation<T>> getMessageQueue() {
+	public Takeable<Observation<T>> getMessageQueue() {
 		return this.queue;
 	}
 

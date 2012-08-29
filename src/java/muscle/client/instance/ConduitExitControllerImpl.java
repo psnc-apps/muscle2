@@ -11,6 +11,6 @@ import muscle.util.concurrency.Disposable;
  *
  * @author jborgdo1
  */
-public interface ConduitExitControllerImpl<T extends Serializable> extends ConduitExitController<T>, Disposable {
+public interface ConduitExitControllerImpl<T extends Serializable> extends ConduitExitController<T> {
 	public void start();
 }

@@ -50,8 +50,11 @@ class ConnectionScheme
 		if block_given?
 			# store values we need for the #tie, which should be called in the block
 			@current_src_kernel = hsh.keys.first
+			@current_src_agent = Cxa.LAST.get @current_src_kernel
 			@current_tgt_kernel = hsh[@current_src_kernel]
+			@current_tgt_agent = Cxa.LAST.get @current_tgt_kernel
 			raise("can not be nil: #{@current_src_kernel.inspect} #{@current_tgt_kernel.inspect}") if @current_src_kernel.nil? || @current_tgt_kernel.nil?
+			raise("kernels must be defined: #{@current_src_kernel.inspect} #{@current_tgt_kernel.inspect}") if @current_src_agent.nil? || @current_tgt_agent.nil?
 
 			yield
 			@current_src_kernel = nil
@@ -61,17 +64,15 @@ class ConnectionScheme
 		end
 	end
 	
-	#
 	def tie(entrance_name, exit_name=entrance_name, conduit=Conduit.new(Cxa.LAST.env[Cxa.LAST.env['CONNECTION_SCHEME_CLASS']]['default_conduit']))
 		abort("first arg to tie can not be a #{entrance_name.class}") if(entrance_name.class==Hash) # sanity check
 		tie_single_args(entrance_name, exit_name, conduit)
 	end
 
-
 	# call with (entrance, exit, [conduit])
 	def tie_single_args(entrance_name, exit_name, conduit)
-		entrance = ConduitEntrance.new(@current_src_kernel, entrance_name)
-		exit = ConduitExit.new(@current_tgt_kernel, exit_name)
+		entrance = ConduitEntrance.new(@current_src_agent, entrance_name)
+		exit = ConduitExit.new(@current_tgt_agent, exit_name)
 
 		@pipelines << Pipeline.new(@current_src_kernel, entrance, conduit, exit, @current_tgt_kernel)
 	end
@@ -152,7 +153,11 @@ class Portal
 	end
 	
 	def to_s
-		"#{@name}@#{@kernel}"
+	  if @kernel.kind_of? TerminalAgent
+	    return "#{@name}@#{@kernel.name}(#{@kernel.cls})"
+	  else
+	    return "#{@name}@#{@kernel.name}"
+    end
 	end
 end
 class ConduitEntrance < Portal
