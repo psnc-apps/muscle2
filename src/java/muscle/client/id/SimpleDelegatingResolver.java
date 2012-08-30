@@ -173,7 +173,13 @@ public class SimpleDelegatingResolver implements Resolver {
 		if (!id.isResolved()) throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
 		
 		String fullName = name(id.getName(), id.getType());
-		resolvedIdCache.put(fullName, id);
+		Identifier resId = resolvedIdCache.get(fullName);
+		if (resId == null) {
+			resolvedIdCache.put(fullName, id);
+		} else if (!resId.isResolved()) {
+			// It already registered and deregistered
+			id.unResolve();
+		}
 		searchingNow.remove(fullName);
 		
 		notifyAll();
