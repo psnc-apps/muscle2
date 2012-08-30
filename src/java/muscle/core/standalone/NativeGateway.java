@@ -28,7 +28,7 @@ public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	private final static boolean USE_ASYNC = true;
+	private final static boolean USE_ASYNC = System.getProperty("muscle.core.standalone.use_async") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_async"));
 	private volatile boolean isDone;
 	private boolean isDisposed;
 	
