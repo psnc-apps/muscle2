@@ -23,6 +23,7 @@ public:
 	static void send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type);
 	static void sendDoubleVector(std::string entrance_name, const std::vector<double>& data);
 
+	static bool has_next(std::string exit_name);
 	static void* receive(std::string exit_name, void *data, size_t &count, muscle_datatype_t type);
 	static std::vector<double> receiveDoubleVector(std::string exit_name);
 

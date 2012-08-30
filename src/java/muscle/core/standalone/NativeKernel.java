@@ -53,7 +53,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
 		if (ec == null || (exit = ec.getExit()) == null) {
-			throw new MUSCLERuntimeException("Unknown exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
+			throw new MUSCLERuntimeException("Unknown conduit exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
 		}
 		
 		if (exit.hasNext()) {
@@ -75,6 +75,16 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		} else {
 			return null;
 		}
+	}
+	
+	public synchronized boolean hasNext(String exitName) {
+		ConduitExitController ec = exits.get(exitName);
+		ConduitExit exit;
+		if (ec == null || (exit = ec.getExit()) == null) {
+			throw new MUSCLERuntimeException("Unknown conduit exit: '" + exitName + "' in " + getLocalName() + " (valid exits are " + exits.keySet() + ")");
+		}
+		
+		return exit.hasNext();
 	}
 
 	public synchronized String getKernelName() {

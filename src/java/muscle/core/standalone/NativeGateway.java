@@ -82,6 +82,8 @@ public class NativeGateway extends Thread implements Disposable {
 		public String getProperties();
 		/* OPCODE = 7 */
 		public String getTmpPath();
+		/* OPCODE = 8 */
+		public boolean hasNext(String exitName);
 			
 		}
 
@@ -205,6 +207,16 @@ public class NativeGateway extends Thread implements Disposable {
 					{
 						if (isFinestLog) logger.finest("getTmpPath() request.");
 						out.writeString(listener.getTmpPath());
+						break;
+					}
+					case 8:
+					{
+						if (isFinestLog) logger.finest("hasNext() request.");
+						String exit = in.readString();
+						if (isFinestLog) logger.log(Level.FINEST, "hasNext({0}) request.", exit);
+						boolean hasNext = listener.hasNext(exit);
+						out.writeBoolean(hasNext);
+						if (isFinestLog) logger.log(Level.FINEST, "hasNext({0}) = {1}", new Object[] {exit, hasNext});
 						break;
 					}
 					default:
