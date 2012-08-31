@@ -6,7 +6,6 @@ package muscle.core.kernel;
 
 import java.io.Serializable;
 import muscle.core.ConduitEntrance;
-import muscle.core.ConduitExit;
 import muscle.core.model.Observation;
 
 /**
@@ -14,9 +13,9 @@ import muscle.core.model.Observation;
  * Set the value variable in readAll(), this will be sent.
  * @author Joris Borgdorff
  */
-public abstract class FanInMapper extends Mapper {
-	protected ConduitEntrance onlyEntrance;
-	protected Observation value;
+public abstract class FanInMapper<T extends Serializable> extends Mapper {
+	protected ConduitEntrance<T> onlyEntrance;
+	protected Observation<T> value;
 
 	@Override
 	public void addPortals() {

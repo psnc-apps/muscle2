@@ -13,9 +13,9 @@ import muscle.core.model.Observation;
  * Use the value variable in to send in writeAll().
  * @author Joris Borgdorff
  */
-public abstract class FanOutMapper extends Mapper {
-	protected ConduitExit onlyExit;
-	protected Observation value;
+public abstract class FanOutMapper<T extends Serializable> extends Mapper {
+	protected ConduitExit<T> onlyExit;
+	protected Observation<T> value;
 
 	public void addPortals() {
 		super.addPortals();
