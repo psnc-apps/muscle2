@@ -11,8 +11,6 @@
 #include <unistd.h>
 #include <cstdio>
 #include <string>
-#include <boost/asio.hpp>
-#include <boost/lexical_cast.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -23,9 +21,7 @@
 #include <iostream>
 #endif
 
-using boost::asio::ip::tcp;
 using namespace std;
-
 
 namespace muscle {
 
@@ -37,8 +33,6 @@ bool env::is_main_processor = false;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
-	using boost::lexical_cast;
-
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::init() ");
 #endif
@@ -50,12 +44,11 @@ muscle_error_t env::init(int *argc, char ***argv)
 	
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
-	char host_str[16];
-	host_str[0] = '\0';
-	boost::asio::ip::address_v4 host;	
+	char hostname[16];
+	hostname[0] = '\0';
 	muscle_pid = -1;
 	
-	env::muscle2_tcp_location(muscle_pid, host_str, &port);
+	env::muscle2_tcp_location(muscle_pid, hostname, &port);
 	
 	// Port is not initialized, initialize MUSCLE instead.
 	if (port == 0)
@@ -63,26 +56,24 @@ muscle_error_t env::init(int *argc, char ***argv)
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
 		muscle_pid = env::muscle2_spawn(argc, argv);
 		
-		env::muscle2_tcp_location(muscle_pid, host_str, &port);
+		env::muscle2_tcp_location(muscle_pid, hostname, &port);
 		if (port == 0)
 		{
 			logger::severe("Could not contact MUSCLE: no TCP port given.");
 			exit(1);
 		}
 	}
-	if (host_str[0] == '\0')
+	if (hostname[0] == '\0')
 	{
-		host = boost::asio::ip::address_v4::loopback();
-		strncpy(host_str, "localhost", 10);
+		strncpy(hostname, "localhost", 10);
 	}
-	else host = boost::asio::ip::address_v4::from_string(host_str);
 	
 	// Start communicating with MUSCLE instance
 	try
 	{
-		muscle_comm = new XdrCommunicator(host, port);
+		muscle_comm = new XdrCommunicator(hostname, port);
 	} catch (std::exception& e) {
-		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", host_str, port, e.what());
+		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", hostname, port, e.what());
 		exit(1);
 	}
 	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
@@ -268,7 +259,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	{
 		char *port_str = getenv("MUSCLE_GATEWAY_PORT");
 		if (port_str != NULL) {
-			*port = boost::lexical_cast<unsigned short>(port_str);
+			*port = (unsigned short)atoi(port_str);
 			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
 			if (host_str != NULL) {
 				strncpy(host, host_str, 16);

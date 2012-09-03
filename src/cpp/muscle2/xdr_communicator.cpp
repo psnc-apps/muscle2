@@ -13,16 +13,16 @@
 
 namespace muscle {
 
-XdrCommunicator::XdrCommunicator(boost::asio::ip::address_v4 host, int port) {
-	connect_socket(host, port);
+XdrCommunicator::XdrCommunicator(const char *hostname, int port) {
+	connect_socket(hostname, port);
 
 /*TODO: detect signature in CMake */
 #ifdef __APPLE__
-	xdrrec_create(&xdro, 0, 0, (char*)s, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
-	xdrrec_create(&xdri, 0, 0, (char*)s,  (int (*) (void *, void *, int)) communicator_read_from_socket, 0);
+	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
+	xdrrec_create(&xdri, 0, 0, &sockfd,  (int (*) (void *, void *, int)) communicator_read_from_socket, 0);
 #else
-	xdrrec_create(&xdro, 0, 0, (char*)s, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
-	xdrrec_create(&xdri, 0, 0, (char*)s,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
+	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
+	xdrrec_create(&xdri, 0, 0, &sockfd,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
 #endif
 	xdro.x_op = XDR_ENCODE;
 	xdri.x_op = XDR_DECODE;

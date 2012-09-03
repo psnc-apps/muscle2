@@ -1,12 +1,17 @@
 #include "communicator.hpp"
-#include <boost/asio.hpp>
+#include <strings.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int buf_len)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "xdr_read_from_socket:" << buf_len << endl;
 #endif
-	return ((tcp::socket *)socket_handle)->read_some(boost::asio::buffer(buf, buf_len));
+	return read(*(int *)socket_handle, buf, buf_len);
 }
 
 extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int buf_len)
@@ -14,18 +19,33 @@ extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int 
 #ifdef CPPMUSCLE_TRACE
 	cout << "xdr_write_to_socket:" << buf_len << endl;
 #endif
-	return boost::asio::write(*((tcp::socket *)socket_handle), boost::asio::buffer(buf, buf_len));
+	return write(*(int *)socket_handle, buf, buf_len);
 }
 
 namespace muscle {
 
-void Communicator::connect_socket(boost::asio::ip::address_v4 host, int port)
+void Communicator::connect_socket(const char *hostname, int port)
 {
-	boost::asio::io_service io_service;
+	struct sockaddr_in serv_addr;
+	struct hostent *server;
+	server = gethostbyname(hostname);
+	if (server == NULL) throw io_exception("ERROR, no such host\n");
+	if (port <= 0) throw io_exception("ERROR, no such port\n");
+    	
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr, 
+		(char *)&serv_addr.sin_addr.s_addr,
+		server->h_length);
+	serv_addr.sin_port = htons(port);
 
-	s = new tcp::socket(io_service);
-
-	s->connect(tcp::endpoint(host, port));
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) throw io_exception("can not create socket");	
+	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+	{
+		sockfd = -1;
+		throw io_exception("ERROR connecting");
+	}
 }
 
 std::string Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {

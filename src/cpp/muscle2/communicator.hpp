@@ -2,9 +2,8 @@
 #define COMMUNICATOR_HPP
 
 #include <string>
-#include <cstring>
-#include <exception>
-#include <boost/asio.hpp>
+#include <stdexcept>
+#include <unistd.h>
 #include "logger.hpp"
 #include "muscle_types.h"
 
@@ -23,8 +22,6 @@ typedef enum {
 	PROTO_TMP_PATH = 7
 } muscle_protocol_t;
 
-using boost::asio::ip::tcp;
-
 extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int buf_len);
 extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int buf_len);
 
@@ -33,8 +30,10 @@ namespace muscle {
 class Communicator
 {
 public:
-	Communicator() {}
-	virtual ~Communicator() { }
+	Communicator() : sockfd(-1) { }
+	virtual ~Communicator() { 
+		if (sockfd >= 0) close(sockfd);
+	}
 	virtual int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len) { return 0; }
 	std::string retrieve_string(muscle_protocol_t opcode, std::string *name);
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
@@ -48,8 +47,8 @@ public:
 			std::string desc;
 	};
 protected:
-	void connect_socket(boost::asio::ip::address_v4 host, int port);
-	tcp::socket *s;
+	void connect_socket(const char *hostname, int port);
+	int sockfd;
 };
 
 } // EO namespace muscle
