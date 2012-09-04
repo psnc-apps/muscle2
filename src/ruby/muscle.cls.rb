@@ -134,29 +134,24 @@ class Muscle
   	return Process.fork {exec(command)}
   end
 	
-	def exec_reverse(kernel_name, extra_args)
-  	puts "Running kernel " + kernel_name + " as a native executable"
-
-    reverse_command = []
+	def exec_native(kernel_name, extra_args)
+  	
+    native_command = []
     cxa = Cxa.LAST
   	if cxa.env[ kernel_name + ":mpiexec_command"] 
-  		puts "Mpiexec commmand: " + cxa.env[ kernel_name + ":mpiexec_command"] 
-  		reverse_command << cxa.env[ kernel_name + ":mpiexec_command"]
+  		native_command << cxa.env[ kernel_name + ":mpiexec_command"]
   	end
 
   	if cxa.env[ kernel_name + ":mpiexec_args"] 
-  		puts "Mpiexec args: " + cxa.env[ kernel_name + ":mpiexec_args"] 
-  		reverse_command << cxa.env[ kernel_name + ":mpiexec_args"].split(" ")
+  		native_command << cxa.env[ kernel_name + ":mpiexec_args"].split(" ")
   	end
 
   	if cxa.env[kernel_name + ":debugger"] 
-  		puts "Debugger: " + cxa.env[ kernel_name + ":debugger"] 
-  		reverse_command << cxa.env[ kernel_name + ":debugger"]
+  		native_command << cxa.env[ kernel_name + ":debugger"]
   	end
 
   	if cxa.env[ kernel_name + ":command"] 
-  		puts "Command: " + cxa.env[ kernel_name + ":command"] 
-  		reverse_command << cxa.env[ kernel_name + ":command"]
+  		native_command << cxa.env[ kernel_name + ":command"]
   	else
   		puts "Missing " + kernel_name + ":command property"
   		exit 1
@@ -164,15 +159,15 @@ class Muscle
 
   	if cxa.env[ kernel_name + ":args"] 
   		puts "Args: " + cxa.env[ kernel_name + ":args"] 
-  		reverse_command << cxa.env[ kernel_name + ":args"].split(" ")
+  		native_command << cxa.env[ kernel_name + ":args"].split(" ")
   	end
 
-  	extra_args.delete("--reverse");
+  	extra_args.delete("--native");
 
-  	reverse_command << "--"
-  	reverse_command << extra_args
+  	native_command << "--"
+  	native_command << extra_args
   	
-  	command = reverse_command.join(" ")
+  	command = native_command.join(" ")
   	
   	puts "Executing: " + command
   	Process.exec(command)

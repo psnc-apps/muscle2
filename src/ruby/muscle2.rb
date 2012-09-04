@@ -54,7 +54,7 @@ end
 
 m = Muscle.new
 
-ARGV_COPY = ARGV.dup #this line is needed by --reverse mode
+ARGV_COPY = ARGV.dup #this line is needed by --native mode
 args, cli_env = cli.parse ARGV
 
 # add cli muscle env
@@ -103,7 +103,7 @@ elsif args.size > 0
 	args.each { |arg| kernels.each { |kernel| active_kernels << kernel if kernel.name == arg } }
 end
 
-if active_kernels.empty? and !m.env['main'] || m.env['use_mpi'] || m.env['reverse']
+if active_kernels.empty? and !m.env['main'] || m.env['use_mpi'] || m.env['native']
   # Unless we're only running main, we need to give an active kernel
 	puts "No kernel names given. Possible kernel names:\n--------\n", kernel_names
 	puts "--------\nTo run all kernels use the --allkernels flag."
@@ -112,7 +112,7 @@ elsif !active_kernels.empty? and !m.env['main'] && !m.env['manager']
   # if there are active kernels, we need a way of contacting the manager.
   puts "Either specify --main or give --manager contact information"
 	exit 1
-elsif active_kernels.size > 1 and m.env['use_mpi'] || m.env['reverse']
+elsif active_kernels.size > 1 and m.env['use_mpi'] || m.env['native']
 	puts "Multiple kernels provided for native code. Aborting."
 	exit 1  
 end
@@ -124,9 +124,10 @@ end
 
 at_exit {puts "\n\tExecuted in <#{Muscle.LAST.env['tmp_path']}>"}
 
-if m.env['reverse']
-  puts "starting kernel in REVERSE mode"
-	m.exec_reverse(active_kernels.first.name, ARGV_COPY)
+if m.env['native']
+  puts "starting kernel " + active_kernels.first.name + " in native mode"
+	m.exec_native(active_kernels.first.name, ARGV_COPY)
+# --native and --mpi are mutually exclusive, since --mpi runs through Java.
 elsif m.env['use_mpi']
   # if using MPI, check rank and execute different command on all 
   rank = detect_mpi_rank
@@ -142,7 +143,6 @@ elsif m.env['use_mpi']
 		runner = "muscle.util.MpiSlaveKernelExecutor"
 		m.exec_mpi([runner, active_kernels.first.cls])
 	end
-# --reverse and MPI are mutually exclusive
 end
 
 manager_pid = 0
