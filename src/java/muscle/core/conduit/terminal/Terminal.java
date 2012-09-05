@@ -11,7 +11,7 @@ import muscle.id.PortalID;
 import muscle.util.concurrency.Disposable;
 
 /**
- *
+ * A base class for Source and Sink
  * @author jborgdo1
  */
 public abstract class Terminal extends Module implements Disposable, Portal {
@@ -24,6 +24,27 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 		this.siTime = new Timestamp(0);
 	}
 	
+	/**
+	 * Constructs a filename for the terminal.
+	 * It does so by reading the "file" property. If the "relative" option is
+	 * set to true, it will open the file relative to the MUSCLE temporary
+	 * directory of the Terminal. If "suffix" is set, it will append that
+	 * extension. If the parameter infix is not null, and "suffix" is not
+	 * set, it will append the extension .dat.
+	 *
+	 * The filename can thus take the following forms:
+	 * file
+	 * or
+	 * file.suffix
+	 * or
+	 * file.infix.dat
+	 * or
+	 * file.infix.suffix
+	 * or
+	 * tmpdir/file
+	 * etc.
+	 * @param infix the infix, if any to use between the filename and the suffix.
+	 */
 	protected File getLocalFile(String infix) {
 		boolean relative = hasProperty("relative") && getBooleanProperty("relative");
 		
@@ -37,7 +58,7 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 		if (relative) {
 			output = new File(this.getTmpPath(), getProperty("file") + suffix);
 		} else {
-			output = new File(getPathProperty("file"), suffix);
+			output = new File(getProperty("file") + suffix);
 		}
 		return output;
 	}

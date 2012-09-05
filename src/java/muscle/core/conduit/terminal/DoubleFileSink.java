@@ -9,7 +9,10 @@ import java.io.Writer;
 import muscle.core.model.Observation;
 
 /**
- *
+ * A FileSink that writes double arrays to a file.
+ * It enumerates the files, so each observation i is written to
+ * file.i.suffix. The doubles are delimeted by spaces by default, unless the property
+ * "delimeter" is set to some other value.
  * @author Joris Borgdorff
  */
 public class DoubleFileSink extends FileSink<double[]> {
@@ -22,11 +25,15 @@ public class DoubleFileSink extends FileSink<double[]> {
 		iteration = 0;
 	}
 	
+	/** The iteration number as a String. */
 	@Override
 	protected String getInfix() {
 		return String.valueOf(iteration);
 	}
 	
+	/**
+	 * Writes the doubles to a file with a delimeter between them.
+	 */
 	@Override
 	protected void write(Writer out, Observation<double[]> obs) throws IOException {
 		double[] data = obs.getData();

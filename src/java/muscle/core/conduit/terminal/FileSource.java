@@ -13,19 +13,31 @@ import muscle.id.PortalID;
 
 /**
  * Reads data from a source.
- * Override receive to use.
- * Use the 'in' variable to read from the specified file, in the CxA file referred to as name:file and name:relative (if relative to the tmp directory)
+ * Override read method and optionally getInfix to use.
  * @author Joris Borgdorff
  */
 public abstract class FileSource<T extends Serializable> extends Source<T> {
+	/**
+	 * Provides an infix to the filename to be written to.
+	 * @see Terminal.getLocalFile() for how the filename is determined
+	 */
 	protected String getInfix() {
 		return null;
 	}
 	
+	/**
+	 * Read an observation from the given reader.
+	 * Override to read specific data types or formats.
+	 * @see Terminal.getLocalFile() for how the filename is determined
+	 * @param in to read file with. Do not close.
+	 * @return an Observation with data and the correct timestamp.
+	 * @throws IOException if there was an error reading
+	 */
 	protected abstract Observation<T> read(Reader in) throws IOException;
 
 	@Override
-	public Observation<T> take() {
+	/** Delegates the take operation to the read method. */
+	public final Observation<T> take() {
 		Reader in = null;
 		try {
 			File input = getLocalFile(getInfix());

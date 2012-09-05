@@ -10,7 +10,11 @@ import java.util.Scanner;
 import muscle.core.model.Observation;
 
 /**
- *
+ * A FileSource that reads double arrays from a file.
+ * Unless extended and overriding getInfix() and isEmpty(), it reads a double array
+ * from a file exactly once, and will return empty afterwards.
+ * Specifically, it reads from the file, delimited by the "delimiter" property
+ * (default: space), until a non-double is encountered.
  * @author Joris Borgdorff
  */
 public class DoubleFileSource extends FileSource<double[]> {
@@ -23,6 +27,7 @@ public class DoubleFileSource extends FileSource<double[]> {
 		iteration = 0;
 	}
 	
+	/** Returns true after one read is called once. */
 	@Override
 	public boolean isEmpty() {
 		return iteration > 0;

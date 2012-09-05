@@ -16,19 +16,33 @@ import muscle.core.model.Observation;
 import muscle.util.MiscTool;
 
 /**
- *
+ * A sink that writes all data to file.
+ * 
+ * It is governed by the CxA options "file", "relative", and "
  * @author Joris Borgdorff
  */
 public abstract class FileSink<T extends Serializable> extends Sink<T> {
-	
+	/**
+	 * Provides an infix to the filename to be written to.
+	 * @see Terminal.getLocalFile() for how the filename is determined
+	 */
 	protected String getInfix() {
 		return null;
 	}
 	
+	/**
+	 * Writes an observation to file using a given Writer.
+	 * Override to write specific datatypes.
+	 * @see Terminal.getLocalFile() for how the filename is determined
+	 * 
+	 * @param out to write to file with. It should not be closed.
+	 * @param obs observation to write
+	 */
 	protected abstract void write(Writer out, Observation<T> obs) throws IOException;
 	
+	/** Delegates the send operation to the write method. */
 	@Override
-	public void send(Observation<T> obs) {
+	public final void send(Observation<T> obs) {
 		Writer out = null;
 		try {
 			File output = getLocalFile(getInfix());
