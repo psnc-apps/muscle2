@@ -21,8 +21,8 @@ XdrCommunicator::XdrCommunicator(const char *hostname, int port) {
 	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
 	xdrrec_create(&xdri, 0, 0, &sockfd,  (int (*) (void *, void *, int)) communicator_read_from_socket, 0);
 #else
-	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
-	xdrrec_create(&xdri, 0, 0, &sockfd,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
+	xdrrec_create(&xdro, 0, 0, (char *)&sockfd, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
+	xdrrec_create(&xdri, 0, 0, (char *)&sockfd,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
 #endif
 	xdro.x_op = XDR_ENCODE;
 	xdri.x_op = XDR_DECODE;
