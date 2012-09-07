@@ -29,10 +29,11 @@ just the version of this MUSCLE
 */
 public class Version {
 	private final static String VERSION_NUM = "2.0-RC";
-	private final static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) " + VERSION_NUM + " Revision: $Rev$Date: 2012-09-07 10:52:45 +0200 (Fri, 07 Sep 2012)$:";
+	private final static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) " + VERSION_NUM + " (SVN revision: $Rev$ from $Date$):";
 	
 	public static String info() {
-		return INFO_TEXT.replaceAll("$$", ""); // remove the $$ in case the version text has not been modified
+		 // remove the $$ in case the version text has not been modified; also remove all other SVN keywords
+		return INFO_TEXT.replaceAll("$$", "").replace("$Rev$", "");
 	}
 
 	public static void main(String[] args) {
