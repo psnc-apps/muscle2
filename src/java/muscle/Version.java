@@ -28,22 +28,15 @@ just the version of this MUSCLE
 @author Jan Hegewald
 */
 public class Version {
-
-	private static String VERSION_NUM = "2.0";
-	private static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) " + VERSION_NUM + " Revision: $Rev$ from $Date$:";
+	private final static String VERSION_NUM = "2.0-RC";
+	private final static String INFO_TEXT = "This is the Multiscale Coupling Library and Environment (MUSCLE) " + VERSION_NUM + " Revision: $Rev$Date: 2012-09-07 10:52:45 +0200 (Fri, 07 Sep 2012)$:";
 	
-
-	//
 	public static String info() {
-	
 		return INFO_TEXT.replaceAll("$$", ""); // remove the $$ in case the version text has not been modified
 	}
-	
-	
-	//
-	public static void main(String[] args) {
 
-      String mode = JVM.is64bitJVM() ? "64":"32";
+	public static void main(String[] args) {
+		String mode = JVM.is64bitJVM() ? "64":"32";
 		System.out.println(info()+" running in "+mode+"-bit mode");		
 	}
 }
