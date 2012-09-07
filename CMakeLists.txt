@@ -59,3 +59,4 @@ if (BUILD_CPACK_SCRIPTS)
 endif (BUILD_CPACK_SCRIPTS)
 
 include(test/regression/CMakeLists.txt)
+install(FILES README.md DESTINATION share/muscle)
