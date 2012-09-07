@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(MUSCLE)
 
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
+option(BUILD_CPP_MUSCLE1 "Build MUSCLE1 part of CPP" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
 
 option(BUILD_CPACK_SCRIPTS "Build scripts for packaging" OFF)
@@ -28,16 +29,20 @@ if (BUILD_JAVA)
 endif (BUILD_JAVA)
 
 if (BUILD_CPP)
-	# muscle CPP core 
-	add_subdirectory(src/cpp/muscle)
+	if (BUILD_CPP_MUSCLE1)
+		# muscle1 CPP core 
+		add_subdirectory(src/cpp/muscle)
+		# Examples CPP
+		add_subdirectory(src/cpp/examples/simplecpp)
+		add_subdirectory(src/cpp/examples/transmutable)
+	endif (BUILD_CPP_MUSCLE1)
+	# muscle2 CPP core 
 	add_subdirectory(src/cpp/muscle2)
 	# Examples CPP
-	add_subdirectory(src/cpp/examples/simplecpp)
 	add_subdirectory(src/cpp/examples/simplecpp2)
 	add_subdirectory(src/cpp/examples/pingpongcpp)
 	add_subdirectory(src/cpp/examples/dataintegrity)
 	add_subdirectory(src/cpp/examples/mpiring)
-	add_subdirectory(src/cpp/examples/transmutable)
 	add_subdirectory(src/cpp/examples/transmutable2)
 endif (BUILD_CPP)
 

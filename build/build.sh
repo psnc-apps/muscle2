@@ -13,13 +13,13 @@ then
 fi
 
 #3. Build release
-cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel -DCMAKE_BUILD_TYPE=Release ..
-make
+cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS ..
+make -j 4
 make install
 
 #4. Build with debug symbols
-cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel-debug -DCMAKE_BUILD_TYPE=Debug ..
-make
+cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel-debug -DCMAKE_BUILD_TYPE=Debug $MUSCLE_CMAKE_OPTIONS ..
+make -j 4
 make install
 
 
