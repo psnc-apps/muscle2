@@ -10,4 +10,4 @@ set_target_properties(${MUSCLE2_LIB} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
 set_target_properties(${MUSCLE2_LIB} PROPERTIES OUTPUT_NAME muscle2)
 
 install(TARGETS ${MUSCLE2_LIB} DESTINATION lib)
-install(FILES ${THIS_HEADERS} DESTINATION include)
+install(FILES ${THIS_HEADERS} DESTINATION include/muscle2)

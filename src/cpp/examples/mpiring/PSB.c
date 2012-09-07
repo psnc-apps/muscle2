@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cmuscle.h>
+#include <muscle2/cmuscle.h>
 
 #include "mpiringlib.h"
 

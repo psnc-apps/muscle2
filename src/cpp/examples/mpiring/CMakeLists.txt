@@ -28,7 +28,7 @@ endif (NOT MPI_FOUND)
 set (CMAKE_C_COMPILER ${MPI_COMPILER})
 
 # load include dirs for muscle and jni
-include_directories(${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
+include_directories("${CMAKE_SOURCE_DIR}/src/cpp")
 
 # add our library that is built from the source files
 add_library (${MPIRING} SHARED mpiringlib.c mpiringlib.h)

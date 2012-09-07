@@ -26,7 +26,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <math.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <cppmuscle.hpp>
+#include <muscle2/cppmuscle.hpp>
 #include <exception>
 
 using namespace muscle;

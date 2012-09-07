@@ -27,9 +27,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <cmath>
 #include <vector>
 #include <stdlib.h>
-#include <cppmuscle.hpp>
+#include <muscle2/cppmuscle.hpp>
 #include <stdexcept>
-#include <muscle_complex_data.hpp>
+#include <muscle2/muscle_complex_data.hpp>
 
 using namespace muscle;
 using namespace std;

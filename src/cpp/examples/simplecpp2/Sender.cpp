@@ -21,7 +21,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 #include <iostream>
 
-#include <cppmuscle.hpp>
+#include <muscle2/cppmuscle.hpp>
 
 using namespace muscle;
 using namespace std;

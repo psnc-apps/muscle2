@@ -23,7 +23,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-#include <cppmuscle.hpp>
+#include <muscle2/cppmuscle.hpp>
 #include <exception>
 
 using namespace muscle;

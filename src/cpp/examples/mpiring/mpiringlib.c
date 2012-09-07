@@ -2,7 +2,7 @@
 #include <mpi.h>
 #include <assert.h>
 
-#include <cmuscle.h>
+#include <muscle2/cmuscle.h>
 
 #ifdef __cplusplus
 extern "C" {

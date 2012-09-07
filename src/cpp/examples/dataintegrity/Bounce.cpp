@@ -20,7 +20,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 */
 
 #include <cstring>
-#include <cppmuscle.hpp>
+#include <muscle2/cppmuscle.hpp>
 #include <stdexcept>
 
 using namespace std;
