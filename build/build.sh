@@ -4,7 +4,8 @@ svn up
 cd build
 
 #2. Source local configuration
-. ${HOSTNAME:-`hostname`}.conf
+HOSTNAME=`hostname -d`
+. $HOSTNAME.conf
 
 if [ -f "$PBS_O_HOST.conf" ]
 then
