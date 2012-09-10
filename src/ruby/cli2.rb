@@ -47,56 +47,53 @@ class MuscleCli
 
 		# MUSCLE flags
 		@parser.separator "MUSCLE flags:"
-		@parser.on("--cxa FILE", "file from which to load the cxa") {|arg| @env['cxa_file'] = File.expand_path(arg) }
-		@parser.on("--tmp-path ARG", "set root of the tmp path where kernel output will go in dedicated subdirectories") {|arg| @env['tmp_path'] = File.expand_path(arg) }
-		@parser.on("--allkernels", "automatically launches all kernels") { @env["allkernels"] = true }
-		@parser.on("--mpi", "checks the MPI rank, and runs MUSCLE on rank 0, and calls the kernel 'execute()' on others") { @env['use_mpi'] = true }
-		@parser.on("--native", "start kernel binary first (standalone native kernels)") { @env['native'] = true }
-		@parser.on("--version", "shows info about this MUSCLE version") do
-		
-
-			puts java("muscle.Version")
-			exit true
-		end
+		@parser.on("-c","--cxa FILE", "MUSCLE configuration file to run with") {|arg| @env['cxa_file'] = File.expand_path(arg) }
+		@parser.on("-p","--tmp-path ARG", "path where MUSCLE and kernel output will go") {|arg| @env['tmp_path'] = File.expand_path(arg) }
+		@parser.on("-a","--allkernels", "launch all kernels") { @env["allkernels"] = true }
+		@parser.on("--native", "start kernel binary first (for standalone native kernels)") { @env['native'] = true }
+		@parser.on("-N","--native-tmp-file ARG", "file to write host and port to when communicating with native code") { |arg| @env['native_tmp_file'] = arg }
+		@parser.on("--mpi", "runs MUSCLE on MPI rank 0, and calls the Java 'execute()' method on other ranks") { @env['use_mpi'] = true }
 
 		# control chief lead head main central
 		@parser.separator "Simulation Manager flags:"
-		@parser.on("--main", "make this instance also a MUSCLE global Simulation Manager") { @env['main'] = true }
-		@parser.on("--bindport PORT", "port where this manager would be listening") {|arg| @env['bindport'] = arg.to_i; }
+		@parser.on("-m","--main", "run Simulation Manager here") { @env['main'] = true }
+		@parser.on("--bindport PORT", "port where this manager will be listening") {|arg| @env['bindport'] = arg.to_i; }
 		@parser.on("--bindaddr IPADDR", "bind address of the manager - TBD") {|arg| @env['bindaddr'] = arg; }
-		@parser.on("--bindinf  interface", "bind interface of the manager (e.g. eth0) - TBD") {|arg| @env['bindinf'] = arg; }
+		@parser.on("--bindinf  interface", "bind interface of the manager (e.g., eth0) - TBD") {|arg| @env['bindinf'] = arg; }
 		
-		@parser.separator "Local Manager flags:"		
-		@parser.on("--manager HOST:PORT", "IP or hostname:port where the MUSCLE Simulation Manager can be contacted") {|arg| @env['manager'] = arg; }
-		@parser.on("--heap RANGE", MemoryRange, "set range for JVM heap size (e.g. 42m..2g)") do |mem_range|
+		@parser.separator "Local Manager flags:"
+		@parser.on("--manager HOST:PORT", "IP or hostname:port of the Simulation Manager") {|arg| @env['manager'] = arg; }
+		@parser.on("--heap RANGE", MemoryRange, "set range for Java Virtual Machine heap size (e.g., 42m..2g; default: 256m..2048m)") do |mem_range|
 			@env['Xms'] = mem_range.from_mem
 			@env['Xmx'] = mem_range.to_mem
 		end
 		
-		@parser.separator "MTO flags:"
-		@parser.on("--intercluster", "use Muscle Transport Overlay") { @env['intercluster'] = true }
-		@parser.on("--port-min ARG", "define lower bound of the port range used (inclusive)") { |arg| @env['port_min'] = arg }
-		@parser.on("--port-max ARG", "define higher bound of the port range used (inclusive)") { |arg| @env['port_max'] = arg }
+		@parser.separator "Muscle Transport Overlay (MTO) flags:"
+		@parser.on("-i","--intercluster", "use MTO") { @env['intercluster'] = true }
+		@parser.on("--port-min ARG", "define lower bound of the port range used, inclusive (default: $MUSCLE_PORT_MIN)") { |arg| @env['port_min'] = arg }
+		@parser.on("--port-max ARG", "define higher bound of the port range used, inclusive (default: $MUSCLE_PORT_MAX)") { |arg| @env['port_max'] = arg }
+		@parser.on("--mto HOST:PORT", "IP/hostname and port where MTO can be contacted (default: $MUSCLE_MTO)") {|arg| @env['mto'] = arg; }
 		@parser.on("--qcg", "enable cooperation with QosCosGrid services") { @env['qcg'] = true }
-		@parser.on("--mto HOST:PORT", "IP/hostname and port where MTO can be contacted") {|arg| @env['mto'] = arg; }
 		
 		# jvm flags
-		@parser.separator "JVM flags:"
-		@parser.on("--classpath ARG", "set classpath for the JVM") {|arg| @env["CLASSPATH"] = arg }
-		@parser.on("--logging-config FILE", "set custom logging configuration") {|arg| @env['logging_config_path'] = arg }
-		@parser.on("--jvmflags ARR", "additional flags to be passed to the jvm (e.g. --jvmflags -da,-help,-Duser.language=en)", Array) {|arr| @env["jvmflags"] = arr; }
+		@parser.separator "Java Virtual Machine flags:"
+		@parser.on("-C","--classpath ARG", "set the Java classpath") {|arg| @env["CLASSPATH"] = arg }
+		@parser.on("-L","--logging-config FILE", "set custom logging configuration") {|arg| @env['logging_config_path'] = arg }
+		@parser.on("-X","--jvmflags ARR", "additional flags to be passed to the JVM (e.g., --jvmflags -da,-help,-Duser.language=en)", Array) {|arr| @env["jvmflags"] = arr; }
 
 		# misc flags
 		@parser.separator "misc flags:"
 		@parser.on("-h", "--help") { puts @parser.help; exit }
-		@parser.on("--print-env=[KEY0,KEY1,...]", Array, "prints the internal preferences, e.g. --print_env=CLASSPATH") {|val| if val.nil? then @env['print_env'] = true;else @env['print_env'] = val;end }
-		@parser.on("-v", "--verbose") { @env['verbose'] = true }
-		@parser.on("-d", "--debug", "produces more verbose logs and do not purges MUSCLE temporary directory") { @env['debug'] = true; @env['verbose'] = true }
+		@parser.on("-V","--version", "MUSCLE version") do
+			puts java("muscle.Version")
+			exit true
+		end
+		@parser.on("--print-env=[KEY0,KEY1,...]", Array, "prints the internal preferences (e.g., --print_env=CLASSPATH)") {|val| if val.nil? then @env['print_env'] = true;else @env['print_env'] = val;end }
+		@parser.on("-v", "--verbose", "verbose logging") { @env['verbose'] = true }
+		@parser.on("-d", "--debug", "verbose logging and does not purge MUSCLE temporary directory") { @env['debug'] = true; @env['verbose'] = true }
 		
-		@parser.on("--quiet") { @env['quiet'] = true }
-		@parser.on("-p", "--print", "print command to stdout but do not execute it") { @env['execute'] = false; @env['verbose'] = true }
-		@parser.on("--native-tmp-file ARG", "temporary file to write host and port to when calling from native code") { |arg| @env['native_tmp_file'] = arg }
-
+		@parser.on("-q","--quiet", "do not show output from MUSCLE") { @env['quiet'] = true }
+		@parser.on("--print", "print command to stdout but do not execute it") { @env['execute'] = false; @env['verbose'] = true }
 	end
 
 
@@ -114,7 +111,7 @@ class MuscleCli
 	def help
 	  puts "This is the bootstrap utility for MUSCLE  2.0 (Multiscale Coupling Library and Environment)."
     puts "[1] http://apps.man.poznan.pl/trac/muscle"
-    puts "[2] http://mapper-project.eu"
+    puts "[2] http://www.mapper-project.eu/"
 		@parser.help
 	end
 	

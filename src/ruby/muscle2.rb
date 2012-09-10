@@ -118,8 +118,11 @@ elsif active_kernels.size > 1 and m.env['use_mpi'] || m.env['native']
 end
 
 # Apply MTO arguments, if any
-if(m.env.has_key?('intercluster'))
-  m.apply_intercluster
+if m.env.has_key?('intercluster')
+  if not m.apply_intercluster
+		puts "Intercluster was not properly specified. Aborting."
+		exit 1
+	end
 end
 
 at_exit {puts "\n\tExecuted in <#{Muscle.LAST.env['tmp_path']}>"}

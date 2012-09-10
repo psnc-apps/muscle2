@@ -112,7 +112,7 @@ class Muscle
 
 			while !File.exists?(contact_file_name)
 				sleep 0.2
-                tries_count += 1
+				tries_count += 1
 				if tries_count % 25 == 0
 					puts "Waiting for manager contact file: #{tries_count} #{contact_file_name}"
 				end
@@ -162,9 +162,22 @@ class Muscle
 			native_command << cxa.env[ kernel_name + ":args"].split(" ")
 		end
 
-		extra_args.delete("--native");
-
 		native_command << "--"
+
+		# Remove --native from subcommand
+		extra_args.reject! {|x| x == "--native" || x == "-n"}
+		
+		# If a shorthand notation contained -n, remove it
+		# but, first remove jvmflags, as this also will start with a single '-'
+		i = extra_args.index "--jvmflags"
+		if i
+			extra_args.delete_at(i)
+			native_command << "--jvmflags" << extra_args.delete_at(i)
+		end
+			
+		# remove -anm or -nm or comparable
+		extra_args.collect! { |x| if x =~ /^-(n|\w*n)/ then x.delete "n" else x end }
+
 		native_command << extra_args
 		
 		command = native_command.join(" ")
@@ -183,7 +196,10 @@ class Muscle
 		port_min = env['port_min'] || ENV['MUSCLE_PORT_MIN']
 		port_max = env['port_max'] || ENV['MUSCLE_PORT_MAX']
 		if(port_min.nil? or port_max.nil?)
-			puts "Warning: intercluster specified, but no local port range given! Intercluster ignored."
+			puts "Warning: intercluster specified, but no local port range given."
+			puts "Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_PORT_MIN or $MUSCLE_PORT_MAX were not set?"
+			puts "To specify them manually, use the flags --port-min and --port-max."
+			return false
 		else
 			mto =	env['mto'] || ENV['MUSCLE_MTO']
 			if (! mto.nil?)
@@ -192,7 +208,10 @@ class Muscle
 			end
 
 			if(mtoPort.nil? or mtoHost.nil?)
-				puts "Warning: intercluster specified, but no MTO address/port given! Intercluster ignored."
+				puts "Warning: intercluster specified, but no MTO address/port given."
+				puts "Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_MTO was not set?"
+				puts "To specify the MTO address manually, use the flag --mto."
+				return false
 			else
 				if(env.has_key?('qcg'))
 					if (env['main'])
@@ -216,6 +235,7 @@ class Muscle
 
 			end
 		end
+		return true
 	end
 	
 	# visibility
