@@ -28,7 +28,11 @@ public:
 	/** Send a message of a double vector over the given conduit entrance. This is a convenience message for send. */
 	static void sendDoubleVector(std::string entrance_name, const std::vector<double>& data);
 
-	static bool has_next(std::string exit_name);
+	/** Receive a message of a given MUSCLE datatype over the given conduit exit. If data is null,
+	 * MUSCLE will allocate data and return it. Count is used to return the message size, and if data is not null
+	 * the size of the buffer that data contains. If data is non-null and the size is too small, this will lead to an
+	 * unrecoverable error.
+	 */
 	static void* receive(std::string exit_name, void *data, size_t &count, muscle_datatype_t type);
 	static std::vector<double> receiveDoubleVector(std::string exit_name);
 
@@ -36,6 +40,7 @@ public:
 
 	static std::string get_tmp_path(void);
 	
+	static bool has_next(std::string exit_name);
 	static bool is_main_processor;
 
 private:
