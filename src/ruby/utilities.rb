@@ -507,7 +507,10 @@ end
 def kill_processes(procs)
   begin
   	statuses = Process.waitall
-  	statuses.each { |status| exit status[1].exitstatus if status[1].exitstatus !=0 } #exit with no zero value if only one process had non-zero exit value
+		#exit with no zero value if only one process had non-zero exit value
+  	statuses.each { |status| exit status[1].exitstatus if status[1].exitstatus !=0 } 
+		# we didn't exit, so our status is good.
+		exit 0
   rescue Interrupt
   	puts "Interrupt received..."
   	exit_val = 1
