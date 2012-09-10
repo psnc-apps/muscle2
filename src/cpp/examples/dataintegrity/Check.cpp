@@ -29,7 +29,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <stdlib.h>
 #include <muscle2/cppmuscle.hpp>
 #include <stdexcept>
-#include <muscle2/muscle_complex_data.hpp>
+#include <muscle2/complex_data.hpp>
 
 using namespace muscle;
 using namespace std;

@@ -1,5 +1,5 @@
-#ifndef COMMUNICATOR_HPP
-#define COMMUNICATOR_HPP
+#ifndef MUSCLE_COMMUNICATOR_HPP
+#define MUSCLE_COMMUNICATOR_HPP
 
 #include <string>
 #include <stdexcept>
@@ -34,8 +34,11 @@ public:
 	virtual ~Communicator() { 
 		if (sockfd >= 0) close(sockfd);
 	}
+	/** Execute a MUSCLE protocol. Identifier is an ID of the name for which to communicate, the msg is the message to MUSCLE and the result the result from MUSCLE. */
 	virtual int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len) { return 0; }
+	/** Retrieves a string from MUSCLE with a certain protocol. If no name is needed for the string, it may be NULL. */
 	std::string retrieve_string(muscle_protocol_t opcode, std::string *name);
+	/** Free data that MUSCLE allocated */
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
 	
 	class io_exception : public std::exception {

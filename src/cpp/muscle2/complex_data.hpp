@@ -20,25 +20,37 @@ namespace muscle {
 
 class ComplexData {
 	public:
+		/** Initialize with given data and datatype, and a number of dimensions. If datatype is not an array or matrix, dimensions may be null. */
 		ComplexData(void *data, muscle_complex_t type, std::vector<int>* dimensions);
+		/** Initialize a ComplexData with a simple MUSCLE datatype of an array, with given length. */
 		ComplexData(void *data, muscle_datatype_t type, size_t len);
 		~ComplexData();
+		/** The data as a void-pointer. It is the responsibility of the caller to do the right casting, based on the complex type. Do not delete or free the data within. */
 		void *getData();
-		muscle_complex_t getType();
-		std::vector<int> getDimensions();
-		int length();
-		size_t sizeOfPrimitive();
+		/** The data as a void-pointer. It is the responsibility of the caller to do the right casting, based on the complex type. Do not delete or free the data within. */
+		const void *getData() const;
+		/** Type of data contained within. */
+		muscle_complex_t getType() const;
+		/** Get a vector containing the dimensions of the data. This will return an empty vector if the data is not an array or matrix.*/
+		std::vector<int> getDimensions() const;
+		/** Get the total length of the data. */
+		int length() const;
+		/** Get the size of the most primitive datatype that is contained. For a double vector, that would be sizeof(double) = 8. */
+		size_t sizeOfPrimitive() const;
 		/** Get the index of the returned array. This will give an exception if it is out of bounds, or the wrong number of dimensions. */
-		int index(int x, int y);
-		int index(int x, int y, int z);
-		int index(int x, int y, int z, int zz);
+		int index(int x, int y) const;
+		int index(int x, int y, int z) const;
+		int index(int x, int y, int z, int zz) const;
 		/** Fast get the index of the returned array. This is inlined and does not do any bounds checking. */
-		int fidx(int x, int y) { return x*dims[1]+y; }
-		int fidx(int x, int y, int z) { return (x*dims[1] + y)*dims[2]+z; }
-		int fidx(int x, int y, int z, int zz) { return ((x*dims[1] + y)*dims[2]+z)*dims[3]+zz; }
+		int fidx(int x, int y) const { return x*dims[1]+y; }
+		int fidx(int x, int y, int z) const { return (x*dims[1] + y)*dims[2]+z; }
+		int fidx(int x, int y, int z, int zz) const { return ((x*dims[1] + y)*dims[2]+z)*dims[3]+zz; }
 		// properties of muscle_complex_t
+		/** Get the size of the most primitive datatype that is contained. For a double vector, that would be sizeof(double) = 8. */
 		static size_t sizeOfPrimitive(muscle_complex_t type);
+		/** Get the number of dimensions of a given datatype. For a vector that would be 1, for a 3-D matrix, 3. */
 		static int dimensions(muscle_complex_t type);
+		/** Type of complex data that represents a muscle datatype. */
 		static muscle_complex_t getType(muscle_datatype_t type);
 	private:
 		static void checkDimensions(muscle_complex_t type, std::vector<int>* dimensions);

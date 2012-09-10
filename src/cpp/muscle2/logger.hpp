@@ -1,5 +1,5 @@
-#ifndef LOGGER_HPP
-#define LOGGER_HPP
+#ifndef MSUCLE_LOGGER_HPP
+#define MSUCLE_LOGGER_HPP
 
 #include <string>
 #include "muscle_types.h"

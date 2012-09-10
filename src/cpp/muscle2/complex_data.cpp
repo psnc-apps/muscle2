@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdexcept>
-#include "muscle_complex_data.hpp"
+#include "complex_data.hpp"
 #include "muscle_types.h"
 #include "logger.hpp"
 
@@ -114,27 +114,32 @@ void * ComplexData::getData()
 	return value;
 }
 
-muscle_complex_t ComplexData::getType()
+const void * ComplexData::getData() const
+{
+	return value;
+}
+
+muscle_complex_t ComplexData::getType() const
 {
 	return type;
 }
 
-std::vector<int> ComplexData::getDimensions()
+std::vector<int> ComplexData::getDimensions() const
 {
 	return dims;
 }
 
-int ComplexData::length()
+int ComplexData::length() const
 {
 	int nprod = 1;
-	for(std::vector<int>::iterator it = dims.begin(); it != dims.end(); ++it)
+	for(std::vector<int>::const_iterator it = dims.begin(); it != dims.end(); ++it)
 	{
 		nprod *= *it;
 	}
 	return nprod;
 }
 
-int ComplexData::index(int x, int y)
+int ComplexData::index(int x, int y) const
 {
 	if (!is_muscle_complex_t_matrix_2D[type]) {
 		throw std::logic_error("Can only compute the 2D index of a 2D matrix");
@@ -149,7 +154,7 @@ int ComplexData::index(int x, int y)
 	}
 	return fidx(x, y);
 }
-int ComplexData::index(int x, int y, int z)
+int ComplexData::index(int x, int y, int z) const
 {
 	if (!is_muscle_complex_t_matrix_3D[type]) {
 		throw std::logic_error("Can only compute the 3D index of a 3D matrix");
@@ -169,7 +174,7 @@ int ComplexData::index(int x, int y, int z)
 	return fidx(x, y, z);
 }
 
-int ComplexData::index(int x, int y, int z, int zz)
+int ComplexData::index(int x, int y, int z, int zz) const
 {
 	if (!is_muscle_complex_t_matrix_4D[type]) {
 		throw std::logic_error("Can only compute the 4D index of a 4D matrix");
@@ -193,7 +198,7 @@ int ComplexData::index(int x, int y, int z, int zz)
 	return fidx(x, y, z, zz);
 }
 
-size_t ComplexData::sizeOfPrimitive()
+size_t ComplexData::sizeOfPrimitive() const
 {
 	return muscle_complex_t_sizeof[type];
 }

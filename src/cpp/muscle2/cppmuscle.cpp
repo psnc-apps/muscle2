@@ -1,7 +1,6 @@
 
 #include "cppmuscle.hpp"
 #include "communicator.hpp"
-#include "logger.hpp"
 #include "xdr_communicator.hpp"
 
 #include <stdlib.h>

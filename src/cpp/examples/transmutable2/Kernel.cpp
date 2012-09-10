@@ -23,7 +23,7 @@ This file is part of muscle (Multiscale Coupling Library and Environment).
 #include <vector>
 
 #include <muscle2/cppmuscle.hpp>
-#include <muscle2/muscle_complex_data.hpp>
+#include <muscle2/complex_data.hpp>
 
 using namespace muscle;
 using namespace std;

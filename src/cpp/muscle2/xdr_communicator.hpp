@@ -1,9 +1,9 @@
-#ifndef XDR_COMMUNICATOR_HPP
-#define XDR_COMMUNICATOR_HPP
+#ifndef MUSCLE_XDR_COMMUNICATOR_HPP
+#define MUSCLE_XDR_COMMUNICATOR_HPP
 
 #include "logger.hpp"
 #include "communicator.hpp"
-#include "muscle_complex_data.hpp"
+#include "complex_data.hpp"
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 

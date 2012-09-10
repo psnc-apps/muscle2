@@ -18,9 +18,9 @@ const char* MUSCLE_Get_Property(const char* name)
 	return strdup(muscle::cxa::get_property(std::string(name)).c_str()); /* TODO store the pointer and release it in Finalize */
 }
 
-void* MUSCLE_Receive(const char *entrance_name, void *array, size_t *size, muscle_datatype_t type)
+void* MUSCLE_Receive(const char *entrance_name, void *array, size_t &size, muscle_datatype_t type)
 {
-	return muscle::env::receive(std::string(entrance_name), array, *size, type);
+	return muscle::env::receive(std::string(entrance_name), array, size, type);
 }
 
 muscle_error_t MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type)
