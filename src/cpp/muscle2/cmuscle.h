@@ -14,7 +14,7 @@ muscle_error_t MUSCLE_Init(int* argc, char*** argv);
 void MUSCLE_Finalize(void);
 
 
-const char* MUSCLE_Get_Kernel_Name(void);
+const char* MUSCLE_Kernel_Name(void);
 const char* MUSCLE_Get_Property(const char* name);
 int MUSCLE_Will_Stop(void);
 

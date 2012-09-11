@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 {
 	MUSCLE_Init();
 
-	Ring_Init(MUSCLE_Get_Kernel_Name(), atof(MUSCLE_Get_Property("DeltaEnergy")), atof(MUSCLE_Get_Property("MaxEnergy")));
+	Ring_Init(MUSCLE_Kernel_Name(), atof(MUSCLE_Get_Property("DeltaEnergy")), atof(MUSCLE_Get_Property("MaxEnergy")));
 
 	if (isMasterNode())
 		insertProton(atof(MUSCLE_Get_Property("InitialEnergy")), energy_callback);

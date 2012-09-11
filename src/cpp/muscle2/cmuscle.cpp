@@ -8,7 +8,7 @@ muscle_error_t MUSCLE_Init(int *argc, char ***argv)
 	return muscle::env::init(argc, argv);
 }
 
-const char* MUSCLE_Get_Kernel_Name(void)
+const char* MUSCLE_Kernel_Name(void)
 {
 	return strdup(muscle::cxa::kernel_name().c_str()); /* TODO store the pointer and release it in Finalize */
 }
