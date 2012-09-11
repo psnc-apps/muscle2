@@ -73,6 +73,23 @@ static const muscle_complex_t muscle_data_t_as_complex[] = {
 
 namespace muscle {
 
+
+ComplexData::ComplexData(muscle_complex_t type, std::vector<int>* dimensions)
+{
+	int nprod = 0;
+	this->type = type;
+	if (dimensions != NULL) {
+		this->dims = *dimensions;
+		for(std::vector<int>::const_iterator it = dims.begin(); it != dims.end(); ++it)
+		{
+			nprod *= *it;
+		}
+	}
+	ComplexData::checkDimensions(type, &this->dims);
+	
+	this->value = malloc(nprod*ComplexData::sizeOfPrimitive(type));
+}
+
 ComplexData::ComplexData(void *data, muscle_complex_t type, std::vector<int>* dimensions)
 {
 	this->value = data;
@@ -129,9 +146,9 @@ std::vector<int> ComplexData::getDimensions() const
 	return dims;
 }
 
-int ComplexData::length() const
+size_t ComplexData::length() const
 {
-	int nprod = 1;
+	size_t nprod = 1;
 	for(std::vector<int>::const_iterator it = dims.begin(); it != dims.end(); ++it)
 	{
 		nprod *= *it;

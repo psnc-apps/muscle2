@@ -20,7 +20,11 @@ namespace muscle {
 
 class ComplexData {
 	public:
-		/** Initialize with given data and datatype, and a number of dimensions. If datatype is not an array or matrix, dimensions may be null. */
+		/** Initialize data with given datatype and number of dimensions. */
+		ComplexData(muscle_complex_t type, std::vector<int>* dimensions);
+		/** Initialize with given data and datatype, and a number of dimensions.
+		 * The given data must be allocated by MUSCLE or with malloc, and will be freed by MUSCLE.
+		 * If datatype is not an array or matrix, dimensions are allowed to be null. */
 		ComplexData(void *data, muscle_complex_t type, std::vector<int>* dimensions);
 		/** Initialize a ComplexData with a simple MUSCLE datatype of an array, with given length. */
 		ComplexData(void *data, muscle_datatype_t type, size_t len);
@@ -34,7 +38,7 @@ class ComplexData {
 		/** Get a vector containing the dimensions of the data. This will return an empty vector if the data is not an array or matrix.*/
 		std::vector<int> getDimensions() const;
 		/** Get the total length of the data. */
-		int length() const;
+		size_t length() const;
 		/** Get the size of the most primitive datatype that is contained. For a double vector, that would be sizeof(double) = 8. */
 		size_t sizeOfPrimitive() const;
 		/** Get the index of the returned array. This will give an exception if it is out of bounds, or the wrong number of dimensions. */
