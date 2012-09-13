@@ -108,7 +108,7 @@ if active_kernels.empty? and !m.env['main'] || m.env['use_mpi'] || m.env['native
 	puts "No kernel names given. Possible kernel names:\n--------\n", kernel_names
 	puts "--------\nTo run all kernels use the --allkernels flag."
 	exit 1
-elsif !active_kernels.empty? and !m.env['main'] && !m.env['manager']
+elsif !active_kernels.empty? and !m.env['main'] && !m.env['manager'] && !m.env['qcg']
   # if there are active kernels, we need a way of contacting the manager.
   puts "Either specify --main or give --manager contact information"
 	exit 1
