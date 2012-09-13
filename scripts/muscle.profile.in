@@ -1,21 +1,17 @@
 #!/bin/sh
 
-
-if [[ -z $MUSCLE_HOME ]] ; then
-	MUSCLE_HOME=@MUSCLE_PREFIX@
-fi
-
-export MUSCLE_HOME
-export PATH=$MUSCLE_HOME/bin:$PATH
+export MUSCLE_HOME="@MUSCLE_PREFIX@"
+export PATH="$MUSCLE_HOME/bin:$PATH"
+export INCLUDE_PATH="$MUSCLE_HOME/include:$INCLUDE_PATH"
 
 if [ `uname` = "Darwin" ]
 then
-	export DYLD_LIBRARY_PATH=$MUSCLE_HOME/lib:$DYLD_LIBRARY_PATH
+	export DYLD_LIBRARY_PATH="$MUSCLE_HOME/lib:$DYLD_LIBRARY_PATH"
 else 
-	export LD_LIBRARY_PATH=$MUSCLE_HOME/lib:$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH="$MUSCLE_HOME/lib:$LD_LIBRARY_PATH"
 fi
 
-if [ -f $MUSCLE_HOME/etc/muscle.defaults ]
+if [ -f "$MUSCLE_HOME/etc/muscle.defaults" ]
 then
-	. $MUSCLE_HOME/etc/muscle.defaults
+	. "$MUSCLE_HOME/etc/muscle.defaults"
 fi
