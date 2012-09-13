@@ -50,7 +50,7 @@ class MuscleCli
 		@parser.on("-c","--cxa FILE", "MUSCLE configuration file to run with") {|arg| @env['cxa_file'] = File.expand_path(arg) }
 		@parser.on("-p","--tmp-path ARG", "path where MUSCLE and kernel output will go") {|arg| @env['tmp_path'] = File.expand_path(arg) }
 		@parser.on("-a","--allkernels", "launch all kernels") { @env["allkernels"] = true }
-		@parser.on("--native", "start kernel binary first (for standalone native kernels)") { @env['native'] = true }
+		@parser.on("-n","--native", "start kernel binary first (for standalone native kernels)") { @env['native'] = true }
 		@parser.on("-N","--native-tmp-file ARG", "file to write host and port to when communicating with native code") { |arg| @env['native_tmp_file'] = arg }
 		@parser.on("--mpi", "runs MUSCLE on MPI rank 0, and calls the Java 'execute()' method on other ranks") { @env['use_mpi'] = true }
 
@@ -62,8 +62,8 @@ class MuscleCli
 		@parser.on("--bindinf  interface", "bind interface of the manager (e.g., eth0) - TBD") {|arg| @env['bindinf'] = arg; }
 		
 		@parser.separator "Local Manager flags:"
-		@parser.on("--manager HOST:PORT", "IP or hostname:port of the Simulation Manager") {|arg| @env['manager'] = arg; }
-		@parser.on("--heap RANGE", MemoryRange, "set range for Java Virtual Machine heap size (e.g., 42m..2g; default: 256m..2048m)") do |mem_range|
+		@parser.on("-M","--manager HOST:PORT", "IP or hostname:port of the Simulation Manager") {|arg| @env['manager'] = arg; }
+		@parser.on("-H","--heap RANGE", MemoryRange, "set range for Java Virtual Machine heap size (e.g., 42m..2g; default: 256m..2048m)") do |mem_range|
 			@env['Xms'] = mem_range.from_mem
 			@env['Xmx'] = mem_range.to_mem
 		end
@@ -79,7 +79,7 @@ class MuscleCli
 		@parser.separator "Java Virtual Machine flags:"
 		@parser.on("-C","--classpath ARG", "set the Java classpath") {|arg| @env["CLASSPATH"] = arg }
 		@parser.on("-L","--logging-config FILE", "set custom logging configuration") {|arg| @env['logging_config_path'] = arg }
-		@parser.on("-X","--jvmflags ARR", "additional flags to be passed to the JVM (e.g., --jvmflags -da,-help,-Duser.language=en)", Array) {|arr| @env["jvmflags"] = arr; }
+		@parser.on("-D","--jvmflags ARR", "additional flags to be passed to the JVM (e.g., --jvmflags -da,-help,-Duser.language=en)", Array) {|arr| @env["jvmflags"] = arr; }
 
 		# misc flags
 		@parser.separator "misc flags:"
