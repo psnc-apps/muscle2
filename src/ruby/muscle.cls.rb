@@ -183,13 +183,13 @@ class Muscle
 		command = native_command.join(" ")
 		
 		puts "Executing: " + command
-		Process.exec(command)
+		exec(command)
 	end
 	
 	def exec_mpi(args)
 		command = JVM.build_command(args, env).first
 		puts "Executing: " + command
-		Process.exec(command)
+		exec(command)
 	end
 	
 	def apply_intercluster
