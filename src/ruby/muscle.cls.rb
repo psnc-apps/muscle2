@@ -114,7 +114,7 @@ class Muscle
 				sleep 0.2
 				tries_count += 1
 				if tries_count % 25 == 0
-					puts "Waiting for manager contact file: #{tries_count} #{contact_file_name}"
+					puts "Waiting for manager contact file: #{contact_file_name}"
 				end
 			end
 
