@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
-
 #include <unistd.h>
+#include <fcntl.h>
 #include <cstdio>
 #include <string>
 #include <sys/types.h>
@@ -267,6 +267,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	}
 	else
 	{
+		logger::fine("Reading Java MUSCLE contact info from FIFO %s", muscle_tmpfifo);
 		FILE *fp = fopen(muscle_tmpfifo, "r");
 		if(fp == 0 || ferror(fp))
 		{	
@@ -366,7 +367,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 	
 	return pid;
 }
-		
+
 
 /**
  * Spawn a new process with arguments argv. argv[0] is the process name.
@@ -374,6 +375,8 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
  */
 pid_t env::spawn(char * const *argv)
 {
+	int pipefd[2];
+	pipe(pipefd);
 	pid_t pid;
 	
 #ifdef CPPMUSCLE_TRACE
@@ -387,15 +390,39 @@ pid_t env::spawn(char * const *argv)
 	}
 	
 	// Child process: execute
-	if (pid == 0) {
-		int rc = execvp(argv[0], argv);
-		if (rc == -1)
-		{
-			logger::severe("Executable muscle2 not found in the PATH. Aborting.");
-			_exit(1);
+	if (pid == 0)
+	{
+		// We're not going to read
+		close (pipefd[0]);
+		// And the writing end should be closed if the exec succeeds
+		fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
+
+		execvp(argv[0], argv);
+		// execvp should not return; if it does, then MUSCLE was not found
+		logger::severe("Executable muscle2 not found in the PATH.");
+		const char c = 1;
+		write(pipefd[1], &c, 1);
+		close(pipefd[1]);
+		_exit(1);
+	} 
+	// Parent process: check if the execute succeeded
+	else
+	{
+		// We're not going to write
+		close(pipefd[1]);
+		char buffer[1];
+		logger::fine("Checking if Java MUSCLE started.");
+		if (read(pipefd[0],buffer,1)<=0) {
+			// Could not write to pipe, so the exec succeeded
+			close(pipefd[0]);
+			logger::fine("Java MUSCLE started.");
+			return pid;
+		} else {
+			// We've aborted
+			logger::severe("Aborting.");
+			exit(1);
 		}
 	}
-	return pid;
 }
 
 void env::free_data(void *ptr, muscle_datatype_t type)
@@ -409,3 +436,4 @@ void env::free_data(void *ptr, muscle_datatype_t type)
 
 
 } // EO namespace muscle
+
