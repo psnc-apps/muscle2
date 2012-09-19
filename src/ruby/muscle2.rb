@@ -112,9 +112,12 @@ elsif !active_kernels.empty? and !m.env['main'] && !m.env['manager'] && !m.env['
   # if there are active kernels, we need a way of contacting the manager.
   puts "Either specify --main or give --manager contact information"
 	exit 1
-elsif active_kernels.size > 1 and m.env['use_mpi'] || m.env['native']
-	puts "Multiple kernels provided for native code. Aborting."
+elsif active_kernels.size > 1 and m.env['use_mpi']
+	puts "Multiple kernels provided for MPI code. Aborting."
 	exit 1  
+elsif active_kernels.size > 1 and m.env['native']
+	puts "Warning: multiple kernels provided for native code. Ignoring the --native flag."
+	m.env['native'] = false
 end
 
 # Apply MTO arguments, if any
