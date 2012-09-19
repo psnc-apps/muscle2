@@ -7,5 +7,5 @@ fi
 
 export MUSCLE_HOME
 
-$MUSCLE_HOME/share/muscle/ruby/muscle2.rb $@
+$MUSCLE_HOME/share/muscle/ruby/muscle2.rb $MUSCLE_ARGS $@
 
