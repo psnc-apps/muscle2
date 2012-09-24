@@ -64,25 +64,25 @@ class ConnectionScheme
 		end
 	end
 	
-	def tie(entrance_name, exit_name=entrance_name, conduit=Conduit.new(Cxa.LAST.env[Cxa.LAST.env['CONNECTION_SCHEME_CLASS']]['default_conduit']))
+	def tie(entrance_name, exit_name=entrance_name, filters=[])
 		abort("first arg to tie can not be a #{entrance_name.class}") if(entrance_name.class==Hash) # sanity check
-		tie_single_args(entrance_name, exit_name, conduit)
+		tie_single_args(entrance_name, exit_name, filters)
 	end
 
 	# call with (entrance, exit, [conduit])
-	def tie_single_args(entrance_name, exit_name, conduit)
+	def tie_single_args(entrance_name, exit_name, filters)
 		entrance = ConduitEntrance.new(@current_src_agent, entrance_name)
 		exit = ConduitExit.new(@current_tgt_agent, exit_name)
 
-		@pipelines << Pipeline.new(@current_src_kernel, entrance, conduit, exit, @current_tgt_kernel)
+		@pipelines << Pipeline.new(@current_src_kernel, entrance, Conduit.new(filters), exit, @current_tgt_kernel)
 	end
 
 	# alternative version, can be called with a hash do define the entrance=>exit
 	# call with (entrance => exit)
 	# or ({entrance => exit}, conduit)
-	def tie_hash_arg(hsh, conduit)
+	def tie_hash_arg(hsh, filters)
 		raise("can only accept hash with one key/val") if hsh.length != 1
-		tie_single_args(hsh.keys.first, hsh.values.first, conduit)
+		tie_single_args(hsh.keys.first, hsh.values.first, filters)
 	end
 	
 	# produces cs in old style format
@@ -127,8 +127,7 @@ end
 
 #
 class Conduit
-	def initialize(cls, args=[])
-		@cls = cls
+	def initialize(args=[])
 		@args = args
 		@@counter||=-1
 		@@counter+= 1
@@ -141,7 +140,7 @@ class Conduit
 	end
 	
 	def to_s
-		"#{@cls}##{@name}#{"(#{@args.join(',')})" unless @args.empty?}"
+		"conduit##{@name}#{"(#{@args.join(',')})" unless @args.empty?}"
 	end	
 end
 
