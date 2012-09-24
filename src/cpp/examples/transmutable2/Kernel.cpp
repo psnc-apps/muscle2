@@ -21,6 +21,8 @@ This file is part of muscle (Multiscale Coupling Library and Environment).
 #include <exception>
 #include <iostream>
 #include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <muscle2/cppmuscle.hpp>
 #include <muscle2/complex_data.hpp>

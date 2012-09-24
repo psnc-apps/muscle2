@@ -2,6 +2,7 @@
 #define MSUCLE_LOGGER_HPP
 
 #include <string>
+#include <stdarg.h>
 #include "muscle_types.h"
 
 namespace muscle {

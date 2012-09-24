@@ -376,7 +376,12 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 pid_t env::spawn(char * const *argv)
 {
 	int pipefd[2];
-	pipe(pipefd);
+	int res = pipe(pipefd);
+	if (res == -1)
+	{
+		logger::severe("Could not start new Java MUSCLE instance: pipe failed. Aborting.");
+		exit(1);
+	}
 	pid_t pid;
 	
 #ifdef CPPMUSCLE_TRACE
@@ -401,7 +406,10 @@ pid_t env::spawn(char * const *argv)
 		// execvp should not return; if it does, then MUSCLE was not found
 		logger::severe("Executable muscle2 not found in the PATH.");
 		const char c = 1;
-		write(pipefd[1], &c, 1);
+		// No use checking result; if we can't communicate, neither _exit nor exit is going to do anything
+		if (write(pipefd[1], &c, 1) < 1) {
+			logger::severe("Could not propagate error to native code; it will stall.\n\nIt is safe to kill me now.");
+		}
 		close(pipefd[1]);
 		_exit(1);
 	} 
