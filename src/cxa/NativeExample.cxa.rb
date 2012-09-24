@@ -44,5 +44,5 @@ cxa.add_kernel('r', 'examples.simplejava.ConsoleWriter')
 cs = cxa.cs
 
 cs.attach('w' => 'r') {
-	tie('data', 'data', Conduit.new("muscle.core.conduit.AutomaticConduit", ["muscle.core.conduit.filter.MultiplyFilterDouble_0.5"]))
+	tie('data', 'data', ["muscle.core.conduit.filter.MultiplyFilterDouble_0.5"])
 }
