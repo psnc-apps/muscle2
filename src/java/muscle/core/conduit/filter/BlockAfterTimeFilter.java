@@ -36,7 +36,7 @@ public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObserv
 	private final static Logger logger = Logger.getLogger(BlockAfterTimeFilter.class.getName());
 
 	/** @param newMaxTime seconds after which the filter blocks */
-	public BlockAfterTimeFilter(int newMaxTime) {
+	public BlockAfterTimeFilter(double newMaxTime) {
 		super();
 		maxTime = new Timestamp(newMaxTime);
 	}

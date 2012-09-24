@@ -33,7 +33,7 @@ public class TimeOffsetFilter<E extends Serializable> extends AbstractObservatio
 	private final Distance offset;
 
 	/** @param newOffset offset in seconds */
-	public TimeOffsetFilter(int newOffset) {
+	public TimeOffsetFilter(double newOffset) {
 		super();
 		offset = new Distance(newOffset);
 	}

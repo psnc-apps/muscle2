@@ -77,11 +77,11 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 		} else if (name.equals("drop")) {
 			filter = new DropFilter(Integer.valueOf(remainder));
 		} else if (name.equals("timeoffset")) {
-			filter = new TimeOffsetFilter(Integer.valueOf(remainder));
+			filter = new TimeOffsetFilter(Double.valueOf(remainder));
 		} else if (name.equals("timefactor")) {
-			filter = new TimeFactorFilter(Integer.valueOf(remainder));
+			filter = new TimeFactorFilter(Double.valueOf(remainder));
 		} else if (name.equals("blockafter")) {
-			filter = new BlockAfterTimeFilter(Integer.valueOf(remainder));
+			filter = new BlockAfterTimeFilter(Double.valueOf(remainder));
 		} else if (name.equals("lineartimeinterpolation")) {
 			filter = new LinearTimeInterpolationFilterDouble(Integer.valueOf(remainder));
 		} // assume name refers to a class name

@@ -29,9 +29,9 @@ modifies timestep with a given factor
 @author Jan Hegewald
 */
 public class TimeFactorFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
-	private final int factor;
+	private final double factor;
 
-	public TimeFactorFilter(int newFactor) {
+	public TimeFactorFilter(double newFactor) {
 		super();
 		factor = newFactor;
 	}
