@@ -52,6 +52,9 @@ if (BUILD_CPP)
     do_test2("DataIntegrity.cxa.rb"  "tests passed")
     do_test2_exec("simplecpp2" "NativeExample2.cxa.rb"  "got: 2.0")
     do_test2_exec("transmutable2" "TransmutableExample2.cxa.rb"  "t: 2")
+	if (BUILD_FORTRAN)
+		do_test2("SimpleFortranExample.cxa.rb" "got: 2.0")
+	endif (BUILD_FORTRAN)
 endif (BUILD_CPP)
 
 

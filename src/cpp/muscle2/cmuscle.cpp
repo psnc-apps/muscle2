@@ -1,7 +1,7 @@
 #include "cmuscle.h"
 #include "cppmuscle.hpp"
 
-#include <string.h>
+#include <string>
 #include <cstring>
 
 muscle_error_t MUSCLE_Init(int *argc, char ***argv)

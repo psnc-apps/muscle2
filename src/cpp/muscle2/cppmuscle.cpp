@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <cstdio>
 #include <string>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -324,12 +325,12 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 #endif
 
 	pid_t pid = -2;
-	string term_str = "--";
+	const char *term_str = "--";
 	int term = -1;
 	
 	// Find terminator
-	for (int i = 1; i < *argc; i++) {
-		if (term_str.compare((*argv)[i]) == 0) {
+	for (int i = 0; i < *argc; i++) {
+		if (strcmp(term_str, (*argv)[i]) == 0) {
 			term = i;
 			break;
 		}

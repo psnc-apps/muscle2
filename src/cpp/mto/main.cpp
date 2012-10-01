@@ -266,7 +266,7 @@ void StubbornConnecter::connectFired(const boost::system::error_code& ec)
   timeout->cancel();
   if(ec)
   {
-    Logger::error(Logger::MsgType_PeerConn, "While connecting to  %s:%hu encountered error %s. Aborting connection.",
+    Logger::error(Logger::MsgType_PeerConn, "While connecting to  %s:%hu encountered error: %s. Aborting connection.",
       where.address().to_string().c_str(), where.port(), ec.message().c_str()
     );
     return;
