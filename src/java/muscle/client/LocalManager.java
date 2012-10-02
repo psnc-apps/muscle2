@@ -51,6 +51,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			instance.init();
 			ConnectionScheme.getInstance(instance);
 			instance.start();
+		} catch (InterruptedException ex) {
+			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, null, ex);
 		} catch (IOException ex) {
 			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not start listening for data connections.", ex);
 		}
@@ -100,7 +102,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		}
 	}
 	
-	private void start() {
+	private void start() throws InterruptedException {
 		disposeOfControllersHook = new DisposeOfControllersHook();
 		Runtime.getRuntime().addShutdownHook(disposeOfControllersHook);
 		forcefulQuitHook = new ForcefulQuitHook();
@@ -111,13 +113,23 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		tcpConnectionHandler.start();
 		localConnectionHandler.start();
 		
-		
-		// Start all instances but the first in a new thread
-		for (int i = 1; i < controllers.size(); i++) {
-			new Thread(controllers.get(i), controllers.get(i).getLocalName()).start();
+		try {
+			// Start all instances but the first in a new thread
+			for (int i = 1; i < controllers.size(); i++) {
+				// Sleep 10 milliseconds, to allow other threads to continue their sequence
+				Thread.sleep(10);
+				synchronized (controllers) {
+					if (i < controllers.size()) {
+						new Thread(controllers.get(i), controllers.get(i).getLocalName()).start();
+					}
+				}
+			}
+			// Run the first instance in the current thread
+			controllers.get(0).run();
+		} catch (OutOfMemoryError er) {
+			logger.log(Level.SEVERE, "Out of memory: too many submodels", er);
+			this.shutdown(2);
 		}
-		// Run the first instance in the current thread
-		controllers.get(0).run();
 	}
 	
 	@Override
@@ -140,16 +152,26 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		return instance;
 	}
 	
+	public void shutdown(int code) {
+		logger.severe("Shutting down simulation due to an error");
+		System.exit(code);
+	}
+	
 	private class DisposeOfControllersHook extends Thread {
 		public DisposeOfControllersHook() {
 			super("DisposeOfControllersHook");
 		}
 		public void run() {
-			if (!controllers.isEmpty()) {
-				System.out.println();
-				System.out.println("MUSCLE is locally shutting down; deregistering local submodels");
+			synchronized (controllers) {
+				if (controllers.isEmpty()) {
+					forcefulQuitHook.notifyDisposerFinished();
+					return;
+				} else {
+					System.out.println();
+					System.out.println("MUSCLE is locally shutting down; deregistering local submodels");
+				}
 			}
-	
+
 			while (!controllers.isEmpty()) {
 				InstanceController ic = null;
 				synchronized (controllers) {

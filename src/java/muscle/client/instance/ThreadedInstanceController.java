@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
+import muscle.client.LocalManager;
 import muscle.client.communication.PortFactory;
 import muscle.core.*;
 import muscle.core.conduit.terminal.Sink;
@@ -148,6 +149,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			logger.log(Level.SEVERE, "Could not instantiate Instance " + getLocalName() + " with class " + this.instanceClass.getName(), ex);
 		} catch (IllegalAccessException ex) {
 			logger.log(Level.SEVERE, "Permission denied to class " + this.instanceClass.getName() + " of Instance " + getLocalName(), ex);
+		} catch (OutOfMemoryError er) {
+			logger.log(Level.SEVERE, "Instance " + getLocalName() + " is out of memory", er);
+			LocalManager.getInstance().shutdown(2);
 		}
 	}
 

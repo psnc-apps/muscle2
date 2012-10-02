@@ -66,7 +66,9 @@ public class SimpleDelegatingResolver implements Resolver {
 	 * @throws InterruptedException if the process was interrupted before the id was resolved.
 	 */
 	public void resolveIdentifier(Identifier id) throws InterruptedException  {
-		if (id.isResolved()) return;
+		if (id.isResolved()) {
+			return;
+		}
 		// Only search for instances directly
 		if (id.getType() == IDType.port) {
 			resolveIdentifier(((PortalID)id).getOwnerID());
@@ -163,14 +165,19 @@ public class SimpleDelegatingResolver implements Resolver {
 	public synchronized void removeIdentifier(String name, IDType type) {
 		String fullName = name(name, type);
 		// Still know that it was known, but make it inactive.
-		this.resolvedIdCache.get(fullName).unResolve();
+		Identifier id = this.resolvedIdCache.get(fullName);
+		if (id != null) {
+			id.unResolve();
+		}
 	}
 	
 	/** Add an identifier to the resolver. This also removes it from any 
 	 *  search list it might be on.
 	 */
 	public synchronized void addResolvedIdentifier(Identifier id) {
-		if (!id.isResolved()) throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
+		if (!id.isResolved()) {
+			throw new IllegalArgumentException("ID " + id + " is not resolved, but Resolver only accepts resolved IDs");
+		}
 		
 		String fullName = name(id.getName(), id.getType());
 		Identifier resId = resolvedIdCache.get(fullName);
@@ -186,7 +193,9 @@ public class SimpleDelegatingResolver implements Resolver {
 	}
 	
 	public synchronized void canNotResolveIdentifier(Identifier id) {
-		if (id.isResolved()) throw new IllegalArgumentException("ID " + id + " is resolved, so it can be resolved.");
+		if (id.isResolved()) {
+			throw new IllegalArgumentException("ID " + id + " is resolved, so it can be resolved.");
+		}
 		
 		String fullName = name(id.getName(), id.getType());
 		resolvedIdCache.put(fullName, id);
