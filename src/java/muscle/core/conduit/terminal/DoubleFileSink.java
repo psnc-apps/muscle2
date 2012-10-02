@@ -11,24 +11,16 @@ import muscle.core.model.Observation;
 /**
  * A FileSink that writes double arrays to a file.
  * It enumerates the files, so each observation i is written to
- * file.i.suffix. The doubles are delimeted by spaces by default, unless the property
+ * file.i.suffix. The doubles are delimited by spaces by default, unless the property
  * "delimeter" is set to some other value.
  * @author Joris Borgdorff
  */
 public class DoubleFileSink extends FileSink<double[]> {
-	private int iteration;
 	private String delimiter;
 	
 	@Override
 	public void beforeExecute() {
 		delimiter = hasProperty("delimiter") ? getProperty("delimiter") : " ";
-		iteration = 0;
-	}
-	
-	/** The iteration number as a String. */
-	@Override
-	protected String getInfix() {
-		return String.valueOf(iteration);
 	}
 	
 	/**
@@ -47,6 +39,5 @@ public class DoubleFileSink extends FileSink<double[]> {
 				out.write(String.valueOf(data[sz]));
 			}
 		}
-		iteration++;
 	}
 }

@@ -46,8 +46,6 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	 * @param infix the infix, if any to use between the filename and the suffix.
 	 */
 	protected File getLocalFile(String infix) {
-		boolean relative = hasProperty("relative") && getBooleanProperty("relative");
-		
 		String suffix;
 		if (infix == null) {
 			suffix = hasProperty("suffix") ? "." + getProperty("suffix") : "";
@@ -55,12 +53,16 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 			suffix = "." + infix + "." + (hasProperty("suffix") ? getProperty("suffix") : "dat");
 		}
 		File output;
-		if (relative) {
+		if (fileIsRelative()) {
 			output = new File(this.getTmpPath(), getProperty("file") + suffix);
 		} else {
 			output = new File(getProperty("file") + suffix);
 		}
 		return output;
+	}
+	
+	protected boolean fileIsRelative() {
+		return hasProperty("relative") && getBooleanProperty("relative");
 	}
 	
 	@Override

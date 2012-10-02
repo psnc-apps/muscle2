@@ -18,16 +18,17 @@ import muscle.util.MiscTool;
 /**
  * A sink that writes all data to file.
  * 
- * It is governed by the CxA options "file", "relative", and "
+ * It is governed by the CxA options "file", "relative"
  * @author Joris Borgdorff
  */
 public abstract class FileSink<T extends Serializable> extends Sink<T> {
-	/**
-	 * Provides an infix to the filename to be written to.
+	private int iteration = 0;
+	
+	/** Provides an infix to the filename to be written to: the iteration number as a String. 
 	 * @see Terminal.getLocalFile() for how the filename is determined
 	 */
 	protected String getInfix() {
-		return null;
+		return String.valueOf(iteration);
 	}
 	
 	/**
@@ -58,6 +59,11 @@ public abstract class FileSink<T extends Serializable> extends Sink<T> {
 					Logger.getLogger(FileSink.class.getName()).log(Level.SEVERE, null, ex);
 				}
 			}
+			iteration++;
 		}
+	}
+	
+	protected boolean fileIsRelative() {
+		return !hasProperty("relative") || getBooleanProperty("relative");
 	}
 }
