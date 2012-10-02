@@ -152,7 +152,7 @@ elsif m.env['use_mpi']
 end
 
 manager_pid = 0
-$running_procs = []
+$running_procs = {}
 
 kill_running = lambda do
   kill_processes($running_procs)
@@ -173,7 +173,7 @@ if m.env['main']
 	muscle_main_args << kernel_names
   if $running_procs != nil
 	  manager_pid = m.run_manager(muscle_main_args)
-	  $running_procs << {:pid => manager_pid, :name => 'Simulation Manager'}
+	  $running_procs[manager_pid] = 'Simulation Manager'
   end
 end
 
@@ -186,7 +186,7 @@ if !active_kernels.empty?
   contact_file_name = m.env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
   if $running_procs != nil
 	  pid = m.run_client(muscle_local_args, contact_file_name)
-  	$running_procs << {:pid => pid, :name => 'Simulation'}
+  	$running_procs[pid] = 'Simulation'
   end
 end
 

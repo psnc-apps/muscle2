@@ -504,35 +504,53 @@ def kill_process(pid, signal, name)
     end
 end
 
+def interrupt_processes(procs, exit_val)
+  procs.each { |pid, name| kill_process(pid, 'SIGINT', name) }
+
+	# After 30 seconds, do a full kill.
+	begin
+		Timeout::timeout(30) {
+			begin
+				Process.waitall
+			rescue Interrupt
+        procs.each { |pid, name| kill_process(pid, 'SIGKILL', name) }
+		    Process.waitall
+			end
+		}
+	rescue Timeout::Error
+    procs.each { |pid, name| kill_process(pid, 'SIGKILL', name) }
+    Process.waitall
+	end
+  
+  exit exit_val
+end
+
 def kill_processes(procs)
   begin
-  	statuses = Process.waitall
-		#exit with no zero value if only one process had non-zero exit value
-  	statuses.each { |status| exit status[1].exitstatus if status[1].exitstatus !=0 } 
+		if not procs.empty?
+  		pid = Process.wait
+			del = procs.delete pid
+
+			while not procs.empty?		
+				if $?.exitstatus != 0
+					puts "#{del} (pid=#{pid}) exited with error code #{$?.exitstatus}; killing other processes"
+					interrupt_processes(procs, $?.exitstatus)
+				end
+			
+				pid = Process.wait
+				del = procs.delete pid
+				#exit with no zero value if only one process had non-zero exit value
+			end
+			if $?.exitstatus != 0
+				exit $?.exitstatus
+			end
+		end
 		# we didn't exit, so our status is good.
 		exit 0
   rescue Interrupt
   	puts "Interrupt received..."
-  	exit_val = 1
 
-    procs.each { |proc| kill_process(proc[:pid], 'SIGINT', proc[:name]) }
-
-  	# After 30 seconds, do a full kill.
-  	begin
-  		Timeout::timeout(30) {
-  			begin
-  				Process.waitall
-  			rescue Interrupt
-          procs.each { |proc| kill_process(proc[:pid], 'SIGKILL', proc[:name]) }
-			    Process.waitall
-  			end
-  		}
-  	rescue Timeout::Error
-      procs.each { |proc| kill_process(proc[:pid], 'SIGKILL', proc[:name]) }
-	    Process.waitall
-  	end
-    
-    exit exit_val
+  	interrupt_processes(procs, 1)
   end
 end
 
