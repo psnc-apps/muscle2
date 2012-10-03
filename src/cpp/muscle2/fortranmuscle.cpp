@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstring>
+#include <stdlib.h>
 
 void muscle_init_(int *argc, char *argv)
 {
