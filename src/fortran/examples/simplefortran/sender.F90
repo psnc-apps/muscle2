@@ -1,13 +1,22 @@
 program sender
+	use iso_c_binding, only: c_char
   	implicit none
 	double precision :: allData(1:65536)
 	integer :: i
 	logical(4) :: wstop
+	character(kind=c_char,len=255) :: propName, kernelName, prop
 	enum, bind(c)
 		enumerator :: MUSCLE_DOUBLE, MUSCLE_FLOAT, MUSCLE_RAW, MUSCLE_INT32, MUSCLE_INT64, MUSCLE_BOOLEAN, MUSCLE_STRING
 	endenum
 	
 	call muscle_fortran_init()
+	
+	call MUSCLE_Kernel_Name(kernelName)
+	write (*,*) kernelName
+	
+	propName = c_char_"command"//char(0)
+	call MUSCLE_Get_Property(propName, prop)
+	write (*,*) prop
 	
 	do i = 1, 65536
 		allData(i) = i
@@ -15,7 +24,7 @@ program sender
 	
 	call MUSCLE_Will_Stop(wstop)
 	do while (.NOT. wstop)
-		call MUSCLE_Send('data'//char(0),allData,%REF(65536),%REF(MUSCLE_DOUBLE))
+		call MUSCLE_Send(c_char_"data"//char(0),allData,%REF(65536),%REF(MUSCLE_DOUBLE))
 		call MUSCLE_Will_Stop(wstop)
 	end do
 	

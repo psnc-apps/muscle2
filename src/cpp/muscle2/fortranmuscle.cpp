@@ -1,11 +1,50 @@
 #include "fortranmuscle.h"
 #include "cppmuscle.hpp"
+#include "logger.hpp"
 
 #include <string>
 #include <cstring>
 #include <stdlib.h>
+#include <ctype.h>
 
-void muscle_init_(int *argc, char *argv)
+using namespace muscle;
+
+char *f2cstr(const char *str, int len)
+{
+	size_t sz = len;
+	bool term;
+	if (memchr(str, '\0', sz) == NULL) {
+		term = false;
+	} else {
+		term = true;
+		sz = strlen(str);
+	}
+	char *cstr = (char *)malloc(sz+1);
+	memcpy(cstr, str, sz);
+	char *end = cstr + sz - 1;
+	
+	if (!term) {
+		logger::warning("Fortran string ''%s'' was not null-terminated, trimming spaces", cstr);
+		while(end > cstr && isspace(*end)) end--;
+	}
+	*(end+1) = '\0';
+	return cstr;
+}
+
+void c2fstr(const char *cstr, char *fstr, int reslen)
+{
+	int len = strlen(cstr);
+	if (len > reslen) {
+		logger::severe("Can not store string ''%s'' of size %d in Fortran string of size %d", cstr, len, reslen);
+		len = reslen;
+	}
+	memcpy(fstr, cstr, len);
+	char *end = fstr + reslen;
+	fstr += len;
+	while (++fstr != end) *fstr = ' ';
+}
+
+void muscle_init_(int *argc, char *argv, int len)
 {
 	// Construct a pointer array for identifying arguments in the long string
 	// argv.
@@ -24,26 +63,29 @@ void muscle_init_(int *argc, char *argv)
 	(*argc)--;
 }
 
-void muscle_kernel_name_(char* result)
+void muscle_kernel_name_(char* result, int reslen)
 {
-	strcpy(result, muscle::cxa::kernel_name().c_str());
+	c2fstr(muscle::cxa::kernel_name().c_str(), result, reslen);
 }
 
-void muscle_get_property_(const char* name, char *result)
+void muscle_get_property_(const char* name, char *result, int len, int reslen)
 {
-	strcpy(result, muscle::cxa::get_property(std::string(name)).c_str());
+	std::string sname(f2cstr(name, len));
+	c2fstr(muscle::cxa::get_property(sname).c_str(), result, reslen);
 }
 
-void muscle_receive_(const char *entrance_name, void *array, int *size, muscle_datatype_t *type)
+void muscle_receive_(const char *entrance_name, void *array, int *size, muscle_datatype_t *type, int len)
 {
+	std::string sname(f2cstr(entrance_name, len));
 	size_t sz;
-	muscle::env::receive(std::string(entrance_name), array, sz, *type);
+	muscle::env::receive(sname, array, sz, *type);
 	*size = (int)sz;
 }
 
-void muscle_send_(const char *exit_name, void *array, int *size, muscle_datatype_t *type)
+void muscle_send_(const char *exit_name, void *array, int *size, muscle_datatype_t *type, int len)
 {
-	muscle::env::send(std::string(exit_name), array, *size, *type);
+	std::string sname(f2cstr(exit_name, len));
+	muscle::env::send(sname, array, *size, *type);
 }
 
 void muscle_will_stop_(int *result) {
