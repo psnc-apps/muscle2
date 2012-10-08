@@ -82,23 +82,23 @@ bool Options::load(int argc, char **argv)
 {
   program_options::options_description opts("Options");
   opts.add_options()
-    ("config", program_options::value<string>(), "Location of the config file (default: $MUSCLE_HOME/etc/mto-config.cfg)")
-    ("topology", program_options::value<string>(), "Location of the config file (default: $MUSCLE_HOME/etc/mto-topology.cfg)")
+    ("config", program_options::value<string>(), "Location of the MTO local configuration file (default: $MUSCLE_HOME/etc/mto-config.cfg)")
+    ("topology", program_options::value<string>(), "Location of the MTO global topology configuration file (default: $MUSCLE_HOME/etc/mto-topology.cfg)")
     
     ("myName", program_options::value<string>(), "Name of the MTO, s specified in the topology file")
     
     ("localPortLow", program_options::value<unsigned short>(), "Low limit of the local port range")
     ("localPortHigh", program_options::value<unsigned short>(), "High limit of the local port range")
     
-    ("internalPort", program_options::value<string>(), "Port to listen for conections to be transported")
-    ("internalAddress", program_options::value<string>(), "Address to listen for conections to be transported")
+    ("internalPort", program_options::value<string>(), "Port to listen for connections to be transported")
+    ("internalAddress", program_options::value<string>(), "Address to listen for connections to be transported")
     
     ("debug", "Causes the program NOT to go to background and sets logLevel to TRACE")
     ("logLevel", program_options::value<string>(), "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)")
-    ("logMsgTypes", program_options::value<string>(), "Allows filtering log msgs (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
-    ("logFile", program_options::value<string>(), "Path to the log file (default behaviour - logging to stderr)")
+    ("logMsgTypes", program_options::value<string>(), "Allows filtering log messages context (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
+    ("logFile", program_options::value<string>(), "Path to the log file (default behavior - logging to standard error)")
     
-    ("sockAutoCloseTimeout", program_options::value<unsigned>(), "Time in seconds after which iddle connection is closed")
+    ("sockAutoCloseTimeout", program_options::value<unsigned>(), "Time in seconds after which idle connection is closed")
   ;
   
   program_options::variables_map read_opts;

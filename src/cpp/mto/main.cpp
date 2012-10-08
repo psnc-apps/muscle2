@@ -328,7 +328,7 @@ void InitPeerConnection::allHellosReceived(error_code ec)
 {
   if(ec)
   {
-    Logger::trace(Logger::MsgType_PeerConn, "Reading hellos from peer %s:%hu failed - occured error: %s",
+    Logger::trace(Logger::MsgType_PeerConn, "Reading hellos from peer %s:%hu failed - occurred error: %s",
                   sock->remote_endpoint().address().to_string().c_str(), sock->remote_endpoint().port(), ec.message().c_str()
             );
     sock->close();
@@ -339,6 +339,7 @@ void InitPeerConnection::allHellosReceived(error_code ec)
   writeHellos(sock);  
   
   PeerConnectionHandler * h = parseHellos(sock, hellos);
+  h->setReconnect(true);
   
   unsigned short hiPort = hellos.back().portHigh;
   connectionsIncomming[hiPort] = h;

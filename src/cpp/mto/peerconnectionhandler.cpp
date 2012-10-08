@@ -126,7 +126,7 @@ void PeerConnectionHandler::handleConnect(Header h)
     return;
   }
   
-  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Trying to establish connection %s:%hu - %s:%hu for %s",
+  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Trying to establish connection %s:%hu - %s:%hu (Peer MTO = %s)",
                   ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                   ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
                   socketEndpt.address().to_string().c_str()
@@ -364,7 +364,11 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   if(closing)
   {
     if(pendingOperatons==0)
+    {
+      iddleTimer.cancel();
+      recreateSocketTimer.cancel();
       delete this;
+    }
     return;
   }
   
@@ -380,7 +384,7 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   }
   else
   {
-    Logger::info(Logger::MsgType_PeerConn, "Peer %s closed it's iddle connection",
+    Logger::info(Logger::MsgType_PeerConn, "Peer %s closed it's idle connection",
                   socketEndpt.address().to_string().c_str()
                  );
   }
@@ -405,6 +409,7 @@ void PeerConnectionHandler::errorOcured(const boost::system::error_code& ec, str
   
   if(socket)
   {
+	socket->cancel();
     socket->close();
     delete socket;
   }
@@ -458,7 +463,7 @@ void PeerConnectionHandler::Sender::dataSent(const error_code& ec, size_t len)
   
   if(ec || parent->closing)
   {
-    Logger::trace(Logger::MsgType_PeerConn, "Error occured, cleaning send queue on %s", parent->remoteEndpoint().address().to_string().c_str());
+    Logger::trace(Logger::MsgType_PeerConn, "Error occurred, cleaning send queue on %s", parent->remoteEndpoint().address().to_string().c_str());
     parent->pendingOperatons--;
     while(!sendQueue.empty())
     {
@@ -539,7 +544,7 @@ void PeerConnectionHandler::updateLastOperationTimer()
 void PeerConnectionHandler::iddleTimerFired(const error_code& ec)
 {
   // closing - ignore.
-  if(ec == error::operation_aborted)
+  if(ec == error::operation_aborted || closing)
     return;
   
   if(ec){

@@ -10,7 +10,7 @@ Connection::Connection(tcp::socket* s, char* requestBuffer)
 /* from remote */
 Connection::Connection(Header h, tcp::socket* s, PeerConnectionHandler * t)
   : sock(s), header(h), closing(false), hasRemotePeer(true), referenceCount(0), reqBuf(0) ,
-    secondMto(t)
+    secondMto(t), currentlyWriting(false)
 {
   remoteConnections[Identifier(h)]=this;
   
@@ -143,12 +143,12 @@ void Connection::readRequest(const boost::system::error_code& e, size_t )
 
 void Connection::clean()
 {
-  Logger::trace(Logger::MsgType_PeerConn, "Cleaning connection between %s:%hu and %s:%hu (ptr=%p)",
+  /* Logger::trace(Logger::MsgType_PeerConn, "Cleaning connection between %s:%hu and %s:%hu (ptr=%p)",
                     ip::address_v4(header.dstAddress).to_string().c_str(),
                     header.dstPort,
                     ip::address_v4(header.srcAddress).to_string().c_str(),
                     header.srcPort,
-                    this);
+                    this);*/
 
   if(!closing)
   {
