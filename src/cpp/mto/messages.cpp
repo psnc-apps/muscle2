@@ -124,7 +124,7 @@ bool Identifier::operator<(const Identifier& other) const
   if(dstAddress<other.dstAddress)
     return true;
   else if(dstAddress>other.dstAddress)
-    return true;
+    return false;
 
   if(srcPort<other.srcPort)
     return true;

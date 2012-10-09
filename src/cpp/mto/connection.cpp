@@ -214,7 +214,7 @@ void Connection::error(const boost::system::error_code& e)
   }
 
   if(e!=asio::error::eof)
-    Logger::error(Logger::MsgType_ClientConn, "Error ocurred in connection between %s:%hu and %s:%hu (%s)",
+    Logger::error(Logger::MsgType_ClientConn, "Error occurred in connection between %s:%hu and %s:%hu (%s)",
                   ip::address_v4(header.dstAddress).to_string().c_str(),
                   header.dstPort,
                   ip::address_v4(header.srcAddress).to_string().c_str(),
