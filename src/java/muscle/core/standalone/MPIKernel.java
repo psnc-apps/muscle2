@@ -25,7 +25,7 @@ public class MPIKernel extends NativeKernel {
 		}
 		
 		if (hasProperty("mpiexec_args")) {
-			String args[] = getProperty("mpiexec_args").split(" ");
+			String args[] = getProperty("mpiexec_args").trim().split(" ");
 			command.addAll(Arrays.asList(args));
 		} else {
 			logger.log(Level.WARNING, "MPI arguments variable ''mpiexec_args'' for {0} not given. Using mpiexec.", getLocalName());
