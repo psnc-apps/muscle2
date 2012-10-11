@@ -154,14 +154,14 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
 	public static final String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
-	protected int magicPort = 22;
+	protected int qcgMagicPort = 22;
 	protected String socketFile = "socket.file";
 	protected InetAddress mtoAddr = null;
 	protected int mtoPort = -1;
 
 	public CrossSocketFactory() {
 		if (System.getProperty(PROP_MAIN_PORT) != null) {
-			magicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
+			qcgMagicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
 		}
 
 		if (System.getProperty(PROP_MTO_ADDRESS) != null) {
@@ -180,20 +180,23 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 	public ServerSocket createServerSocket(int port, int backlog,
 			InetAddress addr) throws IOException {
 		
-		if (port == magicPort) {
+		ServerSocket ss;
+		if (port == qcgMagicPort) {
 			logger.log(Level.FINE, "binding socket on MAIN port and addr {0}", addr);
+			 ss = createServerSocketInRange(backlog, addr);
 		} else if (port == 0) {
 			logger.log(Level.FINE, "binding socket on ANY port and addr {0}", addr);
+			 ss = createServerSocketInRange(backlog, addr);
 		} else {
 			logger.log(Level.FINE, "binding socket on port {0} and addr {1}", new Object[]{port, addr});
-			throw new java.net.BindException();
+			ss = new ServerSocket(port, backlog, addr);
 		}
-
-		ServerSocket ss = createServerSocketInRange(backlog, addr);
 
 		logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
 
-		if (mtoAddr != null && mtoPort != -1) {
+		if (mtoAddr == null || mtoPort == -1) {
+			logger.fine("Missing MTO address / port. MTO will not be used.");
+		} else {
 			try {
 				mtoRegisterListening((InetSocketAddress) ss.getLocalSocketAddress());
 			} catch (IOException ex) {
@@ -201,11 +204,9 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 			}
 
 			logger.info("Registered to MTO");
-		} else {
-			logger.fine("Missing MTO address / port. MTO will not be used.");
 		}
 
-		if (port == magicPort) {
+		if (port == qcgMagicPort) {
 			putConnectionData(InetAddress.getLocalHost()
 					.getHostAddress(), ss.getLocalPort());
 
@@ -377,7 +378,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				super.connect(processedEndpoint, timeout);
 			} else {
 				if (mtoPort == -1 || mtoAddr == null) {
-					logger.severe("Connection out of port range, but MTO is not configured. Trying local");
+					logger.warning("non-default TCP port used and no MTO to resolve it.");
 					super.connect(processedEndpoint, timeout);
 					return;
 				}
@@ -421,7 +422,7 @@ public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.
 				throws IOException {
 			InetSocketAddress iaddr = (InetSocketAddress) endpoint;
 
-			if (iaddr.getPort() == magicPort) {
+			if (iaddr.getPort() == qcgMagicPort) {
 				return getConnectionData();
 			}
 			else {
