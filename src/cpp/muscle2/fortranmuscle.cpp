@@ -47,19 +47,23 @@ void c2fstr(const char *cstr, char *fstr, int reslen)
 void muscle_init_(int *argc, char *argv, int len)
 {
 	// Construct a pointer array for identifying arguments in the long string
-	// argv.
-	char **ptrs = (char **)malloc(*argc * sizeof(char *));
+	// argv
+	char *(ptrs[100]);
+	char **cptrs = ptrs;
+	char margv[25600];
+	char *cargv = margv;
+	memcpy(cargv, argv, len);
 	
 	size_t prevSz = 0;
 	for (int i = 0; i <= *argc; i++) {
 		// Only move to next word if there is one; the first time increment with 0.
-		argv += prevSz;
-		ptrs[i] = argv;
+		cargv += prevSz;
+		ptrs[i] = cargv;
 		prevSz = strlen(ptrs[i])+1;
 	}
 	// C expects argc to be one larger (program name) than Fortran provides.
 	(*argc)++;
-	muscle::env::init(argc, &ptrs);
+	muscle::env::init(argc, &cptrs);
 	(*argc)--;
 }
 

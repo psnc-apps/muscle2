@@ -1,7 +1,6 @@
 #ifndef MSUCLE_LOGGER_HPP
 #define MSUCLE_LOGGER_HPP
 
-#include <string>
 #include <stdarg.h>
 #include "muscle_types.h"
 
@@ -9,18 +8,18 @@ namespace muscle {
 	class logger
 	{
 	  public:
-		static void log_message(muscle_loglevel_t level, std::string message, ...);
+		static void log_message(muscle_loglevel_t level, const char *message, ...);
 
-		static void severe(std::string message, ...);
-		static void warning(std::string message, ...);
-		static void info(std::string message, ...);
-		static void config(std::string message, ...);
-		static void fine(std::string message, ...);
-		static void finer(std::string message, ...);
-		static void finest(std::string message, ...);
-		static void setName(std::string _name);
+		static void severe(const char *message, ...);
+		static void warning(const char *message, ...);
+		static void info(const char *message, ...);
+		static void config(const char *message, ...);
+		static void fine(const char *message, ...);
+		static void finer(const char *message, ...);
+		static void finest(const char *message, ...);
+		static void setName(const char *_name);
 	private:
-		static void format(const muscle_loglevel_t level, std::string message, va_list *args);
+		static void format(const muscle_loglevel_t level, const char *message, va_list *args);
 	};
 
 } // EO namespace muscle

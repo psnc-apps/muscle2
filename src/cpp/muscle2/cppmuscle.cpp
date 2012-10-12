@@ -17,9 +17,7 @@
 #include <sys/errno.h>
 #include <stdlib.h>
 #include <stdexcept>
-#ifdef CPPMUSCLE_TRACE
-#include <iostream>
-#endif
+#include <errno.h>
 
 using namespace std;
 
@@ -77,7 +75,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 		exit(1);
 	}
 	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
-	logger::setName(muscle_kernel_name);
+	logger::setName(strdup(muscle_kernel_name.c_str()));
 	return MUSCLE_SUCCESS;
 }
 
@@ -110,16 +108,16 @@ int env::detect_mpi_rank() {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::detect_mpi_rank() ");
 #endif
-	const std::string possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
-							"OMPI_MCA_ns_nds_vpid",
-	                        "PMI_RANK",
-	                        "MP_CHILD",
-	                        "SLURM_PROCID",
-	                        "X10_PLACE",
-							"MP_CHILD"};
+	const char *possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
+	                                      "OMPI_MCA_ns_nds_vpid",
+	                                      "PMI_RANK",
+	                                      "MP_CHILD",
+	                                      "SLURM_PROCID",
+	                                      "X10_PLACE",
+	                                      "MP_CHILD"};
 	int irank = 0;
 	for (int i = 0; i < 7; i++) {
-		char *rank = getenv(possible_mpi_rank_vars[i].c_str());
+		const char *rank = getenv(possible_mpi_rank_vars[i]);
 		if (rank != NULL) {
 			irank = atoi(rank);
 		}
@@ -405,7 +403,7 @@ pid_t env::spawn(char * const *argv)
 
 		execvp(argv[0], argv);
 		// execvp should not return; if it does, then MUSCLE was not found
-		logger::severe("Executable muscle2 not found in the PATH.");
+		logger::severe("Executable muscle2 not started: %s", strerror( errno ));
 		const char c = 1;
 		// No use checking result; if we can't communicate, neither _exit nor exit is going to do anything
 		if (write(pipefd[1], &c, 1) < 1) {

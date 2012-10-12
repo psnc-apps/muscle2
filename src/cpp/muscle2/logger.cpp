@@ -14,7 +14,7 @@ namespace muscle {
 
 const char *logger_name = 0;
 	
-void logger::log_message(muscle_loglevel_t level, string message, ...)
+void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 
@@ -24,7 +24,7 @@ void logger::log_message(muscle_loglevel_t level, string message, ...)
 	va_end(args);
 }
 
-void logger::severe(string message, ...)
+void logger::severe(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -33,7 +33,7 @@ void logger::severe(string message, ...)
 	va_end(args);
 }
 
-void logger::warning(string message, ...)
+void logger::warning(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -42,7 +42,7 @@ void logger::warning(string message, ...)
 	va_end(args);
 }
 
-void logger::info(string message, ...)
+void logger::info(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -51,7 +51,7 @@ void logger::info(string message, ...)
 	va_end(args);
 }
 
-void logger::config(string message, ...)
+void logger::config(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -60,7 +60,7 @@ void logger::config(string message, ...)
 	va_end(args);
 }
 
-void logger::fine(string message, ...)
+void logger::fine(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -69,7 +69,7 @@ void logger::fine(string message, ...)
 	va_end(args);
 }
 
-void logger::finer(string message, ...)
+void logger::finer(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -78,7 +78,7 @@ void logger::finer(string message, ...)
 	va_end(args);
 }
 
-void logger::finest(string message, ...)
+void logger::finest(const char *message, ...)
 {
 	if (!env::is_main_processor) return;
 	va_list args;
@@ -87,7 +87,7 @@ void logger::finest(string message, ...)
 	va_end(args);
 }
 
-inline void logger::format(const muscle_loglevel_t level, string message, va_list *args)
+inline void logger::format(const muscle_loglevel_t level, const char *message, va_list *args)
 {
 	const char *level_str;
 
@@ -127,14 +127,14 @@ inline void logger::format(const muscle_loglevel_t level, string message, va_lis
 	{
 		printf("[       %7s] ", level_str);
 	}
-	vprintf(message.c_str(), *args);
+	vprintf(message, *args);
 	printf("\n");
 	fflush(stdout);
 }
 
-void logger::setName(std::string _name)
+void logger::setName(const char *_name)
 {
-	logger_name = _name.c_str();
+	logger_name = _name;
 }
 
 } // EO namespace muscle
