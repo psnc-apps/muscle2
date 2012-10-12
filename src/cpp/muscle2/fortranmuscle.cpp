@@ -74,22 +74,28 @@ void muscle_kernel_name_(char* result, int reslen)
 
 void muscle_get_property_(const char* name, char *result, int len, int reslen)
 {
-	std::string sname(f2cstr(name, len));
+	char *cstr = f2cstr(name, len);
+	std::string sname(cstr);
 	c2fstr(muscle::cxa::get_property(sname).c_str(), result, reslen);
+	free(cstr);
 }
 
 void muscle_receive_(const char *entrance_name, void *array, int *size, muscle_datatype_t *type, int len)
 {
-	std::string sname(f2cstr(entrance_name, len));
+	char *cstr = f2cstr(entrance_name, len);
+	std::string sname(cstr);
 	size_t sz;
 	muscle::env::receive(sname, array, sz, *type);
 	*size = (int)sz;
+	free(cstr);
 }
 
 void muscle_send_(const char *exit_name, void *array, int *size, muscle_datatype_t *type, int len)
 {
-	std::string sname(f2cstr(exit_name, len));
+	char *cstr = f2cstr(exit_name, len);
+	std::string sname(cstr);
 	muscle::env::send(sname, array, *size, *type);
+	free(cstr);
 }
 
 void muscle_will_stop_(int *result) {
