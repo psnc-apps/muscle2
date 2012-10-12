@@ -41,7 +41,7 @@ void c2fstr(const char *cstr, char *fstr, int reslen)
 	memcpy(fstr, cstr, len);
 	char *end = fstr + reslen;
 	fstr += len;
-	while (++fstr != end) *fstr = ' ';
+	while (fstr != end) *(fstr++) = ' ';
 }
 
 void muscle_init_(int *argc, char *argv, int len)
