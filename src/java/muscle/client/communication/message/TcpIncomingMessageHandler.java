@@ -28,7 +28,6 @@ import muscle.util.serialization.SerializerWrapper;
 public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Identifier,Receiver>> {
 	private final static Logger logger = Logger.getLogger(TcpIncomingMessageHandler.class.getName());
 	private final static SignalEnum[] signals = SignalEnum.values();
-	private final static TcpDataProtocol[] msgType = TcpDataProtocol.values();
 	private final DataConnectionHandler connectionHandler;
 	private final Resolver resolver;
 	
@@ -43,73 +42,85 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		boolean success = false;
 
 		in.refresh();
-		int magic_number = in.readInt();
-		if (magic_number == -1) {
+		TcpDataProtocol magic = TcpDataProtocol.valueOf(in.readInt());
+		if (magic == TcpDataProtocol.CLOSE) {
 			this.socket.close();
 			logger.finer("Closing stale incoming socket.");
+			return true;
+		}
+		if (magic != TcpDataProtocol.MAGIC_NUMBER) {
+			logger.log(Level.WARNING, "Unrecognized protocol for data messages;\n[\t\t] the wrong manager address may have been specified");
+			out.writeInt(TcpDataProtocol.ERROR.intValue());
+			out.flush();
+			this.socket.close();
 			return null;
 		}
-		if (magic_number != TcpDataProtocol.MAGIC_NUMBER) {
-			logger.warning("Unrecognized protocol for data messages: " + magic_number + " != " + TcpDataProtocol.MAGIC_NUMBER);
-			return null;
-		}
-		int protoNum = in.readInt();
 		// Protocol not executed.
-		if (protoNum < 0 || protoNum >= msgType.length) {
-			logger.log(Level.WARNING, "Unrecognized message type number {0} received.", protoNum);
-			return false;
-		}
+		TcpDataProtocol proto = TcpDataProtocol.valueOf(in.readInt());
+		boolean shouldResubmit = true;
 		
-		TcpDataProtocol proto = msgType[protoNum];
-		String owner_name = in.readString();
-		IDType idType = IDType.values()[in.readInt()];
-		Identifier recipient = resolver.getIdentifier(owner_name, idType);
-		boolean shouldDetach = false;
+		if (proto != TcpDataProtocol.ERROR) {
+			String owner_name = in.readString();
+			IDType idType = IDType.values()[in.readInt()];
+			Identifier recipient = resolver.getIdentifier(owner_name, idType);
 
-		switch (proto) {
-			case OBSERVATION: {
-				Timestamp time = new Timestamp(in.readDouble());
-				Timestamp nextTime = new Timestamp(in.readDouble());
-				SerializableData data = SerializableData.parseData(in);
-				BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
-				logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
-				Receiver recv = listener.get(recipient);
-				if (recv == null) {
-					logger.log(Level.SEVERE, "No receiver registered for message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});	
-				} else {
-					recv.put(msg);
-					success = true;					
-				}
-			} break;
-			case SIGNAL: {
-				Signal sig = getSignal(in.readInt(), recipient);
-				shouldDetach = sig instanceof DetachConduitSignal;
-				
-				if (sig != null) {
+			switch (proto) {
+				case OBSERVATION: {
+					Timestamp time = new Timestamp(in.readDouble());
+					Timestamp nextTime = new Timestamp(in.readDouble());
+					SerializableData data = SerializableData.parseData(in);
+					BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
+					logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
 					Receiver recv = listener.get(recipient);
 					if (recv == null) {
-						// Ignore detach conduit if the submodel has already quit
-						if (!shouldDetach)
-							logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+						logger.log(Level.SEVERE, "No receiver registered for message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});	
 					} else {
-						recv.put(new BasicMessage<SerializableData>(sig,recipient));
+						recv.put(msg);
 						success = true;					
 					}
-				}
-			} break;
-			default:
-				break;
+				} break;
+				case SIGNAL: {
+					Signal sig = getSignal(in.readInt(), recipient);
+					if (sig instanceof DetachConduitSignal) {
+						shouldResubmit = false;
+					}
+
+					if (sig != null) {
+						Receiver recv = listener.get(recipient);
+						if (recv == null) {
+							// Ignore detach conduit if the submodel has already quit
+							if (shouldResubmit)
+								logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+						} else {
+							recv.put(new BasicMessage<SerializableData>(sig,recipient));
+							success = true;					
+						}
+					}
+				} break;
+				default:
+					proto = TcpDataProtocol.ERROR;
+					break;
+			}
+			in.cleanUp();
 		}
-		in.cleanUp();
 	
-		if (!shouldDetach) {
+		out.writeInt(proto.intValue());
+		out.flush();
+		
+		if (proto == TcpDataProtocol.ERROR) {
+			logger.log(Level.WARNING, "Unrecognized protocol for data messages;\n[\t\t] the wrong address may have been specified");
+			this.socket.close();
+		}
+		else if (shouldResubmit) {
 			this.connectionHandler.resubmit(this);
+		} else {
+			this.socket.close();
 		}
 		
 		return success;
 	}
 
-	private Signal getSignal(int sigNum, Identifier recipient) {
+	private static Signal getSignal(int sigNum, Identifier recipient) {
 		if (sigNum < 0 || sigNum >= signals.length) {
 			logger.log(Level.WARNING, "Unrecognized signal number {0} received for {1}.", new Object[]{sigNum, recipient});
 		} else {
@@ -126,5 +137,15 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	@Override
 	public String getName() {
 		return "TcpIncomingMessageHandler";
+	}
+	
+	@Override
+	protected void handleThrowable(Throwable ex) {
+		this.connectionHandler.result(null);
+	}
+	
+	@Override
+	protected void handleResult(Boolean bool) {
+		this.connectionHandler.result(bool);
 	}
 }

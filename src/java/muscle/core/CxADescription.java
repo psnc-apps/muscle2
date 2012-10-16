@@ -20,16 +20,13 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import jade.core.ContainerID;
-import jade.core.Location;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.Constant;
+import muscle.util.FileTool;
 import muscle.util.JVM;
-import muscle.util.MiscTool;
 import muscle.util.data.Env;
 
 /**
@@ -42,7 +39,7 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 
 	public enum Key {
 
-		MAX_TIMESTEPS("max_timesteps"), GUI("gui");
+		MAX_TIMESTEPS("max_timesteps");
 		private String str;
 
 		Key(String str) {
@@ -59,13 +56,10 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 	static {
 		// init default values for mandatory flags
 		DEFAULT_ENV.put(Key.MAX_TIMESTEPS.toString(), 1);
-
-		// init default values for optional flags
-		DEFAULT_ENV.put(Key.GUI.toString(), false);
 	}
 	// be careful to init all other static fields we may use here before our singleton
 	public final static CxADescription ONLY = new CxADescription(); // handle for the singleton
-	private Location sharedLocation;
+	
 	private File tmpDir;
 	{
 		putAll(DEFAULT_ENV);
@@ -79,17 +73,11 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 	protected CxADescription() {
 		tmpDir = JVM.ONLY.tmpDir();
 		logger.log(Level.INFO, "Using directory <{0}>", tmpDir);
-		// init default shared Location if any
-		sharedLocation = new ContainerID((String) get(Constant.Key.TRACE_DATA_TRANSFER, "Main-Container"/*default value*/), null);
 	}
 
 	// tmps path where kernels can create individual subdirs
 	public String getTmpRootPath() {
 		return tmpDir.toString();
-	}
-
-	public Location getSharedLocation() {
-		return sharedLocation;
 	}
 
 	public String getProperty(String key) {
@@ -101,7 +89,7 @@ public class CxADescription extends muscle.util.data.Env implements Serializable
 	}
 
 	public File getPathProperty(String key) {
-		return MiscTool.resolveTilde(getEnvAndAssert(key).toString());
+		return FileTool.resolveTilde(getEnvAndAssert(key).toString());
 	}
 
 	public boolean getBooleanProperty(String key) {

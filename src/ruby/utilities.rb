@@ -27,12 +27,8 @@ PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
 
 module MuscleUtils
-
-
 	# run plain java with muscle classpath applied
 	def java(args)
-
-		script_path = "#{PARENT_DIR}/muscle.rb"
 		cp = default_classpaths.join(File::PATH_SEPARATOR)
 		cmd = "java -cp #{cp} #{args}"
 		`#{cmd}`.chomp
@@ -52,10 +48,8 @@ module MuscleUtils
 		cp += ENV["CLASSPATH"].split(File::PATH_SEPARATOR) if ENV["CLASSPATH"] != nil
 		cp += Dir.glob("#{base_dir}/share/muscle/java/*.jar")
 		cp += Dir.glob("#{base_dir}/share/muscle/java/thirdparty/*.jar")
-		#cp << File.expand_path(File.join(base_dir, "java", "muscle.jar"))
 		cp
 	end
-
 
 	# test range of port number
 	def assert_port(p, name="port")
@@ -80,8 +74,7 @@ module MuscleUtils
 				abort($!)
 			end
 		end
-	end
-	
+	end	
 	
 	# determine current host os
 	def host_os
@@ -100,7 +93,6 @@ module MuscleUtils
 				"unknown"
 		end
 	end
-
 
 	# set value for LIBPATHENV or abort
 	def assert_LIBPATHENV env
@@ -132,79 +124,6 @@ module MuscleUtils
 		end
 		env
 	end
-#
-#
-#
-##
-##if defined?(JRUBY_VERSION)
-##class KernelBootInfo
-##
-##	def initialize
-##		require "java"
-##		$CLASSPATH << "~/javatest/build/bin"
-##	end
-##
-##	def kernels
-##	
-##	end
-##end
-##else
-##class KernelBootInfo
-##	def initialize
-##		puts "KernelBootInfo only available in jruby"
-##	end
-##end
-##end
-
-# extracts kernel boot info from a java class
-#class KernelBootInfo
-#
-#	attr_reader :kernels
-#	def initialize(env)
-#		require 'jade'
-#		@env = env
-#		# launch CxADescripion java class and read kernel info from its output
-#		command = []
-#		command << @env['java']
-#		$mandatoryJVMKeys.each {|key| command << "-#{key} "+@env[key].to_s}
-#		command << "-classpath #{@env['CLASSPATH']}" unless @env['CLASSPATH'].nil?
-#		loggingConfigFile = File.join(env['muscle_src_root'], "resources", "logging", "logging.OFF.properties")
-#		assert_file(loggingConfigFile, __LINE__);
-#		# silence loggers for this run
-#		command << "-Djava.util.logging.config.file="+loggingConfigFile
-#		command << "-Dcxa_path="+@env['cxa_path'].to_s if @env.has_key?('cxa_path')
-#		command << "muscle.core.CxADescription"
-#		command = command.join(" ")
-#
-#		@kernels = []
-#		#puts "command:\n#{command}"
-#		if @env.has_key?('cxa_path')
-#			result = `#{command}`
-#		else
-#			result = "{}"
-#		end
-#		beginIndex = result.rindex('{')
-#		endIndex = result.rindex('}')
-#		result = result[beginIndex..endIndex]
-#		# convert to Hash
-#		kernel_hash = eval(result)
-#		if kernel_hash.class != Hash
-#			puts "error reading kernel info"
-#		else
-#			kernel_hash.each {|name,cls| @kernels << KernelAgent.new(name, cls)}
-#		end
-#	end
-#	
-#	def kernels_to_s
-#		text = ">#{'='*5}"
-#		text += "\n#{@kernels.size} kernels available in CxA #{@env['cxa_path']}"
-#		@kernels.each do |k|
-#			text += "\n #{k}"
-#		end
-#		text += "\n      #{'='*5}<"
-#	end
-#end
-
 
 #
 class TmpDir
@@ -408,17 +327,6 @@ def run_command(cmd, env = {})
 			end		
 		end
 
-#		begin
-#			# note: fork may not work with windows!
-#			pid = Process.fork {exec(cmd)} # commands output will go where the output this ruby script goes
-#			puts "[#{Process.pid}] executing pid: #{pid}"
-#			Process.wait
-#			exitval = $?.exitstatus if($? != nil)
-#		rescue Interrupt
-#			puts "interrupting #{Process.pid}, #{pid}"
-#			exitval = 1
-#		end
-
 		if env.has_key?('tmp_path')
 			writeClosingInfo(infoPath)
 		end
@@ -504,54 +412,51 @@ def kill_process(pid, signal, name)
     end
 end
 
-def interrupt_processes(procs, exit_val)
-  procs.each { |pid, name| kill_process(pid, 'SIGINT', name) }
+$interruptions = 0
+
+def kill_processes(procs, exit_val)
+  $interruptions = $interruptions + 1
+	
+	if $interruptions == 1
+		procs.each { |pid, name| kill_process(pid, 'SIGINT', name) }
+	elsif $interruptions == 2
+		procs.each { |pid, name| kill_process(pid, 'SIGKILL', name) }
+	else
+		exit exit_val
+	end
 
 	# After 30 seconds, do a full kill.
 	begin
-		Timeout::timeout(30) {
-			begin
-				Process.waitall
-			rescue Interrupt
-        procs.each { |pid, name| kill_process(pid, 'SIGKILL', name) }
-		    Process.waitall
-			end
-		}
+		Timeout::timeout(30) { Process.waitall }
 	rescue Timeout::Error
-    procs.each { |pid, name| kill_process(pid, 'SIGKILL', name) }
+    interrupt_processes(procs, exit_val)
     Process.waitall
 	end
   
   exit exit_val
 end
 
-def kill_processes(procs)
-  begin
-		if not procs.empty?
-  		pid = Process.wait
-			del = procs.delete pid
+def await_processes(procs)
+	if not procs.empty?
+ 		pid = Process.wait
+		del = procs.delete pid
 
-			while not procs.empty?		
-				if $?.exitstatus != 0
-					puts "#{del} (pid=#{pid}) exited with error code #{$?.exitstatus}; killing other processes"
-					interrupt_processes(procs, $?.exitstatus)
-				end
-			
-				pid = Process.wait
-				del = procs.delete pid
-				#exit with no zero value if only one process had non-zero exit value
-			end
+		while not procs.empty?
 			if $?.exitstatus != 0
-				exit $?.exitstatus
+				puts "#{del} (pid=#{pid}) exited with status #{$?.exitstatus}; stopping other processes"
+				interrupt_processes(procs, $?.exitstatus)
 			end
+		
+			pid = Process.wait
+			del = procs.delete pid
+			#exit with no zero value if only one process had non-zero exit value
 		end
-		# we didn't exit, so our status is good.
-		exit 0
-  rescue Interrupt
-  	puts "Interrupt received..."
-
-  	interrupt_processes(procs, 1)
-  end
+		if $?.exitstatus != 0
+			exit $?.exitstatus
+		end
+	end
+	# we didn't exit, so our status is good.
+	exit 0
 end
 
 end # module MuscleUtils

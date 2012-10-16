@@ -22,7 +22,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Mariusz Mamonski
  */
 
-public class CrossSocketFactory extends SocketFactory implements jade.imtp.leap.JICP.SocketFactory {
+public class CrossSocketFactory extends SocketFactory {
 	
 	public static class LoggableOutputStream extends FilterOutputStream {
 		protected String id;

@@ -9,8 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.CxADescription;
-import muscle.util.MiscTool;
-import muscle.util.OSTool;
+import muscle.util.FileTool;
 
 /**
  *
@@ -129,7 +128,7 @@ public abstract class Module {
 	do not change signature! (used from native code)
 	 */
 	public String getTmpPath() {
-		File tmpDir = MiscTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), OSTool.portableFileName(getLocalName(), ""));
+		File tmpDir = FileTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), FileTool.portableFileName(getLocalName(), ""));
 		// create our kernel tmp dir if not already there
 		tmpDir.mkdir();
 		if (!tmpDir.isDirectory()) {

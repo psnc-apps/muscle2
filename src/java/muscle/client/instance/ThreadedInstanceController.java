@@ -21,12 +21,13 @@ import muscle.core.conduit.terminal.Source;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.core.kernel.RawInstance;
+import muscle.exception.MUSCLEConduitExhaustedException;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
+import muscle.util.FileTool;
 import muscle.util.JVM;
-import muscle.util.MiscTool;
 
 /**
  *
@@ -100,7 +101,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			instance.setArguments(initFromArgs(args));
 
 			if (!register()) {
-				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. Submodel execution aborted.", getLocalName());
+				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getLocalName());
 				if (!this.isDisposed()) {
 					this.disposeNoDeregister();
 					listener.isFinished(this);
@@ -121,6 +122,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 				logger.log(Level.INFO, "{0}: executing", getLocalName());
 				try {
 					instance.start();
+				} catch (MUSCLEConduitExhaustedException ex) {
+					logger.log(Level.SEVERE, getLocalName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
 				} catch (Exception ex) {
 					StringWriter sw = new StringWriter();
 					PrintWriter pw = new PrintWriter(sw);
@@ -130,7 +133,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 					} catch (IOException ex1) {
 						Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
 					}
-					logger.log(Level.SEVERE, "{0} was terminated due to an error: {1}\n====TRACE====\n{2}==END TRACE==", new Object[]{getLocalName(), ex, sw});
+					logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getLocalName(), sw});
 				}
 				try {
 					for (ConduitEntranceController ec : entrances) {
@@ -223,7 +226,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		
 	private void beforeExecute() {
 		// write info file
-		infoFile = MiscTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX);
+		infoFile = FileTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX);
 
 		PrintWriter out = null;
 		try {
@@ -383,7 +386,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		ConduitExitController<T> exit;
 		if (portArgs.isEmpty()) {
 			ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController<T>(currentID, this, newDataTemplate) : new PassiveConduitExitController<T>(currentID, this, newDataTemplate);
-			portFactory.<T>getReceiver(s, otherID);
+			portFactory.<T>getReceiver(this.mainController, s, otherID);
 			exit = s;
 		} else {
 			String portName = portArgs.get(0);
@@ -407,5 +410,11 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		}
 		exits.add(exit);
 		return exit;
+	}
+
+	@Override
+	public void fatalException(Throwable ex) {
+		logger.log(Level.SEVERE, "Fatal exception occurred in instance " + getLocalName() + "; shutting down platform.", ex);
+		LocalManager.getInstance().shutdown(3);
 	}
 }

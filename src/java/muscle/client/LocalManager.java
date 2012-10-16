@@ -18,7 +18,7 @@ import muscle.client.communication.PortFactory;
 import muscle.client.communication.TcpPortFactoryImpl;
 import muscle.client.communication.message.DataConnectionHandler;
 import muscle.client.communication.message.LocalDataHandler;
-import muscle.client.id.SimpleDelegatingResolver;
+import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
@@ -37,12 +37,13 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private final LocalManagerOptions opts;
 	private DataConnectionHandler tcpConnectionHandler;
 	private LocalDataHandler localConnectionHandler;
-	private SimpleDelegatingResolver res;
+	private DelegatingResolver res;
 	private TcpIDManipulator idManipulator;
 	private PortFactory factory;
 	private boolean isDone;
 	private DisposeOfControllersHook disposeOfControllersHook;
 	private ForcefulQuitHook forcefulQuitHook;
+	private boolean isShutdown;
 	
 	public static void main(String[] args) {
 		try {
@@ -67,6 +68,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		factory = null;
 		idManipulator = null;
 		isDone = false;
+		isShutdown = false;
 	}
 	
 	private void init() throws IOException {
@@ -91,7 +93,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
-		res = new SimpleDelegatingResolver(idManipulator, opts.getAgentNames());
+		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
 		
 		// Initialize the InstanceControllers
@@ -153,6 +155,12 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	public void shutdown(int code) {
+		synchronized (controllers) {
+			if (isShutdown || isDone) {
+				return;
+			}
+			isShutdown = true;
+		}
 		logger.severe("Shutting down simulation due to an error");
 		System.exit(code);
 	}

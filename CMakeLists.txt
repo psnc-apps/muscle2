@@ -3,7 +3,6 @@ PROJECT(MUSCLE)
 
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
 option(BUILD_FORTRAN "Build FORTRAN part of MUSCLE" OFF)
-option(BUILD_CPP_MUSCLE1 "Build MUSCLE1 part of CPP" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
 
 option(BUILD_CPACK_SCRIPTS "Build scripts for packaging" OFF)
@@ -30,13 +29,6 @@ if (BUILD_JAVA)
 endif (BUILD_JAVA)
 
 if (BUILD_CPP)
-	if (BUILD_CPP_MUSCLE1)
-		# muscle1 CPP core 
-		add_subdirectory(src/cpp/muscle)
-		# Examples CPP
-		add_subdirectory(src/cpp/examples/simplecpp)
-		add_subdirectory(src/cpp/examples/transmutable)
-	endif (BUILD_CPP_MUSCLE1)
 	if (BUILD_FORTRAN)
 		add_subdirectory(src/fortran/examples/simplefortran)
 	endif (BUILD_FORTRAN)

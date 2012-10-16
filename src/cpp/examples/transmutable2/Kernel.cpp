@@ -54,12 +54,12 @@ int main(int argc, char **argv)
 			/* initialize data */
 			size_t size = 1024;
 			size_t size2 = size*size;
-			char *data = (char *)malloc(size*size*sizeof(char));
 			vector<int> dims(2);
 			dims[0] = size;
 			dims[1] = size;
 			
-			ComplexData cdata(data, COMPLEX_BYTE_MATRIX_2D, &dims);
+			ComplexData cdata(COMPLEX_BYTE_MATRIX_2D, &dims);
+			char *data = (char *)cdata.getData();
 			
 			for (int j=0; j < size; j++) {
 				for (int k=0; k < size; k++) {
@@ -71,14 +71,14 @@ int main(int argc, char **argv)
 			data[cdata.fidx(size-1, size-1)] = 77;
 
 			/* send */
-			muscle::env::send("writer", &cdata, size2, MUSCLE_COMPLEX);
+			muscle::env::send("writer", &cdata, cdata.length(), MUSCLE_COMPLEX);
 
 			/* receive */
 			ComplexData *cdata2 = (ComplexData *)muscle::env::receive("reader", (void *)0, size2, MUSCLE_COMPLEX);
 			char *data2 = (char *)(cdata2->getData());
 			logger::info("data in c++ : %d %d", data2[cdata2->index(0,0)], data2[cdata2->index(size-1,size-1)]);
 
-			// char **data is freed by destructor of ComplexData
+			// char *data is freed by destructor of ComplexData
 			muscle::env::free_data(cdata2, MUSCLE_COMPLEX); /* we must use muscle:free because the array was allocated by muscle::receive() */
 		}
 

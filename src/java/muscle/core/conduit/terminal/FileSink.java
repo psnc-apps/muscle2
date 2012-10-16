@@ -13,7 +13,7 @@ import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.model.Observation;
-import muscle.util.MiscTool;
+import muscle.util.FileTool;
 
 /**
  * A sink that writes all data to file.

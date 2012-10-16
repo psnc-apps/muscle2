@@ -2,7 +2,6 @@
 #define MUSCLE_COMMUNICATOR_HPP
 
 #include <string>
-#include <stdexcept>
 #include <unistd.h>
 #include "logger.hpp"
 #include "muscle_types.h"
@@ -40,15 +39,6 @@ public:
 	std::string retrieve_string(muscle_protocol_t opcode, std::string *name);
 	/** Free data that MUSCLE allocated */
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
-	
-	class io_exception : public std::exception {
-		public:
-			io_exception (std::string msg) throw() { desc = "I/O exception: " + msg; };
-			virtual const char* what() const throw() { return desc.c_str(); };
-			virtual ~io_exception() throw() {};
-		private:
-			std::string desc;
-	};
 protected:
 	void connect_socket(const char *hostname, int port);
 	int sockfd;

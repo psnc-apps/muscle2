@@ -64,7 +64,9 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 	
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
-		logger.log(Level.WARNING, "LocalDataHandler interrupted.");
+		if (!this.isDisposed()) {
+			logger.log(Level.WARNING, "LocalDataHandler interrupted.");
+		}
 	}
 
 	@Override

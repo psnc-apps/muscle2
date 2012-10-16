@@ -1,4 +1,5 @@
 #include "communicator.hpp"
+#include "exception.hpp"
 #include <strings.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -29,8 +30,8 @@ void Communicator::connect_socket(const char *hostname, int port)
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	server = gethostbyname(hostname);
-	if (server == NULL) throw io_exception("ERROR, no such host\n");
-	if (port <= 0) throw io_exception("ERROR, no such port\n");
+	if (server == NULL) throw muscle_exception("no such host");
+	if (port <= 0) throw muscle_exception("no such port");
     	
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -40,11 +41,11 @@ void Communicator::connect_socket(const char *hostname, int port)
 	serv_addr.sin_port = htons(port);
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) throw io_exception("can not create socket");	
+	if (sockfd < 0) throw muscle_exception("can not create socket");	
 	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
 	{
 		sockfd = -1;
-		throw io_exception("ERROR connecting");
+		throw muscle_exception("could not connect");
 	}
 }
 

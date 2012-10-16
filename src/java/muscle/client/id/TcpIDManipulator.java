@@ -7,17 +7,14 @@ package muscle.client.id;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.id.*;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
-import muscle.util.concurrency.NamedCallable;
 import muscle.util.concurrency.NamedExecutor;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
@@ -55,32 +52,14 @@ public class TcpIDManipulator implements IDManipulator {
 		if (!id.isResolved())
 			((InstanceID)id).resolve(loc);
 
-		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.REGISTER);
-		try {
-			return (f != null && Boolean.TRUE.equals(f.get()));
-		} catch (InterruptedException ex) {
-			logger.log(Level.WARNING, "Register query was interrupted.", ex);
-			return false;
-		} catch (ExecutionException ex) {
-			logger.log(Level.WARNING, "Could not execute register query.", ex);
-			return false;
-		}
+		return runQuery(id, SimulationManagerProtocol.REGISTER);
 	}
 
 	@Override
 	public boolean propagate(Identifier id) {
 		this.checkInstanceID(id);
 		
-		Future<Boolean> f = runQuery(id, SimulationManagerProtocol.PROPAGATE);
-		try {
-			return (f != null && Boolean.TRUE.equals(f.get()));
-		} catch (InterruptedException ex) {
-			logger.log(Level.WARNING, "Propagate query was interrupted.", ex);
-			return false;
-		} catch (ExecutionException ex) {
-			logger.log(Level.WARNING, "Could not execute propagate query.", ex);
-			return false;
-		}
+		return runQuery(id, SimulationManagerProtocol.PROPAGATE);
 	}
 	
 	@Override
@@ -92,6 +71,14 @@ public class TcpIDManipulator implements IDManipulator {
 		}
 		
 		runQuery(id, SimulationManagerProtocol.LOCATE);
+	}
+	
+	public boolean willActivate(Identifier id) {
+		this.checkInstanceID(id);
+		if (this.resolver == null) {
+			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
+		}
+		return runQuery(id, SimulationManagerProtocol.WILL_ACTIVATE);
 	}
 
 	@Override
@@ -120,16 +107,7 @@ public class TcpIDManipulator implements IDManipulator {
 	public boolean delete(Identifier id) {
 		this.checkInstanceID(id);
 		
-		Future<Boolean> f = this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
-		try {
-			return (f != null && Boolean.TRUE.equals(f.get()));
-		} catch (InterruptedException ex) {
-			logger.log(Level.INFO, "Deregister query was interrupted.", ex);
-			return false;
-		} catch (ExecutionException ex) {
-			logger.log(Level.INFO, "Could not execute deregister query.", ex);
-			return false;
-		}
+		return this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
 	}
 
 	@Override
@@ -137,12 +115,28 @@ public class TcpIDManipulator implements IDManipulator {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 		
-	private Future<Boolean> runQuery(Identifier id, SimulationManagerProtocol action) {
+	private Future<Boolean> submitQuery(Identifier id, SimulationManagerProtocol action) {
+		ManagerProtocolHandler proto = createProtocolHandler(id, action);
+		if (proto == null) {
+			return null;
+		}
+		return this.executor.submit(proto);
+	}
+
+	private boolean runQuery(Identifier id, SimulationManagerProtocol action) {
+		ManagerProtocolHandler proto = createProtocolHandler(id, action);
+		if (proto == null) {
+			return false;
+		}
+		Boolean bool = proto.call();
+		return (bool != null && bool);
+	}
+	
+	private ManagerProtocolHandler createProtocolHandler(Identifier id, SimulationManagerProtocol action) {
 		try {
 			Socket s = this.sockets.createSocket();
 			s.connect(managerAddr);
-			ManagerProtocolHandler proto = new ManagerProtocolHandler(s, (InstanceID)id, action);
-			return this.executor.submit(proto);
+			return new ManagerProtocolHandler(s, (InstanceID)id, action);
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Could not open socket to initiate the " + action + " protocol with SimulationManager", ex);
 			return null;
@@ -176,8 +170,8 @@ public class TcpIDManipulator implements IDManipulator {
 		protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 			// Send command
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
-			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER);
-			out.writeInt(this.action.ordinal());
+			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER.intValue());
+			out.writeInt(this.action.intValue());
 			out.writeString(this.id.getName());
 			if (action == SimulationManagerProtocol.REGISTER) {
 				encodeLocation(out, this.id.getLocation());
@@ -187,11 +181,12 @@ public class TcpIDManipulator implements IDManipulator {
 			
 			// See if the command was understood
 			in.refresh();
-			int opnum = in.readInt();
-			SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
-			if (opnum >= protoArr.length || opnum < 0 || protoArr[opnum] == SimulationManagerProtocol.UNSUPPORTED) {
+			SimulationManagerProtocol op = SimulationManagerProtocol.valueOf(in.readInt());
+			if (op == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
 				return Boolean.FALSE;
+			} else if (op == SimulationManagerProtocol.ERROR) {
+				throw new MUSCLERuntimeException("Connection manager refused communication.");
 			}
 
 			// Wait for the resolver to resolve
@@ -200,7 +195,7 @@ public class TcpIDManipulator implements IDManipulator {
 			}
 			boolean success = in.readBoolean();
 			
-			if (success) {
+			if (success || action == SimulationManagerProtocol.WILL_ACTIVATE) {
 				if (action == SimulationManagerProtocol.LOCATE) {
 					this.id.resolve(decodeLocation(in));
 					resolver.addResolvedIdentifier(id);

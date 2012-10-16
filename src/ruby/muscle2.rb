@@ -155,7 +155,7 @@ manager_pid = 0
 $running_procs = {}
 
 kill_running = lambda do
-  kill_processes($running_procs)
+  kill_processes($running_procs, 1)
   $running_procs = nil
 end
 signals = ["SEGV", "INT", "TERM", "QUIT", "ABRT"]
@@ -177,8 +177,7 @@ if m.env['main']
   end
 end
 
-if !active_kernels.empty?	
-	
+if !active_kernels.empty?
 	muscle_local_args = []
   muscle_local_args << "muscle.client.LocalManager"
 	muscle_local_args = muscle_local_args + active_kernels
@@ -190,7 +189,7 @@ if !active_kernels.empty?
   end
 end
 
-kill_processes($running_procs)
+await_processes($running_procs)
 
 exit 0
 

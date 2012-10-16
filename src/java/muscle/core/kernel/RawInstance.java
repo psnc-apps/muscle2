@@ -32,9 +32,6 @@ import muscle.core.model.Distance;
 import muscle.core.model.Timestamp;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.util.jni.JNIMethod;
-import muscle.util.serialization.DataConverter;
-import muscle.util.serialization.PipeConverter;
 
 // experimental info mode with
 // coast sk:coast.cxa.test.sandbox.RawKernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
@@ -195,21 +192,6 @@ public abstract class RawInstance extends Module {
 
 		return e;
 	}
-	
-	@Deprecated
-	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String portName, Class<T> dataClass, Class<R> jniClass, DataConverter<R, T> transmuter) {
-		ConduitExitController<T> ec = controller.createConduitExit(true, portName, new DataTemplate<T>(dataClass));
-
-		JNIConduitExit<T,R> e = new JNIConduitExit<T,R>(transmuter, jniClass, ec);
-		ec.setExit(e);
-		addExitToList(portName, ec);
-
-		return e;		
-	}
-	@Deprecated
-	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String portName, Class<T> dataClass, Class<T> jniClass) {
-		return addJNIExit(portName, dataClass, jniClass, new PipeConverter<T>());
-	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
 		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
@@ -232,21 +214,6 @@ public abstract class RawInstance extends Module {
 		addEntranceToList(portName, ec);
 
 		return e;
-	}
-
-	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String portName, Class<R> jniClass, Class<T> dataClass, DataConverter<R, T> transmuter) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, portName, new DataTemplate<T>(dataClass));
-
-		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
-		JNIConduitEntrance<R,T> e = new JNIConduitEntrance<R,T>(transmuter, jniClass, ec, originTime == null ? Timestamp.ZERO : originTime, dt);
-		ec.setEntrance(e);
-		addEntranceToList(portName, ec);
-
-		return e;		
-	}
-	@Deprecated
-	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String portName, Class<T> dataClass) {
-		return addJNIEntrance(portName, dataClass, dataClass, new PipeConverter<T>());
 	}
 
 	/**
@@ -313,11 +280,6 @@ public abstract class RawInstance extends Module {
 		kernel.connectPortals();
 
 		return kernel.infoText();
-	}
-	
-	
-	public JNIMethod stopJNIMethod() {
-		return new JNIMethod(this, "willStop");
 	}
 	
 	// currently we can not add portals dynamically during runtime
@@ -395,34 +357,5 @@ public abstract class RawInstance extends Module {
 			throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
 		}
 		entrances.put(portName, entrance);		
-	}
-	
-	@Deprecated
-	protected <T extends Serializable, R> JNIConduitExit<T, R> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass, Class<R> newJNIClass, DataConverter<R, T> newTransmuter) {
-		return addJNIExit(newPortalName, newDataClass, newJNIClass, newTransmuter);
-	}
-
-	@Deprecated
-	protected <T extends Serializable> JNIConduitExit<T, T> addJNIExit(String newPortalName, int newRate, Class<T> newDataClass) {
-		return addJNIExit(newPortalName, newDataClass, newDataClass);
-	}
-	
-	@Deprecated
-	protected <T extends Serializable> ConduitExit<T> addExit(String newPortalName, int newRate, Class<T> newDataClass) {
-		return addExit(newPortalName, newDataClass);
-	}
-	@Deprecated
-	protected <T extends Serializable, R> JNIConduitEntrance<R, T> addJNIEntrance(String newPortalName, int newRate, Class<R> newJNIClass, Class<T> newDataClass, DataConverter<R, T> newTransmuter) {
-		return addJNIEntrance(newPortalName, newJNIClass, newDataClass, newTransmuter);
-	}
-
-	@Deprecated
-	protected <T extends Serializable> JNIConduitEntrance<T, T> addJNIEntrance(String newPortalName, int newRate, Class<T> newDataClass) {
-		return addJNIEntrance(newPortalName, newDataClass);
-	}
-	
-	@Deprecated
-	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String newPortalName, int newRate, Class<T> newDataClass) {
-		return addEntrance(newPortalName, newDataClass);
 	}
 }

@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.core.ConduitEntrance;
@@ -102,7 +103,12 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 				continue;
 			}
 			
-			this.transmit(elem);
+			try {
+				this.transmit(elem);
+			} catch (Throwable ex) {
+				// Could not transmit message; this is fatal.
+				LocalManager.getInstance().shutdown(5);
+			}
 			synchronized (this) {
 				this.processingMessage = false;
 				running = queue != null && !queue.isEmpty();
@@ -146,7 +152,11 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	public synchronized void dispose() {
 		// if we are connected to a conduit, tell conduit to detach this exit
 		if (transmitter != null) {
-			transmitter.signal(new DetachConduitSignal());
+			try {
+				transmitter.signal(new DetachConduitSignal());
+			} catch (Exception ex) {
+				logger.log(Level.WARNING, "Could not detach " + this.portalID, ex);
+			}
 			transmitter.dispose();
 			transmitter = null;
 		}

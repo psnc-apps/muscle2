@@ -37,9 +37,9 @@ public abstract class PortFactory implements Disposable {
 	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned receiver was.
 	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
 	 */
-	public <T extends Serializable> Receiver<T,?> getReceiver(ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
+	public <T extends Serializable> Receiver<T,?> getReceiver(InstanceController ic, ConduitExitControllerImpl<T> localInstance, PortalID otherSide) {
 		try {
-			return this.<T>getReceiverTask(localInstance, otherSide).call();
+			return this.<T>getReceiverTask(ic, localInstance, otherSide).call();
 		} catch (Exception ex) {
 			Logger.getLogger(PortFactory.class.getName()).log(Level.SEVERE, "Could not instantiate receiver", ex);
 			return null;
@@ -61,7 +61,7 @@ public abstract class PortFactory implements Disposable {
 	 * 
 	 * In this task, the receiver must also be added to the messageProcessor, and the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> NamedCallable<Receiver<T,?>> getReceiverTask(ConduitExitControllerImpl<T> localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> NamedCallable<Receiver<T,?>> getReceiverTask(InstanceController ic, ConduitExitControllerImpl<T> localInstance, PortalID otherSide);
 	
 	/**
 	 * Creates a task that will assign a transmitter to a ConduitEntranceController.
@@ -78,21 +78,25 @@ public abstract class PortFactory implements Disposable {
 	}
 	
 	/** Resolves a PortalID, if not already done. */
-	protected boolean resolvePort(PortalID port) {
+	protected boolean resolvePort(PortalID port) throws InterruptedException {
 		if (!port.isResolved()) {
 			Resolver res = getResolver();
 			// Could not find resolver
 			if (res == null) return false;
 			
-			try {
-				res.resolveIdentifier(port);
-				if (!port.isResolved()) return false;
-			} catch (InterruptedException ex) {
-				Logger.getLogger(PortFactory.class.getName()).log(Level.SEVERE, "Could not resolve identifier", ex);
-				return false;
-			}
+			res.resolveIdentifier(port);
+			if (!port.isResolved()) return false;
 		}
 		return true;
+	}
+	
+		/** Resolves a PortalID, if not already done. */
+	protected boolean portWillActivate(PortalID port) throws InterruptedException {
+		Resolver res = getResolver();
+		// Could not find resolver
+		if (res == null) return false;
+			
+		return res.identifierMayActivate(port);
 	}
 	
 	protected synchronized Resolver getResolver() {

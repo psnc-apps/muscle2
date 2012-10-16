@@ -122,6 +122,13 @@ public class SimulationManager {
 		return false;
 	}
 	
+	public synchronized boolean willActivate(Identifier id) {
+		logger.log(Level.FINE, "Checking whether ID {0} has not deregistered", id);
+		boolean ret = stillActive.contains(id.getName());
+		logger.log(Level.FINE, "ID {0} {1} deregistered", new Object[] {id, ret ? "has not" : "has"});
+		return ret;
+	}
+	
 	public synchronized void dispose() {
 		this.isDone = true;
 		if (this.connections != null) {

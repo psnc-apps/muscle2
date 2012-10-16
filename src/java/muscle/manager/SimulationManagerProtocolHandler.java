@@ -30,22 +30,16 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
 		in.refresh();
-		int magic_number = in.readInt();
+		SimulationManagerProtocol magic_number = SimulationManagerProtocol.valueOf(in.readInt());
 		if (magic_number != SimulationManagerProtocol.MAGIC_NUMBER) {
-			out.writeInt(-1);
+			out.writeInt(SimulationManagerProtocol.ERROR.intValue());
 			out.flush();
+			socket.close();
 			logger.warning("Protocol for communicating MUSCLE information is not recognized.");
 			return null;
 		}
 		int opnum = in.readInt();
-		SimulationManagerProtocol[] protoArr = SimulationManagerProtocol.values();
-		if (opnum >= protoArr.length || opnum < 0) {
-			out.writeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
-			out.flush();
-			logger.log(Level.WARNING, "Unsupported operation number {0} requested", opnum);
-			return Boolean.FALSE;
-		}
-		SimulationManagerProtocol proto = protoArr[opnum];
+		SimulationManagerProtocol proto = SimulationManagerProtocol.valueOf(opnum);
 		String name = in.readString();
 		InstanceID id = new InstanceID(name);
 		switch (proto) {
@@ -81,9 +75,14 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				success = listener.deregister(id);
 				out.writeBoolean(success);
 				break;
+			case WILL_ACTIVATE:
+				out.writeInt(opnum);
+				success = listener.willActivate(id);
+				out.writeBoolean(success);
+				break;
 			default:
 				logger.log(Level.WARNING, "Unsupported operation {0} requested", proto);
-				out.writeInt(SimulationManagerProtocol.UNSUPPORTED.ordinal());
+				out.writeInt(SimulationManagerProtocol.UNSUPPORTED.intValue());
 				break;
 		}
 		out.flush();

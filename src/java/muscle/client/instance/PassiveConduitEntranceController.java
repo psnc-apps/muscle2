@@ -95,7 +95,11 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	public synchronized void dispose() {
 		// if we are connected to a conduit, tell conduit to detach this exit
 		if (transmitter != null) {
-			transmitter.signal(new DetachConduitSignal());
+			try {
+				transmitter.signal(new DetachConduitSignal());
+			} catch (Exception ex) {
+				logger.log(Level.WARNING, "Could not detach " + this.portalID, ex);
+			}
 			transmitter.dispose();
 			transmitterFound = false;
 		}

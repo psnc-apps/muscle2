@@ -52,7 +52,7 @@ public class JVM implements java.io.Serializable {
 	}
 	
 	public File tmpFile(String filename) {
-		return MiscTool.joinPaths(tmpDir.toString(), filename);
+		return FileTool.joinPaths(tmpDir.toString(), filename);
 	}
 
 	/**
@@ -64,8 +64,8 @@ public class JVM implements java.io.Serializable {
 
 	private static File mkTmpDir() {
 		// use name of this JVM as name for tmp dir
-		String tmpDirName = OSTool.portableFileName(ManagementFactory.getRuntimeMXBean().getName(), "");
-		File td = MiscTool.joinPaths(System.getProperty("java.io.tmpdir"), tmpDirName);
+		String tmpDirName = FileTool.portableFileName(ManagementFactory.getRuntimeMXBean().getName(), "");
+		File td = FileTool.joinPaths(System.getProperty("java.io.tmpdir"), tmpDirName);
 		// create our JVM tmp dir if not already there
 		if (!td.exists()) {
 			td.mkdir();
@@ -73,7 +73,7 @@ public class JVM implements java.io.Serializable {
 		if (td.isDirectory()) {
 			return td;
 		} else {
-			File newtd = MiscTool.resolveTilde(System.getProperty("java.io.tmpdir"));
+			File newtd = FileTool.resolveTilde(System.getProperty("java.io.tmpdir"));
 			if (!newtd.exists()) {
 				newtd.mkdir();
 			}

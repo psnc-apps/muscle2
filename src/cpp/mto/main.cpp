@@ -548,6 +548,13 @@ bool parseHello(const MtoHello & hello, PeerConnectionHandler * handler)
   }
   
   string myName = Options::getInstance().getMyName();
+  
+  if(Options::getInstance().getDaemonize())
+  {
+    Logger::info(-1, "Daemonizing...");
+    daemon(0,1);
+  }
+  
   int myH = Options::getInstance().getLocalPortHigh();
   int myL = Options::getInstance().getLocalPortLow();
   
@@ -748,12 +755,6 @@ int main(int argc, char **argv)
   startListeningForClients();
   
   signal(SIGINT, signalReceived);
-  
-  if(opts.getDaemonize())
-  {
-    Logger::info(-1, "Daemonizing...");
-    daemon(0,1);
-  }
   
   while(!e) ioService.run(e);
   

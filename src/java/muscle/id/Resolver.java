@@ -19,7 +19,9 @@ public interface Resolver extends Disposable {
 	/** removes blocks */
 	public void removeIdentifier(String name, IDType type);
 	/** blocking */
-	public void resolveIdentifier(Identifier id) throws InterruptedException;
+	public boolean resolveIdentifier(Identifier id) throws InterruptedException;
+	/** non-blocking */
+	public boolean identifierMayActivate(Identifier id);
 	
 	/** At current location */
 	public boolean register(InstanceController id);

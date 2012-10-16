@@ -37,7 +37,7 @@ cxa.env["cpp:command"] = ENV['MUSCLE_HOME'] +  "/share/muscle/examples/transmuta
 cxa.env["length"] = 4
 
 # declare kernels
-cxa.add_kernel('cpp', 'examples.transmutable2.Kernel')
+cxa.add_kernel('cpp', 'muscle.core.standalone.NativeKernel')
 
 # configure connection scheme
 cs = cxa.cs

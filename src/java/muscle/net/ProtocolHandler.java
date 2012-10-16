@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.id.TcpLocation;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.id.Location;
 import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.ConverterWrapperFactory;
@@ -83,14 +84,26 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 				}
 
 				ret = executeProtocol(in, out);
+				handleResult(ret);
 				succeeded = true;
+			} catch (MUSCLERuntimeException ex) {
+				logger.log(Level.SEVERE, "Communication aborted: MUSCLE is not properly set up.", ex);
+				handleThrowable(ex);
+				break;
 			} catch (SocketException ex) {
 				logger.log(Level.SEVERE, "Communication aborted: the other side hung up.", ex);
+				handleThrowable(ex);
 				break;
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
+				if (i == tries) {
+					handleThrowable(ex);
+				}
 			} catch (Exception ex) {
 				logger.log(Level.SEVERE, "Could not finish protocol due to an error. Try " + i + "/" +tries+ ".", ex);
+				if (i == tries) {
+					handleThrowable(ex);
+				}
 			}
 		}
 		if (this.closeSocket) {
@@ -139,4 +152,7 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	}
 	
 	public abstract String getName();
+	
+	protected void handleThrowable(Throwable ex) {}
+	protected void handleResult(S s) {}
 }

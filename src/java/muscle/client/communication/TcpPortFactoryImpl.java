@@ -35,12 +35,20 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> NamedCallable<Receiver<T, ?>> getReceiverTask(final ConduitExitControllerImpl<T> exit, final PortalID port) {
+	protected <T extends Serializable> NamedCallable<Receiver<T, ?>> getReceiverTask(final InstanceController ic, final ConduitExitControllerImpl<T> exit, final PortalID port) {
 		return new NamedCallable<Receiver<T,?>>() {
 			@SuppressWarnings("unchecked")
 			public Receiver<T, ?> call() throws Exception {
 				exit.start();
-				
+				try {
+					if (!portWillActivate(port)) {
+						throw new IllegalStateException("Port already shut down");
+					}
+				} catch (Exception ex) {
+					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Port {0} for {1} will not activate. Aborting.", new Object[]{port, exit});
+					ic.fatalException(ex);
+					throw ex;
+				}
 				@SuppressWarnings("unchecked")
 				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
 				
@@ -85,13 +93,19 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
+	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(final InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
 		return new NamedCallable<Transmitter<T,?>>() {
 			@SuppressWarnings("unchecked")
 			public Transmitter<T, ?> call() throws Exception {
 				entrance.start();
-				if (!resolvePort(port)) {
-					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}.", new Object[]{port, entrance});
+				try {
+					if (!resolvePort(port)) {
+						throw new IllegalStateException("Port was not resolved");
+					}
+				} catch (Exception ex) {
+					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}. Aborting.", new Object[]{port, entrance});
+					ic.fatalException(ex);
+					throw ex;
 				}
 				@SuppressWarnings("unchecked")
 				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;

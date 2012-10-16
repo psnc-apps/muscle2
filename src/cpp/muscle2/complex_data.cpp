@@ -76,7 +76,7 @@ namespace muscle {
 
 ComplexData::ComplexData(muscle_complex_t type, std::vector<int>* dimensions)
 {
-	int nprod = 0;
+	int nprod = 1;
 	this->type = type;
 	if (dimensions != NULL) {
 		this->dims = *dimensions;

@@ -1,5 +1,6 @@
 
 #include "cppmuscle.hpp"
+#include "exception.hpp"
 #include "communicator.hpp"
 #include "xdr_communicator.hpp"
 
@@ -16,7 +17,6 @@
 #include <sys/wait.h>
 #include <sys/errno.h>
 #include <stdlib.h>
-#include <stdexcept>
 #include <errno.h>
 
 using namespace std;
@@ -70,8 +70,8 @@ muscle_error_t env::init(int *argc, char ***argv)
 	try
 	{
 		muscle_comm = new XdrCommunicator(hostname, port);
-	} catch (std::exception& e) {
-		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu: %s", hostname, port, e.what());
+	} catch (muscle_exception& e) {
+		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu", hostname, port);
 		exit(1);
 	}
 	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
@@ -127,7 +127,7 @@ int env::detect_mpi_rank() {
 
 std::string cxa::kernel_name(void)
 {
-	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::kernel_name() from main MPI processor (MPI rank 0)");
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::kernel_name() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::kernel_name() ");
 #endif
@@ -136,7 +136,7 @@ std::string cxa::kernel_name(void)
 
 std::string cxa::get_property(std::string name)
 {
-	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::get_property(%s) ", name.c_str());
 #endif
@@ -151,7 +151,7 @@ std::string cxa::get_property(std::string name)
 
 std::string cxa::get_properties()
 {
-	if (!env::is_main_processor) throw runtime_error("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::get_properties()");
 #endif
@@ -160,7 +160,7 @@ std::string cxa::get_properties()
 
 std::string env::get_tmp_path()
 {
-	if (!env::is_main_processor) throw runtime_error("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::get_tmp_path()");
 #endif
@@ -169,7 +169,7 @@ std::string env::get_tmp_path()
 
 bool env::will_stop(void)
 {
-	if (!env::is_main_processor) throw runtime_error("can only call muscle::env::will_stop() from main MPI processor (MPI rank 0)");
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::will_stop() from main MPI processor (MPI rank 0)");
 
 	bool_t is_will_stop = false;
 	

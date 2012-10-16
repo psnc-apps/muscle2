@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
 import muscle.id.ResolverFactory;
@@ -37,6 +38,13 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 		} catch (InterruptedException ex) {
 			Logger.getLogger(DataConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
 			return null;
+		}
+	}
+	
+	void result(Boolean bool) {
+		if (bool != null && !bool.booleanValue() && !isDisposed()) {
+			logger.log(Level.SEVERE, "Could not receive message, message lost. Aborting.");
+			LocalManager.getInstance().shutdown(6);
 		}
 	}
 	

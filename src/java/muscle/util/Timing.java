@@ -20,9 +20,9 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.util;
 
-import muscle.util.concurrency.ThreadCpuTimer;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import muscle.util.concurrency.ThreadCpuTimer;
 
 /**
 helper class to measure cpu/wallclock times for the jvm or single threads

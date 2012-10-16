@@ -1,5 +1,5 @@
-#ifndef CPPMUSCLE_H
-#define CPPMUSCLE_H
+#ifndef CPPMUSCLE_HPP
+#define CPPMUSCLE_HPP
 
 //#define CPPMUSCLE_TRACE  
 

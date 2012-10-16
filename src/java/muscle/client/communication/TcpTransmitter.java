@@ -13,12 +13,14 @@ import muscle.client.communication.message.Signal;
 import muscle.client.communication.message.SignalEnum;
 import muscle.client.id.TcpLocation;
 import muscle.core.model.Observation;
+import muscle.exception.MUSCLERuntimeException;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -67,26 +69,52 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	
 	private void send(Observation<SerializableData> obs, Signal signal) {
 		boolean sent = false;
-		for (int tries = 1; !sent && tries <= 3; tries++) {
+		for (int tries = 1; !sent && tries <= 4; tries++) {
 			if (liveSocket.lock()) {
 				try {
 					SerializerWrapper out = liveSocket.getOutput();
+					DeserializerWrapper in = liveSocket.getInput();
 
-					out.writeInt(TcpDataProtocol.MAGIC_NUMBER);
+					out.writeInt(TcpDataProtocol.MAGIC_NUMBER.intValue());
 					if (obs != null) {
 						sendMessage(out, obs);
 					}
 					else if (signal != null) {
 						sendSignal(out, signal);
 					}
+					out.flush();
 					sent = true;
+					in.refresh();
+					TcpDataProtocol result = TcpDataProtocol.valueOf(in.readInt());
+					in.cleanUp();
+					if (result == TcpDataProtocol.ERROR) {
+						throw new MUSCLERuntimeException("Trying to send message to wrong port.");
+					}
+					if (tries > 1) {
+						logger.log(Level.INFO, "Sending message to {0} succeeded at try {1}", new Object[]{portalID, tries});
+					}
+				} catch (MUSCLERuntimeException ex) {
+					if (isDisposed()) break;
+					else throw ex;
 				} catch (SocketException ex) {
+					if (isDisposed()) break;
 					logger.log(Level.SEVERE, "Message not sent: socket was closed by " + portalID + ".", ex);
-					break;
-				} catch (IOException ex) {
-					logger.log(Level.SEVERE, "I/O failure to send message to " + portalID + "; tried " + tries + "/3 times.", ex);
+					throw new MUSCLERuntimeException(ex);
 				} catch (Exception ex) {
-					logger.log(Level.SEVERE, "Unexpected failure to send message to " + portalID + "; tried " + tries + "/3 times.", ex);
+					if (isDisposed()) break;
+					String t = sent ? "" : "; tried " + tries + "/4 times.";
+					if (signal == null) {
+						logger.log(Level.WARNING, "Failed to send message to " + portalID + t, ex);
+					} else {
+						logger.log(Level.SEVERE, "Failure to send signal " + signal + " to " + portalID + t, ex);
+					}
+					if (tries == 4) {
+						throw new MUSCLERuntimeException(ex);
+					} else if (tries > 1) {
+						try {
+							Thread.sleep(1000*(55*(tries - 2) + 5));
+						} catch (InterruptedException ex1) {}
+					}
 				} finally {
 					liveSocket.unlock();
 				}
@@ -101,13 +129,12 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 		if (logger.isLoggable(Level.FINEST)) {
 			logger.log(Level.FINEST, "Sending data message of type {0} to {1}", new Object[] {obs.getData().getType(), portalID});
 		}
-		out.writeInt(TcpDataProtocol.OBSERVATION.ordinal());
+		out.writeInt(TcpDataProtocol.OBSERVATION.intValue());
 		out.writeString(portalID.getName());
 		out.writeInt(portalID.getType().ordinal());
 		out.writeDouble(obs.getTimestamp().doubleValue());
 		out.writeDouble(obs.getNextTimestamp().doubleValue());
 		obs.getData().encodeData(out);
-		out.flush();
 	}
 	
 	private void sendSignal(SerializerWrapper out, Signal signal) throws IOException {
@@ -119,11 +146,10 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 		}
 		logger.log(Level.FINEST, "Sending signal {0} to {1}", new Object[] {sig, portalID});
 
-		out.writeInt(TcpDataProtocol.SIGNAL.ordinal());
+		out.writeInt(TcpDataProtocol.SIGNAL.intValue());
 		out.writeString(portalID.getName());
 		out.writeInt(portalID.getType().ordinal());
 		out.writeInt(sig.ordinal());
-		out.flush();
 	}
 	
 	public synchronized void dispose() {

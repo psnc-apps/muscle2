@@ -16,6 +16,7 @@ public interface IDManipulator {
 	public boolean propagate(Identifier id);
 	public boolean register(Identifier id, Location loc);
 	public void search(Identifier id);
+	public boolean willActivate(Identifier id);
 	public Identifier create(String name, IDType idType);
 	public Location getLocation();
 	public boolean delete(Identifier id);

@@ -32,16 +32,12 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.Constant;
-import muscle.core.ConduitDescription;
-import muscle.core.CxADescription;
-import muscle.core.EntranceDescription;
-import muscle.core.ExitDescription;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
-import muscle.util.MiscTool;
+import muscle.util.FileTool;
 import muscle.util.data.Env;
 
 /**
@@ -116,7 +112,7 @@ public class ConnectionScheme implements Serializable {
 	private void init() {
 		String connectionSchemeText = null;
 		try {
-			connectionSchemeText =  MiscTool.fileToString(new File(new URI((String)this.env.get(cs_file_uri))), Constant.Text.COMMENT_INDICATOR);
+			connectionSchemeText =  FileTool.fileToString(new File(new URI((String)this.env.get(cs_file_uri))), Constant.Text.COMMENT_INDICATOR);
 		}
 		catch(java.net.URISyntaxException e) {
 			throw new RuntimeException(e);

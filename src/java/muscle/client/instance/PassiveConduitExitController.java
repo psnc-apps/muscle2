@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.message.BasicMessage;
 import muscle.client.communication.message.DetachConduitSignal;
@@ -103,7 +104,12 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 				if (this.filters == null) {
 					this.queue.add(msg.getObservation());
 				} else {
-					this.filters.process(msg.getObservation());
+					try {
+						this.filters.process(msg.getObservation());
+					} catch (Throwable ex) {
+						logger.log(Level.SEVERE, "Can not filter message " + msg + " properly, probably the coupling is not correct. Aborting.", ex);
+						LocalManager.getInstance().shutdown(4);
+					}
 				}
 				increment();
 			}

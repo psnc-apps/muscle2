@@ -39,25 +39,10 @@ import java.io.File;
 static methods for miscellaneous stuff
 @author Jan Hegewald
 */
-public class MiscTool {
+public class FileTool {
 
 	private final static String HOME_PREFIX = "~" + System.getProperty("file.separator");
-	public static final double COMPARE_THESHOLD = 1e-15;
-
-
-	/**
-	total amount of memory for the Java Virtual machine in bytes
-	*/
-	static public long getRAMSize() {
-	  Runtime rt = Runtime.getRuntime();
-	  long memory = rt.maxMemory();
-	  if (memory == Long.MAX_VALUE) {
-	    memory = rt.freeMemory();
-	  }
-		return memory;
-	}
-
-	//
+	
 	public static <A> String joinItems(List<A> list, String separator) {
 
 		StringBuilder joined = null;
@@ -75,8 +60,6 @@ public class MiscTool {
 		return joined == null ? null : joined.toString();
 	}
 	
-	
-	//
 	public static File joinPaths(String ... paths) {
 		if (paths.length == 0) {
 			return null;
@@ -120,5 +103,15 @@ public class MiscTool {
 		reader.close();
 		
 		return fileData.toString();
+	}
+	
+	
+	// forbidden ASCII chars
+	//		windows: [/\:*?"<>|]
+	//		mac: [/]
+	private final static Pattern filenameRegex = Pattern.compile("[/\\:*?\"<>|]");
+
+	public static String portableFileName(String rawName, String replacement) {
+		return filenameRegex.matcher(rawName).replaceAll(replacement);
 	}
 }

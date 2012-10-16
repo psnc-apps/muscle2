@@ -570,6 +570,11 @@ public class MatrixTool {
 				copyValue = new double[len];
 				System.arraycopy(value, 0, copyValue, 0, len);
 			} break;
+			case STRING_ARR: {
+				int len = ((String[])value).length;
+				copyValue = new String[len];
+				System.arraycopy(value, 0, copyValue, 0, len);
+			} break;
 			case BOOLEAN_MATRIX_2D: {
 				boolean[][] oldValue = (boolean[][])value;
 				dimX = oldValue.length; dimY = dimX > 0 ? oldValue[0].length : 0;

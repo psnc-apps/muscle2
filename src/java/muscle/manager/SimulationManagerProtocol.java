@@ -29,7 +29,32 @@ package muscle.manager;
  * @author Joris Borgdorff
  */
 public enum SimulationManagerProtocol {
-	LOCATE, REGISTER, PROPAGATE, DEREGISTER,
-	UNSUPPORTED;
-	public final static int MAGIC_NUMBER = 2391029;
+	LOCATE(0), REGISTER(1), PROPAGATE(2), DEREGISTER(3),
+	UNSUPPORTED(4), WILL_ACTIVATE(5), CLOSE(-1), ERROR(-2), MAGIC_NUMBER(2391029);
+	
+	private final int num;
+	private final static SimulationManagerProtocol[] values = SimulationManagerProtocol.values();
+	private final static int[] nums = new int[values.length];
+	static {
+		for (int i = 0; i < nums.length; i++) {
+			nums[i] = values[i].num;
+		}
+	}
+	
+	SimulationManagerProtocol(int n) {
+		num = n;
+	}
+	
+	public static SimulationManagerProtocol valueOf(int n) {
+		for (int i = 0; i < nums.length; i++) {
+			if (nums[i] == n) {
+				return values[i];
+			}
+		}
+		return ERROR;
+	}
+	
+	public int intValue() {
+		return num;
+	}
 }
