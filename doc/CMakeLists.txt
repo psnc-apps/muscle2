@@ -25,4 +25,3 @@ if (BUILD_API_DOC)
     endif(DOXYGEN_FOUND)
 endif (BUILD_API_DOC)
 
-install(FILES ${PROJECT_SOURCE_DIR}/muscle_developers_guide.pdf DESTINATION doc)
