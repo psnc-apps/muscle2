@@ -8,6 +8,7 @@ import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.ArraySet;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -148,7 +149,20 @@ public class SimulationManager {
 		ManagerConnectionHandler mch = null;
 		
 		try {
-			InetAddress addr = InetAddress.getLocalHost();
+			String addrStr = System.getProperty("muscle.manager.bindaddr");
+			InetAddress addr = null;
+			if (addrStr != null) {
+				try {
+					addr = InetAddress.getByName(addrStr);
+				} catch (UnknownHostException e) {
+					logger.log(Level.WARNING, "Hostname {0} is not known. Using localhost instead.", addrStr);
+				} catch (SecurityException e) {					
+					logger.log(Level.WARNING, "Hostname " + addrStr + " is not allowed not be determined. Using localhost instead.", e);
+				}
+			}
+			if (addr == null) {
+				addr = InetAddress.getLocalHost();
+			}
 			SocketFactory sf = new CrossSocketFactory();
 			ServerSocket ss = sf.createServerSocket(Integer.parseInt(System.getProperty("muscle.manager.bindport","0")), 10, addr);
 			mch = new ManagerConnectionHandler(sm, ss);
