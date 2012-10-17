@@ -418,7 +418,7 @@ def await_processes(procs)
 		while not procs.empty?
 			if $?.exitstatus != 0
 				puts "#{del} (pid=#{pid}) exited with status #{$?.exitstatus}; stopping other processes"
-				interrupt_processes(procs, $?.exitstatus)
+				kill_processes(procs, $?.exitstatus)
 			end
 		
 			pid = Process.wait
