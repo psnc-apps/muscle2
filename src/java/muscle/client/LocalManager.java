@@ -5,7 +5,6 @@
 
 package muscle.client;
 
-import muscle.core.ConnectionScheme;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -22,6 +21,7 @@ import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
+import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.*;
@@ -76,6 +76,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Local address, accepting data connections
 		InetSocketAddress socketAddr = opts.getLocalSocketAddress();
+		if (socketAddr == null) {
+			throw new IOException("Could not construct local socket");
+		}
 		int port = socketAddr.getPort();
 		InetAddress address = socketAddr.getAddress();
 		ServerSocket ss = sf.createServerSocket(port, 1000, address);
@@ -118,8 +121,6 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		try {
 			// Start all instances but the first in a new thread
 			for (int i = 1; i < controllers.size(); i++) {
-				// Sleep 10 milliseconds, to allow other threads to continue their sequence
-				Thread.sleep(10);
 				synchronized (controllers) {
 					if (i < controllers.size()) {
 						new Thread(controllers.get(i), controllers.get(i).getLocalName()).start();

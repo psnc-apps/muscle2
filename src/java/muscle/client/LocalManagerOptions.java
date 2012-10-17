@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.InstanceClass;
 import muscle.core.kernel.RawInstance;
+import muscle.net.SocketFactory;
 
 /**
  *
@@ -128,7 +129,8 @@ public class LocalManagerOptions {
 	
 	private static InetSocketAddress getLocalAddress(int port) {
 		try {
-			return new InetSocketAddress(InetAddress.getLocalHost(), port);
+			InetAddress addr = SocketFactory.getMuscleHost();
+			return new InetSocketAddress(addr, port);
 		} catch (UnknownHostException ex) {
 			Logger.getLogger(LocalManagerOptions.class.getName()).log(Level.SEVERE, "Could not resolve localhost, to start listening for connections.", ex);
 			return null;

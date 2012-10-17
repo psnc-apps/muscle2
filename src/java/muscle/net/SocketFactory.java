@@ -51,4 +51,28 @@ public abstract class SocketFactory {
 			return ss;
 		}
 	}
+	
+	public static InetAddress getMuscleHost() throws UnknownHostException {
+		String addrStr = System.getProperty("muscle.net.bindaddr");
+		InetAddress addr = null;
+		if (addrStr != null) {
+			try {
+				addr = InetAddress.getByName(addrStr);
+			} catch (UnknownHostException e) {
+				logger.log(Level.WARNING, "Hostname {0} is not known. Using localhost instead.", addrStr);
+			} catch (SecurityException e) {					
+				logger.log(Level.WARNING, "Hostname " + addrStr + " is not allowed not be determined. Using localhost instead.", e);
+			}
+		}
+		if (addr == null) {
+			try {
+				addr = InetAddress.getLocalHost();
+			} catch (UnknownHostException ex) {
+				logger.severe("Could not use local host for networking. Please specify a --bindaddr");
+				throw ex;
+			}
+		}
+		
+		return addr;
+	}
 }
