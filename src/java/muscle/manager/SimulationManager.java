@@ -148,7 +148,7 @@ public class SimulationManager {
 		}
 		
 		SimulationManager sm = new SimulationManager(stillActive);
-		ManagerConnectionHandler mch = null;
+		ManagerConnectionHandler mch;
 		
 		try {
 			String addrStr = System.getProperty("muscle.manager.bindaddr");

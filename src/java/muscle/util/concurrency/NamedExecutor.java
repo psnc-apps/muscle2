@@ -9,7 +9,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -55,21 +54,6 @@ public class NamedExecutor {
 	
 	public void shutdown() {
 		executor.shutdown();
-		try {
-			// Wait a while for existing tasks to terminate
-			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-				executor.shutdownNow(); // Cancel currently executing tasks
-				// Wait a while for tasks to respond to being cancelled
-				if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-					logger.severe("Thread did not terminate");
-				}
-			}
-		} catch (InterruptedException ie) {
-			// (Re-)Cancel if current thread also interrupted
-			executor.shutdownNow();
-			// Preserve interrupt status
-			Thread.currentThread().interrupt();
-		}
 	}
 	
 	public boolean isShutdown() {
