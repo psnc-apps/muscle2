@@ -18,6 +18,7 @@
 #include <sys/errno.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 using namespace std;
 

@@ -1,6 +1,7 @@
 #include "communicator.hpp"
 #include "exception.hpp"
 #include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
