@@ -11,6 +11,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.net.SocketFactory;
 import muscle.util.concurrency.Disposable;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
@@ -38,9 +39,9 @@ public class NativeGateway extends Thread implements Disposable {
 		if (USE_ASYNC) {
 			ServerSocketChannel ssc = ServerSocketChannel.open();
 			ss = ssc.socket();
-			ss.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}), 0), 1);
+			ss.bind(new InetSocketAddress(SocketFactory.getMuscleHost(), 0), 1);
 		} else {
-			ss = new ServerSocket(0, 1, InetAddress.getByAddress(new byte[]{ 127, 0, 0, 1}));		
+			ss = new ServerSocket(0, 1, SocketFactory.getMuscleHost());		
 		}
 		
 		this.listener = listener;
