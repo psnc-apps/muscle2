@@ -67,6 +67,7 @@ class JVM
 		command << "-Dmuscle.native.tmpfile="+env['native_tmp_file'].to_s if env.has_key?('native_tmp_file') # used to write the host and port of the file to
 		command << "-Dmuscle.manager.bindport="+env['bindport'].to_s if env.has_key?('bindport') # used to provide bind port
 		command << "-Dmuscle.net.bindaddr="+env['bindaddr'].to_s if env.has_key?('bindaddr') # used to provide bind address
+		command << "-Dmuscle.net.bindinf="+env['bindinf'].to_s if env.has_key?('bindinf') # used to provide bind interface
 		
 		command << jargs unless jargs.nil? # the java class to launch
 		

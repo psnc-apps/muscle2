@@ -5,6 +5,7 @@ package muscle.net;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,9 +60,45 @@ public abstract class SocketFactory {
 			try {
 				addr = InetAddress.getByName(addrStr);
 			} catch (UnknownHostException e) {
-				logger.log(Level.WARNING, "Hostname {0} is not known. Using localhost instead.", addrStr);
+				logger.log(Level.WARNING, "Hostname {0} is not known. Using default host instead.", addrStr);
 			} catch (SecurityException e) {					
-				logger.log(Level.WARNING, "Hostname " + addrStr + " is not allowed not be determined. Using localhost instead.", e);
+				logger.log(Level.WARNING, "Hostname " + addrStr + " is not allowed not be determined. Using default host instead.", e);
+			}
+		}
+
+		String interfaceStr = System.getProperty("muscle.net.bindinf");
+		if (interfaceStr != null) {
+			try {
+				NetworkInterface inf = NetworkInterface.getByName(interfaceStr);
+				if (inf == null) {
+					logger.log(Level.WARNING, "Interface {0} could not be used. Using localhost instead.", interfaceStr);
+				} else {
+					Enumeration<InetAddress> addrs = inf.getInetAddresses();
+					if (addrs.hasMoreElements()) {
+						if (addr != null) {
+							boolean hasAddr = false;
+							while (addrs.hasMoreElements()) {
+								InetAddress iaddr = addrs.nextElement();
+								if (iaddr.equals(addr)) {
+									hasAddr = true;
+									break;
+								}
+							}
+							if (!hasAddr) {
+								logger.log(Level.WARNING, "Given address {0} does not match interface {1}. Using the interface.", new Object[] {addrStr, interfaceStr});
+								addr = null;
+							}
+						}
+						if (addr == null) {
+							addr = inf.getInetAddresses().nextElement();
+						}
+					}
+					else {
+						logger.log(Level.WARNING, "Interface {0} does not have an IP address. Using localhost instead.", interfaceStr);
+					}
+				}
+			} catch (SocketException ex) {
+				logger.log(Level.WARNING, "Interface " + addrStr + " could not be used. Using localhost instead.", ex);
 			}
 		}
 		if (addr == null) {

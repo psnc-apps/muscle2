@@ -59,7 +59,7 @@ class MuscleCli
 		@parser.on("-m","--main", "run Simulation Manager here") { @env['main'] = true }
 		@parser.on("--bindport PORT", "port where this manager will be listening") {|arg| @env['bindport'] = arg.to_i; }
 		@parser.on("--bindaddr IPADDR", "bind address of the manager and/or simulation") {|arg| @env['bindaddr'] = arg; }
-#		@parser.on("--bindinf  interface", "bind interface of the manager (e.g., eth0) - TBD") {|arg| @env['bindinf'] = arg; }
+		@parser.on("--bindinf  interface", "bind interface of the manager and/or simulation (e.g., eth0)") {|arg| @env['bindinf'] = arg; }
 		
 		@parser.separator "Local Manager flags:"
 		@parser.on("-M","--manager HOST:PORT", "IP or hostname:port of the Simulation Manager") {|arg| @env['manager'] = arg; }

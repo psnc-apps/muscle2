@@ -102,25 +102,22 @@ public class LocalManagerOptions {
 	public static class SocketAddressConverter implements IStringConverter<InetSocketAddress> {
 		@Override
 		public InetSocketAddress convert(String value) {
-			String[] s = value.split(":");
-			if (s.length != 2) {
+			int lastColon = value.lastIndexOf(':');
+			if (lastColon == -1) {
 				throw new ParameterException("Location should be specified by an address and a port, separated by a colon (:); argument " + value + " is not formatted as such.");
 			}
-			
+			String addrStr = value.substring(0, lastColon);
+			String portStr = value.substring(lastColon + 1);
 			InetAddress addr;
-			
-			try {
-				addr = InetAddress.getByName(s[0]);
-			} catch (UnknownHostException ex) {
-				throw new ParameterException("Internet address " + s[0] + " in address " + value + " is not reachable.");
-			}
-			
 			int port;
 			
 			try {
-				port = Integer.parseInt(s[1]);
+				addr = InetAddress.getByName(addrStr);
+				port = Integer.parseInt(portStr);
+			} catch (UnknownHostException ex) {
+				throw new ParameterException("Internet address " + addrStr + " in address " + value + " is not reachable.");
 			} catch (NumberFormatException ex) {
-				throw new ParameterException("Port " + s[0] + " in address " + value + " is not a valid number.");
+				throw new ParameterException("Port " + portStr + " in address " + value + " is not a valid number.");
 			}
 			
 			return new InetSocketAddress(addr, port);
