@@ -7,6 +7,7 @@ package muscle.net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.util.concurrency.NamedCallable;
@@ -60,12 +61,15 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 	protected abstract NamedCallable<?> createProtocolHandler(Socket s);
 	
 	public synchronized void dispose() {
+		logger.finer("Stopping connection handler");
 		super.dispose();
 		try {
+			logger.finest("Closing connection handler server socket");
 			this.ss.close();
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "ServerSocket could not be closed.", ex);
 		}
+		logger.finest("Stopping connection handler threads");
 		executor.shutdown();
 	}
 }

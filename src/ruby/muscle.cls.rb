@@ -99,31 +99,59 @@ class Muscle
 		if env['verbose']
 			puts "Executing: " + command
 		end
-		return Process.fork {exec(command)}
+		Process.fork {exec(command)}
 	end
 	
-	def run_client(args, contact_file_name = nil)
+	def find_manager_contact(manager_pid, contact_file_name = nil)
+		if not contact_file_name
+			contact_file_name = env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
+		end
+		tries_count = 0
+		while !File.exists?(contact_file_name)
+			if Process::waitpid(manager_pid, Process::WNOHANG)
+				if not $?
+					puts "Simulation Manager exited with an error."
+					exit 1
+				elsif $?.exitstatus != 0
+					puts "Simulation Manager exited with an error."
+					exit $?.exitstatus
+				else
+					puts "Simulation Manager exited before setting up connection."
+					exit 0
+				end
+			end
+			sleep 0.2
+			tries_count += 1
+			if tries_count % 25 == 0
+				puts "Waiting for simulation manager to start listening, notified in file: #{contact_file_name}"
+			end
+		end
+
+		while File.exists?(contact_file_name + ".lock") #waiting for lock file to disappear 
+			if Process::waitpid(manager_pid, Process::WNOHANG)
+				if not $?
+					puts "\n\nSimulation Manager exited with an error."
+					exit 1
+				elsif $?.exitstatus != 0
+					puts "\n\nSimulation Manager exited with an error."
+					exit $?.exitstatus
+				else
+					puts "\n\nSimulation Manager exited before setting up connection."
+					exit 0
+				end
+			end
+			sleep 0.2
+		end
+
+		File.open(contact_file_name, "rb").read
+	end
+	
+	def run_client(args, contact_addr)
 		args << "-m"
 		if env['manager']
 				args << env['manager']
 		else
 			# main
-			tries_count = 0
-
-			while !File.exists?(contact_file_name)
-				sleep 0.2
-				tries_count += 1
-				if tries_count % 25 == 0
-					puts "Waiting for manager contact file: #{contact_file_name}"
-				end
-			end
-
-			while File.exists?(contact_file_name + ".lock") #waiting for lock file to disappear 
-				sleep 0.2
-			end
-
-			contact_addr = File.open(contact_file_name, "rb").read
-			puts "Using manager address: #{contact_addr}"
 			args << contact_addr
 		end
 
@@ -132,7 +160,7 @@ class Muscle
 		if env['verbose']
 			puts command
 		end
-		return Process.fork {exec(command)}
+		Process.fork {exec(command)}
 	end
 	
 	def exec_native(kernel_name, extra_args)

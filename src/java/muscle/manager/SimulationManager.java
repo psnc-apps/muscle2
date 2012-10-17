@@ -35,10 +35,11 @@ public class SimulationManager {
 		this.stillActive = stillActive;
 		this.registered = new ArrayMap<String,Identifier>(stillActive == null ? 10 : stillActive.size());
 		this.available = new ArraySet<String>(stillActive == null ? 10 : stillActive.size());
+		this.connections = null;
 		this.isDone = false;
 	}
 	
-	private void setConnectionHandler(AbstractConnectionHandler ch) {
+	private synchronized void setConnectionHandler(AbstractConnectionHandler ch) {
 		this.connections = ch;
 	}
 	
@@ -131,6 +132,7 @@ public class SimulationManager {
 	}
 	
 	public synchronized void dispose() {
+		logger.finer("Stopping Simulation Manager");
 		this.isDone = true;
 		if (this.connections != null) {
 			this.connections.dispose();
@@ -164,17 +166,16 @@ public class SimulationManager {
 				addr = InetAddress.getLocalHost();
 			}
 			SocketFactory sf = new CrossSocketFactory();
-			ServerSocket ss = sf.createServerSocket(Integer.parseInt(System.getProperty("muscle.manager.bindport","0")), 10, addr);
+			int port = Integer.parseInt(System.getProperty("muscle.manager.bindport","0"));
+			ServerSocket ss = sf.createServerSocket(port, 10, addr);
 			mch = new ManagerConnectionHandler(sm, ss);
 			mch.start();
 			sm.setConnectionHandler(mch);
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
-			if (mch != null) {
-				sm.dispose();
-				mch.dispose();
-				mch = null;
-			}
+			sm.dispose();
+			mch = null;
+			System.exit(1);
 		}
 		if (mch != null) {
 			mch.writeLocation();

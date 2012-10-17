@@ -215,42 +215,6 @@ end
 		File.expand_path(path)
 	end
 
-
-## call individual tests or all known tests
-## a test usually starts a CxA along with different agents, but does not have to launch a CxA or agents at all
-#def doTests(tests)
-#	#alltests = {"conduits" => method(:testConduits)}
-#	ENV['MUSCLE_SRC_ROOT'] = find_src_root if not ENV.has_key?('MUSCLE_SRC_ROOT')
-#	fileprefix = File.join(find_src_root, "test.")
-#	alltests = {}
-#	Dir.glob(fileprefix+"*").each do |x|
-#		key = x.split(fileprefix).last
-#		abort("Error reading testfile <"+x+">") if !key
-#		alltests[key] = x
-#	end
-#		
-#	testNames = []
-#	if tests && tests.size > 0
-#		testNames = tests
-#	else # run all tests
-#		alltests.sort.each {|key,m| testNames << key}
-#	end
-#	
-#	testNames.each do |t|
-#		if not alltests.has_key?(t)
-#			puts " skipping unknown test:<"+t+">"
-#		else
-#			puts " running test:<"+t+"> ..."
-#			#alltests[t].call
-#			load alltests[t]
-#			runTest __FILE__
-#			puts " ... finished test:<"+t+">"
-#		end
-#	end	
-#end
-
-
-#
 def run_command(cmd, env = {})
 
 	if env['verbose']
@@ -401,6 +365,7 @@ def detect_mpi_rank
 	return rank
 end
 
+# Kill a single process with a given signal.
 def kill_process(pid, signal, name)
 	if pid
     	begin
@@ -417,6 +382,13 @@ $interruptions = 0
 def kill_processes(procs, exit_val)
   $interruptions = $interruptions + 1
 	
+	# Return if the processes are already killed
+	if not procs
+		return
+	end
+	
+	# First time, SIGINT, second time, SIGKILL. This happens if a user
+	# presses Ctrl-C twice within 30 seconds and MUSCLE is still running.
 	if $interruptions == 1
 		procs.each { |pid, name| kill_process(pid, 'SIGINT', name) }
 	elsif $interruptions == 2
@@ -429,13 +401,15 @@ def kill_processes(procs, exit_val)
 	begin
 		Timeout::timeout(30) { Process.waitall }
 	rescue Timeout::Error
-    interrupt_processes(procs, exit_val)
+    kill_processes(procs, exit_val)
     Process.waitall
 	end
   
   exit exit_val
 end
 
+# Wait until all processes are finished, and kill other processes if
+# a process exited with an error.
 def await_processes(procs)
 	if not procs.empty?
  		pid = Process.wait

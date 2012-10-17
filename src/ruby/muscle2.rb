@@ -161,6 +161,8 @@ end
 signals = ["SEGV", "INT", "TERM", "QUIT", "ABRT"]
 signals.each { |sig| Signal.trap(sig, kill_running) }
 
+contact_addr = nil
+
 if m.env['main']
 	if active_kernels.empty?
 		puts "Only starting MUSCLE2 Simulation Manager; not running the Simulation."
@@ -175,6 +177,14 @@ if m.env['main']
 	  manager_pid = m.run_manager(muscle_main_args)
 	  $running_procs[manager_pid] = 'Simulation Manager'
   end
+
+	begin
+		Timeout::timeout(30) { contact_addr = m.find_manager_contact(manager_pid) }
+	rescue Timeout::Error
+		puts "Simulation Manager did not run correctly. Aborting."
+		kill_processes($running_procs, 6)
+	  $running_procs = nil
+	end
 end
 
 if !active_kernels.empty?
@@ -182,9 +192,8 @@ if !active_kernels.empty?
   muscle_local_args << "muscle.client.LocalManager"
 	muscle_local_args = muscle_local_args + active_kernels
 
-  contact_file_name = m.env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
   if $running_procs != nil
-	  pid = m.run_client(muscle_local_args, contact_file_name)
+	  pid = m.run_client(muscle_local_args, contact_addr)
   	$running_procs[pid] = 'Simulation'
   end
 end
