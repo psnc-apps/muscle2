@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unistd.h>
+#include <netdb.h>
 #include "logger.hpp"
 #include "muscle_types.h"
 
@@ -42,6 +43,9 @@ public:
 protected:
 	void connect_socket(const char *hostname, int port);
 	int sockfd;
+private:
+	int connect_socket_ipv4(struct hostent *server, uint16_t port);
+	int connect_socket_ipv6(struct hostent *server, uint16_t port);
 };
 
 } // EO namespace muscle

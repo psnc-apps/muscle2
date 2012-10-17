@@ -4,7 +4,9 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int buf_len)
@@ -27,26 +29,59 @@ namespace muscle {
 
 void Communicator::connect_socket(const char *hostname, int port)
 {
-	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	server = gethostbyname(hostname);
-	if (server == NULL) throw muscle_exception("no such host");
+	int res;
+	
 	if (port <= 0) throw muscle_exception("no such port");
-    	
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	bcopy((char *)server->h_addr, 
-		(char *)&serv_addr.sin_addr.s_addr,
-		server->h_length);
-	serv_addr.sin_port = htons(port);
-
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) throw muscle_exception("can not create socket");	
-	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+	uint16_t hport = htons(port);
+	
+	server = gethostbyname(hostname);
+	if (server == NULL)
+	{
+		server = gethostbyname2(hostname, AF_INET6);
+		if (server == NULL) throw muscle_exception("no such host");
+		res = connect_socket_ipv6(server, hport);
+	}
+	else res = connect_socket_ipv4(server, hport);		
+    	if (res < 0)
 	{
 		sockfd = -1;
+		logger::severe("could not connect: %s", strerror(errno));
 		throw muscle_exception("could not connect");
 	}
+}
+
+int Communicator::connect_socket_ipv4(struct hostent *server, uint16_t port)
+{
+	struct sockaddr_in serv_addr;
+
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *)server->h_addr,
+		(char *)&serv_addr.sin_addr.s_addr,
+		server->h_length);
+	serv_addr.sin_port = port;
+
+	sockfd = socket(PF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) throw muscle_exception("can not create socket");	
+	return connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr));
+}
+
+int Communicator::connect_socket_ipv6(struct hostent *server, uint16_t port)
+{
+	struct sockaddr_in6 serv_addr;
+
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin6_family = AF_INET6;
+	bcopy((char *)server->h_addr,
+		(char *)&serv_addr.sin6_addr.s6_addr,
+		server->h_length);
+	serv_addr.sin6_port = port;
+
+	sockfd = socket(PF_INET6, SOCK_STREAM, 0);
+	if (sockfd < 0) throw muscle_exception("can not create socket");	
+	
+	return connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr));
 }
 
 std::string Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {

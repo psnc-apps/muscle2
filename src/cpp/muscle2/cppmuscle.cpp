@@ -42,7 +42,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
-	char hostname[16];
+	char hostname[256];
 	hostname[0] = '\0';
 	muscle_pid = -1;
 	
@@ -260,23 +260,45 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 			*port = (unsigned short)atoi(port_str);
 			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
 			if (host_str != NULL) {
-				strncpy(host, host_str, 16);
+				strncpy(host, host_str, 255);
 			}
 		}
 	}
 	else
 	{
+		char hostparts[272];
+
 		logger::fine("Reading Java MUSCLE contact info from FIFO %s", muscle_tmpfifo);
 		FILE *fp = fopen(muscle_tmpfifo, "r");
 		if(fp == 0 || ferror(fp))
 		{	
 			logger::severe("Could not open temporary file %s", muscle_tmpfifo);
 			return;
-		}
-		while (fscanf(fp, "%15[^:]:%hu", host, port) == EOF) {
-			sleep(1);
+		}		
+		char *cs = fgets(hostparts, 272, fp);
+		if (cs == NULL) {
+			logger::severe("Could not read temporary file %s", muscle_tmpfifo);
+			return;
+		} else if (fgetc(fp) != EOF) {
+			logger::severe("Specified host name '%272s...' is too long", hostparts);
+			return;
 		}
 		fclose(fp);
+		
+		char* indexColon = strrchr(hostparts, ':');
+		if (indexColon == NULL) {			
+			logger::severe("Host name should be specified as hostName:port, not like '%s'", hostparts);
+			return;
+		} else if (indexColon - hostparts >= 256) {
+			logger::severe("Specified host name '%255s...' is too long", hostparts);
+			return;
+		}
+		*indexColon = '\0';
+		strcpy(host, hostparts);
+		if (sscanf(++indexColon, "%hu", port) != 1) {
+			logger::severe("Port is not correctly specified, it should be a number less than 65536, not like '%s'", indexColon);
+			return;
+		}
   
 		logger::info("Will communicate with Java MUSCLE on %s:%d", host, *port);
 	}
