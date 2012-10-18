@@ -309,7 +309,8 @@ public abstract class RawInstance extends Module {
 	
 	public String infoText() {
 		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
-		sb.append(getLocalName()).append(": exits: ").append(exits.values()).append("; entrances: ").append(entrances.values());
+		sb.append(getLocalName()).append(" conduit entrances: ").append(entrances.values()).append("\n\t\t  ")
+		  .append(getLocalName()).append(" conduit exits: ").append(exits.values());
 		return sb.toString();
 	}
 
