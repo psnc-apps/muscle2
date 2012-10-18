@@ -28,7 +28,7 @@ namespace muscle {
 Communicator *muscle_comm;
 pid_t muscle_pid;
 const char *muscle_tmpfifo;
-std::string muscle_kernel_name;
+std::string muscle_kernel_name, muscle_tmp_path;
 bool env::is_main_processor = false;
 
 muscle_error_t env::init(int *argc, char ***argv)
@@ -83,7 +83,8 @@ muscle_error_t env::init(int *argc, char ***argv)
 		exit(1);
 	}
 	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
-	logger::setName(strdup(muscle_kernel_name.c_str()));
+	muscle_tmp_path = muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
+	logger::setName(strdup(muscle_kernel_name.c_str()), strdup(muscle_tmp_path.c_str()));
 	return MUSCLE_SUCCESS;
 }
 
@@ -173,7 +174,7 @@ std::string env::get_tmp_path()
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::get_tmp_path()");
 #endif
-	return muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
+	return muscle_tmp_path;
 }
 
 bool env::will_stop(void)
@@ -309,7 +310,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 			return;
 		}
   
-		logger::info("Will communicate with Java MUSCLE on %s:%d", host, *port);
+		logger::config("Will communicate with Java MUSCLE on %s:%d", host, *port);
 	}
 }
 
@@ -403,24 +404,30 @@ void env::muscle2_kill(void)
 {
 	int status, pid, i = 0;
 	
-	if (muscle_pid > 0) {		
+	// Just an if, with a simplified break
+	while (muscle_pid != -1) {		
 		// Correctly quit
-		if ((pid = waitpid(muscle_pid, &status, WNOHANG)) > 0) {
-			muscle_pid = -1;
-			return;
+		if (muscle_pid > 0)
+		{
+			if ((pid = waitpid(muscle_pid, &status, WNOHANG)) > 0) {
+				muscle_pid = -1;
+				break;
+			}
+		} else {
+			muscle_pid = -muscle_pid;
 		}
 		logger::info("Stopping Java MUSCLE (pid=%u).", muscle_pid);
 
 		if (pid < 0) {
 			logger::warning("MUSCLE did not quit correctly.");
 			muscle_pid = -1;
-			return;
+			break;
 		}
 		
 		if (kill(muscle_pid, SIGINT) != 0) {
 			logger::warning("Java MUSCLE could not be stopped.");
 			muscle_pid = -1;
-			return;
+			break;
 		}
 		
 		// Wait for MUSLCE until a) MUSCLE has exit or b) 30 seconds have passed.
@@ -437,13 +444,13 @@ void env::muscle2_kill(void)
 		// Correctly quit
 		if (pid > 0) {
 			logger::info("Java MUSCLE stopped.");
-			return;
 			muscle_pid = -1;
+			break;
 		}
 		if (pid < 0) {
 			logger::warning("MUSCLE did not quit correctly.");
 			muscle_pid = -1;
-			return;
+			break;
 		}
 		
 		logger::info("Forcing Java MUSCLE to stop (pid=%u).", muscle_pid);
@@ -452,11 +459,16 @@ void env::muscle2_kill(void)
 		muscle_pid = -1;
 	}
 	
-	logger::info("Program has finished.");
+	logger::info("Program finished.");
+	logger::finalize();
 }
 
 void env::muscle2_sighandler(int signal) {
 	logger::severe("Signal received: %s", strsignal(signal));
+	// SIGINT gets forwarded, ignore it the first time
+	if (signal == SIGINT) {
+		muscle_pid = -muscle_pid;
+	}
 	env::muscle2_kill();
 	
 	struct sigaction act;
@@ -469,7 +481,7 @@ void env::muscle2_sighandler(int signal) {
 
 void env::install_sighandler(void)
 {
-	int fatalsigs[] = {SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGSYS, SIGPIPE, SIGALRM, SIGTERM, SIGTSTP, SIGTTIN, SIGTTOU, SIGXCPU, SIGXFSZ, SIGPROF, SIGUSR1, SIGUSR2};
+	int fatalsigs[] = {SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGSYS, SIGPIPE, SIGALRM, SIGTERM, SIGTTIN, SIGTTOU, SIGXCPU, SIGXFSZ, SIGPROF, SIGUSR1, SIGUSR2};
 	struct sigaction act;
 	act.sa_handler = muscle::env::muscle2_sighandler;
 	sigemptyset (&act.sa_mask);

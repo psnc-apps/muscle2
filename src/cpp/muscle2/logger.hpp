@@ -17,7 +17,8 @@ namespace muscle {
 		static void fine(const char *message, ...);
 		static void finer(const char *message, ...);
 		static void finest(const char *message, ...);
-		static void setName(const char *_name);
+		static void setName(const char *_name, const char *_tmp_path);
+		static void finalize();
 	private:
 		static void format(const muscle_loglevel_t level, const char *message, va_list *args);
 	};

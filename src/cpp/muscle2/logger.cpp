@@ -13,6 +13,7 @@ using namespace std;
 namespace muscle {
 
 const char *logger_name = 0;
+FILE *logger_fd = 0;
 	
 void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 {
@@ -88,53 +89,82 @@ void logger::finest(const char *message, ...)
 }
 
 inline void logger::format(const muscle_loglevel_t level, const char *message, va_list *args)
-{
+{	time_t timer;
+	char timebuf[9];
+	struct tm* tm_info;
 	const char *level_str;
+
+	time(&timer);
+	tm_info = localtime(&timer);
+
+	strftime(timebuf, 9, "%H:%M:%S", tm_info);
 
 	switch (level)
 	{
 	case MUSCLE_LOG_SEVERE:
-		level_str = "SEVERE";
+		level_str = "ERROR: ";
 		break;
 	case MUSCLE_LOG_WARNING:
-		level_str = "WARNING";
+		level_str = "warning: ";
 		break;
 	case MUSCLE_LOG_INFO:
-		level_str = "INFO";
+		level_str = "";
 		break;
 	case MUSCLE_LOG_CONFIG:
-		level_str = "CONFIG";
+		level_str = "config: ";
 		break;
 	case MUSCLE_LOG_FINE:
-		level_str = "FINE";
+		level_str = "debug: ";
 		break;
 	case MUSCLE_LOG_FINER:
-		level_str = "FINER";
+		level_str = "debug: ";
 		break;
 	case MUSCLE_LOG_FINEST:
-		level_str = "FINEST";
+		level_str = "debug: ";
 		break;
 	default:
-		level_str = "OTHER";
+		level_str = "";
 		break;
 	}
 
 	if (logger_name)
 	{
-		printf("[%7s:%7s] ", logger_name, level_str);
+		printf("(%8s %6s) %s", timebuf, logger_name, level_str);
+		if (logger_fd) fprintf(logger_fd, "(%8s %6s) %s", timebuf, logger_name, level_str);
 	}
 	else
 	{
-		printf("[       %7s] ", level_str);
+		printf("(%8s       ) %s", timebuf, level_str);
+		if (logger_fd) fprintf(logger_fd, "(%8s       ) %s", timebuf, level_str);
 	}
 	vprintf(message, *args);
 	printf("\n");
 	fflush(stdout);
+	if (logger_fd)
+	{
+		vfprintf(logger_fd, message, *args);
+		fprintf(logger_fd,"\n");
+		fflush(logger_fd);
+	}
 }
 
-void logger::setName(const char *_name)
+void logger::setName(const char *_name, const char *_tmp_path)
 {
 	logger_name = _name;
+	if (strlen(_tmp_path) + strlen(_name) > 506) {
+		logger::warning("Temporary directory <%s> and name <%s> are too long to open a log file for.", _tmp_path, _name);
+		return;
+	}
+	char filename[512];
+	sprintf(filename, "%s/%s.log", _tmp_path, _name);
+	logger_fd = fopen(filename,"a");
+}
+
+void logger::finalize()
+{
+	if (logger_fd) {
+		fclose(logger_fd);
+	}
 }
 
 } // EO namespace muscle
