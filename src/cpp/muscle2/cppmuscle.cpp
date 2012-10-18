@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 using namespace std;
 
@@ -54,7 +55,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	{
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
 		muscle_pid = env::muscle2_spawn(argc, argv);
-		
+		env::install_term_handling();		
 		env::muscle2_tcp_location(muscle_pid, hostname, &port);
 		if (port == 0)
 		{
@@ -93,6 +94,7 @@ void env::finalize(void)
 	{
 		int status;
 		waitpid(muscle_pid, &status, 0);
+		muscle_pid = -1;
 		if (WIFEXITED(status)) 
 		{
 			if (WEXITSTATUS(status)) logger::severe("MUSCLE execution failed with status %d.", WEXITSTATUS(status));
@@ -305,7 +307,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	}
 }
 
-char * env::create_tmpfifo()
+char *env::create_tmpfifo()
 {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::create_tmpfifo()");
@@ -390,6 +392,92 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 	return pid;
 }
 
+/** Kills the current invocation of MUSCLE, if any. */
+void env::muscle2_kill(void)
+{
+	int status, pid, i = 0;
+	
+	if (muscle_pid > 0) {		
+		// Correctly quit
+		if ((pid = waitpid(muscle_pid, &status, WNOHANG)) > 0) {
+			muscle_pid = -1;
+			return;
+		}
+		logger::info("Stopping Java MUSCLE (pid=%u).", muscle_pid);
+
+		if (pid < 0) {
+			logger::warning("MUSCLE did not quit correctly.");
+			muscle_pid = -1;
+			return;
+		}
+		
+		if (kill(muscle_pid, SIGINT) != 0) {
+			logger::warning("Java MUSCLE could not be stopped.");
+			muscle_pid = -1;
+			return;
+		}
+		
+		// Wait for MUSLCE until a) MUSCLE has exit or b) 30 seconds have passed.
+		while ((pid = waitpid(muscle_pid, &status, WNOHANG)) == 0 && i < 150) {
+			// 200.000 us = 0.2 s
+			usleep(200000);
+			if (++i % 25 == 0) {
+				printf("#");
+				fflush(stdout);
+			}
+		}
+		printf("\n");
+		
+		// Correctly quit
+		if (pid > 0) {
+			logger::info("Java MUSCLE stopped.");
+			return;
+			muscle_pid = -1;
+		}
+		if (pid < 0) {
+			logger::warning("MUSCLE did not quit correctly.");
+			muscle_pid = -1;
+			return;
+		}
+		
+		logger::info("Forcing Java MUSCLE to stop (pid=%u).", muscle_pid);
+		// Second call to SIGINT will cause Ruby to force kill java.
+		kill(muscle_pid, SIGINT);
+		muscle_pid = -1;
+	}
+}
+
+void env::muscle2_signal_handler(int signal) {
+	env::muscle2_kill();
+	
+	struct sigaction act;
+	act.sa_handler = SIG_DFL;
+	sigemptyset (&act.sa_mask);
+	act.sa_flags = 0;
+	sigaction(signal, &act, NULL);
+	kill(getpid(),signal);
+}
+
+void env::install_term_handling(void)
+{
+	if (atexit(muscle::env::muscle2_kill) != 0) {
+		logger::severe("Will not be able to stop MUSCLE at a later point. Aborting.");
+		muscle::env::muscle2_kill();
+		exit(3);
+	}
+	int fatalsigs[] = {SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGSYS, SIGPIPE, SIGALRM, SIGTERM, SIGTSTP, SIGTTIN, SIGTTOU, SIGXCPU, SIGXFSZ, SIGPROF, SIGUSR1, SIGUSR2};
+	struct sigaction act;
+	act.sa_handler = muscle::env::muscle2_signal_handler;
+	sigemptyset (&act.sa_mask);
+	act.sa_flags = 0;
+
+	for (int i = 0; i < sizeof(fatalsigs)/4; i++) {
+		if (sigaction(fatalsigs[i],&act,NULL) != 0) {
+			logger::severe("Will not be able to stop MUSCLE when a signal arrives. Aborting.");
+			exit(4);
+		}
+	}
+}
 
 /**
  * Spawn a new process with arguments argv. argv[0] is the process name.
@@ -441,11 +529,9 @@ pid_t env::spawn(char * const *argv)
 		// We're not going to write
 		close(pipefd[1]);
 		char buffer[1];
-		logger::fine("Checking if Java MUSCLE started.");
 		if (read(pipefd[0],buffer,1)<=0) {
 			// Could not write to pipe, so the exec succeeded
 			close(pipefd[0]);
-			logger::fine("Java MUSCLE started.");
 			return pid;
 		} else {
 			// We've aborted

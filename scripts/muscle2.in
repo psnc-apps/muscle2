@@ -7,5 +7,6 @@ fi
 
 export MUSCLE_HOME
 
-$MUSCLE_HOME/share/muscle/ruby/muscle2.rb  $@
+# Exec is needed so that the PID stays the same
+exec $MUSCLE_HOME/share/muscle/ruby/muscle2.rb  $@
 

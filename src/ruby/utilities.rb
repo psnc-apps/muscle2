@@ -368,13 +368,17 @@ end
 # Kill a single process with a given signal.
 def kill_process(pid, signal, name)
 	if pid
-    	begin
-			puts "sending #{signal} signal to #{name} (pid=#{pid})"
+		begin
+			if signal == 'SIGKILL'
+				puts "Forcing #{name} to stop (pid=#{pid})"
+			else
+				puts "Stopping #{name} (pid=#{pid})"
+			end
 			Process.kill(signal, pid)
 		rescue Errno::ESRCH
 			puts "#{name} already finished."
 		end
-    end
+	end
 end
 
 $interruptions = 0

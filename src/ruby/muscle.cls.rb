@@ -97,7 +97,7 @@ class Muscle
 		env['Xmx'] = tmpXmx
 		puts "=== Running MUSCLE2 Simulation Manager ==="
 		if env['verbose']
-			puts "Executing: " + command
+			puts "Executing: #{command}"
 		end
 		Process.fork {exec(command)}
 	end
@@ -181,13 +181,13 @@ class Muscle
 		if cxa.env[ kernel_name + ":command"] 
 			native_command << cxa.env[ kernel_name + ":command"]
 		else
-			puts "Missing " + kernel_name + ":command property"
+			puts "Missing #{kernel_name}:command property"
 			exit 1
 		end
 
 		if cxa.env[ kernel_name + ":args"] 
-			puts "Args: " + cxa.env[ kernel_name + ":args"] 
-			native_command << cxa.env[ kernel_name + ":args"].split(" ")
+			puts "Args: #{cxa.env['#{kernel_name}:args']}" 
+			native_command << cxa.env["#{kernel_name}:args"].split(" ")
 		end
 
 		native_command << "--"
@@ -210,13 +210,13 @@ class Muscle
 		
 		command = native_command.join(" ")
 		
-		puts "Executing: " + command
+		puts "Executing: #{command}"
 		exec(command)
 	end
 	
 	def exec_mpi(args)
 		command = JVM.build_command(args, env).first
-		puts "Executing: " + command
+		puts "Executing: #{command}"
 		exec(command)
 	end
 	

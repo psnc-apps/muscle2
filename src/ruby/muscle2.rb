@@ -131,7 +131,7 @@ end
 at_exit {puts "\n\tExecuted in <#{Muscle.LAST.env['tmp_path']}>"}
 
 if m.env['native']
-  puts "starting kernel " + active_kernels.first.name + " in native mode"
+  puts "Starting kernel #{active_kernels.first.name} in native mode (pid=#{Process.pid})"
 	m.exec_native(active_kernels.first.name, ARGV_COPY)
 # --native and --mpi are mutually exclusive, since --mpi runs through Java.
 elsif m.env['use_mpi']
@@ -143,7 +143,7 @@ elsif m.env['use_mpi']
 		exit 1
 	end
 
- 	puts "MPI RANK  = " + rank	
+ 	puts "MPI RANK = #{rank}"
  	# non-root rank
 	if rank and rank.to_i > 0		
 		runner = "muscle.util.MpiSlaveKernelExecutor"
@@ -158,7 +158,9 @@ kill_running = lambda do
   kill_processes($running_procs, 1)
   $running_procs = nil
 end
-signals = ["SEGV", "INT", "TERM", "QUIT", "ABRT"]
+signals = ["HUP", "INT", "QUIT", "ILL", "ABRT", "FPE", "BUS", "SEGV", "SYS",
+					 "PIPE", "ALRM", "TERM", "TSTP", "TTIN", "TTOU", "XCPU", "XFSZ",
+					 "PROF", "USR1", "USR2"]
 signals.each { |sig| Signal.trap(sig, kill_running) }
 
 contact_addr = nil

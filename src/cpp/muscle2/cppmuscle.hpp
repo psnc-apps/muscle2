@@ -44,12 +44,14 @@ public:
 	static bool is_main_processor;
 
 private:
-
-	static int detect_mpi_rank();
+	static int detect_mpi_rank(void);
 	static pid_t spawn(char * const *argv);
 	static pid_t muscle2_spawn(int* argc, char ***argv);
-	static char * create_tmpfifo();
+	static char * create_tmpfifo(void);
 	static void muscle2_tcp_location(pid_t pid, char *host, unsigned short *port);
+	static void muscle2_kill(void);
+	static void muscle2_signal_handler(int signal);
+	static void install_term_handling();
 };
 
 class cxa
