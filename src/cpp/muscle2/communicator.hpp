@@ -19,7 +19,9 @@ typedef enum {
 	PROTO_KERNEL_NAME = 1,
 	PROTO_PROPERTY = 2,
 	PROTO_PROPERTIES = 6,
-	PROTO_TMP_PATH = 7
+	PROTO_TMP_PATH = 7,
+	// Logger
+	PROTO_LOG_LEVEL = 9
 } muscle_protocol_t;
 
 extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int buf_len);

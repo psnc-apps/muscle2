@@ -85,7 +85,8 @@ public class NativeGateway extends Thread implements Disposable {
 		public String getTmpPath();
 		/* OPCODE = 8 */
 		public boolean hasNext(String exitName);
-			
+		/* OPCODE = 9 */
+		public int getLogLevel();
 		}
 
 	public int getPort() {
@@ -218,6 +219,12 @@ public class NativeGateway extends Thread implements Disposable {
 						boolean hasNext = listener.hasNext(exit);
 						out.writeBoolean(hasNext);
 						if (isFinestLog) logger.log(Level.FINEST, "hasNext({0}) = {1}", new Object[] {exit, hasNext});
+						break;
+					}
+					case 9:
+					{
+						if (isFinestLog) logger.finest("getLogLevel() request.");
+						out.writeInt(listener.getLogLevel());
 						break;
 					}
 					default:

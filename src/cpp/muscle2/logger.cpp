@@ -14,6 +14,7 @@ namespace muscle {
 
 const char *logger_name = 0;
 FILE *logger_fd = 0;
+int logger_level = MUSCLE_LOG_ALL;
 	
 void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 {
@@ -127,28 +128,34 @@ inline void logger::format(const muscle_loglevel_t level, const char *message, v
 		break;
 	}
 
-	if (logger_name)
-	{
-		printf("(%8s %6s) %s", timebuf, logger_name, level_str);
-		if (logger_fd) fprintf(logger_fd, "(%8s %6s) %s", timebuf, logger_name, level_str);
+	if (level >= logger_level) {
+		if (logger_name)
+		{	printf("(%8s %6s) %s", timebuf, logger_name, level_str);
+		}
+		else
+		{	printf("(%8s       ) %s", timebuf, level_str);
+		}
+
+		vprintf(message, *args);
+		printf("\n");
+		fflush(stdout);
 	}
-	else
-	{
-		printf("(%8s       ) %s", timebuf, level_str);
-		if (logger_fd) fprintf(logger_fd, "(%8s       ) %s", timebuf, level_str);
-	}
-	vprintf(message, *args);
-	printf("\n");
-	fflush(stdout);
 	if (logger_fd)
 	{
+		if (logger_name)
+		{	fprintf(logger_fd, "(%8s %6s) %s", timebuf, logger_name, level_str);
+		}
+		else
+		{	fprintf(logger_fd, "(%8s       ) %s", timebuf, level_str);
+		}
+
 		vfprintf(logger_fd, message, *args);
 		fprintf(logger_fd,"\n");
 		fflush(logger_fd);
 	}
 }
 
-void logger::setName(const char *_name, const char *_tmp_path)
+void logger::initialize(const char *_name, const char *_tmp_path, int _level)
 {
 	logger_name = _name;
 	if (strlen(_tmp_path) + strlen(_name) > 506) {
@@ -158,6 +165,7 @@ void logger::setName(const char *_name, const char *_tmp_path)
 	char filename[512];
 	sprintf(filename, "%s/%s.log", _tmp_path, _name);
 	logger_fd = fopen(filename,"a");
+	logger_level = _level;
 }
 
 void logger::finalize()

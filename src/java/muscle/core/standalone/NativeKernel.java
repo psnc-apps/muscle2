@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import muscle.core.*;
 import muscle.core.kernel.CAController;
@@ -196,6 +197,15 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			if (gateway != null) {
 				gateway.dispose();
 			}
+		}
+	}
+	
+	public int getLogLevel() {
+		String strConsoleLevel = LogManager.getLogManager().getProperty("java.util.logging.ConsoleHandler.level");
+		try {
+			return Level.parse(strConsoleLevel).intValue();
+		} catch (Throwable ex) {
+			return 0;
 		}
 	}
 }

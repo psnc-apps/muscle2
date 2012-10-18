@@ -205,6 +205,9 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			//decode answer
 			if (!xdr_bool(&xdri, (bool_t *)result)) throw muscle_exception("Can not read boolean");
 			break;
+		case PROTO_LOG_LEVEL:
+			if (!xdr_int(&xdri, (int *)result)) throw muscle_exception("Can not read log level");
+			break;
 		case PROTO_PROPERTY:
 			bool_t success;
 			if (!xdr_bool(&xdri, &success)) throw muscle_exception("Can not read property success status");

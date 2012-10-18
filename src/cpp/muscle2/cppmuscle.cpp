@@ -82,9 +82,13 @@ muscle_error_t env::init(int *argc, char ***argv)
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu", hostname, port);
 		exit(1);
 	}
+	
+	int log_level;
 	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
 	muscle_tmp_path = muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
-	logger::setName(strdup(muscle_kernel_name.c_str()), strdup(muscle_tmp_path.c_str()));
+	muscle_comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
+	
+	logger::initialize(strdup(muscle_kernel_name.c_str()), strdup(muscle_tmp_path.c_str()), log_level);
 	return MUSCLE_SUCCESS;
 }
 
