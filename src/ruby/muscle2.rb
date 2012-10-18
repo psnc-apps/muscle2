@@ -159,7 +159,7 @@ kill_running = lambda do
   $running_procs = nil
 end
 signals = ["HUP", "INT", "QUIT", "ILL", "ABRT", "FPE", "BUS", "SEGV", "SYS",
-					 "PIPE", "ALRM", "TERM", "TSTP", "TTIN", "TTOU", "XCPU", "XFSZ",
+					 "PIPE", "ALRM", "TERM", "TTIN", "TTOU", "XCPU", "XFSZ",
 					 "PROF", "USR1", "USR2"]
 signals.each { |sig| Signal.trap(sig, kill_running) }
 
