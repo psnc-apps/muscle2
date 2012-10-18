@@ -27,7 +27,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 
 	public DataConnectionHandler(ServerSocket ss, ResolverFactory rf) {
 		super(ss, new ConcurrentHashMap<Identifier,Receiver>());
-		logger.log(Level.INFO, "Listening for data connections on {0}.", ss);
+		logger.log(Level.CONFIG, "Listening for data connections on {0}:{1}", new Object[]{ss.getInetAddress().getHostAddress(), ss.getLocalPort()});
 		this.resolverFactory = rf;
 	}
 	
