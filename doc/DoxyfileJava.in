@@ -1,10 +1,31 @@
-PROJECT_NAME     = Muscle
-OUTPUT_DIRECTORY = @MUSCLE_JAVA_API@
-WARNINGS         = NO
-INPUT 		 = @PROJECT_SOURCE_DIR@/../src/
-FILE_PATTERNS    = *.java
-RECURSIVE        = YES
-SEARCHENGINE     = YES
-GENERATE_LATEX   = NO
+PROJECT_NAME           = "Muscle Java API"
+PROJECT_NUMBER         = "Version 2.0"
+OUTPUT_DIRECTORY       = @MUSCLE_JAVA_API@
+WARNINGS               = NO
+INPUT 		             = @PROJECT_SOURCE_DIR@/../src/java/muscle/core \
+                         @PROJECT_SOURCE_DIR@/../src/java/muscle/util \
+                         @PROJECT_SOURCE_DIR@/../src/java/muscle/exception  
 
+FILE_PATTERNS          = *.java
 
+RECURSIVE              = YES
+SEARCHENGINE           = YES
+GENERATE_LATEX         = NO
+SORT_MEMBER_DOCS       = NO
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = NO
+HIDE_SCOPE_NAMES       = NO
+SHOW_INCLUDE_FILES     = YES
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_BY_SCOPE_NAME     = NO
+MAX_INITIALIZER_LINES  = 30
+SHOW_USED_FILES        = YES
+SHOW_DIRECTORIES       = YES
