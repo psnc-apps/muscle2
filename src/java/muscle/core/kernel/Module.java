@@ -123,10 +123,6 @@ public abstract class Module {
 	}
 	
 	
-	/**
-	returns path to a tmp directory for this kernel<br>
-	do not change signature! (used from native code)
-	 */
 	public String getTmpPath() {
 		File tmpDir = FileTool.joinPaths(CxADescription.ONLY.getTmpRootPath(), FileTool.portableFileName(getLocalName(), ""));
 		// create our kernel tmp dir if not already there

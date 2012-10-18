@@ -191,7 +191,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 				this.writeContactInformation(host, port);
 			}
 		} catch (Exception ex) {
-			Logger.getLogger(NativeKernel.class.getName()).log(Level.SEVERE, getLocalName() + " could not start communicating with native code", ex);
+			logger.log(Level.SEVERE, getLocalName() + " could not start communicating with native code", ex);
 		} finally {
 			// Make sure the gateway thread quits
 			if (gateway != null) {
@@ -205,6 +205,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		try {
 			return Level.parse(strConsoleLevel).intValue();
 		} catch (Throwable ex) {
+			// Just log everything if there is no well-defined log level.
 			return 0;
 		}
 	}

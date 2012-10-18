@@ -25,9 +25,6 @@ import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import muscle.core.model.Distance;
 
 
@@ -105,34 +102,6 @@ public class Scale implements java.io.Serializable {
 		}
 		
 		return text.toString();
-	}
-	
-	@Deprecated
-	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, DecimalMeasure ... newDx) {
-		this(new Distance(newDt.doubleValue(SI.SECOND)), newDx);
-	}
-	
-	@Deprecated
-	public Scale(Distance newDt, DecimalMeasure ... newDx) {
-		dt = newDt.withDimension(Dimension.TIME);
-		this.omegaT = null;
-		// we will get a nasty compiler warning if our method signature contains a generic vararg like DecimalMeasure<Length> ... newDx
-		// this is probably because there are no generic c-style arrays in java
-		// so we check the types for each vararr item to be a DecimalMeasure<Length>
-		dx = new ArrayList<Distance>();
-		for(DecimalMeasure m : newDx) {
-			dx.add(new Distance(m.doubleValue(SI.METER), Dimension.SPACE));
-		}
-	}
-
-	@Deprecated
-	public Scale(DecimalMeasure<javax.measure.quantity.Duration> newDt, List<DecimalMeasure<Length>> newDx) {
-		dt = new Distance(newDt.doubleValue(SI.SECOND), Dimension.TIME);
-		this.omegaT = null;
-		dx = new ArrayList<Distance>();
-		for(DecimalMeasure m : newDx) {
-			dx.add(new Distance(m.doubleValue(SI.METER), Dimension.SPACE));
-		}
 	}
 }
 

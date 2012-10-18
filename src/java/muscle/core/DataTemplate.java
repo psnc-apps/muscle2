@@ -22,11 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
-import javax.measure.DecimalMeasure;
-import javax.measure.quantity.Duration;
-import javax.measure.quantity.Length;
-import javax.measure.unit.SI;
 import muscle.core.model.Distance;
 
 /**

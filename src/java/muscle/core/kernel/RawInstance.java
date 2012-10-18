@@ -33,11 +33,8 @@ import muscle.core.model.Timestamp;
 import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
 
-// experimental info mode with
-// coast sk:coast.cxa.test.sandbox.RawKernel\("execute true"\) --cxa_file src/coast/cxa/test.sandbox --main
 /**
 A basic kernel, that all kernels must extend
-@author Jan Hegewald
  */
 public abstract class RawInstance extends Module {
 	private static final Logger logger = Logger.getLogger(RawInstance.class.getName());
@@ -52,9 +49,6 @@ public abstract class RawInstance extends Module {
 
 	/**
 	currently returns true if all portals of this kernel have passed a maximum timestep given in the cxa properties
-	(this is a temporary implementation because this mechanism is going to change anyway)
-	note: if init portals are being used, they do increment their time only once!
-	do not change signature! (used from native code)
 	 */
 	public boolean willStop() {
 		if (originTime == null) {
@@ -203,33 +197,6 @@ public abstract class RawInstance extends Module {
 
 		return e;
 	}
-	
-	@Deprecated
-	protected <T extends Serializable> ConduitEntrance<T> addSynchronizedEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
-
-		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
-		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
-		ec.setEntrance(e);
-		addEntranceToList(portName, ec);
-
-		return e;
-	}
-
-	/**
-	do not change signature! (used from native code)
-	 */
-	static public String getCxAProperty(String key) {
-		return CxADescription.ONLY.getProperty(key);
-	}
-
-	/**
-	reference to the CxA of this kernel
-	do not change signature! (used from native code)
-	 */
-	static public CxADescription getCxA() {
-		return CxADescription.ONLY;
-	}
 
 	protected Logger getLogger() {
 		return Logger.getLogger(getClass().getName());
@@ -296,17 +263,7 @@ public abstract class RawInstance extends Module {
 	public final void start() {
 		execute();
 	}
-	
-	/**
-	Returns null. helper method to create a scale object where dt is a multiple of the kernel scale
-	* @deprecated use MML to specify this
-	 */
-	@Deprecated
-	private Scale getPortalScale(int rate) {
-		return null;
-	}
-	
-	
+		
 	public String infoText() {
 		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
 		sb.append(getLocalName()).append(" conduit entrances: ").append(entrances.values()).append("\n\t\t  ")
