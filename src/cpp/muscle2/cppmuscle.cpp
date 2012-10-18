@@ -42,6 +42,12 @@ muscle_error_t env::init(int *argc, char ***argv)
 	if (rank > 0) return MUSCLE_SUCCESS;
 	is_main_processor = true;
 	
+	if (atexit(muscle::env::muscle2_kill) != 0) {
+		logger::severe("Will not be able to stop MUSCLE at a later point. Aborting.");
+		muscle::env::muscle2_kill();
+		exit(3);
+	}
+	
 	// Initialize host and port on which MUSCLE is listening
 	unsigned short port = 0;
 	char hostname[256];
@@ -55,7 +61,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	{
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
 		muscle_pid = env::muscle2_spawn(argc, argv);
-		env::install_term_handling();		
+		env::install_sighandler();		
 		env::muscle2_tcp_location(muscle_pid, hostname, &port);
 		if (port == 0)
 		{
@@ -445,10 +451,12 @@ void env::muscle2_kill(void)
 		kill(muscle_pid, SIGINT);
 		muscle_pid = -1;
 	}
+	
+	logger::info("Program has finished.");
 }
 
-void env::muscle2_signal_handler(int signal) {
-	logger::severe("Signal received: %s...", strsignal(signal));
+void env::muscle2_sighandler(int signal) {
+	logger::severe("Signal received: %s", strsignal(signal));
 	env::muscle2_kill();
 	
 	struct sigaction act;
@@ -459,16 +467,11 @@ void env::muscle2_signal_handler(int signal) {
 	kill(getpid(),signal);
 }
 
-void env::install_term_handling(void)
+void env::install_sighandler(void)
 {
-	if (atexit(muscle::env::muscle2_kill) != 0) {
-		logger::severe("Will not be able to stop MUSCLE at a later point. Aborting.");
-		muscle::env::muscle2_kill();
-		exit(3);
-	}
 	int fatalsigs[] = {SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGABRT, SIGFPE, SIGBUS, SIGSEGV, SIGSYS, SIGPIPE, SIGALRM, SIGTERM, SIGTSTP, SIGTTIN, SIGTTOU, SIGXCPU, SIGXFSZ, SIGPROF, SIGUSR1, SIGUSR2};
 	struct sigaction act;
-	act.sa_handler = muscle::env::muscle2_signal_handler;
+	act.sa_handler = muscle::env::muscle2_sighandler;
 	sigemptyset (&act.sa_mask);
 	act.sa_flags = 0;
 

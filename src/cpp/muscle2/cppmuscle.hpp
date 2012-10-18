@@ -50,8 +50,8 @@ private:
 	static char * create_tmpfifo(void);
 	static void muscle2_tcp_location(pid_t pid, char *host, unsigned short *port);
 	static void muscle2_kill(void);
-	static void muscle2_signal_handler(int signal);
-	static void install_term_handling();
+	static void muscle2_sighandler(int signal);
+	static void install_sighandler();
 };
 
 class cxa
