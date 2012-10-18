@@ -85,7 +85,7 @@ public abstract class SocketFactory {
 								}
 							}
 							if (!hasAddr) {
-								logger.log(Level.WARNING, "Given address {0} does not match interface {1}. Using the interface.", new Object[] {addrStr, interfaceStr});
+								logger.log(Level.WARNING, "Given address {0} does not match interface {1}. Using {1}.", new Object[] {addrStr, interfaceStr});
 								addr = null;
 							}
 						}
