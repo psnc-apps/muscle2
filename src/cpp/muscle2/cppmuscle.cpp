@@ -448,6 +448,7 @@ void env::muscle2_kill(void)
 }
 
 void env::muscle2_signal_handler(int signal) {
+	logger::severe("Signal received: %s...", strsignal(signal));
 	env::muscle2_kill();
 	
 	struct sigaction act;
