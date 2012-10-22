@@ -56,6 +56,7 @@ void *sendRecv(const void *data, const muscle_datatype_t type, const size_t d_sz
 		return newdata;
 	} else
 	{
+		muscle::env::free_data(newdata, type);
 		if (type == MUSCLE_STRING)
 			logger::severe("Size %u of sent data '%s' with sizeof %u is not equal to size %u of received data '%s'", sz, data, d_sz, msg_sz, newdata);
 		else
@@ -244,6 +245,7 @@ int main(int argc, char **argv)
 				const char *str = test_strs[i];
 				char *newstr = (char *)sendRecv(str, MUSCLE_STRING, 1, strlen(str)+1);
 				success = dataMatches((const unsigned char *)str, (const unsigned char *)newstr, MUSCLE_STRING, 1, strlen(str)+1);
+				muscle::env::free_data(newstr, MUSCLE_STRING);
 			}
 			logger::info("Testing MUSCLE_STRING %s", success ? "succeeded" : "failed");
 			all_succeed = success && all_succeed;
@@ -289,6 +291,7 @@ int main(int argc, char **argv)
 					}
 				}
 			}
+			muscle::env::free_data(cnewdata,MUSCLE_COMPLEX);
 			logger::info("Testing COMPLEX_DOUBLE_MATRIX_3D %s", success ? "succeeded" : "failed");
 			all_succeed = success && all_succeed;
 		}
