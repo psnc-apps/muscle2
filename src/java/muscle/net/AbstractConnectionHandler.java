@@ -23,7 +23,7 @@ import muscle.util.concurrency.SafeThread;
  * 
  * @author Joris Borgdorff
  */
-public abstract class AbstractConnectionHandler<T> extends SafeThread {
+public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListener> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
 	protected final NamedExecutor executor;
@@ -45,17 +45,25 @@ public abstract class AbstractConnectionHandler<T> extends SafeThread {
 		}
 	}
 	
-	@Override
-	protected final void execute() throws InterruptedException {
-		try {
-			Socket s = this.ss.accept();
-			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
-			executor.submit(this.createProtocolHandler(s));
-		} catch (IOException iox) {
+	protected final synchronized void handleException(Throwable ex) {
+		if (ex instanceof IOException) {
 			if (!isDisposed())
-				logger.log(Level.SEVERE, "ConnectionHandler could not accept connection.", iox);
+				logger.log(Level.SEVERE, "ConnectionHandler could not accept connection.", ex);
 			// Else, we're closing the serversocket ourselves.
+			ex = null;
+		} else {
+			logger.log(Level.SEVERE, "Fatal exception in connectionhandling occurred", ex);
 		}
+		if (ex != null) {
+			listener.fatalException(ex);
+		}
+	}
+	
+	@Override
+	protected final void execute() throws Exception {
+		Socket s = this.ss.accept();
+		logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
+		executor.submit(this.createProtocolHandler(s));
 	}
 	
 	protected abstract NamedCallable<?> createProtocolHandler(Socket s);

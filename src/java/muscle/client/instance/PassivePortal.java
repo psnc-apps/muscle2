@@ -32,10 +32,12 @@ public abstract class PassivePortal<T extends Serializable> implements Serializa
 	protected Timestamp customSITime;
 	private int usedCount;
 	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
+	protected final Class<T> dataClass;
 	
-	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
+	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
 		portalID = newPortalID;
 	
+		this.dataClass = newDataTemplate.getDataClass();
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
 		this.usedCount = 0;

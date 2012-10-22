@@ -19,6 +19,7 @@ import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
+import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.data.Takeable;
@@ -37,7 +38,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private final FilterChain filters;
 
-	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
+	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
@@ -53,8 +54,11 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		if (args.isEmpty()) return null;
 		
 		FilterChain fc = new FilterChain() {
-			@SuppressWarnings("unchecked")
 			protected void apply(Observation subject) {
+				if (!dataClass.isInstance(subject.getData())) {
+					throw new MUSCLEDatatypeException("Data type "+ subject.getData().getClass().getSimpleName() + " received through conduit exit " + PassiveConduitExitController.this + " does not match expected data type " + dataClass.getSimpleName());
+				}
+
 				queue.add(subject);
 			}
 		};
@@ -78,7 +82,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	public String toString() {
-		return "pasv-in:" + this.getIdentifier();
+		return "in:" + this.getIdentifier().toString();
 	}
 
 	@Override
@@ -102,12 +106,17 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 				}
 			} else {
 				if (this.filters == null) {
+					Observation<T> subject = msg.getObservation();
+					if (!dataClass.isInstance(subject.getData())) {
+						throw new MUSCLEDatatypeException("Data type "+ subject.getData().getClass().getSimpleName() + " received through conduit exit " + this + " does not match expected data type " + dataClass.getSimpleName());
+					}
+
 					this.queue.add(msg.getObservation());
 				} else {
 					try {
 						this.filters.process(msg.getObservation());
 					} catch (Throwable ex) {
-						logger.log(Level.SEVERE, "Can not filter message " + msg + " properly, probably the coupling is not correct. Aborting.", ex);
+						logger.log(Level.SEVERE, "Could not filter message " + msg + " properly, probably the coupling is not correct.", ex);
 						LocalManager.getInstance().shutdown(4);
 					}
 				}

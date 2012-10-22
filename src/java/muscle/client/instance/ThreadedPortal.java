@@ -21,6 +21,9 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.client.instance;
 
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.core.DataTemplate;
 import muscle.core.Portal;
 import muscle.core.kernel.InstanceController;
@@ -30,6 +33,7 @@ import muscle.id.PortalID;
 import muscle.util.concurrency.SafeTriggeredThread;
 
 public abstract class ThreadedPortal<T extends Serializable> extends SafeTriggeredThread implements Serializable, Identifiable<PortalID>, Portal {
+	private final static Logger logger = Logger.getLogger(ThreadedPortal.class.getName());
 	protected final PortalID portalID;
 	protected Timestamp customSITime;
 	private int usedCount;
@@ -83,4 +87,11 @@ public abstract class ThreadedPortal<T extends Serializable> extends SafeTrigger
 	void increment() {
 		usedCount++;
 	}
+	
+	@Override
+	protected void handleException(Throwable ex) {
+		logger.log(Level.SEVERE, getIdentifier() + "could not process messages", ex);
+		LocalManager.getInstance().shutdown(10);
+	}
+
 }

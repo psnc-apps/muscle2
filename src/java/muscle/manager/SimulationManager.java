@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.Identifier;
 import muscle.net.AbstractConnectionHandler;
+import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 
@@ -23,7 +24,7 @@ import muscle.net.SocketFactory;
  * Keeps a registry of running submodels and stops simulation once all submodels have finished.
  * @author Joris Borgdorff
  */
-public class SimulationManager {
+public class SimulationManager implements ConnectionHandlerListener {
 	private final Map<String,Identifier> registered;
 	private final Set<String> available;
 	private final Set<String> stillActive;
@@ -167,5 +168,11 @@ public class SimulationManager {
 		if (mch != null) {
 			mch.writeLocation();
 		}
+	}
+
+	@Override
+	public void fatalException(Throwable ex) {
+		logger.log(Level.SEVERE, "Fatal exception occurred. Aborting.", ex);
+		System.exit(19);
 	}
 }

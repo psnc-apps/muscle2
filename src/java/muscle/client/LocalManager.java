@@ -25,13 +25,14 @@ import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.*;
+import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 
 /**
  * @author Joris Borgdorff
  */
-public class LocalManager implements InstanceControllerListener, ResolverFactory {
+public class LocalManager implements InstanceControllerListener, ResolverFactory, ConnectionHandlerListener {
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<InstanceController> controllers;
 	private final LocalManagerOptions opts;
@@ -164,6 +165,11 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		}
 		logger.severe("Shutting down simulation due to an error");
 		System.exit(code);
+	}
+
+	@Override
+	public void fatalException(Throwable ex) {
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	
 	private class DisposeOfControllersHook extends Thread {

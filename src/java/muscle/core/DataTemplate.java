@@ -47,7 +47,7 @@ public class DataTemplate<T> implements Serializable {
 	}
 	
 	public String toString() {
-		return dataClass.getCanonicalName() + ":" + scale.toString();
+		return "<" + dataClass.getSimpleName() + ":" + scale.toString() + ">";
 	}
 
 	// workaround to solve an issue with the JADE Classloader which can not serialize a Class field with a primitive class

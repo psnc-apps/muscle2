@@ -22,6 +22,7 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.core.kernel.RawInstance;
 import muscle.exception.MUSCLEConduitExhaustedException;
+import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
@@ -51,7 +52,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	private boolean execute;
 	private File infoFile;
 	private InstanceController mainController;
-	private volatile boolean isDone;
+	private boolean isDone;
 	private boolean isExecuting;
 	
 	private Map<String, ExitDescription> exitDescriptions;
@@ -79,7 +80,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		return this.isExecuting;
 	}
 	
-	public boolean isDisposed() {
+	public synchronized boolean isDisposed() {
 		return isDone;
 	}
 	
@@ -124,6 +125,10 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 					instance.start();
 				} catch (MUSCLEConduitExhaustedException ex) {
 					logger.log(Level.SEVERE, getLocalName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
+					LocalManager.getInstance().shutdown(6);
+				} catch (MUSCLEDatatypeException ex) {
+					logger.log(Level.SEVERE, getLocalName() + " communicated a wrong data type. Check the coupling.", ex);
+					LocalManager.getInstance().shutdown(7);
 				} catch (Exception ex) {
 					StringWriter sw = new StringWriter();
 					PrintWriter pw = new PrintWriter(sw);
@@ -134,6 +139,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 						Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
 					}
 					logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getLocalName(), sw});
+					LocalManager.getInstance().shutdown(8);
 				}
 				try {
 					for (ConduitEntranceController ec : entrances) {
@@ -188,27 +194,32 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	public void dispose() {
-		if (!isDisposed()) {
-			isDone = true;
-			// Deregister with the resolver
-			try {
-				Resolver r = resolverFactory.getResolver();
-				r.deregister(this.mainController == null ? this : this.mainController);
-			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
+		synchronized (this) {
+			if (isDisposed()) {
+				return;
 			}
-
-			listener.isFinished(this);
-			
-			this.disposeNoDeregister();
+			isDone = true;
 		}
+		// Deregister with the resolver
+		try {
+			Resolver r = resolverFactory.getResolver();
+			r.deregister(this.mainController == null ? this : this.mainController);
+		} catch (InterruptedException ex) {
+			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
+		}
+
+		listener.isFinished(this);
+
+		this.disposeNoDeregister();
 	}
 	
 	/** Disposes the current instance, without deregistering it.
 	 *   It will only be executed once per instance, after this it becomes a no-op.
 	 */
 	private void disposeNoDeregister() {
-		isDone = true;
+		synchronized (this) {
+			isDone = true;
+		}
 		
 		for (ConduitExitController<?> source : exits) {
 			portFactory.removeReceiver(source.getIdentifier());
@@ -258,7 +269,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		
 		PrintWriter out = null;
 		try {
-			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile)));
+			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile, true)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

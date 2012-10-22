@@ -24,11 +24,22 @@ public abstract class SafeThread extends Thread implements Disposable {
 	public final void run() {
 		try {
 			this.setUp();
-			while(this.continueComputation()) {
-				this.execute();
+			while(true) {
+				// Call this try/catch inside the loop so that an interruption
+				// puts you back to the beginning of the loop. The next evaluation
+				// of continueComputation will determine whether the thread should
+				// stop.
+				try {
+					if (!this.continueComputation()) {
+						break;
+					}
+					this.execute();
+				} catch (InterruptedException ex) {
+					this.handleInterruption(ex);
+				}
 			}
-		} catch (InterruptedException ex) {
-			this.handleInterruption(ex);
+		} catch (Throwable ex) {
+			this.handleException(ex);
 		}
 	}
 	
@@ -36,9 +47,10 @@ public abstract class SafeThread extends Thread implements Disposable {
 	protected void setUp() throws InterruptedException {}
 	
 	protected abstract void handleInterruption(InterruptedException ex);
+	protected abstract void handleException(Throwable ex);
 	
 	/** The thread will keep executing the contents of this method until it isDone. */
-	protected abstract void execute() throws InterruptedException;
+	protected abstract void execute() throws Exception;
 	
 	/**
 	 * Signal the thread to stop its calculation. Can be overridden to clean up

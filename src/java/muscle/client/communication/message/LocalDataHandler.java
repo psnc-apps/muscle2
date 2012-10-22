@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
 import muscle.util.concurrency.SafeTriggeredThread;
@@ -65,8 +66,14 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 	@Override
 	protected void handleInterruption(InterruptedException ex) {
 		if (!this.isDisposed()) {
-			logger.log(Level.WARNING, "LocalDataHandler interrupted.");
+			logger.log(Level.WARNING, "LocalDataHandler interrupted.", ex);
 		}
+	}
+	
+	@Override
+	protected void handleException(Throwable ex) {
+		logger.log(Level.SEVERE, "LocalDataHandler had a fatal exception.", ex);
+		LocalManager.getInstance().shutdown(15);
 	}
 
 	@Override
@@ -83,5 +90,4 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 			recv.dispose();
 		}
 	}
-
 }

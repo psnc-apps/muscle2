@@ -21,20 +21,22 @@ import muscle.util.concurrency.NamedCallable;
  *
  * @author Joris Borgdorff
  */
-public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identifier,Receiver>> implements IncomingMessageProcessor {
+public class DataConnectionHandler extends AbstractConnectionHandler<LocalManager> implements IncomingMessageProcessor {
 	private final ResolverFactory resolverFactory;
+	private final Map<Identifier,Receiver> receivers;
 	private final static Logger logger = Logger.getLogger(DataConnectionHandler.class.getName());
 
 	public DataConnectionHandler(ServerSocket ss, ResolverFactory rf) {
-		super(ss, new ConcurrentHashMap<Identifier,Receiver>());
+		super(ss, LocalManager.getInstance());
 		logger.log(Level.CONFIG, "Listening for data connections on {0}:{1}", new Object[]{ss.getInetAddress().getHostAddress(), ss.getLocalPort()});
 		this.resolverFactory = rf;
+		this.receivers = new ConcurrentHashMap<Identifier,Receiver>();
 	}
 	
 	@Override
 	protected NamedCallable<?> createProtocolHandler(Socket s) {
 		try {
-			return new TcpIncomingMessageHandler(s, listener, resolverFactory, this);
+			return new TcpIncomingMessageHandler(s, receivers, resolverFactory, this);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(DataConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
 			return null;
@@ -54,20 +56,20 @@ public class DataConnectionHandler extends AbstractConnectionHandler<Map<Identif
 
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {
-		listener.put(id, recv);
+		receivers.put(id, recv);
 		logger.log(Level.FINER, "Added receiver {0} to receivers", id);
 	}
 	
 	@Override
 	public void dispose() {
 		super.dispose();
-		for (Receiver recv : listener.values()) {
+		for (Receiver recv : receivers.values()) {
 			recv.dispose();
 		}
 	}
 
 	@Override
 	public void removeReceiver(Identifier id) {
-		this.listener.remove(id);
+		this.receivers.remove(id);
 	}
 }

@@ -9,7 +9,7 @@ package muscle.exception;
  *
  * @author Joris Borgdorff
  */
-public class MUSCLEConduitExhaustedException extends IllegalStateException {
+public class MUSCLEConduitExhaustedException extends MUSCLERuntimeException {
 	public MUSCLEConduitExhaustedException() {
 		
 	}

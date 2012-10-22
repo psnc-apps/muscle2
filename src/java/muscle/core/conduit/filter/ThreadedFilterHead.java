@@ -7,6 +7,7 @@ package muscle.core.conduit.filter;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.util.concurrency.SafeTriggeredThread;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
@@ -52,5 +53,11 @@ public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueP
 
 	protected void handleInterruption(InterruptedException ex) {
 		Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, "Could not apply filter", ex);
+	}
+
+	@Override
+	protected void handleException(Throwable ex) {
+		Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, "Could not apply filter.", ex);
+		LocalManager.getInstance().shutdown(20);
 	}
 }

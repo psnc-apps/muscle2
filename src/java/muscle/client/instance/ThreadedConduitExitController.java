@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Message;

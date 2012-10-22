@@ -29,12 +29,12 @@ import muscle.core.ConduitEntrance;
 import muscle.core.DataTemplate;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
+import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
 
 /**
 this is the (remote) head of a conduit,
 an entrance sends data to the conduit exit through a transmitter
-@author Jan Hegewald
  */
 public class PassiveConduitEntranceController<T extends Serializable> extends PassivePortal<T>  implements ConduitEntranceControllerImpl<T> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
@@ -44,7 +44,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private volatile boolean processingMessage;
 	private boolean isDone;
 	
-	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
+	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.transmitter = null;
 		this.conduitEntrance = null;
@@ -126,7 +126,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	}
 	
 	public String toString() {
-		return "pasv-out:" + this.getIdentifier();
+		return "out:" + this.getIdentifier();
 	}
 
 	@Override
@@ -136,6 +136,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 				throw new IllegalStateException("Can not send message over disposed ConduitEntrance");
 			}
 			this.processingMessage = true;
+		}
+		if (!dataClass.isInstance(msg.getData())) {
+			throw new MUSCLEDatatypeException("Data type "+ msg.getData().getClass().getSimpleName() + " sent through conduit entrance " + this + " does not match expected data type " + dataClass.getSimpleName());
 		}
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.

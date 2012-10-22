@@ -127,6 +127,11 @@ public class AliveSocket extends SafeTriggeredThread {
 	protected void handleInterruption(InterruptedException ex) {
 		// Do nothing
 	}
+	@Override
+	protected void handleException(Throwable ex) {
+		logger.log(Level.SEVERE, "Exception in Socket occurred. Closing connection.", ex);
+		this.dispose();
+	}
 	
 	@Override
 	public void dispose() {
@@ -159,7 +164,7 @@ public class AliveSocket extends SafeTriggeredThread {
 		
 			this.reset();
 		} catch (Exception ex) {
-			logger.log(Level.SEVERE, "Exception occurred", ex);
+			logger.log(Level.SEVERE, "Exception in Socket occurred", ex);
 		} finally {
 			// lock may not yet be locked.
 			if (lock.isHeldByCurrentThread()) {
