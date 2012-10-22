@@ -16,7 +16,7 @@ string getNextLine(ifstream & file)
   string line;
     do
     {
-      getline(file, line);
+      std::getline(file, line);
       // blank & empty lines
       if(regex_match(line, regex("^\\s*$")))
         continue;

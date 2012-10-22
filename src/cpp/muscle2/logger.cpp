@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include "cppmuscle.hpp"
+#include <string.h>
 
 using namespace std;
 
