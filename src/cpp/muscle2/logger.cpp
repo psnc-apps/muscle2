@@ -158,7 +158,7 @@ inline void logger::format(const muscle_loglevel_t level, const char *message, v
 
 void logger::initialize(const char *_name, const char *_tmp_path, int _level)
 {
-	logger_name = _name;
+	logger_name = strdup(_name);
 	if (strlen(_tmp_path) + strlen(_name) > 506) {
 		logger::warning("Temporary directory <%s> and name <%s> are too long to open a log file for.", _tmp_path, _name);
 		return;

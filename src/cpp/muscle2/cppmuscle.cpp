@@ -88,7 +88,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	muscle_tmp_path = muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
 	muscle_comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
 	
-	logger::initialize(strdup(muscle_kernel_name.c_str()), strdup(muscle_tmp_path.c_str()), log_level);
+	logger::initialize(muscle_kernel_name.c_str(), muscle_tmp_path.c_str(), log_level);
 	return MUSCLE_SUCCESS;
 }
 
