@@ -232,10 +232,8 @@ void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
 	{
 		delete (ComplexData *)ptr;
 	}
-	else if (type == MUSCLE_STRING)
-	{
-		xdr_free((xdrproc_t)&xdr_string,(char*)&ptr);
-	}
+    // XDR free for xdr_string doesn't actually free anything. Sigh.
+    // else if (type == MUSCLE_STRING) xdr_free((xdrproc_t)&xdr_string,(char*)&ptr);
 	else
 	{
 		free(ptr);
