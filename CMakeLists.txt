@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(MUSCLE)
 
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
+option(BUILD_MPI_EXAMPLES "Build MPI examples" ON)
 option(BUILD_FORTRAN "Build FORTRAN part of MUSCLE" OFF)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
 
@@ -38,7 +39,9 @@ if (BUILD_CPP)
 	add_subdirectory(src/cpp/examples/simplecpp2)
 	add_subdirectory(src/cpp/examples/pingpongcpp)
 	add_subdirectory(src/cpp/examples/dataintegrity)
-	add_subdirectory(src/cpp/examples/mpiring)
+    if (BUILD_MPI_EXAMPLES)
+	    add_subdirectory(src/cpp/examples/mpiring)
+    endif (BUILD_MPI_EXAMPLES)
 	add_subdirectory(src/cpp/examples/transmutable2)
 endif (BUILD_CPP)
 
