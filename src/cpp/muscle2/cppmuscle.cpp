@@ -9,7 +9,7 @@
 #include <rpc/xdr.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <cstdio>
+#include <stdio.h>
 #include <string>
 #include <cstring>
 #include <sys/types.h>
@@ -299,7 +299,7 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		}
 		fclose(fp);
 		
-		char* indexColon = strrchr(hostparts, ':');
+		char *indexColon = strrchr(hostparts, ':');
 		if (indexColon == NULL) {			
 			logger::severe("Host name should be specified as hostName:port, not like '%s'", hostparts);
 			return;
@@ -309,12 +309,12 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		}
 		*indexColon = '\0';
 		strcpy(host, hostparts);
-		if (sscanf(++indexColon, "%hu", port) != 1) {
+		if (sscanf(indexColon+1, "%hu", port) != 1) {
 			logger::severe("Port is not correctly specified, it should be a number less than 65536, not like '%s'", indexColon);
 			return;
 		}
   
-		logger::config("Will communicate with Java MUSCLE on %s:%d", host, *port);
+		logger::config("Will communicate with Java MUSCLE on %s:%hu", host, *port);
 	}
 }
 
