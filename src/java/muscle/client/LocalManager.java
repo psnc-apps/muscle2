@@ -54,9 +54,11 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			ConnectionScheme.getInstance(instance);
 			instance.start();
 		} catch (InterruptedException ex) {
-			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, null, ex);
+			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Simulation was interrupted. Aborting.", ex);
+			System.exit(121);
 		} catch (IOException ex) {
-			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not start listening for data connections.", ex);
+			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not start listening for data connections. Aborting.", ex);
+			System.exit(120);
 		}
 	}
 	

@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 singleton class which provides access to global (JVM wide) settings
 @author Jan Hegewald
  */
-public class JVM implements java.io.Serializable {
+public class JVM {
 	// be careful to init all other static fields we may use here before our singleton
 	public final static JVM ONLY = new JVM(); // handle for the singleton
 	private File tmpDir;
@@ -57,13 +57,6 @@ public class JVM implements java.io.Serializable {
 	
 	public File tmpFile(String filename) {
 		return FileTool.joinPaths(tmpDir.toString(), filename);
-	}
-
-	/**
-	name of this JVM
-	 */
-	public String name() {
-		return ManagementFactory.getRuntimeMXBean().getName();
 	}
 
 	private static File mkTmpDir() {

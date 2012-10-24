@@ -37,7 +37,7 @@ module MuscleUtils
 	def mkTmpPath(arg)
 		require 'fileutils'
 		host = `hostname -f`.chomp
-		time = Time.now.strftime("%Y%m%d%H%M%S")
+		time = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
 		tmpdir_path = File.expand_path(arg) + "/#{host}_#{time}_#{Process.pid}"
 		FileUtils::mkdir_p(tmpdir_path + "/.muscle");
 		return tmpdir_path

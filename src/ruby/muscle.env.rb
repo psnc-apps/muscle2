@@ -70,10 +70,7 @@ e = {
 'java' => 'java', # java command
 'Xms' => '256m', # default JVM heap size minimum
 'Xmx' => "2048m", # default JVM heap size maximum
-#'Xss' => '1m', # default stack size for the JVM thread
 "allkernels" => false,
-#:kernelinfo => false,
-#'platformname' => "",
 'print_env' => false,
 # configure java logging
 'logging_config_path' => "#{logging_path}/logging.properties",
