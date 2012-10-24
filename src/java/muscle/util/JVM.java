@@ -23,7 +23,11 @@ package muscle.util;
 import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
 singleton class which provides access to global (JVM wide) settings
@@ -63,9 +67,7 @@ public class JVM implements java.io.Serializable {
 	}
 
 	private static File mkTmpDir() {
-		// use name of this JVM as name for tmp dir
-		String tmpDirName = FileTool.portableFileName(ManagementFactory.getRuntimeMXBean().getName(), "");
-		File td = FileTool.joinPaths(System.getProperty("java.io.tmpdir"), tmpDirName);
+		File td = new File(System.getProperty("java.io.tmpdir"));
 		// create our JVM tmp dir if not already there
 		if (!td.exists()) {
 			td.mkdir();

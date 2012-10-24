@@ -24,9 +24,11 @@ Jan Hegewald
 Mariusz Mamonski
 =end
 
+require 'utilities'
+include MuscleUtils
+
 PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
-
 
 class MuscleCli
 	#
@@ -48,7 +50,7 @@ class MuscleCli
 		# MUSCLE flags
 		@parser.separator "MUSCLE flags:"
 		@parser.on("-c","--cxa FILE", "MUSCLE configuration file to run with") {|arg| @env['cxa_file'] = File.expand_path(arg) }
-		@parser.on("-p","--tmp-path ARG", "path where MUSCLE and kernel output will go") {|arg| @env['tmp_path'] = File.expand_path(arg) }
+		@parser.on("-p","--tmp-path ARG", "path where MUSCLE and kernel output will go") {|arg| @env['tmp_path'] = mkTmpPath(arg) }
 		@parser.on("-a","--allkernels", "launch all kernels") { @env["allkernels"] = true }
 		@parser.on("-n","--native", "start kernel binary first (for standalone native kernels)") { @env['native'] = true }
 		@parser.on("-N","--native-tmp-file ARG", "file to write host and port to when communicating with native code") { |arg| @env['native_tmp_file'] = arg }
@@ -117,4 +119,4 @@ class MuscleCli
 	
 	#
 	attr_reader :parser
-end# class Cli
+end

@@ -6,18 +6,18 @@ GNU Lesser General Public License
 
 This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
-    MUSCLE is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+MUSCLE is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    MUSCLE is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+MUSCLE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Lesser General Public License
+along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 
 == Author
 Jan Hegewald
@@ -30,8 +30,6 @@ else
 end unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
 
-
-#
 class ConnectionScheme
 
 	def initialize
@@ -39,12 +37,11 @@ class ConnectionScheme
 		@@LAST=self
 		@pipelines = []
 	end
-	
+
 	def ConnectionScheme.LAST
 		@@LAST
 	end
-			
-	#
+
 	def attach(hsh)
 		raise("can only accept hash with one key/val") if hsh.length != 1
 		if block_given?
@@ -63,7 +60,7 @@ class ConnectionScheme
 			raise("empty attach for #{hsh.inspect}")
 		end
 	end
-	
+
 	def tie(entrance_name, exit_name=entrance_name, filters=[])
 		abort("first arg to tie can not be a #{entrance_name.class}") if(entrance_name.class==Hash) # sanity check
 		tie_single_args(entrance_name, exit_name, filters)
@@ -84,7 +81,7 @@ class ConnectionScheme
 		raise("can only accept hash with one key/val") if hsh.length != 1
 		tie_single_args(hsh.keys.first, hsh.values.first, filters)
 	end
-	
+
 	# produces cs in old style format
 	# {exit name} {{full class name of conduit}[#ID][(carg0,cargn)]} {entrance name}
 	# e.g.:
@@ -96,14 +93,15 @@ class ConnectionScheme
 		end
 		lines.join("\n")
 	end
-		
+
 	def ConnectionScheme.jclass
 		'muscle.core.ConnectionScheme'
 	end
-	
+
 	# visibility
 	private :tie_hash_arg, :tie_single_args
 end
+
 # helper method for setup files, redirect tie method to ConnectionScheme
 unless respond_to?(:tie, true)
 	def tie(*args)
@@ -113,7 +111,6 @@ else
 	raise("method #{self}#tie already defined")
 end
 
-#
 class Pipeline
 	def initialize(src_kernel, entrance, conduit, exit, tgt_kernel)
 		@src_kernel = src_kernel
@@ -125,7 +122,6 @@ class Pipeline
 	attr_reader :src_kernel, :entrance, :conduit, :exit, :tgt_kernel
 end
 
-#
 class Conduit
 	def initialize(args=[])
 		@args = args
@@ -133,37 +129,36 @@ class Conduit
 		@@counter+= 1
 		@name = @@counter.to_s
 	end
-	
+
 	def dup
 		@@counter+= 1
 		super
 	end
-	
+
 	def to_s
 		"conduit##{@name}#{"(#{@args.join(',')})" unless @args.empty?}"
 	end	
 end
-
 
 class Portal
 	def initialize(kernel, name)
 		@kernel = kernel
 		@name = name
 	end
-	
+
 	def to_s
-	  if @kernel.kind_of? TerminalAgent
-	    return "#{@name}@#{@kernel.name}(#{@kernel.cls})"
-	  else
-	    return "#{@name}@#{@kernel.name}"
-    end
+		if @kernel.kind_of? TerminalAgent
+			"#{@name}@#{@kernel.name}(#{@kernel.cls})"
+		else
+			"#{@name}@#{@kernel.name}"
+		end
 	end
 end
+
 class ConduitEntrance < Portal
 end
 class ConduitExit < Portal
 end
-
 
 ## test
 if $0 == __FILE__
@@ -173,15 +168,15 @@ if $0 == __FILE__
 		tie("entrance0" => "exit0")
 		tie("entrance1" => "exit1")
 	}
-#	cs.attach("k1"=>"k0") {
-#		tie("entrance0" => "exit0")
-#	}
+	#	cs.attach("k1"=>"k0") {
+	#		tie("entrance0" => "exit0")
+	#	}
 	cs.attach("k2"=>"k3") {
 		tie("entrance0" => "exit0")
 		tie("entrance1" => "exit1")
 	}
 
-#	puts "writing dot file ..."
-#	require 'csgraph'
-#	system("open -a Preview #{cs.write_to_graphic_file}")
+	#	puts "writing dot file ..."
+	#	require 'csgraph'
+	#	system("open -a Preview #{cs.write_to_graphic_file}")
 end

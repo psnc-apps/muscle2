@@ -38,8 +38,7 @@ public class ManagerConnectionHandler extends AbstractConnectionHandler<Simulati
 
 		// Writing address so that it can automatically be read
 		try {
-			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-			String addrFileName = System.getProperty("java.io.tmpdir") + "/simulationmanager." + pid + ".address";
+			String addrFileName = System.getProperty("java.io.tmpdir") + "/.muscle/simulationmanager.address";
 			File flock = new File(addrFileName + ".lock");
 			
 			flock.createNewFile(); /* lock */

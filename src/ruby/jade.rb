@@ -23,16 +23,12 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 Jan Hegewald
 =end
 
-require 'jvm'
-require 'utilities'
-include MuscleUtils
-
-class JadeAgent
-
+class Agent
 	def initialize(name, cls, args=[])
 		@name = name
 		@cls = cls
 		@args = args
+		@env = {}
 	end
 	
 	def ==(other)
@@ -43,88 +39,22 @@ class JadeAgent
 		@name == other.name && @cls == other.cls && @args == other.args
 	end
 	
-	def to_jade_plain
-		to_s(false)
-	end
-
-	def to_jade_leap
-		to_s(true)
-	end
-
-	def to_s(leap_mode = true)
-		if @args.size > 0
-			joinText = " "
-			joinText = "," if leap_mode
-			@name+":"+@cls+"("+@args.join(joinText)+")"
+	def to_s
+		if @args.empty?
+			"#{@name}:#{@cls}"
 		else
-			@name+":"+@cls
+			"#{@name}:#{@cls}(#{@args.join(',')})"
 		end
-	end
-	
-	#
-	def JadeAgent.agent_from_string(agent_string, agent_infos)
-
-		name = nil
-		cls = nil
-		args = []
-		
-		# strip any args
-		argBegin = agent_string.index('(')
-		argEnd = agent_string.rindex(')')
-		if argBegin && argEnd
-			argBegin += 1
-			argEnd -= 1
-			if argBegin < argEnd && argBegin >= 0 && argEnd >= 0
-				argString = agent_string.slice(argBegin..argEnd)
-				if argString
-					agent_string = agent_string.chomp("("+argString+")")
-					args = argString.split(",")
-				end
-			end
-		end
-
-		# get name and class
-		name, cls = agent_string.split(':')
-		if not cls
-			ainfo = nil
-			agent_infos.each {|ai| (ainfo=ai;break) if ai.name==name}
-			unless ainfo.nil?
-				cls = ainfo.cls
-			else
-				abort("Error: can not parse #{agent_string}")
-			end
-		end
-		return JadeAgent.new(name, cls, args)
 	end
 
 	# visibility
-	attr_reader :name, :cls, :args
-	
+	attr_reader :name, :cls, :args, :env
 end
 
-
-#
-class KernelAgent < JadeAgent
-
-	def initialize(*args)
-		super
-		@env = {}
-	end
-	
-	# visibility
-	attr :env
+class TerminalAgent < Agent
 end
 
-#
-class TerminalAgent < JadeAgent
-
-	def initialize(*args)
-		super
-		@env = {}
-	end
-	
-	# visibility
-	attr :env
+class InstanceAgent < Agent
 end
 
 # test

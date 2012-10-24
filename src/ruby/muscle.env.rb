@@ -26,9 +26,7 @@ Jan Hegewald
 # default configuration file for the MUSCLE bootstrap utility
 abort "this is a configuration file for to be used with the MUSCLE bootstrap utility" if __FILE__ == $0
 
-
 m = Muscle.LAST
-
 
 # some local variables to keep things simple
 base_dir = ENV["MUSCLE_HOME"]
@@ -37,6 +35,9 @@ if base_dir == nil
   puts "MUSCLE_HOME environment variable is not defined."
   exit 1
 end
+
+require 'tmpdir'
+
 #
 ## configure java CLASSPATH
 ## classpath must include jade and muscle classes
@@ -58,8 +59,11 @@ m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
 # Fixes issue where OS X can not find libjava.jnilib
 # m.add_libpath "#{base_dir}/lib"
 
+logging_path = "#{base_dir}/share/muscle/resources/logging"
+
+tmp_path = mkTmpPath(Dir.tmpdir)
+
 e = {
-"bootclass" => "muscle.client.JadeBoot",
 'execute' => true,
 'verbose' => false,
 'quiet' => false,
@@ -67,33 +71,21 @@ e = {
 'Xms' => '256m', # default JVM heap size minimum
 'Xmx' => "2048m", # default JVM heap size maximum
 #'Xss' => '1m', # default stack size for the JVM thread
-'rmagui' => false,
-'jade' => true,
-'test' => false,
-#'jade_wd' => nil, # value for the JADE output dir (-file-dir flag)
-# use a private port as default http://de.wikipedia.org/wiki/Port_%28Protokoll%29
-# we create a different port for each user so multiple independent environments can be executed at the same time
-'mainport' => nil,
-'changeportifbusy' => false, # only available with leap
-'leap' => true,
-'localport' => nil,
 "allkernels" => false,
-"autoquit" => false,
 #:kernelinfo => false,
 #'platformname' => "",
-'main_container_name' => "Main-Container", # default JADE name for Main-Container, beware if you change this: some JADE/thirdparty code relies on it
 'print_env' => false,
 # configure java logging
-'logging_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.properties"),
-'logging_quiet_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.quiet.properties"),
-'logging_verbose_config_path' => File.join(base_dir, "share/muscle/resources/logging/logging.verbose.properties"),
-'tmp_path' => mkJVMTmpPath,
-'muscle_src_root' => find_src_root,
+'logging_config_path' => "#{logging_path}/logging.properties",
+'logging_quiet_config_path' => "#{logging_path}/logging.quiet.properties",
+'logging_verbose_config_path' => "#{logging_path}/logging.verbose.properties",
+'logging_manager_config_path' => "#{logging_path}/logging.manager.properties",
+'logging_quiet_manager_config_path' => "#{logging_path}/logging.quiet.manager.properties",
+'logging_verbose_manager_config_path' => "#{logging_path}/logging.verbose.manager.properties",
+'tmp_path' => tmp_path,
+'port_min' => ENV['MUSCLE_PORT_MIN'],
+'port_max' => ENV['MUSCLE_PORT_MAX']
 }
-e['muscle.Env dump uri'] = URI.parse "file:#{File.join(e['tmp_path'], Muscle.jclass)}"
+e['muscle.Env dump uri'] = URI.parse "file:#{tmp_path}/.muscle/#{Muscle.jclass}"
 
 m.add_env(e)
-
-
-
-

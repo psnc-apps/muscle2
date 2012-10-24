@@ -41,13 +41,8 @@ class Cxa
 		rootenv[self.class.jclass] = {}
 		@env = rootenv[self.class.jclass]
 		
-		@known_agents = []
-		def @known_agents.<<(val)
-			if(i=index(val))
-				puts "overwriting agent <#{self[i]}> with new configuration <#{val}>" unless self[i].eql?(val)
-			end
-			super
-		end
+		@instances = {}
+		@terminals = {}
 
 		@env_basename = "cxa.env.rb"
 		
@@ -65,35 +60,33 @@ class Cxa
 		@@LAST
 	end
 	
-	# convenience method for config file
+	def add_instance(*args)
+		add_to_hash(@instances, "instance", InstanceAgent.new(*args))
+	end
+
 	def add_kernel(*args)
-		add KernelAgent.new(*args)
+		add_instance(*args)
 	end
 	
-	# convenience method for config file
 	def add_terminal(*args)
-		add TerminalAgent.new(*args)
+		add_to_hash(@terminals, "terminal", TerminalAgent.new(*args))
 	end
-
-	def add(x)
-		if x.kind_of?(JadeAgent)
-			known_agents << x
-		else
-			puts "#{__FILE__}:#{__LINE__} error: do not know how to add #{x}"
+	
+	def add_to_hash(hash, name, agent)
+		if hash.has_key?(agent.name)
+			puts "Error: #{name} <#{agent.name}> is defined twice." 
+			exit 4
 		end
-	end
-	
-	def get(name)
-	  return known_agents.find {|k| k.name == name}
-  end
-	
-	def get_kernels
-	  return known_agents.find_all {|a| a.kind_of?(KernelAgent)}
+		hash[agent.name] = agent
 	end
 
-	def get_terminals
-	  return known_agents.find_all {|a| a.kind_of?(TerminalAgent)}
-	end
+	def get(name)
+		if @instances.has_key?(name)
+			@instances[name]
+		else
+			@terminals[name]
+		end
+  	end
 	
 	def generate_cs_file
 	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, "w") do |f|
@@ -103,7 +96,7 @@ class Cxa
   end
   
 	# visibility
-	attr_reader :env, :cs, :known_agents
+	attr_reader :env, :cs, :instances, :terminals
 end
 
 

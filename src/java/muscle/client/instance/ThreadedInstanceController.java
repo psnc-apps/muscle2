@@ -235,51 +235,12 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		}
 	}
 		
-	private void beforeExecute() {
-		// write info file
-		infoFile = FileTool.joinPaths(JVM.ONLY.tmpDir().toString(), Constant.Filename.AGENT_INFO_PREFIX + getLocalName() + Constant.Filename.AGENT_INFO_SUFFIX);
-
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile)));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		
-		out.println("this is file <" + infoFile + "> created by <" + getClass() + ">");
-		out.println("start date: " + (new java.util.Date()));
-		out.println("agent name: " + getLocalName());
-		out.println("coarsest log level: " + logger.getLevel());
-		out.println();
-		out.println("executing ...");
-		
-		out.close();
-		synchronized (this) {
-			this.isExecuting = true;
-		}
+	private synchronized void beforeExecute() {
+		this.isExecuting = true;
 	}
 
-	public void afterExecute() {
-		synchronized (this) {
-			this.isExecuting = false;
-		}
-
-		// write info file
-		assert infoFile != null;
-		
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new BufferedWriter(new FileWriter(infoFile, true)));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		out.println();
-		out.println("... done");
-		out.println();
-		out.println("end date: " + (new java.util.Date()));
-		
-		out.close();
+	public synchronized void afterExecute() {
+		this.isExecuting = false;
 	}
 	
 	private boolean register() {

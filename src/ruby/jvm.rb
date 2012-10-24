@@ -22,11 +22,19 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 == Author
 Jan Hegewald
 =end
-#needed ???
-#begin; require 'rubygems'; rescue LoadError; end
+
 require 'json'
 
+PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min"
+PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max"
+
 class JVM
+	def JVM.add_prop(env, command, key, value)
+		JVM.add_pref(env, command, "-D#{key}=", value)
+	end
+	def JVM.add_pref(env, command, prefix, value)
+		command << "#{prefix}#{env[value]}" if env[value]
+	end
 	def JVM.build_command(jargs, env)
 		# build command to launch a java application
 		command = []
@@ -34,43 +42,46 @@ class JVM
 		# java VM args
 		command << env['java']
 		command << "-server"
-		if env['quiet'] and env.has_key?('logging_quiet_config_path')
-			command << "-Djava.util.logging.config.file="+env['logging_quiet_config_path']
-		elsif env['verbose'] and env.has_key?('logging_verbose_config_path')
-			command << "-Djava.util.logging.config.file="+env['logging_verbose_config_path']
-		else
-			command << "-Djava.util.logging.config.file="+env['logging_config_path'] if env.has_key?('logging_config_path')
-		end
-		command << "-Xms#{env['Xms']}" if env.has_key?('Xms') # note: no space between key and value
-		command << "-Xmx#{env['Xmx']}" if env.has_key?('Xmx') # note: no space between key and value
-		command << "-Xss#{env['Xss']}" if env.has_key?('Xss') # note: no space between key and value
-		
-		# resolve all proc objects
-		# needed ???
-		#env = env.evaluate if env.respond_to?(:evaluate)
 
 		# the java platform should load CXA from JSON file, so we dump a file with the muscle env
 		# dump env
 		File.open(env['muscle.Env dump uri'].path, "w") do |f|
 			f.puts JSON.dump(env)
 		end
-		command << "-D#{Muscle.jclass}=#{env['muscle.Env dump uri']}"
-		
-		command << "-classpath #{env['CLASSPATH']}" unless env['CLASSPATH'].nil?
+
+		JVM.add_pref(env, command, '-Xms', 'Xms')
+		JVM.add_pref(env, command, '-Xmx', 'Xms')
+		JVM.add_pref(env, command, '-Xss', 'Xms')
+				                             # intentional space after classpath
+		JVM.add_pref(env, command, '-classpath ', 'CLASSPATH')
 		
 		# additional jvm flags
 		if env.has_key?("jvmflags")
 			env["jvmflags"].each {|x| command << x}
 		end
 
-		command << "-Djava.io.tmpdir="+env['tmp_path'].to_s if env.has_key?('tmp_path') # used by standard java stuff
-		command << "-Dmuscle.native.tmpfile="+env['native_tmp_file'].to_s if env.has_key?('native_tmp_file') # used to write the host and port of the file to
-		command << "-Dmuscle.manager.bindport="+env['bindport'].to_s if env.has_key?('bindport') # used to provide bind port
-		command << "-Dmuscle.net.bindaddr="+env['bindaddr'].to_s if env.has_key?('bindaddr') # used to provide bind address
-		command << "-Dmuscle.net.bindinf="+env['bindinf'].to_s if env.has_key?('bindinf') # used to provide bind interface
+		log_infix = env[:as_manager] ? 'manager_' : ''
+		
+		# Properties to use within program
+		if env['quiet'] and env.has_key?("logging_quiet_#{log_infix}config_path")
+			JVM.add_prop(env, command, "java.util.logging.config.file", "logging_quiet_#{log_infix}config_path")
+		elsif env['verbose'] and env.has_key?("logging_verbose_#{log_infix}config_path")
+			JVM.add_prop(env, command, "java.util.logging.config.file", "logging_verbose_#{log_infix}config_path")
+		else
+			JVM.add_prop(env, command, "java.util.logging.config.file", "logging_#{log_infix}config_path")
+		end
+
+		JVM.add_prop(env, command, Muscle.jclass,             'muscle.Env dump uri')
+		JVM.add_prop(env, command, 'java.io.tmpdir', 	        'tmp_path')
+		JVM.add_prop(env, command, 'muscle.native.tmpfile',   'native_tmp_file')
+		JVM.add_prop(env, command, 'muscle.manager.bindport', 'bindport')
+		JVM.add_prop(env, command, 'muscle.net.bindaddr',     'bindaddr')
+		JVM.add_prop(env, command, 'muscle.net.bindinf',      'bindinf')
+		JVM.add_prop(env, command, PROP_PORT_RANGE_MIN,       'port_min')
+		JVM.add_prop(env, command, PROP_PORT_RANGE_MAX,       'port_max')
 		
 		command << jargs unless jargs.nil? # the java class to launch
 		
-		return command.join(" "), command
-	end	
+		return command.join(" ")
+	end
 end

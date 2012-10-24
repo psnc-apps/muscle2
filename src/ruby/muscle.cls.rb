@@ -1,8 +1,7 @@
+require 'jvm'
 require 'utilities'
 include MuscleUtils
 
-PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min"
-PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max"
 PROP_MAIN_PORT = "pl.psnc.mapper.muscle.mainport"
 PROP_DEBUG = "pl.psnc.mapper.muscle.debug"
 PROP_TRACE = "pl.psnc.mapper.muscle.trace"
@@ -22,14 +21,14 @@ class Muscle
 		load_env(File.expand_path("#{PARENT_DIR}/#{@env_basename}"), true)
 	end
 	
-	#
 	def add_env(e)
-		@env.merge!(e){|key, oldval, newval| 
-				if(key == "CLASSPATH" && oldval != nil)
-					oldval=newval+File::PATH_SEPARATOR+oldval
-				else
-					oldval=newval
-				end}
+		@env.merge!(e) do |key, oldval, newval| 
+			if(key == "CLASSPATH" && oldval != nil)
+				oldval=newval+File::PATH_SEPARATOR+oldval
+			else
+				oldval=newval
+			end
+		end
 	end
 
 	# helper method to add path variables
@@ -51,7 +50,6 @@ class Muscle
 		add_path("CLASSPATH"=>p)
 	end
 
-
 	def add_libpath(p)
 		add_path("libpath"=>p)
 		ENV[@env["LIBPATHENV"]] = @env["libpath"]
@@ -59,9 +57,7 @@ class Muscle
 
 	# overwrite env setting
 	def set(hsh)
-		hsh.each do |k,v|
-			@env[k] = v
-		end
+		@env.merge!(hsh)
 	end
 
 	def Muscle.jclass
@@ -92,7 +88,10 @@ class Muscle
 		tmpXms = env['Xms']
 		env['Xms'] = '20m'
 		env['Xmx'] = '100m'
-		command = JVM.build_command(args, env).first
+		env[:as_manager] = true
+		command = JVM.build_command(args, env)
+		env.delete(:as_manager)
+		
 		env['Xms'] = tmpXms
 		env['Xmx'] = tmpXmx
 		puts "=== Running MUSCLE2 Simulation Manager ==="
@@ -102,24 +101,28 @@ class Muscle
 		Process.fork {exec(command)}
 	end
 	
+	def poll_manager(manager_pid)
+		if Process::waitpid(manager_pid, Process::WNOHANG)
+			if not $?
+				puts "Simulation Manager exited with an error."
+				exit 1
+			elsif $?.exitstatus != 0
+				puts "Simulation Manager exited with an error."
+				exit $?.exitstatus
+			else
+				puts "Simulation Manager exited before setting up connection."
+				exit 0
+			end
+		end
+	end
+	
 	def find_manager_contact(manager_pid, contact_file_name = nil)
 		if not contact_file_name
-			contact_file_name = env['tmp_path'] + "/simulationmanager.#{manager_pid}.address"
+			contact_file_name = "#{muscle_tmp_path}/simulationmanager.address"
 		end
 		tries_count = 0
 		while !File.exists?(contact_file_name)
-			if Process::waitpid(manager_pid, Process::WNOHANG)
-				if not $?
-					puts "Simulation Manager exited with an error."
-					exit 1
-				elsif $?.exitstatus != 0
-					puts "Simulation Manager exited with an error."
-					exit $?.exitstatus
-				else
-					puts "Simulation Manager exited before setting up connection."
-					exit 0
-				end
-			end
+			poll_manager(manager_pid)
 			sleep 0.2
 			tries_count += 1
 			if tries_count % 25 == 0
@@ -128,18 +131,7 @@ class Muscle
 		end
 
 		while File.exists?(contact_file_name + ".lock") #waiting for lock file to disappear 
-			if Process::waitpid(manager_pid, Process::WNOHANG)
-				if not $?
-					puts "\n\nSimulation Manager exited with an error."
-					exit 1
-				elsif $?.exitstatus != 0
-					puts "\n\nSimulation Manager exited with an error."
-					exit $?.exitstatus
-				else
-					puts "\n\nSimulation Manager exited before setting up connection."
-					exit 0
-				end
-			end
+			poll_manager(manager_pid)
 			sleep 0.2
 		end
 
@@ -156,38 +148,39 @@ class Muscle
 		end
 
 		puts "=== Running MUSCLE2 Simulation ==="
-		command = JVM.build_command(args, env).first
+		command = JVM.build_command(args, env)
 		if env['verbose']
 			puts command
 		end
 		Process.fork {exec(command)}
 	end
 	
+	def add_to_command(command, kernel_name, prop)
+		cenv = Cxa.LAST.env
+		key = "#{kernel_name}:#{prop}"
+		if cenv.has_key?(key)
+			command << cenv[key]
+			return true
+		else
+			return false
+		end
+	end
+	
 	def exec_native(kernel_name, extra_args)
 		native_command = []
-		cxa = Cxa.LAST
-		if cxa.env[ kernel_name + ":mpiexec_command"] 
-			native_command << cxa.env[ kernel_name + ":mpiexec_command"]
-		end
-
-		if cxa.env[ kernel_name + ":mpiexec_args"] 
-			native_command << cxa.env[ kernel_name + ":mpiexec_args"].split(" ")
-		end
-
-		if cxa.env[kernel_name + ":debugger"] 
-			native_command << cxa.env[ kernel_name + ":debugger"]
-		end
-
-		if cxa.env[ kernel_name + ":command"] 
-			native_command << cxa.env[ kernel_name + ":command"]
-		else
+		add_to_command(native_command, kernel_name, "mpiexec_command")
+		add_to_command(native_command, kernel_name, "mpiexec_args")
+		add_to_command(native_command, kernel_name, "debugger")
+		
+		if not add_to_command(native_command, kernel_name, "command")
 			puts "Missing #{kernel_name}:command property"
 			exit 1
 		end
 
-		if cxa.env[ kernel_name + ":args"] 
-			puts "Args: #{cxa.env['#{kernel_name}:args']}" 
-			native_command << cxa.env["#{kernel_name}:args"].split(" ")
+		args = Cxa.LAST.env["#{kernel_name}:args"]
+		if args
+			puts "Args: #{args}"
+			native_command << args.split(" ")
 		end
 
 		native_command << "--"
@@ -215,21 +208,19 @@ class Muscle
 	end
 	
 	def exec_mpi(args)
-		command = JVM.build_command(args, env).first
+		command = JVM.build_command(args, env)
 		puts "Executing: #{command}"
 		exec(command)
 	end
 	
 	def apply_intercluster
-		port_min = env['port_min'] || ENV['MUSCLE_PORT_MIN']
-		port_max = env['port_max'] || ENV['MUSCLE_PORT_MAX']
-		if(port_min.nil? or port_max.nil?)
+		if(env['port_min'].nil? or env['port_max'].nil?)
 			puts "Warning: intercluster specified, but no local port range given."
 			puts "Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_PORT_MIN or $MUSCLE_PORT_MAX were not set?"
 			puts "To specify them manually, use the flags --port-min and --port-max."
 			return false
 		else
-			mto =	env['mto'] || ENV['MUSCLE_MTO']
+			mto = env['mto'] || ENV['MUSCLE_MTO']
 			if (! mto.nil?)
 				mtoHost = mto.split(':')[0]
 				mtoPort = mto.split(':')[1]
@@ -241,8 +232,8 @@ class Muscle
 				puts "To specify the MTO address manually, use the flag --mto."
 				return false
 			else
-				if(env.has_key?('qcg'))
-					if (env['main'])
+				if env.has_key?('qcg')
+					if env.has_key?('main')
 						env['bindport'] = 22 #master
 					else
 						env['manager'] = "localhost:22" #slave
@@ -251,19 +242,20 @@ class Muscle
 					env['localport'] = 0 
 				end
 
-				if(env["jvmflags"].nil?)
-					env["jvmflags"] = Array.new
+				if not env.has_key?("jvmflags")
+					env["jvmflags"] = []
 				end
 
 				env["jvmflags"] << "-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory"
-				env["jvmflags"] << "-D" + PROP_PORT_RANGE_MIN + "=" + port_min
-				env["jvmflags"] << "-D" + PROP_PORT_RANGE_MAX + "=" + port_max
 				env["jvmflags"] << "-D" + PROP_MTO_ADDRESS		+ "=" + mtoHost
 				env["jvmflags"] << "-D" + PROP_MTO_PORT			 + "=" + mtoPort.to_s
-
 			end
 		end
 		return true
+	end
+	
+	def muscle_tmp_path
+		"#{env['tmp_path']}/.muscle"
 	end
 	
 	# visibility
