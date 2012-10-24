@@ -5,7 +5,7 @@ program sender
 	logical(4) :: wstop
 	character(len=255) :: propName, kernelName, prop, portName
 	enum, bind(c)
-		enumerator :: MUSCLE_DOUBLE, MUSCLE_FLOAT, MUSCLE_RAW, MUSCLE_INT32, MUSCLE_INT64, MUSCLE_BOOLEAN, MUSCLE_STRING
+		enumerator :: MUSCLE_DOUBLE, MUSCLE_FLOAT, MUSCLE_INT32, MUSCLE_INT64, MUSCLE_STRING, MUSCLE_BOOLEAN, MUSCLE_RAW
 	endenum
 	
 	call muscle_fortran_init()
