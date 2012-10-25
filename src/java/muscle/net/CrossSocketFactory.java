@@ -221,11 +221,11 @@ public class CrossSocketFactory extends SocketFactory {
 		StringBuilder message = new StringBuilder(4096);
 
 		if (coordinatorURL == null) {
-			throw new IOException(ENV_COORDINATOR_URL + " env variable not set");
+			throw new IOException(ENV_COORDINATOR_URL + " environment variable not set, which is needed to connect to QCG.");
 		}
 
 		if (sessionID == null) {
-			throw new IOException(ENV_SESSION_ID + " env variable not set");
+			throw new IOException("QCG environment variable " + ENV_SESSION_ID + " not set; choose an arbitrary unique identifier for your simulation.");
 		}
 
 		message.append(PUT_MSG_TEMPLATE_1);
