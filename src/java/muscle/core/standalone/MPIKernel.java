@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.CxADescription;
 
 public class MPIKernel extends NativeKernel {
 	private final static Logger logger = Logger.getLogger(MPIKernel.class.getName());
@@ -28,7 +27,7 @@ public class MPIKernel extends NativeKernel {
 			String args[] = getProperty("mpiexec_args").trim().split(" ");
 			command.addAll(Arrays.asList(args));
 		} else {
-			logger.log(Level.WARNING, "MPI arguments variable ''mpiexec_args'' for {0} not given. Using mpiexec.", getLocalName());
+			logger.log(Level.WARNING, "MPI arguments variable ''mpiexec_args'' for {0} not given. Not using arguments.", getLocalName());
 		}
 		
 		super.buildCommand(command);
