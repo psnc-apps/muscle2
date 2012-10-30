@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+  * A kernel that executes a native instance with MPI.
+  * 
+  * For this to work correctly, the mpiexec_command parameter should be set.
+  */
 public class MPIKernel extends NativeKernel {
 	private final static Logger logger = Logger.getLogger(MPIKernel.class.getName());
 
@@ -19,7 +24,7 @@ public class MPIKernel extends NativeKernel {
 			command.add(getProperty("mpiexec_command"));
 		}
 		else {
-			logger.warning("MPI command variable ''mpiexec_command'' not given. Using mpiexec.");
+			logger.log(Level.WARNING, "MPI command variable ''mpiexec_command''  for {0} not given. Using mpiexec.", getLocalName());
 			command.add("mpiexec");
 		}
 		

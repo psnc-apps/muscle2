@@ -24,7 +24,13 @@ import muscle.util.serialization.XdrSerializerWrapper;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
 
-
+/**
+ * Communicates with the API in cppmuscle.cpp with a TCP/IP connection using the XDR protocol.
+ * 
+ * When the socket between Java and the native code has an error (disconnected, could not connect), it is assumed
+ * that the native command had an unrecoverable error, and the gateway stops. By setting the Java property
+ * muscle.core.standalone.use_async to false, synchronous sockets will be used instead of asynchronous sockets.
+ */
 public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
@@ -65,6 +71,7 @@ public class NativeGateway extends Thread implements Disposable {
 		return this.isDone;
 	}
 	
+	/** Implement this interface to be able to communicate with a native MUSCLE command. */
 	public interface CallListener {
 		/* OPCODE = 0 */
 		public void isFinished();

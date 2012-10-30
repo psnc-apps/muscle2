@@ -14,7 +14,11 @@ import muscle.exception.MUSCLERuntimeException;
 import muscle.util.data.SerializableData;
 import muscle.util.data.SerializableDatatype;
 
-
+/** A kernel used with a native command.
+   *
+   * It builds the command line arguments from the parameters debugger, command and args. It keeps in contact
+   * with the started command using a TCP IP connection that is controlled by NativeGateway.
+   */
 public class NativeKernel extends CAController  implements NativeGateway.CallListener {
 
 	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
@@ -109,6 +113,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		notify();
 	}
 	
+	/** Adds the command to execute to the given list. */
 	protected void buildCommand(List<String> command) {
 		if (hasInstanceProperty("debugger")) {
 			command.add(getProperty("debugger"));
@@ -200,6 +205,11 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		}
 	}
 	
+	/**
+	 * Get int value of the log Level {@link java.util.logger.Level}.
+	 * 
+	 * Returns the log level of the ConsoleHandler, if set, otherwise returns Level.ALL.
+	 */
 	public int getLogLevel() {
 		String strConsoleLevel = LogManager.getLogManager().getProperty("java.util.logging.ConsoleHandler.level");
 		try {
