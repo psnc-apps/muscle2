@@ -108,7 +108,7 @@ elsif args.size > 0
 		show_info("Arguments #{unused} are not valid instance names. ", instances)
 	end
 	
-	active_instances = args.each {|arg| active_instances << instances[arg]}
+	args.each {|arg| active_instances << instances[arg]}
 end
 
 if active_instances.empty? and !m.env['main'] || m.env['use_mpi'] || m.env['native']
