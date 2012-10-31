@@ -130,10 +130,10 @@ inline void logger::format(const muscle_loglevel_t level, const char *message, v
 	}
 
 	va_list cp_args;
+	if (logger_fd)
+	{	va_copy(cp_args, *args);
+	}
 	if (level >= logger_level) {
-		if (logger_fd)
-		{	va_copy(cp_args, *args);
-		}
 		if (logger_name)
 		{	printf("(%8s %6s) %s", timebuf, logger_name, level_str);
 		}
