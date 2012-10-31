@@ -197,6 +197,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			}
 		} catch (Exception ex) {
 			logger.log(Level.SEVERE, getLocalName() + " could not start communicating with native code", ex);
+			this.controller.fatalException(ex);
 		} finally {
 			// Make sure the gateway thread quits
 			if (gateway != null) {
