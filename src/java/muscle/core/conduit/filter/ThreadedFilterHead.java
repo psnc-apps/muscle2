@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.LocalManager;
+import muscle.core.kernel.InstanceController;
 import muscle.util.concurrency.SafeTriggeredThread;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
@@ -18,11 +19,13 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
 public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueProducer<F> {
 	private QueueConsumer<F> consumer;
 	private final BlockingQueue<F> outgoingQueue;
+	private final InstanceController controller;
 	
-	public ThreadedFilterHead(QueueConsumer<F> consumer) {
+	public ThreadedFilterHead(QueueConsumer<F> consumer, InstanceController localController) {
 		super("FilterHead");
 		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>();
 		this.setQueueConsumer(consumer);
+		this.controller = localController;
 	}
 	
 	public void put(F data) {
@@ -58,6 +61,6 @@ public class ThreadedFilterHead<F> extends SafeTriggeredThread implements QueueP
 	@Override
 	protected void handleException(Throwable ex) {
 		Logger.getLogger(ThreadedFilterHead.class.getName()).log(Level.SEVERE, "Could not apply filter.", ex);
-		LocalManager.getInstance().shutdown(20);
+		this.controller.fatalException(ex);
 	}
 }
