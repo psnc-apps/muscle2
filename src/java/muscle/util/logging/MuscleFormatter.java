@@ -34,33 +34,17 @@ public class MuscleFormatter extends SimpleFormatter {
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
-	private final String name;
-
-	public MuscleFormatter() {
-		super();
-		this.name = null;
-	}
-	
-	public MuscleFormatter(String name) {
-		super();
-		this.name = name;
-	}
 	
 	public synchronized String format(LogRecord record) {
-		String loggerName;
-		if (this.name == null) {
-			loggerName = record.getLoggerName();
-			if (loggerName == null) {
-				loggerName = "?";
-			} else if (!loggerName.startsWith("muscle")) {
-				// Use class name
-				int	classIndex = loggerName.lastIndexOf('.');
-				if (classIndex >= 0) {
-					loggerName = loggerName.substring(classIndex + 1);
-				}
+		String loggerName = record.getLoggerName();
+		if (loggerName == null) {
+			loggerName = "?";
+		} else if (!loggerName.startsWith("muscle")) {
+			// Use class name
+			int	classIndex = loggerName.lastIndexOf('.');
+			if (classIndex >= 0) {
+				loggerName = loggerName.substring(classIndex + 1);
 			}
-		} else {
-			loggerName = this.name;
 		}
 		
 		int intLevel = record.getLevel().intValue();

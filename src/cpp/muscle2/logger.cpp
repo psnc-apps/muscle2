@@ -169,7 +169,7 @@ void logger::initialize(const char *_name, const char *_tmp_path, int _level)
 		return;
 	}
 	char filename[512];
-	sprintf(filename, "%s/%s.log", _tmp_path, _name);
+	sprintf(filename, "%s/%s.native.log", _tmp_path, _name);
 	logger_fd = fopen(filename,"a");
 	logger_level = _level;
 }

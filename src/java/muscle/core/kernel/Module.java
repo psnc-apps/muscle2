@@ -15,8 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.CxADescription;
 import muscle.util.FileTool;
-import muscle.util.logging.MuscleDetailFormatter;
-import muscle.util.logging.MuscleFormatter;
+import muscle.util.logging.ModuleFormatter;
 
 /**
  *
@@ -24,6 +23,7 @@ import muscle.util.logging.MuscleFormatter;
  */
 public abstract class Module {
 	private final static Logger logger = Logger.getLogger(Module.class.getName());
+	@SuppressWarnings("NonConstantLogger")
 	private Logger modLogger = null;
 	
 	private String name = null;
@@ -35,16 +35,21 @@ public abstract class Module {
 			modLogger = Logger.getLogger(getClass().getName());
 			if (name != null) {
 				try {
-					Formatter format = new MuscleFormatter(name);
+					// Format messages with module name
+					Formatter format = new ModuleFormatter(name);
+
+					// On the console
 					ConsoleHandler newch = new ConsoleHandler();
 					newch.setFormatter(format);
 					modLogger.addHandler(newch);
+					
+					// And in a private kernel log
 					File log = new File(getTmpPath(), name + ".log");
 					FileHandler fh = new FileHandler(log.getAbsolutePath());
 					fh.setFormatter(format);
 					modLogger.addHandler(fh);
 					
-					// Do not use the parent ConsoleHandler, only the FileHandler
+					// Do not use the global ConsoleHandler, only the FileHandler
 					modLogger.setUseParentHandlers(false);
 					for (Handler h : Logger.getLogger("").getHandlers()) {
 						if (h instanceof FileHandler) {
@@ -52,11 +57,11 @@ public abstract class Module {
 						}
 					}
 				} catch (IOException ex) {
-					logger.log(Level.WARNING, "Could not use custom logger.", ex);
 					modLogger.setUseParentHandlers(true);
+					logger.log(Level.WARNING, "Could not use custom logger.", ex);
 				} catch (SecurityException ex) {
-					logger.log(Level.WARNING, "Could not use custom logger.", ex);
 					modLogger.setUseParentHandlers(true);
+					logger.log(Level.WARNING, "Could not use custom logger.", ex);
 				}
 			}
 		}
