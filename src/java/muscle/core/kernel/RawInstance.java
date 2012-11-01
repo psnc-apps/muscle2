@@ -198,10 +198,6 @@ public abstract class RawInstance extends Module {
 		return e;
 	}
 
-	protected Logger getLogger() {
-		return Logger.getLogger(getClass().getName());
-	}
-	
 	protected void log(String msg) {
 		log(msg, Level.INFO);
 	}
@@ -226,7 +222,7 @@ public abstract class RawInstance extends Module {
 	
 	public void setInstanceController(InstanceController ic) {
 		this.controller = ic;
-		this.name = ic.getLocalName();
+		this.setLocalName(ic.getLocalName());
 	}
 	
 	

@@ -76,7 +76,7 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	}
 
 	public void setIdentifier(PortalID id) {
-		this.name = id.getOwnerID().getName();
+		this.setLocalName(id.getOwnerID().getName());
 		this.portalID = id;
 	}
 	

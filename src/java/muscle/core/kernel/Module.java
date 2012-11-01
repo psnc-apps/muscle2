@@ -5,11 +5,18 @@
 package muscle.core.kernel;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.NoSuchElementException;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.CxADescription;
 import muscle.util.FileTool;
+import muscle.util.logging.MuscleDetailFormatter;
+import muscle.util.logging.MuscleFormatter;
 
 /**
  *
@@ -17,17 +24,55 @@ import muscle.util.FileTool;
  */
 public abstract class Module {
 	private final static Logger logger = Logger.getLogger(Module.class.getName());
+	private Logger modLogger = null;
 	
-	protected String name = null;
+	private String name = null;
 	
 	public void beforeExecute() {};
+	
+	public Logger getLogger() {
+		if (modLogger == null) {
+			modLogger = Logger.getLogger(getClass().getName());
+			if (name != null) {
+				try {
+					Formatter format = new MuscleFormatter(name);
+					ConsoleHandler newch = new ConsoleHandler();
+					newch.setFormatter(format);
+					modLogger.addHandler(newch);
+					File log = new File(getTmpPath(), name + ".log");
+					FileHandler fh = new FileHandler(log.getAbsolutePath());
+					fh.setFormatter(format);
+					modLogger.addHandler(fh);
+					
+					// Do not use the parent ConsoleHandler, only the FileHandler
+					modLogger.setUseParentHandlers(false);
+					for (Handler h : Logger.getLogger("").getHandlers()) {
+						if (h instanceof FileHandler) {
+							modLogger.addHandler(h);
+						}
+					}
+				} catch (IOException ex) {
+					logger.log(Level.WARNING, "Could not use custom logger.", ex);
+					modLogger.setUseParentHandlers(true);
+				} catch (SecurityException ex) {
+					logger.log(Level.WARNING, "Could not use custom logger.", ex);
+					modLogger.setUseParentHandlers(true);
+				}
+			}
+		}
+		return modLogger;
+	}
 	
 	/**
 	 * Get the local name of the current kernel.
 	*/
-
 	public String getLocalName() {
 		return name;
+	}
+	
+	protected void setLocalName(String name) {
+		this.modLogger = null;
+		this.name = name;
 	}
 
 	public boolean hasProperty(String name) {

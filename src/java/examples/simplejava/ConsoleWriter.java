@@ -22,8 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package examples.simplejava;
 
 import muscle.core.ConduitExit;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
 
 /**
 a simple java example kernel which receives data and prints its content to stdout
@@ -48,15 +46,15 @@ public class ConsoleWriter extends muscle.core.kernel.CAController {
 			}
 						
 			for (int i = 0; i < 5 && i < size; i++) {
-				System.out.println("got: "+dataA[i]);				
+				log("got: "+dataA[i]);				
 			}
 
 			if (size > 5) {
-				System.out.println("...");
-				System.out.println("got: "+dataA[dataA.length - 1]);
+				log("...");
+				log("got: "+dataA[dataA.length - 1]);
 			}
 			
-			System.out.println();
+			log("");
 		}
 	}
 

@@ -141,7 +141,7 @@ class Muscle
 	def run_client(args, contact_addr)
 		args << "-m"
 		if env['manager']
-				args << env['manager']
+			args << env['manager']
 		else
 			# main
 			args << contact_addr

@@ -37,20 +37,38 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
 
+	private final String name;
+
+	public MuscleDetailFormatter() {
+		super();
+		this.name = null;
+	}
+	
+	public MuscleDetailFormatter(String name) {
+		super();
+		this.name = name;
+	}
+	
 	public synchronized String format(LogRecord record) {
-		String loggerName = record.getLoggerName();
+		String loggerName;
 		String pkg, clazz;
-		if (loggerName == null) {
-			clazz = pkg = "?";
-		} else {
-			int classIndex = loggerName.lastIndexOf('.');
-			if (classIndex == -1) {
-				clazz = loggerName;
-				pkg = "";
+		if (this.name == null) {
+			loggerName = record.getLoggerName();
+			if (loggerName == null) {
+				clazz = pkg = "?";
 			} else {
-				 clazz = loggerName.substring(classIndex + 1);
-				 pkg = loggerName.substring(0, Math.min(15, classIndex));
+				int classIndex = loggerName.lastIndexOf('.');
+				if (classIndex == -1) {
+					clazz = loggerName;
+					pkg = ":";
+				} else {
+					 clazz = loggerName.substring(classIndex + 1);
+					 pkg = loggerName.substring(0, Math.min(15, classIndex));
+				}
 			}
+		} else {
+			pkg = ":";
+			clazz = this.name;
 		}
 		
 		String method = record.getSourceMethodName();
