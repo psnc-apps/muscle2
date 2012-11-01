@@ -202,8 +202,8 @@ bool do_full_test(const muscle_datatype_t type, const size_t d_sz, const size_t 
 
 bool do_test_suite(const char *name, const muscle_datatype_t type, const size_t d_sz)
 {
-	const int test_sizes[] = {0, 1, 8, 50, 1024, 1024*64, 1024*1024};
-	const int num_tests = 7;
+	const int test_sizes[] = {0, 1, 3, 8, 50, 1024, 1024*64, 1024*1024};
+	const int num_tests = 8;
 	bool succeed = true;
 	
 	logger::info("Testing %s", name);

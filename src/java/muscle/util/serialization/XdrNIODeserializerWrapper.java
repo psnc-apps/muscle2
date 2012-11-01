@@ -109,7 +109,7 @@ public class XdrNIODeserializerWrapper implements DeserializerWrapper {
 	private Serializable parse(SerializableDatatype type) throws IOException {
 		switch (type.typeOf()) {
 			case BYTE_ARR:
-				return xdrIn.xdrDecodeByteVector();
+				return xdrIn.xdrDecodeDynamicOpaque();
 			case STRING_ARR:
 				return xdrIn.xdrDecodeStringVector();
 			case BOOLEAN_ARR:

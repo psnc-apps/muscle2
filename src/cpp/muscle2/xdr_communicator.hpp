@@ -18,6 +18,8 @@ public:
 	void free_data(void *ptr, muscle_datatype_t type);
 private:
 	static xdrproc_t get_proc(muscle_complex_t type);
+	int send_array(muscle_complex_t type, char **msg, unsigned int *len, size_t sz);
+	int recv_array(muscle_complex_t type, char **result, unsigned int *len, size_t sz);
 	XDR xdro, xdri;
 };
 } // EO namespace muscle

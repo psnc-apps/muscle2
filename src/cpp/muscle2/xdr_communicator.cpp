@@ -80,18 +80,15 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			unsigned int chunk_len = (unsigned int)ceil(count_int/(float)chunks);
 			unsigned int first_chunk_len = count_int - (chunks - 1)*chunk_len;
 
-			xdrproc_t proc = get_proc(ctype);
-			if (proc) {
-				char *msg_ptr = (char *)msg;
-				if (!xdr_array(&xdro, (char **)&msg_ptr, &first_chunk_len, M2_XDR_BUFSIZE, sz, proc)) throw muscle_exception("Can not write data chunk");;
-				msg_ptr += first_chunk_len*sz;
-				
-				for (int i = 1; i < chunks; i++)
-				{
-					if (!xdrrec_endofrecord(&xdro, 1)) throw muscle_exception("Can not send data chunk");
-					if (!xdr_array(&xdro, (char **)&msg_ptr, &chunk_len, M2_XDR_BUFSIZE, sz, proc)) throw muscle_exception("Can not write data chunk");
-					msg_ptr += chunk_len*sz;
-				}
+			char *msg_ptr = (char *)msg;
+			if (!send_array(ctype, (char **)&msg_ptr, &first_chunk_len, sz)) throw muscle_exception("Can not write data chunk");;
+			msg_ptr += first_chunk_len*sz;
+
+			for (int i = 1; i < chunks; i++)
+			{
+				if (!xdrrec_endofrecord(&xdro, 1)) throw muscle_exception("Can not send data chunk");
+				if (!send_array(ctype, (char **)&msg_ptr, &chunk_len, sz)) throw muscle_exception("Can not write data chunk");
+				msg_ptr += chunk_len*sz;
 			}
 		}
 		// Send dimensions
@@ -140,7 +137,6 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			}
 			else
 			{
-				xdrproc_t proc = get_proc(ctype);
 				int chunks;
 				if (!xdr_int(&xdri, &chunks)) throw muscle_exception("Can not read int");
 				
@@ -159,13 +155,13 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 					if (!result_ptr) throw muscle_exception("Could not allocate buffer for receiving message");
 					
 					// Read the first chunk
-					if (!xdr_array(&xdri, &result_ptr, &len, M2_XDR_BUFSIZE, sz, proc)) throw muscle_exception("Can not read data");
+					if (!recv_array(ctype, &result_ptr, &len, sz)) throw muscle_exception("Can not read data");
 					// Update pointer for the next chunk
 					result_ptr += len*sz;
 					// Read all other chunks
 					for (int i = 1; i < chunks; i++) {
 						if (!xdrrec_skiprecord(&xdri)) throw muscle_exception("Can not proceed to next chunk");
-						if (!xdr_array(&xdri, &result_ptr, &len, M2_XDR_BUFSIZE, sz, proc)) throw muscle_exception("Can not read data chunk");
+						if (!recv_array(ctype, &result_ptr, &len, sz)) throw muscle_exception("Can not read data chunk");
 						// Update pointer for the next chunk
 						result_ptr += len*sz;
 					}
@@ -175,7 +171,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				else
 				{
 					// Read the data in one single go
-					if (!xdr_array(&xdri, (char **)result, &len, M2_XDR_BUFSIZE, sz, proc))  throw muscle_exception("Can not read data");
+					if (!recv_array(ctype, (char **)result, &len, sz))  throw muscle_exception("Can not read data");
 				}
 			}
 			
@@ -268,6 +264,26 @@ xdrproc_t XdrCommunicator::get_proc(muscle_complex_t type)
 			break;
 	}
 	return proc;
+}
+
+int XdrCommunicator::send_array(muscle_complex_t type, char **msg, unsigned int *len, size_t sz)
+{
+	if (type == COMPLEX_BYTE_ARR) {
+		return xdr_bytes(&xdro, msg, len, M2_XDR_BUFSIZE);
+	} else {
+		xdrproc_t proc = get_proc(type);
+		return xdr_array(&xdro, msg, len, M2_XDR_BUFSIZE, sz, proc);
+	}
+}
+
+int XdrCommunicator::recv_array(muscle_complex_t type, char **result, unsigned int *len, size_t sz)
+{
+	if (type == COMPLEX_BYTE_ARR) {
+		return xdr_bytes(&xdri, result, len, M2_XDR_BUFSIZE);
+	} else {
+		xdrproc_t proc = get_proc(type);
+		return xdr_array(&xdri, result, len, M2_XDR_BUFSIZE, sz, proc);
+	}
 }
 
 } // EO namespace muscle

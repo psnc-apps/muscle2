@@ -145,7 +145,7 @@ public class XdrNIOSerializerWrapper implements SerializerWrapper {
 				xdrOut.xdrEncodeDoubleVector((double[]) newValue);
 				break;
 			case BYTE_ARR:
-				xdrOut.xdrEncodeByteVector((byte[]) newValue);
+				xdrOut.xdrEncodeDynamicOpaque((byte[]) newValue);
 				break;
 			default:
 				throw new IllegalArgumentException("Datatype " + type + " not recognized");
