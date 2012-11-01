@@ -241,22 +241,19 @@ xdrproc_t XdrCommunicator::get_proc(muscle_complex_t type)
 	xdrproc_t proc = NULL;
 	switch (type)
 	{
-		case COMPLEX_DOUBLE: case COMPLEX_DOUBLE_ARR: case COMPLEX_DOUBLE_MATRIX_2D: case COMPLEX_DOUBLE_MATRIX_3D: case COMPLEX_DOUBLE_MATRIX_4D:
+		case COMPLEX_DOUBLE_ARR: case COMPLEX_DOUBLE_MATRIX_2D: case COMPLEX_DOUBLE_MATRIX_3D: case COMPLEX_DOUBLE_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_double;
 			break;
-		case COMPLEX_FLOAT: case COMPLEX_FLOAT_ARR: case COMPLEX_FLOAT_MATRIX_2D: case COMPLEX_FLOAT_MATRIX_3D: case COMPLEX_FLOAT_MATRIX_4D:
+		case COMPLEX_FLOAT_ARR: case COMPLEX_FLOAT_MATRIX_2D: case COMPLEX_FLOAT_MATRIX_3D: case COMPLEX_FLOAT_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_float;
 			break;
-		case COMPLEX_INT: case COMPLEX_INT_ARR: case COMPLEX_INT_MATRIX_2D: case COMPLEX_INT_MATRIX_3D: case COMPLEX_INT_MATRIX_4D:
+		case COMPLEX_INT_ARR: case COMPLEX_INT_MATRIX_2D: case COMPLEX_INT_MATRIX_3D: case COMPLEX_INT_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_int;
 			break;
-		case COMPLEX_LONG: case COMPLEX_LONG_ARR: case COMPLEX_LONG_MATRIX_2D: case COMPLEX_LONG_MATRIX_3D: case COMPLEX_LONG_MATRIX_4D:
+		case COMPLEX_LONG_ARR: case COMPLEX_LONG_MATRIX_2D: case COMPLEX_LONG_MATRIX_3D: case COMPLEX_LONG_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_hyper;
 			break;
-		case COMPLEX_BOOLEAN: case COMPLEX_BOOLEAN_ARR: case COMPLEX_BOOLEAN_MATRIX_2D: case COMPLEX_BOOLEAN_MATRIX_3D: case COMPLEX_BOOLEAN_MATRIX_4D:
-			proc = (xdrproc_t)&xdr_char;
-			break;
-		case COMPLEX_BYTE: case COMPLEX_BYTE_ARR: case COMPLEX_BYTE_MATRIX_2D: case COMPLEX_BYTE_MATRIX_3D: case COMPLEX_BYTE_MATRIX_4D:
+		case COMPLEX_BOOLEAN_ARR: case COMPLEX_BOOLEAN_MATRIX_2D: case COMPLEX_BOOLEAN_MATRIX_3D: case COMPLEX_BOOLEAN_MATRIX_4D:
 			proc = (xdrproc_t)&xdr_char;
 			break;
 		default:
@@ -268,21 +265,23 @@ xdrproc_t XdrCommunicator::get_proc(muscle_complex_t type)
 
 int XdrCommunicator::send_array(muscle_complex_t type, char **msg, unsigned int *len, size_t sz)
 {
-	if (type == COMPLEX_BYTE_ARR) {
-		return xdr_bytes(&xdro, msg, len, M2_XDR_BUFSIZE);
-	} else {
-		xdrproc_t proc = get_proc(type);
-		return xdr_array(&xdro, msg, len, M2_XDR_BUFSIZE, sz, proc);
+	switch (type) {
+		case COMPLEX_BYTE_ARR: case COMPLEX_BYTE_MATRIX_2D: case COMPLEX_BYTE_MATRIX_3D: case COMPLEX_BYTE_MATRIX_4D:
+			return xdr_bytes(&xdro, msg, len, M2_XDR_BUFSIZE);
+		default:
+			xdrproc_t proc = get_proc(type);
+			return xdr_array(&xdro, msg, len, M2_XDR_BUFSIZE, sz, proc);
 	}
 }
 
 int XdrCommunicator::recv_array(muscle_complex_t type, char **result, unsigned int *len, size_t sz)
 {
-	if (type == COMPLEX_BYTE_ARR) {
-		return xdr_bytes(&xdri, result, len, M2_XDR_BUFSIZE);
-	} else {
-		xdrproc_t proc = get_proc(type);
-		return xdr_array(&xdri, result, len, M2_XDR_BUFSIZE, sz, proc);
+	switch (type) {
+		case COMPLEX_BYTE_ARR: case COMPLEX_BYTE_MATRIX_2D: case COMPLEX_BYTE_MATRIX_3D: case COMPLEX_BYTE_MATRIX_4D:
+			return xdr_bytes(&xdri, result, len, M2_XDR_BUFSIZE);
+		default:
+			xdrproc_t proc = get_proc(type);
+			return xdr_array(&xdri, result, len, M2_XDR_BUFSIZE, sz, proc);
 	}
 }
 
