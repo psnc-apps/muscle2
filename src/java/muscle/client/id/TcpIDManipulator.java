@@ -4,6 +4,7 @@
 
 package muscle.client.id;
 
+import muscle.id.TcpLocation;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;

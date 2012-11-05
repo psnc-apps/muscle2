@@ -20,7 +20,7 @@ import muscle.client.communication.message.DataConnectionHandler;
 import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
-import muscle.client.id.TcpLocation;
+import muscle.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;

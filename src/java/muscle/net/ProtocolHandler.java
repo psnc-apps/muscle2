@@ -4,17 +4,16 @@
 
 package muscle.net;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.id.TcpLocation;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.id.Location;
+import muscle.id.LocationType;
+import muscle.id.TcpLocation;
 import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.ConverterWrapperFactory;
 import muscle.util.serialization.DeserializerWrapper;
@@ -135,7 +134,8 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 		}
 		TcpLocation tcpLoc = (TcpLocation)loc;
 
-		byte[] addr = tcpLoc.getAddress().getAddress();		
+		byte[] addr = tcpLoc.getAddress().getAddress();
+		out.writeInt(LocationType.TCP_DIR_LOCATION.intValue());
 		out.writeByteArray(addr);
 		out.writeInt(tcpLoc.getPort());
 		out.writeString(tcpLoc.getTmpDir());
@@ -147,10 +147,16 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	 * @returns the TcpLocation that was transmitted.
 	 */
 	protected static TcpLocation decodeLocation(DeserializerWrapper in) throws IOException {
+		LocationType locType = LocationType.valueOf(in.readInt());
 		byte[] addr = in.readByteArray();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
 		int port = in.readInt();
-		String tmpDir = in.readString();
+		String tmpDir;
+		if (locType == LocationType.TCP_DIR_LOCATION) {
+			tmpDir = in.readString();
+		} else {
+			tmpDir = "";
+		}
 		return new TcpLocation(inetAddr, port, tmpDir);
 	}
 	

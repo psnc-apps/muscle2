@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.id.TcpLocation;
+import muscle.id.TcpLocation;
 import muscle.id.Identifier;
 import muscle.id.Location;
 import muscle.net.AbstractConnectionHandler;

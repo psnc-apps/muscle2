@@ -2,7 +2,7 @@
  * 
  */
 
-package muscle.client.id;
+package muscle.id;
 
 import java.io.File;
 import java.net.InetAddress;

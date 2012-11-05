@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Signal;
 import muscle.client.communication.message.SignalEnum;
-import muscle.client.id.TcpLocation;
+import muscle.id.TcpLocation;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.id.InstanceID;
