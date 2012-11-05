@@ -117,6 +117,7 @@ public class FileTool {
 		return filenameRegex.matcher(rawName).replaceAll(replacement);
 	}
 	
+	// In Java 7 this is integrated in Files.createSymbolicLink(), but Java 7 is not installed everywhere.
 	public static boolean createSymlink(File name, File target) {
 		try {
 			Runtime.getRuntime().exec(new String[] {"ln", "-s", target.getPath(), name.getAbsolutePath()});
