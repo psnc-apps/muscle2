@@ -128,7 +128,13 @@ public class TcpIDManipulator implements IDManipulator {
 			// Otherwise, find the manager yourself
 			this.searchingForManager = true;
 		}
-		this.runQuery(null, SimulationManagerProtocol.MANAGER_LOCATION);
+		if (!this.runQuery(null, SimulationManagerProtocol.MANAGER_LOCATION)) {
+			synchronized (this) {
+				this.searchingForManager = false;
+				this.managerLocation = new TcpLocation(this.managerAddr, "");
+				this.notifyAll();
+			}
+		}
 		// Manager is set in the runQuery
 		synchronized (this) {
 			return this.managerLocation;
@@ -218,8 +224,10 @@ public class TcpIDManipulator implements IDManipulator {
 			SimulationManagerProtocol op = SimulationManagerProtocol.valueOf(in.readInt());
 			if (op == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
+				in.cleanUp();
 				return Boolean.FALSE;
 			} else if (op == SimulationManagerProtocol.ERROR) {
+				in.cleanUp();
 				throw new MUSCLERuntimeException("Connection manager refused communication.");
 			}
 

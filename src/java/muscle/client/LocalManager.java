@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -109,7 +107,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		idManipulator.setResolver(res);
 		
 		String managerDir = ((TcpLocation)idManipulator.getManagerLocation()).getTmpDir();
-		if (!dir.equals(managerDir)) {
+		if (!dir.equals(managerDir) && !managerDir.isEmpty()) {
 			FileTool.createSymlink(JVM.ONLY.tmpFile("manager"), new File("../" + managerDir));
 		}
 		
