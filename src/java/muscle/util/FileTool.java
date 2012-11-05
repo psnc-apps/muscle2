@@ -22,20 +22,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.util;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.lang.reflect.Array;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.regex.Pattern;
 
 /**
 static methods for miscellaneous stuff
