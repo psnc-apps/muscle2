@@ -77,7 +77,6 @@ if m.env.has_key?('cxa_file')
 	# load CxA configuration
 	new_cxa = m.env['tmp_path'] + '/' + File.basename(m.env['cxa_file'])
 	FileUtils::copy_file(m.env['cxa_file'], new_cxa)
-	m.env['cxa_file'] = new_cxa
 	cxa = Cxa.new(m.env['cxa_file'], m.env)
 else
 	# No more useful actions without a CxA file
