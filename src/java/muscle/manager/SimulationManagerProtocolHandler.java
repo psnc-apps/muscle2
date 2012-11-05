@@ -41,8 +41,8 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 		InstanceID id = null;
 		int opnum = in.readInt();
 		SimulationManagerProtocol proto = SimulationManagerProtocol.valueOf(opnum);
+		String name = in.readString();
 		if (proto != SimulationManagerProtocol.MANAGER_LOCATION) {
-			String name = in.readString();
 			id = new InstanceID(name);
 		}
 		switch (proto) {

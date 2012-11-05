@@ -119,7 +119,7 @@ public class TcpIDManipulator implements IDManipulator {
 					while (this.searchingForManager) {
 						wait();
 					}
-					return this.managerLocation;		
+					return this.managerLocation;
 				} catch (InterruptedException ex) {
 					logger.log(Level.WARNING, "Search for manager interrupted.", ex);
 					return null;
@@ -210,7 +210,9 @@ public class TcpIDManipulator implements IDManipulator {
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
 			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER.intValue());
 			out.writeInt(this.action.intValue());
-			if (id != null) {
+			if (id == null) {
+				out.writeString("");
+			} else {
 				out.writeString(this.id.getName());
 			}
 			if (action == SimulationManagerProtocol.REGISTER) {
