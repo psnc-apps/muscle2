@@ -30,7 +30,8 @@ package muscle.manager;
  */
 public enum SimulationManagerProtocol {
 	LOCATE(0), REGISTER(1), PROPAGATE(2), DEREGISTER(3),
-	UNSUPPORTED(4), WILL_ACTIVATE(5), CLOSE(-1), ERROR(-2), MAGIC_NUMBER(2391029);
+	UNSUPPORTED(4), WILL_ACTIVATE(5), CLOSE(-1), ERROR(-2), MAGIC_NUMBER(2391029),
+	MANAGER_LOCATION(6);
 	
 	private final int num;
 	private final static SimulationManagerProtocol[] values = SimulationManagerProtocol.values();

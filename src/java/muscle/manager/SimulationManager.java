@@ -6,19 +6,26 @@ package muscle.manager;
 
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.ArraySet;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.id.TcpLocation;
 import muscle.id.Identifier;
+import muscle.id.Location;
 import muscle.net.AbstractConnectionHandler;
 import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
+import muscle.util.FileTool;
+import muscle.util.JVM;
 
 /**
  * Keeps a registry of running submodels and stops simulation once all submodels have finished.
@@ -31,13 +38,24 @@ public class SimulationManager implements ConnectionHandlerListener {
 	private boolean isDone;
 	private AbstractConnectionHandler connections;
 	private final static Logger logger = Logger.getLogger(SimulationManager.class.getName());
+	private Location location;
+	private Set<Location> locs;
 	
 	private SimulationManager(Set<String> stillActive) {
 		this.stillActive = stillActive;
-		this.registered = new ArrayMap<String,Identifier>(stillActive == null ? 10 : stillActive.size());
-		this.available = new ArraySet<String>(stillActive == null ? 10 : stillActive.size());
+		int size = stillActive.size();
+		if (stillActive.size() > 30) {
+			this.registered = new HashMap<String,Identifier>(size);
+			this.available = new HashSet<String>(size);
+			this.locs = new HashSet<Location>(size);
+		} else {			
+			this.registered = new ArrayMap<String,Identifier>(size);
+			this.available = new ArraySet<String>(size);
+			this.locs = new ArraySet<Location>(size);
+		}
 		this.connections = null;
 		this.isDone = false;
+		this.location = null;
 	}
 	
 	private synchronized void setConnectionHandler(AbstractConnectionHandler ch) {
@@ -55,8 +73,16 @@ public class SimulationManager implements ConnectionHandlerListener {
 			return false;
 		}
 		else {
-			logger.log(Level.INFO, "Registered ID {0}", id);
 			this.registered.put(id.getName(),id);
+			logger.log(Level.INFO, "Registered ID {0}", id);
+			Location loc = id.getLocation();
+			if (!this.locs.contains(loc)) {
+				this.locs.add(loc);
+				String dir = ((TcpLocation)loc).getTmpDir();
+				if (!dir.equals(((TcpLocation)getLocation()).getTmpDir())) {
+					FileTool.createSymlink(JVM.ONLY.tmpFile("simulation-" + id.getName() + "-et-al"), new File("../" + dir));
+				}
+			}
 			return true;
 		}
 	}
@@ -143,10 +169,15 @@ public class SimulationManager implements ConnectionHandlerListener {
 	
 	public static void main(String[] args) {
 		Set<String> stillActive = null;
-		if (args.length > 0) {
+		if (args.length > 30) {
+			stillActive = new HashSet<String>(args.length);
+		} else if (args.length > 0) {
 			stillActive = new ArraySet<String>(args.length);
-			stillActive.addAll(Arrays.asList(args));
+		} else {
+			logger.severe("No instances given for manager to manage. Aborting.");
+			System.exit(21);
 		}
+		stillActive.addAll(Arrays.asList(args));			
 		
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch;
@@ -174,5 +205,13 @@ public class SimulationManager implements ConnectionHandlerListener {
 	public void fatalException(Throwable ex) {
 		logger.log(Level.SEVERE, "Fatal exception occurred. Aborting.", ex);
 		System.exit(19);
+	}
+
+	public Location getLocation() {
+		if (location == null) {
+			String dir = JVM.ONLY.getTmpDirName();
+			location = new TcpLocation(connections.getSocketAddress(), dir);
+		}
+		return location;
 	}
 }

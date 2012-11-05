@@ -19,6 +19,7 @@ public interface IDManipulator {
 	public boolean willActivate(Identifier id);
 	public Identifier create(String name, IDType idType);
 	public Location getLocation();
+	public Location getManagerLocation();
 	public boolean delete(Identifier id);
 	public void deletePlatform();
 }

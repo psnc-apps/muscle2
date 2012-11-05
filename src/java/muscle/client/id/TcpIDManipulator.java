@@ -29,6 +29,8 @@ public class TcpIDManipulator implements IDManipulator {
 	private Resolver resolver;
 	private final InetSocketAddress managerAddr;
 	private final Location location;
+	private Location managerLocation;
+	private boolean searchingForManager;
 	
 	public TcpIDManipulator(SocketFactory sf, InetSocketAddress managerAddr, Location loc) {
 		this.executor = new NamedExecutor();
@@ -36,6 +38,8 @@ public class TcpIDManipulator implements IDManipulator {
 		this.managerAddr = managerAddr;
 		this.resolver = null;
 		this.location = loc;
+		this.managerLocation = null;
+		this.searchingForManager = false;
 	}
 	
 	public void setResolver(Resolver resolver) {
@@ -101,6 +105,34 @@ public class TcpIDManipulator implements IDManipulator {
 	@Override
 	public Location getLocation() {
 		return this.location;
+	}
+
+	@Override
+	public  Location getManagerLocation() {
+		synchronized (this) {
+			// See if manager is found
+			if (this.managerLocation != null) {
+				return this.managerLocation;
+			} // or already searched for
+			else if (this.searchingForManager) {
+				try {
+					while (this.searchingForManager) {
+						wait();
+					}
+					return this.managerLocation;		
+				} catch (InterruptedException ex) {
+					logger.log(Level.WARNING, "Search for manager interrupted.", ex);
+					return null;
+				}
+			}
+			// Otherwise, find the manager yourself
+			this.searchingForManager = true;
+		}
+		this.runQuery(null, SimulationManagerProtocol.MANAGER_LOCATION);
+		// Manager is set in the runQuery
+		synchronized (this) {
+			return this.managerLocation;
+		}
 	}
 
 	@Override
@@ -172,7 +204,9 @@ public class TcpIDManipulator implements IDManipulator {
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
 			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER.intValue());
 			out.writeInt(this.action.intValue());
-			out.writeString(this.id.getName());
+			if (id != null) {
+				out.writeString(this.id.getName());
+			}
 			if (action == SimulationManagerProtocol.REGISTER) {
 				encodeLocation(out, this.id.getLocation());
 			}
@@ -193,20 +227,30 @@ public class TcpIDManipulator implements IDManipulator {
 			if (action == SimulationManagerProtocol.LOCATE) {
 				in.refresh();
 			}
-			boolean success = in.readBoolean();
-			
-			if (success || action == SimulationManagerProtocol.WILL_ACTIVATE) {
-				if (action == SimulationManagerProtocol.LOCATE) {
-					this.id.resolve(decodeLocation(in));
-					resolver.addResolvedIdentifier(id);
+			boolean success;
+			if (action == SimulationManagerProtocol.MANAGER_LOCATION) {
+				synchronized (TcpIDManipulator.this) {
+					TcpIDManipulator.this.managerLocation = decodeLocation(in);
+					TcpIDManipulator.this.searchingForManager = false;
+					TcpIDManipulator.this.notifyAll();
 				}
-				logger.log(Level.FINE, "Successfully finished the {0} protocol for ID {1}", new Object[]{action, id});
-			}
-			else {
-				if (action == SimulationManagerProtocol.LOCATE) {
-					resolver.canNotResolveIdentifier(this.id);
+				success = true;
+			} else {
+				success = in.readBoolean();
+
+				if (success || action == SimulationManagerProtocol.WILL_ACTIVATE) {
+					if (action == SimulationManagerProtocol.LOCATE) {
+						this.id.resolve(decodeLocation(in));
+						resolver.addResolvedIdentifier(id);
+					}
+					logger.log(Level.FINE, "Successfully finished the {0} protocol for ID {1}", new Object[]{action, id});
 				}
-				logger.log(Level.WARNING, "Failed to finish the {0} protocol for ID {1}", new Object[]{action, id});
+				else {
+					if (action == SimulationManagerProtocol.LOCATE) {
+						resolver.canNotResolveIdentifier(this.id);
+					}
+					logger.log(Level.WARNING, "Failed to finish the {0} protocol for ID {1}", new Object[]{action, id});
+				}
 			}
 			in.cleanUp();
 			

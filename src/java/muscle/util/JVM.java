@@ -55,6 +55,10 @@ public class JVM {
 		return tmpDir;
 	}
 	
+	public String getTmpDirName() {
+		return tmpDir.getName();
+	}
+	
 	public File tmpFile(String filename) {
 		return FileTool.joinPaths(tmpDir.toString(), filename);
 	}

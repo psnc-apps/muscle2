@@ -38,10 +38,13 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 			logger.warning("Protocol for communicating MUSCLE information is not recognized.");
 			return null;
 		}
+		InstanceID id = null;
 		int opnum = in.readInt();
 		SimulationManagerProtocol proto = SimulationManagerProtocol.valueOf(opnum);
-		String name = in.readString();
-		InstanceID id = new InstanceID(name);
+		if (proto != SimulationManagerProtocol.MANAGER_LOCATION) {
+			String name = in.readString();
+			id = new InstanceID(name);
+		}
 		switch (proto) {
 			case LOCATE:
 				out.writeInt(opnum);
@@ -79,6 +82,12 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				out.writeInt(opnum);
 				success = listener.willActivate(id);
 				out.writeBoolean(success);
+				break;
+			case MANAGER_LOCATION:
+				out.writeInt(opnum);
+				Location mgrloc = listener.getLocation();
+				encodeLocation(out, mgrloc);
+				success = true;
 				break;
 			default:
 				logger.log(Level.WARNING, "Unsupported operation {0} requested", proto);

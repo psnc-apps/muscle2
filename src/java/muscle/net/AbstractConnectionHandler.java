@@ -5,8 +5,10 @@
 package muscle.net;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,5 +81,9 @@ public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListe
 		}
 		logger.finest("Stopping connection handler threads");
 		executor.shutdown();
+	}
+	
+	public InetSocketAddress getSocketAddress() {
+		return (InetSocketAddress)ss.getLocalSocketAddress();
 	}
 }

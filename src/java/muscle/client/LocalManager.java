@@ -5,10 +5,13 @@
 
 package muscle.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -28,6 +31,8 @@ import muscle.id.*;
 import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
+import muscle.util.FileTool;
+import muscle.util.JVM;
 
 /**
  * @author Joris Borgdorff
@@ -90,7 +95,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		port = ss.getLocalPort();
 		logger.log(Level.CONFIG, "Data connection bound to {0}:{1,number,#}", new Object[]{address, port});
 		socketAddr = new InetSocketAddress(address, port);
-		TcpLocation loc = new TcpLocation(socketAddr);
+		String dir = JVM.ONLY.getTmpDirName();
+		TcpLocation loc = new TcpLocation(socketAddr, dir);
 		tcpConnectionHandler = new DataConnectionHandler(ss, this);
 		localConnectionHandler = new LocalDataHandler();
 		
@@ -101,6 +107,11 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
+		
+		String managerDir = ((TcpLocation)idManipulator.getManagerLocation()).getTmpDir();
+		if (!dir.equals(managerDir)) {
+			FileTool.createSymlink(JVM.ONLY.tmpFile("manager"), new File("../" + managerDir));
+		}
 		
 		// Initialize the InstanceControllers
 		for (InstanceClass name : opts.getAgents()) {

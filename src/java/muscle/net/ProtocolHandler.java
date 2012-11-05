@@ -4,6 +4,7 @@
 
 package muscle.net;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -137,6 +138,7 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 		byte[] addr = tcpLoc.getAddress().getAddress();		
 		out.writeByteArray(addr);
 		out.writeInt(tcpLoc.getPort());
+		out.writeString(tcpLoc.getTmpDir());
 	}
 
 	/**
@@ -148,7 +150,8 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 		byte[] addr = in.readByteArray();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
 		int port = in.readInt();
-		return new TcpLocation(inetAddr, port);
+		String tmpDir = in.readString();
+		return new TcpLocation(inetAddr, port, tmpDir);
 	}
 	
 	public abstract String getName();

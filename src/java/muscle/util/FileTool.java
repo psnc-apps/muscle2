@@ -33,6 +33,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.lang.reflect.Array;
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -113,5 +115,15 @@ public class FileTool {
 
 	public static String portableFileName(String rawName, String replacement) {
 		return filenameRegex.matcher(rawName).replaceAll(replacement);
+	}
+	
+	public static boolean createSymlink(File name, File target) {
+		try {
+			Runtime.getRuntime().exec(new String[] {"ln", "-s", target.getPath(), name.getAbsolutePath()});
+			return true;
+		} catch (IOException ex) {
+			Logger.getLogger(FileTool.class.getName()).log(Level.WARNING, "Could not create symlink from " + name + " to " + target + ".", ex);
+			return false;
+		}
 	}
 }
