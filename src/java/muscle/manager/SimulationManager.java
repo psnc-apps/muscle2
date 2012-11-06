@@ -79,7 +79,7 @@ public class SimulationManager implements ConnectionHandlerListener {
 			if (!this.locs.contains(loc)) {
 				this.locs.add(loc);
 				String dir = ((TcpLocation)loc).getTmpDir();
-				if (!dir.equals(((TcpLocation)getLocation()).getTmpDir())) {
+				if (!dir.equals(((TcpLocation)getLocation()).getTmpDir()) && !dir.isEmpty()) {
 					FileTool.createSymlink(JVM.ONLY.tmpFile("simulation-" + id.getName() + "-et-al"), new File("../" + dir));
 				}
 			}
