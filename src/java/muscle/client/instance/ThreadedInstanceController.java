@@ -240,6 +240,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	public synchronized void afterExecute() {
+		instance.afterExecute();
 		this.isExecuting = false;
 	}
 	

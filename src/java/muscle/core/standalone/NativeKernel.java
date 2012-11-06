@@ -24,6 +24,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
 	private SerializableDatatype type;
+	private Process child;
 
 	private boolean isDone;
 	
@@ -41,6 +42,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	public NativeKernel() {
 		super();
 		isDone = false;
+		child = null;
 		type = SerializableDatatype.NULL;
 	}
 	
@@ -149,7 +151,9 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			}
 		}
 		
-		Process child = pb.start();
+		synchronized (this) {
+			child = pb.start();
+		}
 
 		StreamRipper stdoutR = new StreamRipper("stdout-reader-"+getLocalName(), System.out, child.getInputStream());
 		StreamRipper stderrR = new StreamRipper("stderr-reader-"+getLocalName(), System.err, child.getErrorStream());
@@ -218,6 +222,12 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		} catch (Throwable ex) {
 			// Just log everything if there is no well-defined log level.
 			return 0;
+		}
+	}
+	
+	public synchronized void afterExecute() {
+		if (child != null) {
+			child.destroy();
 		}
 	}
 }
