@@ -4,7 +4,7 @@ function usage {
 	echo "USAGE: $0 [-h|--help|INSTALL_PREFIX] [install|maintenance]"
 	echo "Builds and installs MUSCLE to INSTALL_PREFIX (default: /opt/muscle)."
 	echo "If file \`hostname\`.conf is present, a RELEASE and DEBUG version are installed"
-	echo "in \$INSTALL_PREFIX/devel and \$INSTALL_PREFIX/devel-debug, respectively."
+	echo "in \$INSTALL_PREFIX/RC2 and \$INSTALL_PREFIX/RC2-debug, respectively."
 	exit $1
 }
 
@@ -102,10 +102,10 @@ if [ "$MODE" = "install" ]; then
 else
 	#3. Build release
 	echo "========== BUILDING RELEASE ==========="
-	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS .. \
+	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/RC2 -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS .. \
 	&& make clean && make -j 4 install
 	if [ $? -eq 0 ]; then
-		echo "----------- RELEASE INSTALLED IN $INSTALL_PREFIX/devel -----------"
+		echo "----------- RELEASE INSTALLED IN $INSTALL_PREFIX/RC2 -----------"
 	else
 		echo "!!!!!!!!!! BUILDING RELEASE FAILED !!!!!!!!!!!"
 		exit 1
@@ -113,10 +113,10 @@ else
 	
 	#4. Build with debug symbols
 	echo "========== BUILDING DEBUG version ==========="
-	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel-debug -DCMAKE_BUILD_TYPE=Debug $MUSCLE_CMAKE_OPTIONS .. \
+	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/RC2-debug -DCMAKE_BUILD_TYPE=Debug $MUSCLE_CMAKE_OPTIONS .. \
 	&& make clean && make -j 4 install
 	if [ $? -eq 0 ]; then
-		echo "----------- DEBUG INSTALLED IN $INSTALL_PREFIX/devel-debug -----------"
+		echo "----------- DEBUG INSTALLED IN $INSTALL_PREFIX/RC2-debug -----------"
 	else
 		echo "!!!!!!!!!! BUILDING DEBUG FAILED !!!!!!!!!!!"
 		exit 1
