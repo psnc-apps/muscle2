@@ -75,14 +75,20 @@ end
 
 if m.env.has_key?('cxa_file')
 	# load CxA configuration
-	new_cxa = m.env['tmp_path'] + '/' + File.basename(m.env['cxa_file'])
-	FileUtils::copy_file(m.env['cxa_file'], new_cxa)
 	cxa = Cxa.new(m.env['cxa_file'], m.env)
 else
 	# No more useful actions without a CxA file
 	puts "--cxa option missing. Aborting"
 	exit 1
 end
+
+if m.env['stage_files'].size == 1
+	puts "Staging file #{m.env['stage_files'].first.inspect}"
+elsif m.env['stage_files'].size > 1
+	puts "Staging files #{m.env['stage_files'].inspect}"
+end
+m.env['stage_files'].push(m.env['cxa_file'])
+m.stage_files
 
 # Generate the connection scheme file
 cxa.generate_cs_file

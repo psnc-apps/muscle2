@@ -81,7 +81,8 @@ e = {
 'logging_verbose_manager_config_path' => "#{logging_path}/logging.verbose.manager.properties",
 'tmp_path' => tmp_path,
 'port_min' => ENV['MUSCLE_PORT_MIN'],
-'port_max' => ENV['MUSCLE_PORT_MAX']
+'port_max' => ENV['MUSCLE_PORT_MAX'],
+'stage_files' => []
 }
 e['muscle.Env dump uri'] = URI.parse "file:#{tmp_path}/.muscle/#{Muscle.jclass}"
 

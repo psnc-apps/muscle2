@@ -55,6 +55,7 @@ class MuscleCli
 		@parser.on("-n","--native", "start kernel binary first (for standalone native kernels)") { @env['native'] = true }
 		@parser.on("-N","--native-tmp-file ARG", "file to write host and port to when communicating with native code") { |arg| @env['native_tmp_file'] = arg }
 		@parser.on("--mpi", "runs MUSCLE on MPI rank 0, and calls the Java 'execute()' method on other ranks") { @env['use_mpi'] = true }
+		@parser.on("-s","--stage PATHS", "stage in files to temporary path before running, separated by colons ':'") { |arg| @env['stage_files'] = arg.split(":") }
 
 		# control chief lead head main central
 		@parser.separator "Simulation Manager flags:"

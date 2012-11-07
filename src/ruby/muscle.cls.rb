@@ -71,31 +71,41 @@ class Muscle
 	def print_env(keys)
 		if keys == true
 			# print the complete env (sorted)
-			env.keys.sort.each {|k| puts "#{k.inspect}=>#{env[k].inspect}"}
+			@env.keys.sort.each {|k| puts "#{k.inspect}=>#{env[k].inspect}"}
 		else
 			# print value for the specified key(s)
 			if(keys.size == 1)
 				# print raw value if output is for a single key (useful if you want to further process the output, e.g. CLASSPATH)
-				puts env[keys.first] if env.has_key? keys.first
+				puts @env[keys.first] if @env.has_key? keys.first
 			else
-				keys.each {|k| puts "#{k.inspect}=>#{env[k].inspect}" if env.has_key? k}
+				keys.each {|k| puts "#{k.inspect}=>#{env[k].inspect}" if @env.has_key? k}
 			end
 		end
 	end
 	
+	def stage_files
+		for file in @env['stage_files'] do
+			files = Dir.glob(file)
+			if files.empty?
+				puts "\tWarning: filename #{file} does not result in any files."
+			end
+			FileUtils::cp_r(files, @env['tmp_path'])
+		end
+	end
+	
 	def run_manager(args)
-		tmpXmx = env['Xmx']
-		tmpXms = env['Xms']
-		env['Xms'] = '20m'
-		env['Xmx'] = '100m'
-		env[:as_manager] = true
-		command = JVM.build_command(args, env)
-		env.delete(:as_manager)
+		tmpXmx = @env['Xmx']
+		tmpXms = @env['Xms']
+		@env['Xms'] = '20m'
+		@env['Xmx'] = '100m'
+		@env[:as_manager] = true
+		command = JVM.build_command(args, @env)
+		@env.delete(:as_manager)
 		
-		env['Xms'] = tmpXms
-		env['Xmx'] = tmpXmx
+		@env['Xms'] = tmpXms
+		@env['Xmx'] = tmpXmx
 		puts "=== Running MUSCLE2 Simulation Manager ==="
-		if env['verbose']
+		if @env['verbose']
 			puts "Executing: #{command}"
 		end
 		Process.fork {exec(command)}
@@ -140,16 +150,16 @@ class Muscle
 	
 	def run_client(args, contact_addr)
 		args << "-m"
-		if env['manager']
-			args << env['manager']
+		if @env['manager']
+			args << @env['manager']
 		else
 			# main
 			args << contact_addr
 		end
 
 		puts "=== Running MUSCLE2 Simulation ==="
-		command = JVM.build_command(args, env)
-		if env['verbose']
+		command = JVM.build_command(args, @env)
+		if @env['verbose']
 			puts command
 		end
 		Process.fork {exec(command)}
@@ -208,19 +218,19 @@ class Muscle
 	end
 	
 	def exec_mpi(args)
-		command = JVM.build_command(args, env)
+		command = JVM.build_command(args, @env)
 		puts "Executing: #{command}"
 		exec(command)
 	end
 	
 	def apply_intercluster
-		if(env['port_min'].nil? or env['port_max'].nil?)
+		if(env['port_min'].nil? or @env['port_max'].nil?)
 			puts "Warning: intercluster specified, but no local port range given."
 			puts "Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_PORT_MIN or $MUSCLE_PORT_MAX were not set?"
 			puts "To specify them manually, use the flags --port-min and --port-max."
 			return false
 		else
-			mto = env['mto'] || ENV['MUSCLE_MTO']
+			mto = @env['mto'] || ENV['MUSCLE_MTO']
 			if (! mto.nil?)
 				mtoHost = mto.split(':')[0]
 				mtoPort = mto.split(':')[1]
@@ -232,23 +242,23 @@ class Muscle
 				puts "To specify the MTO address manually, use the flag --mto."
 				return false
 			else
-				if env.has_key?('qcg')
-					if env.has_key?('main')
-						env['bindport'] = 22 #master
+				if @env.has_key?('qcg')
+					if @env.has_key?('main')
+						@env['bindport'] = 22 #master
 					else
-						env['manager'] = "localhost:22" #slave
+						@env['manager'] = "localhost:22" #slave
 					end
 				else
-					env['localport'] = 0 
+					@env['localport'] = 0 
 				end
 
-				if not env.has_key?("jvmflags")
-					env["jvmflags"] = []
+				if not @env.has_key?("jvmflags")
+					@env["jvmflags"] = []
 				end
 
-				env["jvmflags"] << "-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory"
-				env["jvmflags"] << "-D" + PROP_MTO_ADDRESS		+ "=" + mtoHost
-				env["jvmflags"] << "-D" + PROP_MTO_PORT			 + "=" + mtoPort.to_s
+				@env["jvmflags"] << "-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory"
+				@env["jvmflags"] << "-D" + PROP_MTO_ADDRESS		+ "=" + mtoHost
+				@env["jvmflags"] << "-D" + PROP_MTO_PORT			 + "=" + mtoPort.to_s
 			end
 		end
 		return true
