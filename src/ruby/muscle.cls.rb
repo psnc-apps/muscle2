@@ -95,7 +95,7 @@ class Muscle
 
 	def gzip_stage_files
 		for file in @env['gzip_stage_files'] do
-			if not system("tar --exclude=.git --exclude=.svn -czf #{@env['tmp_path']}/#{File.basename(file)}.tgz #{file}")
+			if not system("tar --exclude=.git --exclude=.svn --exclude=.hg -czf #{@env['tmp_path']}/#{File.basename(file)}.tgz #{file}")
 				puts "\tWarning: filename #{file} could not be compressed or staged."
 			end
 		end
