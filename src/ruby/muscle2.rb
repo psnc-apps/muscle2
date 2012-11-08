@@ -89,6 +89,12 @@ elsif m.env['stage_files'].size > 1
 end
 m.env['stage_files'].push(m.env['cxa_file'])
 m.stage_files
+if m.env['gzip_stage_files'].size == 1
+	puts "Zipping and staging file #{m.env['gzip_stage_files'].first.inspect}"
+elsif m.env['stage_files'].size > 1
+	puts "Zipping and staging files #{m.env['gzip_stage_files'].inspect}"
+end
+m.gzip_stage_files
 
 # Generate the connection scheme file
 cxa.generate_cs_file

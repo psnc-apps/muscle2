@@ -54,7 +54,8 @@ class MuscleCli
 		@parser.on("-M","--manager HOST:PORT", "IP address/hostname and port of the Simulation Manager") {|arg| @env['manager'] = arg; }
 		@parser.on("-a","--allkernels", "launch all kernels") { @env["allkernels"] = true }
 		@parser.on("-p","--tmp-path ARG", "path where MUSCLE and model output will go") {|arg| @env['tmp_path'] = mkTmpPath(arg) }
-		@parser.on("-s","--stage PATHS", "stage in files or directories to tmp path before running, separated by colons ':'") { |arg| @env['stage_files'] = arg.split("") }
+		@parser.on("-s","--stage PATHS", "stage in files or directories to tmp path before running, separated by colons ':'") { |arg| @env['stage_files'] = arg.split(":") }
+		@parser.on("-z","--gzip-stage PATHS", "stage in zipped files or directories to tmp path before running, separated by colons ':'") { |arg| @env['gzip_stage_files'] = arg.split(":") }
 
 		@parser.separator "\nAlternative execution"
 		@parser.on("--mpi", "runs MUSCLE on MPI rank 0, and calls the Java 'execute()' method on other ranks") { @env['use_mpi'] = true }

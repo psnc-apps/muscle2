@@ -85,11 +85,19 @@ class Muscle
 	
 	def stage_files
 		for file in @env['stage_files'] do
-			files = Dir.glob(file)
-			if files.empty?
+			dir = Dir.glob(file)
+			if dir.empty?
 				puts "\tWarning: filename #{file} does not result in any files."
 			end
-			FileUtils::cp_r(files, @env['tmp_path'])
+			FileUtils::cp_r(dir, @env['tmp_path'])
+		end
+	end
+
+	def gzip_stage_files
+		for file in @env['gzip_stage_files'] do
+			if not system("tar --exclude=.git --exclude=.svn -czf #{@env['tmp_path']}/#{File.basename(file)}.tgz #{file}")
+				puts "\tWarning: filename #{file} could not be compressed or staged."
+			end
 		end
 	end
 	
