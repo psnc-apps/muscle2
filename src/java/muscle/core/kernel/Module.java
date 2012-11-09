@@ -32,8 +32,10 @@ public abstract class Module {
 	
 	public Logger getLogger() {
 		if (modLogger == null) {
-			modLogger = Logger.getLogger(getClass().getName());
-			if (name != null) {
+			if (name == null) {
+				modLogger = Logger.getLogger(getClass().getName());
+			} else {
+				modLogger = Logger.getLogger(getClass().getName() + "." + name);
 				try {
 					// Format messages with module name
 					Formatter format = new ModuleFormatter(name);
