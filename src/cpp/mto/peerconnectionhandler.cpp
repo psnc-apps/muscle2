@@ -120,11 +120,12 @@ void PeerConnectionHandler::handleConnect(Header h)
   }
   
   h.type = Header::ConnectResponse;
+  /* TODO: user autoRegister option
   if(availablePorts.find(pair<unsigned int, unsigned short>(h.dstAddress, h.dstPort))==availablePorts.end())
   {
     handleConnectFailed(h);
     return;
-  }
+  }*/
   
   Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Trying to establish connection %s:%hu - %s:%hu (Peer MTO = %s)",
                   ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,

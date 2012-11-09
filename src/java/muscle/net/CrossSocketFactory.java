@@ -139,6 +139,7 @@ public class CrossSocketFactory extends SocketFactory {
 
 	public static final String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
 	public static final String ENV_SESSION_ID = "SESSION_ID";
+	public static final String ENV_QCG_COORDINATOR_VIA_MTO = "QCG_COORDINATOR_VIA_MTO";
 
 	public static final String PUT_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"> "
 			+ "<SOAP-ENV:Body><smoacoordinator:PutProcessEntry xmlns:smoacoordinator=\"http://schemas.qoscosgrid.org/coordinator/2009/04/service\"><smoacoordinator:ProcessEntry>"
@@ -243,47 +244,73 @@ public class CrossSocketFactory extends SocketFactory {
 	}
 
 	private String sendHTTPRequest(URL url, String request) throws IOException {
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 		StringBuffer response = new StringBuffer(4096);
 		OutputStreamWriter osw = null;
 		BufferedReader brd = null;
+	
+		if (System.getenv(ENV_QCG_COORDINATOR_VIA_MTO) == null) {
+			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 
-		try {
-			logger.log(Level.FINEST, "Request Message: {0}", request);
+			try {
+				logger.log(Level.FINEST, "Request Message: {0}", request);
 
-			conn.setDoOutput(true);
-			conn.setRequestMethod("POST");
+				conn.setDoOutput(true);
+				conn.setRequestMethod("POST");
 
-			osw = new OutputStreamWriter(conn.getOutputStream());
-			osw.write(request);
-			osw.flush();
+				osw = new OutputStreamWriter(conn.getOutputStream());
+				osw.write(request);
+				osw.flush();
 
-			if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-				throw new IOException("Call to " + url + " failed with code "
-						+ conn.getResponseCode());
+				if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+					throw new IOException("Call to " + url + " failed with code "
+							+ conn.getResponseCode());
+				}
+
+				brd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+				
+				String line;
+				while ((line = brd.readLine()) != null) {
+					response.append(line);
+				}
+				
+			} finally {
+
+				if (osw != null) {
+					osw.close();
+				}
+
+				if (brd != null) {
+					brd.close();
+				}
 			}
+		} else {
+			logger.log(Level.INFO, "Connecting to QCG-Coordinator via MTO");
 
-			brd = new BufferedReader(new InputStreamReader(
-					conn.getInputStream()));
-			String line;
-			while ((line = brd.readLine()) != null) {
-				response.append(line);
-			}
-
-			logger.log(Level.FINEST, "Response Message: {0}", response);
-
-		} catch (RuntimeException e) {
-			throw e;
-		} finally {
-
-			if (osw != null) {
-				osw.close();
-			}
-
-			if (brd != null) {
-				brd.close();
+			CrossSocket s = new CrossSocket();
+			
+			try {
+				s.connect(new InetSocketAddress(url.getHost(), url.getPort()));
+				
+				osw = new OutputStreamWriter( s.getOutputStream() );
+				osw.write(request);
+				osw.flush();
+				
+				brd = new BufferedReader(new InputStreamReader(s.getInputStream()));
+				
+				String line;
+				boolean content = false;
+				while ((line = brd.readLine()) != null) {
+					if (line.matches(".*SOAP-ENV:Envelope.*"))
+						content = true;
+					if (content)
+						response.append(line);
+				}
+			} finally {
+				s.close();
 			}
 		}
+		
+		logger.log(Level.FINEST, "Response Message: {0}", response);
 
 		return response.toString();
 	}
@@ -336,7 +363,7 @@ public class CrossSocketFactory extends SocketFactory {
 			host = saxHandler.getParsedValues().get(0);
 			port = Integer.parseInt(saxHandler.getParsedValues().get(1));
 		} catch (SAXException ex) {
-			throw new IOException("Failed to parse coordinator response.", ex);
+			throw new IOException("Failed to parse coordinator response: " + ex.getMessage() + " response: " + response );
 		} catch (ParserConfigurationException ex) {
 			throw new AssertionError(ex);
 		}
@@ -348,6 +375,7 @@ public class CrossSocketFactory extends SocketFactory {
 			/**
 			 * very ugly but what else we can do if bounded socket is not enough
 			 * for JADE...
+			 * TODO: this can be removed, but after the review
 			 */
 			Thread.sleep(3000);
 		} catch (InterruptedException e) {

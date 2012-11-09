@@ -10,6 +10,8 @@ using namespace boost::algorithm;
 
 Options * Options::instance = 0;
 
+extern set<pair<unsigned int, unsigned short> > availablePorts;
+
 bool Options::setLogFile(string x){
   FILE * file = fopen(x.c_str(), "a");
   if(!file)
@@ -92,8 +94,11 @@ bool Options::load(int argc, char **argv)
     
     ("internalPort", program_options::value<string>(), "Port to listen for connections to be transported")
     ("internalAddress", program_options::value<string>(), "Address to listen for connections to be transported")
+    ("autoRegister", program_options::value<string>(), "Address:Port to be registered automatically (used for accessing QCG-Coordinator)")
+
     
     ("debug", "Causes the program NOT to go to background and sets logLevel to TRACE")
+    ("MPWide", "Use the MPWide library in the MTO backbone")
     ("logLevel", program_options::value<string>(), "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)")
     ("logMsgTypes", program_options::value<string>(), "Allows filtering log messages context (PEER,CONFIG,CLIENT, default: PEER|CONFIG|CLIENT)")
     ("logFile", program_options::value<string>(), "Path to the log file (default behavior - logging to standard error)")
@@ -211,6 +216,13 @@ bool Options::load(int argc, char **argv)
   Logger::debug(Logger::MsgType_Config, "Auto close timeout: %s", to_simple_string(sockAutoCloseTimeout).c_str());
   read_opts.erase("sockAutoCloseTimeout");
   
+  if(read_opts.find("MPWide")!=read_opts.end())
+  {
+	  useMPWide = true;
+	  Logger::debug(Logger::MsgType_Config, "Using MPWide");
+  }
+  read_opts.erase("MPWide");
+
   // Remove optional opts
   read_opts.erase("config");
   read_opts.erase("topology");

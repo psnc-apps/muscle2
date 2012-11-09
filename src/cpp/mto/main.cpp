@@ -430,7 +430,7 @@ void newConnectionPairFormed(unsigned short portHigh){
   // new connections will use proper PeerConnectionHandler
   connectionsIncToOut[inc] = out;
   
-  out->enableAutoClose(true);
+  //out->enableAutoClose(true);
 }
 
 template <typename M, typename V> bool removeFirstKeyFromMap (M m, V v)
@@ -720,6 +720,12 @@ int main(int argc, char **argv)
   
   string myName = opts.getMyName();
   
+  if(opts.getDaemonize())
+  {
+    Logger::info(-1, "Daemonizing...");
+    daemon(0,1);
+  }
+
   if(mtoConfigs.find(myName) == mtoConfigs.end()){
     Logger::error(-1, "The name of this MTO (%s) could not be found in the topology file!", myName.c_str());
     return 1;
@@ -732,7 +738,7 @@ int main(int argc, char **argv)
     tcp::resolver::iterator it = tcp::resolver(ioService).resolve(tcp::resolver::query(mtoConfigs[myName].address, mtoConfigs[myName].port), e);
     if(e)
     {
-      Logger::error(-1, "Address of this MTO (%s:%s) not understod!",
+      Logger::error(-1, "Cannot resolve  MTO external address (%s:%s)!",
         mtoConfigs[myName].address.c_str(), mtoConfigs[myName].port.c_str()
       );
       return 1;

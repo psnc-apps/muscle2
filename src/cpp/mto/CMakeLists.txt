@@ -30,7 +30,7 @@ if(NOT Boost_FOUND)
     #unset(Boost_INCLUDE_DIR CACHE)
 else(NOT Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(${MTO} logger.cpp peerconnectionhandler.cpp connection.cpp options.cpp messages.cpp main.cpp topology.cpp)
+    add_executable(${MTO} logger.cpp peerconnectionhandler.cpp connection.cpp options.cpp messages.cpp main.cpp topology.cpp mpwide/Socket.cpp mpwide/MPWide.cpp )
     target_link_libraries(${MTO} ${Boost_LIBRARIES} )
     target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 

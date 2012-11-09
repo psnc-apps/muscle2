@@ -21,7 +21,7 @@ using namespace boost::system;
 
 
 /**
- * The part resposible for interconnection between two proxies.
+ * The part responsible for interconnection between two MTOs.
  */
 class PeerConnectionHandler
 {
@@ -138,7 +138,7 @@ protected:
   
   void handleData(Header h);
   
-  /** Reads the data and forewards it to proper local connction */
+  /** Reads the data and forwards it to proper local connection */
   struct DataForwarder
   {
     DataForwarder(char * d, Header h, PeerConnectionHandler * t) : data(d), header(h), thiz(t) {}
@@ -166,7 +166,7 @@ protected:
   
   boost::asio::deadline_timer recreateSocketTimer;
   
-  /* ====== Iddle issues ====== */
+  /* ====== Iddle connection handler ====== */
   
   boost::asio::deadline_timer iddleTimer;
   void iddleTimerFired(const error_code & ec);
