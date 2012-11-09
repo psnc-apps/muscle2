@@ -50,8 +50,8 @@ class JVM
 		end
 
 		JVM.add_pref(env, command, '-Xms', 'Xms')
-		JVM.add_pref(env, command, '-Xmx', 'Xms')
-		JVM.add_pref(env, command, '-Xss', 'Xms')
+		JVM.add_pref(env, command, '-Xmx', 'Xmx')
+		JVM.add_pref(env, command, '-Xss', 'Xss')
 				                             # intentional space after classpath
 		JVM.add_pref(env, command, '-classpath ', 'CLASSPATH')
 		
