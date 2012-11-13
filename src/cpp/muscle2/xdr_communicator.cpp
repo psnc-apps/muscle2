@@ -68,16 +68,19 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		}
 		else
 		{
-			float tot_sz = count_int * (sz == 8 ? 8 : 4);
+			double tot_sz = count_int * (sz == 8 ? 8.0 : 4.0);
 			int chunks = (int)ceil(tot_sz/M2_XDR_BUFSIZE);
 			if (!xdr_int(&xdro, &chunks)) throw muscle_exception("Can not write int");
 			if (chunks > 1)
 			{
 				int count_i = count_int;
+				if (count_i < 0 || count_i + 8 < 0) {
+					throw muscle_exception("Message too large, can not send arrays with more than 2 147 483 639 elements.");
+				}
 				if (!xdr_int(&xdro, &count_i)) throw muscle_exception("Can not write int");
 			}
 		
-			unsigned int chunk_len = (unsigned int)ceil(count_int/(float)chunks);
+			unsigned int chunk_len = (unsigned int)ceil(count_int/(double)chunks);
 			unsigned int first_chunk_len = count_int - (chunks - 1)*chunk_len;
 
 			char *msg_ptr = (char *)msg;
