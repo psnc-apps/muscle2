@@ -74,7 +74,7 @@ public class XdrNIOSerializerWrapper implements SerializerWrapper {
 			int len = MatrixTool.lengthOfMatrix(newValue, type);
 
 			// Take into account that char* is transmitted worse than expected (4 byte per char) in XDR
-			int size = Math.max(len * 4 + 20, MatrixTool.deepSizeOf(newValue, type));
+			long size = MatrixTool.deepSizeOf(newValue, type);
 			int chunks = (int) Math.ceil(size / max_chunk_size);
 			xdrOut.xdrEncodeInt(chunks);
 
@@ -82,7 +82,7 @@ public class XdrNIOSerializerWrapper implements SerializerWrapper {
 				xdrOut.xdrEncodeInt(len);
 
 				int chunk_len = (int) Math.ceil(len / (float) chunks);
-				int first_chunk_len = len - ((chunks - 1) * chunk_len);
+				int first_chunk_len = (int)(len - (long)((chunks - 1) * chunk_len));
 
 				Serializable arr = MatrixTool.initializeArray(type, first_chunk_len);
 				System.arraycopy(newValue, 0, arr, 0, first_chunk_len);

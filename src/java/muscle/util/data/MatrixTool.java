@@ -12,24 +12,20 @@ import java.io.Serializable;
  * @author Joris Borgdorff
  */
 public class MatrixTool {
-	public static int deepSizeOf(Serializable value, SerializableDatatype type) {
-		int size = type.getDimensions()*4;
+	public static long deepSizeOf(Serializable value, SerializableDatatype type) {
+		long size = type.getDimensions()*4;
 
 		switch (type.typeOf()) {
-			case BOOLEAN_ARR:
-				size += 4 + lengthOfMatrix(value, type);
-				break;
 			case BYTE_ARR:
-				size += 4 + lengthOfMatrix(value, type);
+				size += 4l + lengthOfMatrix(value, type);
 				break;
-			case SHORT_ARR:
-				size += 4 + lengthOfMatrix(value, type)*2;
-				break;
+			// No special distinction for transferring short or boolean
+			case SHORT_ARR: case BOOLEAN_ARR:
 			case INT_ARR: case FLOAT_ARR:
-				size += 4 + lengthOfMatrix(value, type)*4;
+				size += 4l + lengthOfMatrix(value, type)*4l;
 				break;
 			case LONG_ARR: case DOUBLE_ARR:
-				size += 4 + lengthOfMatrix(value, type)*8;
+				size += 4l + lengthOfMatrix(value, type)*8l;
 				break;
 		}
 		return size;
@@ -38,7 +34,11 @@ public class MatrixTool {
 	public static int lengthOfMatrix(Serializable value, SerializableDatatype type) {
 		int[] dims = {1, 1, 1, 1};
 		dimensionsOfMatrix(value, type, dims, 0);
-		return dims[0]*dims[1]*dims[2]*dims[3];
+		long res = (long)dims[0]*(long)dims[1]*(long)dims[2]*(long)dims[3];
+		if (res > Integer.MAX_VALUE - 8) {
+			throw new IllegalArgumentException("A matrix that results in a array longer than 2 147 483 639 elements can not be sent");
+		}
+		return (int)res;
 	}
 	
 	public static int lengthOfArray(Serializable value, SerializableDatatype type) {

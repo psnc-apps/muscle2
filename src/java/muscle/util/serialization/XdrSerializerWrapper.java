@@ -96,8 +96,7 @@ public class XdrSerializerWrapper implements SerializerWrapper {
 			if (type.typeOf().isArray()) {
 				int len = MatrixTool.lengthOfMatrix(newValue, type);
 				
-				// Take into account that char* is transmitted worse than expected (4 byte per char) in XDR
-				int size = Math.max(len*4+20,MatrixTool.deepSizeOf(newValue, type));
+				long size = MatrixTool.deepSizeOf(newValue, type);
 				int chunks = (int)Math.ceil(size / max_chunk_size);
 				xdrOut.xdrEncodeInt(chunks);
 				

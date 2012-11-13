@@ -27,7 +27,7 @@ public class SerializableData implements Serializable {
 
 	private final SerializableDatatype type;
 	private final Serializable value;
-	private final int size;
+	private final long size;
 	private final static SerializableDatatype[] datatypes = SerializableDatatype.values();
 	
 	/**
@@ -38,7 +38,7 @@ public class SerializableData implements Serializable {
 	 * @param type the type corresponding to the serializable object
 	 * @throws IllegalArgumentException if the type provided does not match the data.
 	 */
-	public SerializableData(Serializable value, SerializableDatatype type, int size) {
+	public SerializableData(Serializable value, SerializableDatatype type, long size) {
 		if (type == SerializableDatatype.NULL && value != null) {
 			throw new IllegalArgumentException("A NULL datatype should be provided with null data.");
 		} else if (type == SerializableDatatype.JAVA_BYTE_OBJECT) {
@@ -79,7 +79,7 @@ public class SerializableData implements Serializable {
 			return new SerializableData(null, SerializableDatatype.NULL, 0);
 		}
 		SerializableDatatype type = inferDatatype(value);
-		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
+		long size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
 		return new SerializableData(value, type, size);
 	}
 	
@@ -93,7 +93,7 @@ public class SerializableData implements Serializable {
 		if (value == null) {
 			return new SerializableData(null, SerializableDatatype.NULL, 0);
 		}
-		int size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
+		long size = (type == SerializableDatatype.JAVA_BYTE_OBJECT) ? -1 : sizeOf(value, type);
 		return new SerializableData(value, type, size);
 	}
 	
@@ -128,7 +128,7 @@ public class SerializableData implements Serializable {
 		return type;
 	}
 	
-	public int getSize() {
+	public long getSize() {
 		return size;
 	}
 	
@@ -185,15 +185,15 @@ public class SerializableData implements Serializable {
 				break;
 		}
 
-		int size = sizeOf(value, type);		
+		long size = sizeOf(value, type);		
 		if (type.isMatrix()) {
 			int length = MatrixTool.lengthOfMatrix(value, type);
 			
 			int dimX, dimY, dimZ, dimZZ;
 			dimX = in.readInt();
 			dimY = type.isMatrix2D() ? length / dimX : in.readInt();
-			dimZ = type.isMatrix4D() ? in.readInt() : length / (dimX*dimY);
-			dimZZ = type.isMatrix4D() ? length / (dimX*dimY*dimZ) : 1;
+			dimZ = type.isMatrix3D() ? length / (dimX*dimY) : in.readInt();
+			dimZZ = length / (dimX*dimY*dimZ);
 		
 			value = MatrixTool.arrayToMatrix(value, type, dimX, dimY, dimZ, dimZZ);
 		}
@@ -255,7 +255,7 @@ public class SerializableData implements Serializable {
 		}
 	}
 	
-	private static int sizeOf(Serializable value, SerializableDatatype type) {
+	private static long sizeOf(Serializable value, SerializableDatatype type) {
 		int size = 0;
 		if ((type.isArray() || type.isMatrix()) && type != SerializableDatatype.STRING_ARR) {
 			return MatrixTool.deepSizeOf(value, type);
