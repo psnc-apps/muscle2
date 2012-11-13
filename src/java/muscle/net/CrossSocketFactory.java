@@ -31,7 +31,7 @@ public class CrossSocketFactory extends SocketFactory {
 		
 		public LoggableOutputStream(String id, OutputStream out) throws IOException {
 			super(out);
-			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", id);
 			this.id = id;
 			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
 		}
@@ -46,13 +46,13 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 		@Override
 		public void close() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", id);
 			out.close();
 			traceFile.close();
 		}
 		@Override
 		public void flush() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", id);
 			out.flush();
 		}
 		@Override
@@ -74,7 +74,7 @@ public class CrossSocketFactory extends SocketFactory {
 		
 		public LoggableInputStream(String id, InputStream in) throws IOException {
 			super(in);
-			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", id);
 			this.id = id;
 			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
 		}
@@ -83,8 +83,9 @@ public class CrossSocketFactory extends SocketFactory {
 			int b = in.read();
 			
 			logger.log(Level.FINEST, "id = {0}, b = {1}, pos = {2}", new Object[] {id, b, pos});
-			if (b != -1)
+			if (b != -1) {
 				pos++;
+			}
 			
 			traceFile.write(b);
 			
@@ -92,7 +93,7 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 		@Override
 		public void close() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", new Object[] {id});
+			logger.log(Level.FINEST, "id = {0}", id);
 			in.close();
 			traceFile.close();
 		}
@@ -119,10 +120,10 @@ public class CrossSocketFactory extends SocketFactory {
 
 				return bread;
 			} catch (IOException ex) {
-				logger.log(Level.WARNING, "read failed: {0}", new Object[] {ex});
+				logger.log(Level.WARNING, "read failed", ex);
 				throw ex;
 			} catch (Exception ex) {
-				logger.log(Level.SEVERE, "Unchecked exception: {0}", new Object[] {ex});
+				logger.log(Level.SEVERE, "Unchecked exception", ex);
 				throw new AssertionError(ex);
 			}
 			/* not reached */
@@ -155,29 +156,37 @@ public class CrossSocketFactory extends SocketFactory {
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
 	public static final String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
-	protected int qcgMagicPort = 22;
-	protected String socketFile = "socket.file";
-	protected InetAddress mtoAddr = null;
-	protected int mtoPort = -1;
+	/** Port number that signifies that QCG Coordinator should be notified of the actually used port number. */
+	protected final int qcgMagicPort;	
+	protected final int mtoPort;
+	protected final InetAddress mtoAddr;
+	private boolean isRetrievingMainPort;
+	private InetSocketAddress mainAddr;
 
 	public CrossSocketFactory() {
-		if (System.getProperty(PROP_MAIN_PORT) != null) {
-			qcgMagicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT));
-		}
-
+		qcgMagicPort = Integer.valueOf(System.getProperty(PROP_MAIN_PORT, "22"));
+		mtoPort = Integer.valueOf(System.getProperty(PROP_MTO_PORT, "-1"));
+		
+		InetAddress addr = null;
 		if (System.getProperty(PROP_MTO_ADDRESS) != null) {
 			try {
-				mtoAddr = InetAddress.getByName(System.getProperty(PROP_MTO_ADDRESS));
+				addr = InetAddress.getByName(System.getProperty(PROP_MTO_ADDRESS));
 			} catch (UnknownHostException e) {
 				logger.log(Level.SEVERE, "Provided MTO address unresolvable.", e);
 			}
 		}
-
-		if (System.getProperty(PROP_MTO_PORT) != null) {
-			mtoPort = Integer.valueOf(System.getProperty(PROP_MTO_PORT));
-		}
+		mtoAddr = addr;
+		mainAddr = null;
+		isRetrievingMainPort = false;
 	}
 
+	/**
+	 * Create a server socket.
+	 * 
+	 * If the MTO details are given, the socket is created within the given range and the MTO is notified of
+	 * the new server socket. If the MTO details are not given, or only partially, create a standard Java server
+	 * socket within the given range.
+	 */
 	public ServerSocket createServerSocket(int port, int backlog,
 			InetAddress addr) throws IOException {
 		
@@ -215,6 +224,11 @@ public class CrossSocketFactory extends SocketFactory {
 		return ss;
 	}
 
+	/**
+	 * Put server socket connection data to the QCG Coordinator.
+	 * 
+	 * Requires environment variables ENV_COORDINATOR_URL (QCG location) and ENV_SESSION_ID (unique identifier of the simulation) to be set.
+	 */
 	private void putConnectionData(String hostAddress, int localPort)
 			throws IOException {
 		String coordinatorURL = System.getenv(ENV_COORDINATOR_URL);
@@ -243,6 +257,12 @@ public class CrossSocketFactory extends SocketFactory {
 
 	}
 
+	/**
+	 * Custom implementation to send an HTTP request.
+	 * 
+	 * If the MTO details and ENV_QCG_COORDINATOR_VIA_MTO environment variable are set,
+	 * the HTTP request will be performed through MTO.
+	*/
 	private String sendHTTPRequest(URL url, String request) throws IOException {
 		StringBuffer response = new StringBuffer(4096);
 		OutputStreamWriter osw = null;
@@ -300,10 +320,12 @@ public class CrossSocketFactory extends SocketFactory {
 				String line;
 				boolean content = false;
 				while ((line = brd.readLine()) != null) {
-					if (line.matches(".*SOAP-ENV:Envelope.*"))
+					if (line.matches(".*SOAP-ENV:Envelope.*")) {
 						content = true;
-					if (content)
+					}
+					if (content) {
 						response.append(line);
+					}
 				}
 			} finally {
 				s.close();
@@ -315,7 +337,28 @@ public class CrossSocketFactory extends SocketFactory {
 		return response.toString();
 	}
 
+	/**
+	 * Get the connection data from the QCG Coordinator.
+	 *
+	 * The connection data is only queried from the QCG coordinator as long as there was no successful
+	 * result. Only one query to the Coordinator is performed at a time, managed by a wait/notify scheme.
+	 */
 	private InetSocketAddress getConnectionData() throws IOException {
+		synchronized (this) {
+			try {
+				while (this.isRetrievingMainPort) {
+					wait();
+				}
+			} catch (InterruptedException ex) {
+				throw new IOException("Interrupted while retrieving main port", ex);
+			}
+			
+			if (this.mainAddr != null) {
+				return this.mainAddr;
+			} else {
+				this.isRetrievingMainPort = true;
+			}
+		}
 		String coordinatorURL = System.getenv(ENV_COORDINATOR_URL);
 		String sessionID = System.getenv(ENV_SESSION_ID);
 		StringBuilder message = new StringBuilder(4096);
@@ -382,7 +425,12 @@ public class CrossSocketFactory extends SocketFactory {
 			logger.warning("Wait to resolve socket interrupted.");
 		}
 
-		return new InetSocketAddress(host, port);
+		synchronized (this) {
+			this.mainAddr = new InetSocketAddress(host, port);
+			this.isRetrievingMainPort = false;
+			this.notify();
+			return this.mainAddr;
+		}
 	}
 
 	public Socket createSocket() {
@@ -417,8 +465,9 @@ public class CrossSocketFactory extends SocketFactory {
 		
 		@Override
 		public InputStream getInputStream() throws IOException {
-			if (System.getProperty(PROP_MTO_TRACE) == null )
+			if (System.getProperty(PROP_MTO_TRACE) == null ) {
 				return super.getInputStream();
+			}
 			else {
 				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
 				return new LoggableInputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getInputStream());
@@ -427,9 +476,9 @@ public class CrossSocketFactory extends SocketFactory {
 
 		@Override
 		public OutputStream getOutputStream() throws IOException {
-			if (System.getProperty(PROP_MTO_TRACE) == null )
+			if (System.getProperty(PROP_MTO_TRACE) == null ) {
 				return super.getOutputStream();
-			else {
+			} else {
 				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
 				return new LoggableOutputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getOutputStream());
 			}
@@ -549,7 +598,10 @@ public class CrossSocketFactory extends SocketFactory {
 		r.setSource(isa);
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
-		s.getOutputStream().write(r.write().array());
-		s.close();
+		try {
+			s.getOutputStream().write(r.write().array());
+		}  finally {
+			s.close();
+		}
 	}
 }
