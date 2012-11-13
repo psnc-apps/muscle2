@@ -68,11 +68,13 @@ module MuscleUtils
 		load_path = machine_load_path if File.readable?(machine_load_path)
 
 		begin
-			#eval( File.read(load_path), binding, load_path )
 			load(load_path)
+			return true
 		rescue LoadError
 			if mandatory
-				abort($!)
+				raise $!
+			else
+				return false
 			end
 		end
 	end	

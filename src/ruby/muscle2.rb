@@ -74,11 +74,16 @@ if m.env['print_env'] != false
 end
 
 if m.env.has_key?('cxa_file')
-	# load CxA configuration
-	cxa = Cxa.new(m.env['cxa_file'], m.env)
+	begin
+		# load CxA configuration
+		cxa = Cxa.new(m.env['cxa_file'], m.env)
+	rescue LoadError
+		puts "--cxa does not specify a valid file: <#{m.env['cxa_file']}> not found."
+		exit 1
+	end
 else
 	# No more useful actions without a CxA file
-	puts "--cxa option missing. Aborting"
+	puts "--cxa option missing. Aborting."
 	exit 1
 end
 
