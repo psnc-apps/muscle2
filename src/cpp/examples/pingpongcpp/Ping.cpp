@@ -27,6 +27,7 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 #include <stdlib.h>
 #include <sys/time.h>
 #include <muscle2/cppmuscle.hpp>
+#include <muscle2/exception.hpp>
 #include <exception>
 
 using namespace muscle;
@@ -64,7 +65,7 @@ void print_stats(const int printdesc, const long *times, const long totaltime, c
 		printf("|=%10s|=%10s|=%10s|=%10s|=%10s|=%13s|\n","Size (kiB)","Total (ms)","Avg (us)","StdDev(us)","StdDev(%)","Speed (MiB/s)");
 	}
 	// MiB/s -> 2*((KBytes/1024)/(micro/1000000)) -> 2*1000000*KBytes/1024*micro -> 15625 KBytes / 8 avg
-	double speed = 15625*size_kib /(8*avg);
+	double speed = 15625L*size_kib /(8.0*avg);
 	printf("| %10d| %10d| %10.0f| %10.0f| %10.1f| %13.1f|\n", size_kib, (int)(totaltime/1000), avg, s, 100*s/avg, speed);
 	fflush(stdout);
 }
@@ -74,6 +75,10 @@ long do_computation(long* times, const int size, const int runs, const int steps
 	struct timeval tpStart, tpEnd;
 	size_t count = size*1024; // 1024/sizeof(double)
 	void *buf = malloc(count);
+	if (!buf)
+	{
+		throw muscle_exception("Could not allocate buffer to send message.");
+	}
 	long total = 0;
 
 	for (int test = 0; test < runs; test++)
@@ -124,7 +129,10 @@ int main(int argc, char **argv)
 		long *totalTimes = new long[runs];
 		size_t preparation_size = 1024;
 		void *data = malloc(preparation_size);
-
+		if (!data) {
+			throw muscle_exception("Can not allocate data to warm up environment.");
+		}
+		
 		// Making noise in order to give time for JVM to stabilize
 		cout << "Preparing";
 		for (int i = 0; i < prepare_steps; i++)
