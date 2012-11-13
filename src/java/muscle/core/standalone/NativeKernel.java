@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -44,6 +45,28 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		isDone = false;
 		child = null;
 		type = SerializableDatatype.NULL;
+	}
+	
+	/**
+	 * Initializes all ports for you.
+	 */
+	@Override
+	protected void addPortals() {
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
+		if (ports != null) {
+			for (PortDescription entrance : ports.values()) {
+				this.addSharedDataEntrance(entrance.getID().getPortName(), Serializable.class);
+			}
+		}
+		logger.log(Level.FINE, "{0}: added all conduit entrances", getLocalName());
+		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
+		if (ports != null) {
+			for (PortDescription exit : ports.values()) {
+				this.addExit(exit.getID().getPortName(), Serializable.class);
+			}
+		}
+		logger.log(Level.FINE, "{0}: added all conduit exits", getLocalName());
 	}
 	
 	public synchronized void send(String entranceName, SerializableData data) {
@@ -229,5 +252,9 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		if (child != null) {
 			child.destroy();
 		}
+	}
+	
+	public void fatalException(Throwable thr) {
+		this.controller.fatalException(thr);
 	}
 }

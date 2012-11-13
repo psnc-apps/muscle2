@@ -13,8 +13,10 @@ import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.client.instance.PassiveConduitExitController;
+import muscle.client.instance.ThreadedConduitEntranceController;
 import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
+import muscle.core.model.Observation;
 import muscle.id.*;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.NamedCallable;
@@ -93,7 +95,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 	}
 
 	@Override
-	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(final InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port) {
+	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(final InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port, final boolean shared) {
 		return new NamedCallable<Transmitter<T,?>>() {
 			@SuppressWarnings("unchecked")
 			public Transmitter<T, ?> call() throws Exception {
@@ -112,11 +114,16 @@ public class TcpPortFactoryImpl extends PortFactory {
 				
 				Resolver res = getResolver();
 				Transmitter trans;
+				DataConverter converter;
 				if (res.isLocal(instancePort)) {
-					ObservationConverter<T,T> copyPipe = new PipeObservationConverter<T>(new SerializableDataConverter());
-					trans = new LocalTransmitter<T>(localMsgProcessor, copyPipe, instancePort);
+					if (shared || entrance instanceof ThreadedConduitEntranceController) {
+						converter = new PipeConverter();
+					} else {
+						 converter = new PipeObservationConverter<T>(new SerializableDataConverter());
+					}
+					trans = new LocalTransmitter<T>(localMsgProcessor, converter, instancePort);
 				} else {
-					ObservationConverter converter = new ObservationConverter(new SerializableDataConverter());
+					converter = new ObservationConverter(new SerializableDataConverter());
 					trans = new TcpTransmitter<T>(socketFactory, converter, instancePort);
 					((TcpTransmitter)trans).start();
 				}

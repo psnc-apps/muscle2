@@ -15,8 +15,10 @@ import muscle.core.model.Observation;
 public interface ConduitEntranceController<T extends Serializable> extends Portal {
 	/** Send a message. */
 	void send(Observation<T> msg);
+	
 	/** Get the ConduitEntrance that is controlled. */
 	public ConduitEntrance getEntrance();
+	
 	/**
 	 * Set the ConduitEntrance that will be controlled.
 	 * Use only by MUSCLE during initialization phase.

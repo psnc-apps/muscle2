@@ -94,6 +94,8 @@ public class NativeGateway extends Thread implements Disposable {
 		public boolean hasNext(String exitName);
 		/* OPCODE = 9 */
 		public int getLogLevel();
+		/* no opcode */
+		public void fatalException(Throwable thr);
 		}
 
 	public int getPort() {
@@ -245,10 +247,13 @@ public class NativeGateway extends Thread implements Disposable {
 			}
 		} catch (SocketException ex) {
 			logger.log(Level.SEVERE, "Connection of " + listener.getKernelName() + " failed; most likely the native code exited.", ex);
+			this.listener.fatalException(ex);
 		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Communication error with " + listener.getKernelName(), ex);
+			this.listener.fatalException(ex);
 		} catch (Throwable ex) {
 			logger.log(Level.SEVERE, listener.getKernelName() + " could not finish communication with native code.", ex);
+			this.listener.fatalException(ex);
 		} finally {
 			listener.isFinished();
 			if (s != null) {

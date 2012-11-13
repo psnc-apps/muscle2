@@ -188,7 +188,7 @@ public abstract class RawInstance extends Module {
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, false, portName, new DataTemplate<T>(dataClass));
 
 		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
@@ -198,6 +198,28 @@ public abstract class RawInstance extends Module {
 		return e;
 	}
 
+	protected <T extends Serializable> ConduitEntrance<T> addAsynchronousEntrance(String portName, Class<T> dataClass) {
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, false, portName, new DataTemplate<T>(dataClass));
+
+		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
+		ec.setEntrance(e);
+		addEntranceToList(portName, ec);
+
+		return e;
+	}
+
+	protected <T extends Serializable> ConduitEntrance<T> addSharedDataEntrance(String portName, Class<T> dataClass) {
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, true, portName, new DataTemplate<T>(dataClass));
+
+		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
+		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
+		ec.setEntrance(e);
+		addEntranceToList(portName, ec);
+
+		return e;
+	}
+	
 	protected void log(String msg) {
 		log(msg, Level.INFO);
 	}

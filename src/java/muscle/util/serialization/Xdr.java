@@ -726,10 +726,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 	 */
 	public void xdrEncodeString(String string) {
 		logger.log(Level.FINEST, "Encode String:  {0}", string);
-		if( string == null ) {
-			string = "";
-		}
-		xdrEncodeDynamicOpaque(string.getBytes());
+		xdrEncodeDynamicOpaque(string == null ? new byte[] {} : string.getBytes());
 	}
 
 	private static final byte [] paddingZeros = { 0, 0, 0, 0 };

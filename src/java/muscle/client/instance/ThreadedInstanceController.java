@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.Constant;
 import muscle.client.LocalManager;
 import muscle.client.communication.PortFactory;
 import muscle.core.*;
@@ -27,8 +26,6 @@ import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
-import muscle.util.FileTool;
-import muscle.util.JVM;
 
 /**
  *
@@ -309,7 +306,8 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 	}
 
 	@Override
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate) {
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, boolean shared, String portalName, DataTemplate newDataTemplate) {
+		@SuppressWarnings("unchecked")
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, ENTRANCE);
 		ConduitEntranceController<T> entrance;
@@ -319,8 +317,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		}
 		List<String> portArgs = desc.getArgs();
 		if (portArgs.isEmpty()) {
+			@SuppressWarnings("unchecked")
 			ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController<T>(currentID, this, newDataTemplate) : new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate);
-			portFactory.<T>getTransmitter(this.mainController, s, otherID);
+			portFactory.<T>getTransmitter(this.mainController, s, otherID, shared);
 			entrance = s;
 		} else {
 			String portName = portArgs.get(0);
@@ -348,6 +347,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 
 	@Override
 	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
+		@SuppressWarnings("unchecked")
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
 		
@@ -358,6 +358,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		List<String> portArgs = desc.getArgs();
 		ConduitExitController<T> exit;
 		if (portArgs.isEmpty()) {
+			@SuppressWarnings("unchecked")
 			ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController<T>(currentID, this, newDataTemplate) : new PassiveConduitExitController<T>(currentID, this, newDataTemplate);
 			portFactory.<T>getReceiver(this.mainController, s, otherID);
 			exit = s;

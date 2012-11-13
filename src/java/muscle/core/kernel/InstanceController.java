@@ -15,7 +15,7 @@ import muscle.util.concurrency.Disposable;
  */
 public interface InstanceController extends Identifiable, Runnable, Disposable {
 	public String getLocalName();
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, String portalName, DataTemplate newDataTemplate);
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, boolean shared, String portalName, DataTemplate newDataTemplate);
 	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate);
 	public boolean isExecuting();
 	public void fatalException(Throwable ex);

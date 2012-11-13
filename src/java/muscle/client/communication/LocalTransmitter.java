@@ -11,7 +11,7 @@ import muscle.client.communication.message.Signal;
 import muscle.core.model.Observation;
 import muscle.id.InstanceID;
 import muscle.id.PortalID;
-import muscle.util.serialization.ObservationConverter;
+import muscle.util.serialization.DataConverter;
 
 /**
  *
@@ -20,7 +20,7 @@ import muscle.util.serialization.ObservationConverter;
 public class LocalTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<T>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<T>> {
 	private final LocalDataHandler dataHandler;
 	
-	public LocalTransmitter(LocalDataHandler dataHandler, ObservationConverter<T, T> converter, PortalID<InstanceID> portalID) {
+	public LocalTransmitter(LocalDataHandler dataHandler, DataConverter<Observation<T>, Observation<T>> converter, PortalID<InstanceID> portalID) {
 		super(converter, portalID);
 		this.dataHandler = dataHandler;
 	}
@@ -33,6 +33,7 @@ public class LocalTransmitter<T extends Serializable> extends AbstractCommunicat
 	}
 
 	public final void signal(Signal signal) {
+		@SuppressWarnings("unchecked")
 		Message<T> msg = new BasicMessage(signal, portalID);
 		this.dataHandler.put(msg);
 	}

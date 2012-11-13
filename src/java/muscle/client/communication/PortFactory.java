@@ -52,8 +52,8 @@ public abstract class PortFactory implements Disposable {
 	 * By evaluating the Future that is returned, it is possible to determine when this has taken place and what the actual assigned transmitter was.
 	 * The call is non-blocking, however, the returned Future can be evaluated with a blocking call.
 	 */
-	public <T extends Serializable> Future<Transmitter<T,?>> getTransmitter(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide) {
-		return executor.submit(this.<T>getTransmitterTask(ic, localInstance, otherSide));
+	public <T extends Serializable> Future<Transmitter<T,?>> getTransmitter(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide, boolean shared) {
+		return executor.submit(this.<T>getTransmitterTask(ic, localInstance, otherSide, shared));
 	}
 
 	/**
@@ -68,7 +68,7 @@ public abstract class PortFactory implements Disposable {
 	 * 
 	 * In this task, the otherSide might have to be resolved.
 	 */
-	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide);
+	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide, boolean shared);
 	
 	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
 		this.executor = new NamedExecutor();
