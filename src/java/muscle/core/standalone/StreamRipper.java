@@ -1,10 +1,13 @@
 package muscle.core.standalone;
 
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class StreamRipper extends Thread {
 	private BufferedReader br;
 	private PrintStream ps;
+	private final static Logger logger = Logger.getLogger(StreamRipper.class.getName());
 	
 	public StreamRipper(String name, PrintStream ps, InputStream is) {
 		super(name);
@@ -19,10 +22,8 @@ public class StreamRipper extends Thread {
 			while ((line = br.readLine()) != null) {
 				ps.println(line);
 			}
-			
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			logger.log(Level.WARNING, this.getName() + " no longer capturing output of process", ex);
 		}
 	}
-
 }
