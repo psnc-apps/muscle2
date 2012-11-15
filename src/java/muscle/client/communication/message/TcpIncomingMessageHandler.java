@@ -81,16 +81,19 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 				} break;
 				case SIGNAL: {
 					Signal sig = getSignal(in.readInt(), recipient);
-					if (sig instanceof DetachConduitSignal) {
-						shouldResubmit = false;
-					}
 
 					if (sig != null) {
+						if (sig instanceof DetachConduitSignal) {
+							shouldResubmit = false;
+						}
 						Receiver recv = listener.get(recipient);
 						if (recv == null) {
 							// Ignore detach conduit if the submodel has already quit
-							if (shouldResubmit)
-								logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});	
+							if (shouldResubmit) {
+								logger.log(Level.WARNING, "No receiver registered for signal {1} intended for {0}.", new Object[]{recipient, sig});
+							} else {
+								success = true;
+							}
 						} else {
 							recv.put(new BasicMessage<SerializableData>(sig,recipient));
 							success = true;					
