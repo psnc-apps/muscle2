@@ -168,7 +168,6 @@ bool do_full_test(const muscle_datatype_t type, const size_t d_sz, const size_t 
 				data = (const unsigned char *)"";
 				send_size = 1;
 			}
-			else if (sz >= 64*1024) return true;
 			else
 			{
 				c_data = (unsigned char *)malloc(send_size);
@@ -239,9 +238,10 @@ int main(int argc, char **argv)
 		
 		{
 			logger::info("Testing MUSCLE_STRING");
-			const char *test_strs[] = {"", "some simple", "&!!9121234567';:><{}][@#$%^&*-=_+QWERTYUIOPASDFGHJKLZXCVBNM,."};
+			std::string largeStr(64*1024,'.');
+			const char *test_strs[] = {"", "some simple", "&!!9121234567';:><{}][@#$%^&*-=_+QWERTYUIOPASDFGHJKLZXCVBNM,.", largeStr.c_str()};
 			bool success = true;
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 4; i++) {
 				const char *str = test_strs[i];
 				char *newstr = (char *)sendRecv(str, MUSCLE_STRING, 1, strlen(str)+1);
 				success = dataMatches((const unsigned char *)str, (const unsigned char *)newstr, MUSCLE_STRING, 1, strlen(str)+1);

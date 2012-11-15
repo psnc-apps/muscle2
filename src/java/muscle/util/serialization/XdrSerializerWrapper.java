@@ -18,7 +18,7 @@ import org.acplt.oncrpc.XdrEncodingStream;
  */
 public class XdrSerializerWrapper implements SerializerWrapper {
 	private final XdrEncodingStream xdrOut;
-	public final static int DEFAULT_BUFFER_SIZE=65536*9/10;
+	public final static int DEFAULT_BUFFER_SIZE=66560; // 65*1024
 	private final static float CHUNK_SIZE_MODIFIER = .9f;
 	private final float max_chunk_size;
 
