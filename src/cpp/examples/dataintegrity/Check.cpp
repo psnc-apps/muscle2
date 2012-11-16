@@ -295,6 +295,44 @@ int main(int argc, char **argv)
 			logger::info("Testing COMPLEX_DOUBLE_MATRIX_3D %s", success ? "succeeded" : "failed");
 			all_succeed = success && all_succeed;
 		}
+		{
+			bool success = true;
+			logger::info("Testing COMPLEX_INT_MATRIX_2D");
+			 int i_dims[] = {15,30};
+			vector<int> dims(i_dims, i_dims + sizeof(i_dims) / sizeof(int));
+			size_t len = dims[0]*dims[1];
+			
+			int *data = (int *)generateRandom(len*sizeof(int));
+			ComplexData cdata(data, COMPLEX_INT_MATRIX_2D, &dims);
+			ComplexData *cnewdata = (ComplexData *)sendRecv(&cdata, MUSCLE_COMPLEX, 8, len);
+			
+			int *olddata = (int *)cdata.getData();
+			int *newdata = (int *)cnewdata->getData();
+			
+			int prevIdx = -1;
+			for (int i = 0; i < dims[0] && success; i++) {
+				for (int j = 0; j < dims[1] && success; j++) {
+					int idx = cdata.fidx(i, j);
+					if (idx == prevIdx + 1) {
+						prevIdx++;
+					} else {
+						logger::severe("Index (%d, %d) = %d does not follow previous index %d", i, j, idx, prevIdx);
+						success = false;
+					}
+					if (idx != cnewdata->index(i, j)) {
+						logger::severe("Index (%d, %d) = %d of sent data does not match index %d of received data", i, j, idx, cnewdata->index(i, j));
+						success = false;
+					}
+					if (olddata[idx] != newdata[idx]) {
+						logger::fine("%d:  from %d to %d", i, olddata[idx], newdata[idx]);
+						success = false;
+					}
+				}
+			}
+			muscle::env::free_data(cnewdata,MUSCLE_COMPLEX);
+			logger::info("Testing COMPLEX_INT_MATRIX_2D %s", success ? "succeeded" : "failed");
+			all_succeed = success && all_succeed;
+		}
 		
 		// Stop Bounce
 		int datatype = -1;
