@@ -191,8 +191,10 @@ public class SerializableData implements Serializable {
 			
 			int dimX, dimY, dimZ, dimZZ;
 			dimX = in.readInt();
+			// Read the next int if type is not Matrix2D
 			dimY = type.isMatrix2D() ? length / dimX : in.readInt();
-			dimZ = type.isMatrix3D() ? length / (dimX*dimY) : in.readInt();
+			// Only read the last int if type is Matrix 4D.
+			dimZ = type.isMatrix4D() ?  in.readInt() : length / (dimX*dimY);
 			dimZZ = length / (dimX*dimY*dimZ);
 		
 			value = MatrixTool.arrayToMatrix(value, type, dimX, dimY, dimZ, dimZZ);
