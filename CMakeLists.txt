@@ -21,7 +21,6 @@ set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib") #this is importat for 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(MUSCLE_LIB muscle_cpp)
 set(MUSCLE2_LIB muscle2_cpp)
 set(MUSCLE_JAVA muscle_java)
 
