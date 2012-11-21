@@ -107,16 +107,15 @@ class Muscle
 		@env['Xms'] = '20m'
 		@env['Xmx'] = '100m'
 		@env[:as_manager] = true
-		command = JVM.build_command(args, @env)
-		@env.delete(:as_manager)
-		
+
+		puts "=== Running MUSCLE2 Simulation Manager ==="
+		pid = run_command(args)
+
+		@env.delete(:as_manager)		
 		@env['Xms'] = tmpXms
 		@env['Xmx'] = tmpXmx
-		puts "=== Running MUSCLE2 Simulation Manager ==="
-		if @env['verbose']
-			puts "Executing: #{command}"
-		end
-		Process.fork {exec(command)}
+		
+		return pid
 	end
 	
 	def poll_manager(manager_pid)
@@ -166,11 +165,7 @@ class Muscle
 		end
 
 		puts "=== Running MUSCLE2 Simulation ==="
-		command = JVM.build_command(args, @env)
-		if @env['verbose']
-			puts command
-		end
-		Process.fork {exec(command)}
+		run_command(args)
 	end
 	
 	def add_to_command(command, kernel_name, prop)
@@ -221,14 +216,35 @@ class Muscle
 		
 		command = native_command.join(" ")
 		
-		puts "Executing: #{command}"
-		exec(command)
+		exec_command(command)
 	end
 	
 	def exec_mpi(args)
 		command = JVM.build_command(args, @env)
-		puts "Executing: #{command}"
-		exec(command)
+		exec_command(command)
+	end
+	
+	def exec_command(command)
+		puts "Executing #{command}"
+		
+		if @env.has_key?('execute') and not @env['execute']
+			exit 0
+		else
+			exec(command)
+		end
+	end
+
+	def run_command(args)
+		command = JVM.build_command(args, @env)
+		if @env['verbose']
+			puts command
+		end
+		
+		if @env.has_key?('execute') and not @env['execute']
+			return -1
+		else
+			return Process.fork {exec(command)}
+		end
 	end
 	
 	def apply_intercluster

@@ -202,15 +202,21 @@ if m.env['main']
 	muscle_main_args << instances.keys
 	if $running_procs != nil
 		manager_pid = m.run_manager(muscle_main_args)
-		$running_procs[manager_pid] = 'Simulation Manager'
+		if manager_pid != -1
+			$running_procs[manager_pid] = 'Simulation Manager'
+		end
 	end
-
-	begin
-		Timeout::timeout(30) { contact_addr = m.find_manager_contact(manager_pid) }
-	rescue Timeout::Error
-		puts "Simulation Manager did not run correctly. Aborting."
-		kill_processes($running_procs, 6)
-		$running_procs = nil
+	
+	if manager_pid == -1
+		contact_addr = "[MANAGER_ADDRESS]"
+	else
+		begin
+			Timeout::timeout(30) { contact_addr = m.find_manager_contact(manager_pid) }
+		rescue Timeout::Error
+			puts "Simulation Manager did not run correctly. Aborting."
+			kill_processes($running_procs, 6)
+			$running_procs = nil
+		end
 	end
 end
 
@@ -219,12 +225,12 @@ if not active_instances.empty?
 
 	if $running_procs != nil
 		pid = m.run_client(muscle_local_args, contact_addr)
-		$running_procs[pid] = 'Simulation'
+		if pid != -1
+			$running_procs[pid] = 'Simulation'
+		end
 	end
 end
 
 await_processes($running_procs)
 
 exit 0
-
-
