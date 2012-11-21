@@ -197,6 +197,7 @@ char *MPW_DNSResolve(char *host){
     return host;
   }
   cout << "Error: Unable to resolve host name" << endl;
+  return NULL;
 }
 
 char *MPW_DNSResolve(string host) {
@@ -492,7 +493,7 @@ void MPW_Init(string* url, int* ports, int* cports, int numstreams)
 int MPW_CreatePath(string host, int server_side_base_port, int streams_in_path) {
   int path_ports[streams_in_path];
   int path_cports[streams_in_path];
-  string hosts[streams_in_path];
+  vector<string> hosts(streams_in_path);
   int stream_indices[streams_in_path];
   for(int i=0; i<streams_in_path; i++) {
     path_ports[i] = server_side_base_port + i;
@@ -504,7 +505,7 @@ int MPW_CreatePath(string host, int server_side_base_port, int streams_in_path) 
   /* Add Path to paths Vector. */
   paths.push_back(MPWPath(host, stream_indices, streams_in_path));
 
-  MPW_AddStreams(hosts, path_ports, path_cports, streams_in_path);
+  MPW_AddStreams(&hosts[0], path_ports, path_cports, streams_in_path);
 
   #if PERF_REPORT > 0
   cout << "Creating New Path:" << endl;
@@ -549,6 +550,8 @@ int MPW_DestroyPath(int path) {
     DecrementStreamIndices(i);
   }
   paths.erase(paths.begin()+path);
+  // No return value given in original code, returning 0 by default
+  return 0;
 }
 
 int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int maxrecvsize, int path) {
@@ -579,11 +582,11 @@ void MPW_Init(string url, int port) {
 extern "C" {
   void MPW_Init_c (char** url, int* ports, int numstreams) 
   {
-    string urls[numstreams];
+    vector<string> urls(numstreams);
     for(int i=0;i<numstreams;i++) {
       urls[i].assign(url[i]);
     }
-    MPW_Init(urls,ports,numstreams);
+    MPW_Init(&urls[0],ports,numstreams);
   }
 
   void MPW_Init1_c (char* url, int port)
