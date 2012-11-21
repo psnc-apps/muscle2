@@ -5,9 +5,9 @@ project(mto)
 set(MTO mto)
 set(TESTER mto_tester)
 
-set(Boost_USE_STATIC_LIBS        OFF)
-set(Boost_USE_MULTITHREADED      OFF)
-set(Boost_USE_STATIC_RUNTIME     ON)
+#set(Boost_USE_STATIC_LIBS        ON)
+#set(Boost_USE_MULTITHREADED      OFF)
+#set(Boost_USE_STATIC_RUNTIME     OFF)
 
 #set(CMAKE_BUILD_TYPE Debug)
 
