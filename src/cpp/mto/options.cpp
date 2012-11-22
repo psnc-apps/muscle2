@@ -173,26 +173,6 @@ bool Options::load(int argc, char **argv)
 
   Logger::info(Logger::MsgType_Config, "Topology file '%s'", topologyFilePath.c_str());
 
-  // Logging
-    
-  if(read_opts.find("logMsgTypes")!=read_opts.end())
-    if(!setLogMsgType(read_opts["logMsgTypes"].as<string>()))
-      return false;
-  read_opts.erase("logMsgTypes");
-  
-  if(read_opts.find("logLevel")!=read_opts.end())
-    if(!setLogLvL(read_opts["logLevel"].as<string>()))
-      return false;
-  read_opts.erase("logLevel");
-  
-  int l = Logger::getLogLevel();
-  Logger::info(-1, "Logging level %d (%s)", l, 
-    ( l == Logger::LogLevel_Trace ? "TRACE":
-    ( l == Logger::LogLevel_Debug ? "DEBUG":
-    ( l == Logger::LogLevel_Info ? "INFO":
-    ( l == Logger::LogLevel_Error ? "ERROR": 
-      "?")))));
-  
   // Daemon
   
   if(read_opts.find("debug")!=read_opts.end())
@@ -223,6 +203,26 @@ bool Options::load(int argc, char **argv)
   }
   read_opts.erase("MPWide");
 
+  // Logging
+    
+  if(read_opts.find("logMsgTypes")!=read_opts.end())
+    if(!setLogMsgType(read_opts["logMsgTypes"].as<string>()))
+      return false;
+  read_opts.erase("logMsgTypes");
+  
+  if(read_opts.find("logLevel")!=read_opts.end())
+    if(!setLogLvL(read_opts["logLevel"].as<string>()))
+      return false;
+  read_opts.erase("logLevel");
+  
+  int l = Logger::getLogLevel();
+  Logger::info(-1, "Logging level %d (%s)", l, 
+    ( l == Logger::LogLevel_Trace ? "TRACE":
+    ( l == Logger::LogLevel_Debug ? "DEBUG":
+    ( l == Logger::LogLevel_Info ? "INFO":
+    ( l == Logger::LogLevel_Error ? "ERROR": 
+      "?")))));
+  
   // Remove optional opts
   read_opts.erase("config");
   read_opts.erase("topology");
