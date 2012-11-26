@@ -137,8 +137,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			}
 			this.processingMessage = true;
 		}
-		if (!dataClass.isInstance(msg.getData())) {
-			throw new MUSCLEDatatypeException("Data type "+ msg.getData().getClass().getSimpleName() + " sent through conduit entrance " + this + " does not match expected data type " + dataClass.getSimpleName());
+		T data = msg.getData();
+		if (data != null && !dataClass.isInstance(data)) {
+			throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " sent through conduit entrance " + this + " does not match expected data type " + dataClass.getSimpleName());
 		}
 		
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
