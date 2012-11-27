@@ -81,7 +81,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		};
 		
 		fc.init(entranceArgs);
-		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {cd, entranceArgs});
 		return fc;
 	}
 

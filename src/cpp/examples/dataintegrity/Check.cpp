@@ -222,10 +222,11 @@ int main(int argc, char **argv)
 	try
 	{
 		env::init(&argc, &argv);
+		const int seeds = atoi(cxa::get_property("num_seeds").c_str());
 		
 		bool all_succeed = true;
 
-		for (int seed = 1; seed <= 5; seed++) {
+		for (int seed = 1; seed <= seeds; seed++) {
 			srandom(seed);
 
 			all_succeed = do_test_suite("MUSCLE_BOOLEAN", MUSCLE_BOOLEAN, 1) && all_succeed;

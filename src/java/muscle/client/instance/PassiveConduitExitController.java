@@ -72,7 +72,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		};
 		
 		fc.init(exitArgs);
-		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {cd, exitArgs});
 		return fc;
 	}
 	

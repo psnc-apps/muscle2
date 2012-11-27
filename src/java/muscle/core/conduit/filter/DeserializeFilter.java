@@ -21,16 +21,20 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
+import muscle.core.model.Observation;
 import muscle.util.serialization.ByteJavaObjectConverter;
 
 /**
-deserialize a byte array
-@author Jan Hegewald
-*/
-public class DeserializeFilter extends AbstractFilter<byte[],Object> {
+ * Deserialize a message with a serialized byte array of a Java object into that object.
+ * @author Joris Borgdorff
+ */
+public class DeserializeFilter<T extends Serializable> extends AbstractObservationFilter<byte[],T> {
 	private ByteJavaObjectConverter converter = new ByteJavaObjectConverter();
-	protected void apply(byte[] subject) {
-		put(converter.deserialize(subject));
+	protected void apply(Observation<byte[]> subject) {
+		T deserialized = (T)converter.deserialize(subject.getData());
+		Observation<T> copy = subject.copyWithNewData(deserialized);
+		put(copy);
 	}
 }
 
