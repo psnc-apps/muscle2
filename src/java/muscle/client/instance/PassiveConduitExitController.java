@@ -55,8 +55,9 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		
 		FilterChain fc = new FilterChain() {
 			protected void apply(Observation subject) {
-				if (!dataClass.isInstance(subject.getData())) {
-					throw new MUSCLEDatatypeException("Data type "+ subject.getData().getClass().getSimpleName() + " received through conduit exit " + PassiveConduitExitController.this + " does not match expected data type " + dataClass.getSimpleName());
+				Serializable data = subject.getData();
+				if (data != null && !dataClass.isInstance(data)) {
+					throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + PassiveConduitExitController.this + " does not match expected data type " + dataClass.getSimpleName());
 				}
 
 				queue.add(subject);
