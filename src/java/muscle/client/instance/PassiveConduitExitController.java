@@ -3,6 +3,7 @@
  */
 package muscle.client.instance;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
 import java.util.List;
 import java.util.logging.Level;
@@ -52,6 +53,12 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
 		List<String> args = cd.getArgs();
 		if (args.isEmpty()) return null;
+		int exitArgDiv = args.indexOf("") + 1;
+		if (exitArgDiv == args.size()) return null;
+		List<String> exitArgs = new FastArrayList<String>(args.size() - exitArgDiv);
+		for (int i = exitArgDiv; i < args.size(); i++) {
+			exitArgs.add(args.get(i));
+		}
 		
 		FilterChain fc = new FilterChain() {
 			protected void apply(Observation subject) {
@@ -64,8 +71,8 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 			}
 		};
 		
-		fc.init(args);
-		logger.log(Level.INFO, "The conduit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		fc.init(exitArgs);
+		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
 		return fc;
 	}
 	

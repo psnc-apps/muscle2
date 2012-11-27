@@ -20,13 +20,19 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.client.instance;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.client.LocalManager;
 import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
+import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntrance;
+import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEDatatypeException;
@@ -43,7 +49,8 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private volatile boolean processingMessage;
 	private boolean isDone;
-	
+	private final FilterChain filters;
+
 	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.transmitter = null;
@@ -51,6 +58,31 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		this.processingMessage = false;
 		this.isDone = false;
 		this.transmitterFound = false;
+		this.filters = createFilterChain();
+	}
+	
+	/** Create a filter chain from the given arguments */
+	private FilterChain createFilterChain() {
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		ConduitDescription cd = cs.entranceDescriptionForPortal(portalID).getConduitDescription();
+		List<String> args = cd.getArgs();
+		int entranceArgDiv = args.indexOf("");
+		if (entranceArgDiv < 1) return null;
+		
+		List<String> entranceArgs = new FastArrayList<String>(entranceArgDiv);
+		for (int i = 0; i < entranceArgDiv; i++) {
+			entranceArgs.add(args.get(i));
+		}
+		
+		FilterChain fc = new FilterChain() {
+			protected void apply(Observation subject) {
+				transmitter.transmit(subject);
+			}
+		};
+		
+		fc.init(entranceArgs);
+		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		return fc;
 	}
 
 	/** Set the transmitter that will be used to transmit messages. Before this
@@ -121,7 +153,16 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			return;
 		}
 
-		transmitter.transmit(msg);
+		if (this.filters == null) {
+			transmitter.transmit(msg);
+		} else {
+			try {
+				this.filters.process(msg);
+			} catch (Throwable ex) {
+				logger.log(Level.SEVERE, "Could not filter message " + msg + " properly, probably the coupling is not correct.", ex);
+				LocalManager.getInstance().shutdown(14);
+			}
+		}
 		increment();
 	}
 	

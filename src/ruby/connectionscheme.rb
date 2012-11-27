@@ -61,15 +61,21 @@ class ConnectionScheme
 		end
 	end
 
-	def tie(entrance_name, exit_name=entrance_name, filters=[])
+	def tie(entrance_name, exit_name=entrance_name, filters=[], exit_filters=nil)
 		abort("first arg to tie can not be a #{entrance_name.class}") if(entrance_name.class==Hash) # sanity check
-		tie_single_args(entrance_name, exit_name, filters)
+		tie_single_args(entrance_name, exit_name, filters, exit_filters)
 	end
 
 	# call with (entrance, exit, [conduit])
-	def tie_single_args(entrance_name, exit_name, filters)
+	def tie_single_args(entrance_name, exit_name, entrance_filters, exit_filters)
 		entrance = ConduitEntrance.new(@current_src_agent, entrance_name)
 		exit = ConduitExit.new(@current_tgt_agent, exit_name)
+		
+		if exit_filters.nil?
+			filters = entrance_filters
+		else
+			filters = entrance_filters + [""] + exit_filters
+		end
 
 		@pipelines << Pipeline.new(@current_src_kernel, entrance, Conduit.new(filters), exit, @current_tgt_kernel)
 	end
