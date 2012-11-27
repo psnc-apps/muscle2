@@ -39,6 +39,11 @@ public class DecompressFilter extends AbstractObservationFilter<byte[],byte[]> {
 	private final static boolean finerIsLoggable = logger.isLoggable(Level.FINER);
 	protected void apply(Observation<byte[]> subject) {
 		byte[] bytes = subject.getData();
+		if (bytes.length == 0) {
+			if (finerIsLoggable) logger.log(Level.FINER, "Not decompressing 0 bytes...");
+			put(subject.copyWithNewData(new byte[0]));
+			return;
+		}
 		if (finerIsLoggable) logger.log(Level.FINEST, "Decompressing {0} bytes...", bytes.length);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		InflaterOutputStream inflater = new InflaterOutputStream(out);
@@ -50,7 +55,7 @@ public class DecompressFilter extends AbstractObservationFilter<byte[],byte[]> {
 			throw new RuntimeException(ex);
 		}
 		byte[] output = out.toByteArray();
-		if (finerIsLoggable) logger.log(Level.FINER, "Compression ratio was {0}% (lower is better)", 100*bytes.length/output.length);
+		if (finerIsLoggable) logger.log(Level.FINER, "Compression ratio was {0}% (higher is better)", 100 - 100*bytes.length/output.length);
 		put(subject.copyWithNewData(output));
   	}
 }
