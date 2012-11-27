@@ -210,10 +210,16 @@ if m.env['main']
 	if manager_pid == -1
 		contact_addr = "[MANAGER_ADDRESS]"
 	else
+		if ENV.has_key?('MUSCLE_MANAGER_TIMEOUT')
+			manager_timeout = ENV['MUSCLE_MANAGER_TIMEOUT'].to_i
+		else
+			manager_timeout = 30
+		end
+		
 		begin
-			Timeout::timeout(30) { contact_addr = m.find_manager_contact(manager_pid) }
+			Timeout::timeout(manager_timeout) { contact_addr = m.find_manager_contact(manager_pid) }
 		rescue Timeout::Error
-			puts "Simulation Manager did not run correctly. Aborting."
+			puts "Simulation Manager did not run correctly after #{manager_timeout} seconds. Aborting."
 			kill_processes($running_procs, 6)
 			$running_procs = nil
 		end
