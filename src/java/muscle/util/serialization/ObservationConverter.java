@@ -18,11 +18,11 @@ public class ObservationConverter<E extends Serializable,F extends Serializable>
 	}
 	@Override
 	public Observation<F> serialize(Observation<E> data) {
-		return new Observation<F>(this.converter.serialize(data.getData()), data.getTimestamp(), data.getNextTimestamp());
+		return data.copyWithNewData(this.converter.serialize(data.getData()));
 	}
 
 	@Override
 	public Observation<E> deserialize(Observation<F> data) {
-		return new Observation<E>(this.converter.deserialize(data.getData()), data.getTimestamp(), data.getNextTimestamp());
+		return data.copyWithNewData(this.converter.deserialize(data.getData()));
 	}
 }

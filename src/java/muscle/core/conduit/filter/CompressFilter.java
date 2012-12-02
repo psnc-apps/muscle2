@@ -33,7 +33,7 @@ import muscle.util.serialization.ByteJavaObjectConverter;
 /**
  * Compress a message
  */
-public class CompressFilter extends AbstractObservationFilter<byte[],byte[]> {
+public class CompressFilter extends AbstractFilter<byte[],byte[]> {
 	private final static Logger logger = Logger.getLogger(CompressFilter.class.getName());
 	private final static boolean finerIsLoggable = logger.isLoggable(Level.FINER);
 	

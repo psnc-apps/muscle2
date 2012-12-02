@@ -18,11 +18,11 @@ public class Timestamp extends SIUnit {
 		this(t, ScaleFactor.SECOND);
 	}
 	
-	private Timestamp(double t, ScaleFactor sc) {
+	Timestamp(double t, ScaleFactor sc) {
 		super(t, sc);
 	}
 
-	private Timestamp(SIUnit unit) {
+	Timestamp(SIUnit unit) {
 		super(unit);
 	}
 	
@@ -34,7 +34,18 @@ public class Timestamp extends SIUnit {
 		if (other.getDimension() != Dimension.TIME) {
 			throw new IllegalArgumentException("May only subtract time from a timestamp");
 		}
-		return new Timestamp(super.sub(other));
+		return new Timestamp(sub(other));
+	}
+	public Distance distance(Timestamp other) {
+		if (other.getDimension() != Dimension.TIME) {
+			throw new IllegalArgumentException("May only subtract time from a timestamp");
+		}
+		boolean isLarger = this.compareTo(other) >= 0;
+		if (isLarger) {
+			return new Distance(sub(other));
+		} else {
+			return new Distance(other.sub(this));
+		}
 	}
 	public Timestamp add(Distance other) {
 		if (other.getDimension() != Dimension.TIME) {

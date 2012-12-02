@@ -28,7 +28,7 @@ import muscle.core.model.Observation;
 this filter writes data to standard out and also forwards the data to the next filter
 @author Jan Hegewald
 */
-public class ConsoleWriterFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class ConsoleWriterFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	protected void apply(Observation<E> subject) {
 		System.out.println(subject.toString());
 		

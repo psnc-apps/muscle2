@@ -23,12 +23,13 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 
 /**
 modifies timestep with a given factor
-@author Jan Hegewald
+@author Joris Borgdorff
 */
-public class TimeFactorFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class TimeFactorFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	private final double factor;
 
 	public TimeFactorFilter(double newFactor) {
@@ -37,6 +38,6 @@ public class TimeFactorFilter<E extends Serializable> extends AbstractObservatio
 	}
 
 	protected void apply(Observation<E> subject) {		
-		put(new Observation<E>(subject.getData(), subject.getTimestamp().multiply(factor), subject.getNextTimestamp().multiply(factor)));
+		put(subject.copyWithNewTimestamps(subject.getTimestamp().multiply(factor), subject.getNextTimestamp().multiply(factor)));
 	}
 }

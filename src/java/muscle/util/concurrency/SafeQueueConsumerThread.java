@@ -3,6 +3,7 @@
  */
 package muscle.util.concurrency;
 
+import java.io.Serializable;
 import java.util.Queue;
 import muscle.core.conduit.filter.QueueConsumer;
 
@@ -10,7 +11,7 @@ import muscle.core.conduit.filter.QueueConsumer;
  *
  * @author Joris Borgdorff
  */
-public abstract class SafeQueueConsumerThread<T> extends SafeThread implements QueueConsumer<T> {
+public abstract class SafeQueueConsumerThread<T extends Serializable> extends SafeThread implements QueueConsumer<T> {
 	private Queue<T> queue;
 	
 	public SafeQueueConsumerThread(String name) {

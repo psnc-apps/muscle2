@@ -21,7 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import muscle.core.model.Distance;
 import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 
 /**
 interpolates between current and last timestep<br>
@@ -34,48 +36,54 @@ dtFineCount = (globalStepCount%dt_fine)-1<br>
 dtCoarseCount/2 == dtFineCount<br>
 @author Jan Hegewald
 */
-public class LinearTimeInterpolationFilterDouble extends AbstractObservationFilter<double[],double[]> {
-	private double[] lastCoarseData; // copy of the last used coarse timestep data (inData)
+public class LinearTimeInterpolationFilterDouble extends AbstractFilter<double[],double[]> {
+	private double[] lastCoarseArray; // copy of the last used coarse timestep data (inData)
 	private final int dtFactor;
+	private Timestamp lastTime;
 		
 	public LinearTimeInterpolationFilterDouble(int dtFactor) {
 		super();
-		// so far only tested with dt_coarse = 2*dt_fine
-		assert dtFactor == 2;
+		// only works with strictly positive dt
+		assert dtFactor > 0;
 		this.dtFactor = dtFactor;
 	}
 	
 	public void apply(Observation<double[]> subject) {
+		double[] data = subject.getData();
+		int size = data.length;
 		// init lastCoarseData buffer
 		// create our buffer for out data only once
-		if(lastCoarseData == null) {
-			lastCoarseData = (subject.getData()).clone();
-
-			// feed next filter with data for the current coarse timestep
-			put(subject);
-
-			return;
-		}
-
-		double[] lastCoarseArray = lastCoarseData;
-		double[] currentCoarseArray = subject.getData();
-		double[] interpolatedArray = new double[currentCoarseArray.length];
-		for(int i = 0; i < lastCoarseArray.length; i++) {
-			interpolatedArray[i] = (lastCoarseArray[i] + currentCoarseArray[i]) / 2.0;
-		}
+		Timestamp currentTime = subject.getTimestamp();
+		// We need to copy this so that we can store it for the next iteration
+		double[] currentCoarseArray = new double[size];
+		System.arraycopy(data, 0, currentCoarseArray, 0, size);
 		
+		// In the first step, don't interpolate anything
+		if(lastCoarseArray != null) {
+			Distance dt = lastTime.distance(currentTime).div((double)dtFactor);
+			Timestamp interpolatedTime = lastTime.add(dt);
+			for (int t = 1; t < dtFactor; t++) {
+				double[] interpolatedArray = new double[size];
+				for(int i = 0; i < lastCoarseArray.length; i++) {
+					interpolatedArray[i] = ((dtFactor - t)*lastCoarseArray[i] + t*currentCoarseArray[i]) / (double)dtFactor;
+				}
+
+				Timestamp nextInterpolatedTime = (t + 1 == dtFactor) ? currentTime : interpolatedTime.add(dt);
+				Observation<double[]> interpolatedData = new Observation<double[]>(interpolatedArray, interpolatedTime, nextInterpolatedTime, true);
+				interpolatedTime = nextInterpolatedTime;
+				
+				// feed next filter with interpolated data for last fine timestep
+				put(interpolatedData);
+			}
+		}
+
 		// retain the current coarse data to be able to calculate the next timestep
-		lastCoarseData = (subject.getData()).clone();
-		
-		Observation<double[]> interpolatedData = new Observation<double[]>(interpolatedArray, subject.getTimestamp().divide(dtFactor), subject.getNextTimestamp().divide(dtFactor));
-		assert interpolatedData.getTimestamp().compareTo(subject.getTimestamp()) != 0;
-		
-		// feed next filter with interpolated data for last fine timestep
-		put(interpolatedData);
+		lastCoarseArray = currentCoarseArray;
+		lastTime = currentTime;
 
+		Distance nextDt = currentTime.distance(subject.getNextTimestamp()).div((double)dtFactor);
 		// feed next filter with data for the current coarse timestep
-		put(subject);
+		put(subject.copyWithNewTimestamps(currentTime, currentTime.add(nextDt)));
 	}
-
 }
 

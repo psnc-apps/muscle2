@@ -17,6 +17,9 @@ public class PipeObservationConverter<T extends Serializable> extends Observatio
 		super(converter);
 	}
 	public Observation<T> serialize(Observation<T> data) {
-		return data.copyWithNewData(this.converter.copy(data.getData()));
+		return data.privateCopy(this.converter);
+	}
+	public Observation<T> deserialize(Observation<T> data) {
+		return data.privateCopy(this.converter);
 	}
 }

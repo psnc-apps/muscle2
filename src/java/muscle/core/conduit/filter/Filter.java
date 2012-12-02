@@ -21,9 +21,11 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
+
 /**
 interface for conduit filters
 */
-public interface Filter<E,F> extends QueueConsumer<E>, QueueProducer<F> {
+public interface Filter<E extends Serializable,F extends Serializable> extends QueueConsumer<E>, QueueProducer<F> {
 }
 

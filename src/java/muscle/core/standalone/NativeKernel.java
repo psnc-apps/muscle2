@@ -11,6 +11,9 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import muscle.core.*;
 import muscle.core.kernel.CAController;
+import muscle.core.model.Distance;
+import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 import muscle.exception.MUSCLERuntimeException;
 import muscle.util.data.SerializableData;
 import muscle.util.data.SerializableDatatype;
@@ -47,36 +50,16 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		type = SerializableDatatype.NULL;
 	}
 	
-	/**
-	 * Initializes all ports for you.
-	 */
-	@Override
-	protected void addPortals() {
-		ConnectionScheme cs = ConnectionScheme.getInstance();
-		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
-		if (ports != null) {
-			for (PortDescription entrance : ports.values()) {
-				this.addSharedDataEntrance(entrance.getID().getPortName(), Serializable.class);
-			}
-		}
-		logger.log(Level.FINE, "{0}: added all conduit entrances", getLocalName());
-		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
-		if (ports != null) {
-			for (PortDescription exit : ports.values()) {
-				this.addExit(exit.getID().getPortName(), Serializable.class);
-			}
-		}
-		logger.log(Level.FINE, "{0}: added all conduit exits", getLocalName());
-	}
-	
 	public synchronized void send(String entranceName, SerializableData data) {
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
 		if (ec == null || (entrance = ec.getEntrance()) == null) {
 			throw new MUSCLERuntimeException("Unknown entrance: '" + entranceName + "' in " + getLocalName() + " (valid entrances are " + entrances.keySet() + ")");
 		}
+		Distance dt = getScale().getDt();
+		Observation obs = new Observation(data.getValue(), ec.getSITime(), ec.getSITime().add(dt), true);
 		
-		entrance.send(data.getValue());		
+		entrance.send(obs);
 	}
 	
 	public synchronized SerializableData receive(String exitName) {
@@ -87,7 +70,14 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		}
 		
 		if (exit.hasNext()) {
-			Serializable data = exit.receive();
+			Observation obs = exit.receiveObservation();
+			Timestamp time = obs.getTimestamp();
+			for (ConduitEntranceController cec : this.entrances.values()) {
+				if (time.compareTo(cec.getSITime()) > 0) {
+					cec.resetTime(time);
+				}
+			}
+			Serializable data = obs.getData();
 			SerializableData sdata;
 			if (data == null) {
 				logger.log(Level.WARNING, "Null values, from exit {0}, are not supported in native code.", exit);

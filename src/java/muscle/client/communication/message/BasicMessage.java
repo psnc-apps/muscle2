@@ -23,10 +23,6 @@ public class BasicMessage<E extends Serializable> implements Message<E>, Seriali
 		this.obs = null;
 	}
 	
-	public BasicMessage(E data, Timestamp time, Timestamp nextTime, Identifier recipient) {
-		this (new Observation<E>(data, time, nextTime), recipient);
-	}
-	
 	public BasicMessage(Observation<E> obs, Identifier recipient) {
 		this.obs = obs;
 		this.recv = recipient;

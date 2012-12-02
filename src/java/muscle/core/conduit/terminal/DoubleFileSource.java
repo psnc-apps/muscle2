@@ -58,6 +58,6 @@ public class DoubleFileSource extends FileSource<double[]> {
 			System.arraycopy(value, 0, tmp, 0, size);
 			value = tmp;
 		}
-		return new Observation<double[]>(value, getSITime(), getSITime());
+		return new Observation<double[]>(value, getSITime(), getSITime(), true);
 	}
 }

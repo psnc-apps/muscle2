@@ -29,7 +29,7 @@ example of a kernel which is using native code to send and receive data using a 
 */
 public class Pong extends NativeKernel {	
 	public void addPortals() {
-		addSharedDataEntrance("out", byte[].class);
+		addEntrance("out", byte[].class);
 		addExit("in", byte[].class);
 	}
 }

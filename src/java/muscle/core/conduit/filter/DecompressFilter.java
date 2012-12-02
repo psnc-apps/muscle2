@@ -34,7 +34,7 @@ import muscle.util.serialization.ByteJavaObjectConverter;
 /**
  * Decompress a message.
  */
-public class DecompressFilter extends AbstractObservationFilter<byte[],byte[]> {
+public class DecompressFilter extends AbstractFilter<byte[],byte[]> {
 	private final static Logger logger = Logger.getLogger(DecompressFilter.class.getName());
 	private final static boolean finerIsLoggable = logger.isLoggable(Level.FINER);
 	protected void apply(Observation<byte[]> subject) {

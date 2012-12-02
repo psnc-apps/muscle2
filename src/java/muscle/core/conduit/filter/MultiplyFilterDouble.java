@@ -22,12 +22,13 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import muscle.core.model.Observation;
+import muscle.util.data.SerializableDatatype;
 
 /**
 multiplies every value of incoming data with a constant factor
 @author Jan Hegewald
 */
-public class MultiplyFilterDouble extends AbstractObservationFilter<double[],double[]> {
+public class MultiplyFilterDouble extends AbstractFilter<double[],double[]> {
 	private final double factor;
 	
 	public MultiplyFilterDouble(double newFactor) {
@@ -36,12 +37,13 @@ public class MultiplyFilterDouble extends AbstractObservationFilter<double[],dou
 	}
 
 	protected void apply(Observation<double[]> subject) {
-		double[] inData = subject.getData();
+		Observation<double[]> privObs = subject.privateCopy(SerializableDatatype.DOUBLE_ARR);
+		double[] inData = privObs.getData();
 
 		for (int i = 0; i < inData.length; i++) {			
 			inData[i] *= factor;
 		}
-		put(subject);
+		put(privObs);
 	}
 }
 

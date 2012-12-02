@@ -26,14 +26,12 @@ import muscle.core.model.Observation;
 import muscle.util.serialization.ByteJavaObjectConverter;
 
 /**
- * serialize a Java object as a byte array
- * @author Joris Borgdorff
- */
-public class SerializeFilter<E extends Serializable> extends AbstractObservationFilter<E,byte[]> {
+serialize to a byte array
+@author Joris Borgdorff
+*/
+public class SerializeFilter<E extends Serializable> extends AbstractFilter<E,byte[]> {
 	private final ByteJavaObjectConverter<E> converter = new ByteJavaObjectConverter<E>();
 	protected void apply(Observation<E> subject) {
-		byte[] serialized = converter.serialize(subject.getData());
-		Observation<byte[]> copy = subject.copyWithNewData(serialized);
-		put(copy);
+		put(subject.copyWithNewData(converter.serialize(subject.getData())));
 	}
 }

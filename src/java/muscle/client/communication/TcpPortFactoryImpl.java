@@ -116,8 +116,9 @@ public class TcpPortFactoryImpl extends PortFactory {
 				Transmitter trans;
 				DataConverter converter;
 				if (res.isLocal(instancePort)) {
-					if (shared || entrance instanceof ThreadedConduitEntranceController) {
-						converter = new PipeConverter();
+					if (shared) {
+						converter = new PipeConverter<Observation<T>>();
+						entrance.setSharedData();
 					} else {
 						 converter = new PipeObservationConverter<T>(new SerializableDataConverter());
 					}

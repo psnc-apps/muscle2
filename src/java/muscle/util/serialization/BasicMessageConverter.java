@@ -26,7 +26,7 @@ public class BasicMessageConverter<E extends Serializable,F extends Serializable
 		} else {
 			Observation<E> obs = data.getObservation();
 			F newData = subconverter.serialize(obs.getData());
-			return new BasicMessage<F>(newData, obs.getTimestamp(), obs.getNextTimestamp(), data.getRecipient());
+			return new BasicMessage<F>(obs.copyWithNewData(newData), data.getRecipient());
 		}
 	}
 
@@ -37,7 +37,7 @@ public class BasicMessageConverter<E extends Serializable,F extends Serializable
 		} else {
 			Observation<F> obs = data.getObservation();
 			E newData = subconverter.deserialize(obs.getData());
-			return new BasicMessage<E>(newData, obs.getTimestamp(), obs.getNextTimestamp(), data.getRecipient());
+			return new BasicMessage<E>(obs.copyWithNewData(newData), data.getRecipient());
 		}
 	}
 }

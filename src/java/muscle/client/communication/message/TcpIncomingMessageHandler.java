@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
 import muscle.client.communication.TcpDataProtocol;
+import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
 import muscle.id.IDType;
 import muscle.id.Identifier;
@@ -69,7 +70,8 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 					Timestamp time = new Timestamp(in.readDouble());
 					Timestamp nextTime = new Timestamp(in.readDouble());
 					SerializableData data = SerializableData.parseData(in);
-					BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(data, time, nextTime, recipient);
+					Observation<SerializableData> obs = new Observation<SerializableData>(data, time, nextTime, true);
+					BasicMessage<SerializableData> msg = new BasicMessage<SerializableData>(obs, recipient);
 					logger.log(Level.FINEST, "Message for {0} received with type {1}, size {2}, at time {3}.", new Object[]{recipient, data.getType(), data.getSize(), time});
 					Receiver recv = listener.get(recipient);
 					if (recv == null) {

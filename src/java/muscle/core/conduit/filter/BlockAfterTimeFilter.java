@@ -31,7 +31,7 @@ import muscle.core.model.Timestamp;
 ignores data after a given timestep, only recommended for debugging purposes
 @author Jan Hegewald
 */
-public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class BlockAfterTimeFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	private final Timestamp maxTime;
 	private final static Logger logger = Logger.getLogger(BlockAfterTimeFilter.class.getName());
 
@@ -42,9 +42,11 @@ public class BlockAfterTimeFilter<E extends Serializable> extends AbstractObserv
 	}
 
 	protected void apply(Observation<E> subject) {
-		if(subject.getTimestamp().compareTo(maxTime) < 1)
+		if(subject.getTimestamp().compareTo(maxTime) < 1) {
 			put(subject);
-		else
+		}
+		else {
 			logger.log(Level.WARNING, "blocking data for time <{0}>", subject.getTimestamp());
+		}
 	}
 }

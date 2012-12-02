@@ -29,7 +29,7 @@ drops data if incoming time scale is not a multiple of outgoing dt, newInDt is o
 use for testing, usually better try to not send the dropped data at all from within the CA
 @author Jan Hegewald
 */
-public class DropFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class DropFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	private final int outRate;
 	private int counter;
 	

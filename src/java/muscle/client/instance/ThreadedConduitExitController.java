@@ -3,6 +3,7 @@
  */
 package muscle.client.instance;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
 import java.util.List;
 import java.util.logging.Level;
@@ -18,6 +19,7 @@ import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
+import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.data.TakeableQueue;
@@ -48,18 +50,22 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
 		List<String> args = cd.getArgs();
-		if (args.isEmpty()) {
-			return null;
+		if (args.isEmpty()) return null;
+		int exitArgDiv = args.indexOf("") + 1;
+		if (exitArgDiv == args.size()) return null;
+		List<String> exitArgs = new FastArrayList<String>(args.size() - exitArgDiv);
+		for (int i = exitArgDiv; i < args.size(); i++) {
+			exitArgs.add(args.get(i));
 		}
 		
 		FilterChain fc = new FilterChain() {
-			@SuppressWarnings("unchecked")
 			protected void apply(Observation subject) {
-				ThreadedConduitExitController.this.queue.add(subject);
+				queue.add(subject);
 			}
 		};
-		fc.init(args);
-		logger.log(Level.INFO, "The conduit ''{0}'' will use filter(s) {1}.", new Object[] {cd, args});
+		
+		fc.init(exitArgs);
+		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {cd, exitArgs});
 		return fc;
 	}
 
@@ -110,7 +116,11 @@ public class ThreadedConduitExitController<T extends Serializable> extends Threa
 	@Override
 	public synchronized void dispose() {
 		receiver = null;
-		super.dispose();
+		if (this.filters != null && !isDisposed()) {
+			this.filters.dispose();
+		} else {
+			super.dispose();
+		}
 	}
 
 	@Override

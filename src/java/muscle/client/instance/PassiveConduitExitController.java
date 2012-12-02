@@ -85,8 +85,12 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 	
 	@Override
-	public void dispose() {
-		this.isDone = true;
+	public synchronized void dispose() {
+		if (this.filters != null && !isDisposed()) {
+			this.filters.dispose();
+		} else {
+			this.isDone = true;
+		}
 	}
 
 	public String toString() {
@@ -139,7 +143,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	@Override
-	public boolean isDisposed() {
+	public synchronized boolean isDisposed() {
 		return this.isDone;
 	}
 		

@@ -24,11 +24,11 @@ public class Distance extends SIUnit {
 		this(t, ScaleFactor.SI.withDimension(dim, dimName));
 	}
 	
-	private Distance(double t, ScaleFactor sc) {
+	Distance(double t, ScaleFactor sc) {
 		super(t, sc);
 	}
 	
-	private Distance(SIUnit unit) {
+	Distance(SIUnit unit) {
 		super(unit);
 	}
 	

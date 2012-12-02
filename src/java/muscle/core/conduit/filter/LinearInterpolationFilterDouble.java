@@ -28,7 +28,7 @@ interpolates two adjacent values of the incoming data array
 for this filter to work, the incoming data must have one value more than the outgoing data
 @author Jan Hegewald
 */
-public class LinearInterpolationFilterDouble extends AbstractObservationFilter<double[],double[]> {
+public class LinearInterpolationFilterDouble extends AbstractFilter<double[],double[]> {
 	protected void apply(Observation<double[]> subject) {
 		double[] inData = subject.getData();
 		double[] outData = new double[inData.length-1];

@@ -4,6 +4,8 @@
  */
 package muscle.core.conduit.filter;
 
+import eu.mapperproject.jmml.util.FastArrayList;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import muscle.core.model.Observation;
@@ -13,11 +15,13 @@ import muscle.exception.MUSCLERuntimeException;
  *
  * @author Joris Borgdorff
  */
-public abstract class FilterChain extends AbstractFilter<Observation,Observation> {
+public abstract class FilterChain<E extends Serializable, F extends Serializable> extends AbstractFilter<E,F> {
+	private List<ThreadedFilter> threadedFilters;
 	
 	public void init(List<String> args) {
+		this.threadedFilters = new FastArrayList<ThreadedFilter>();
 		if (!args.isEmpty()) {
-			QueueConsumer<Observation> qc = automaticPipeline(args, this);
+			QueueConsumer qc = automaticPipeline(args, this);
 			this.setQueueConsumer(qc);
 		}
 	}
@@ -42,8 +46,8 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 		}
 	}
 	
-	private QueueConsumer<Observation> automaticPipeline(List<String> filterNames, QueueConsumer<Observation> tailFilter) {
-		QueueConsumer<Observation> filter = tailFilter;
+	private QueueConsumer automaticPipeline(List<String> filterNames, QueueConsumer tailFilter) {
+		QueueConsumer filter = tailFilter;
 		for (int i = filterNames.size() - 1; i >= 0; i--) {
 			filter = filterForName(filterNames.get(i), filter);
 		}
@@ -51,7 +55,13 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 		return filter;
 	}
 
-	private QueueConsumer<Observation> filterForName(String fullName, QueueConsumer<Observation> tailFilter) {
+	public void dispose() {
+		for (ThreadedFilter f : this.threadedFilters) {
+			f.dispose();
+		}
+	}
+	
+	private QueueConsumer filterForName(String fullName, QueueConsumer tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once
 		String name = tmp[0];
@@ -60,7 +70,7 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 			remainder = tmp[1];
 		}
 
-		ObservationFilter filter = null;
+		Filter filter = null;
 
 		// filters without args
 		if (name.equals("null")) {
@@ -71,7 +81,11 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 			filter = new ConsoleWriterFilter();
 		} else if (name.equals("linearinterpolation")) {
 			filter = new LinearInterpolationFilterDouble();
-		} // filters with mandatory args
+		} else if (name.equals("thread")) {
+			ThreadedFilter tfilter = new ThreadedFilter();
+			tfilter.start();
+			this.threadedFilters.add(tfilter);
+		}// filters with mandatory args
 		else if (name.equals("multiply")) {
 			filter = new MultiplyFilterDouble(Double.valueOf(remainder));
 		} else if (name.equals("drop")) {
@@ -86,21 +100,21 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 			filter = new LinearTimeInterpolationFilterDouble(Integer.valueOf(remainder));
 		} // assume name refers to a class name
 		else {
-			Class<? extends ObservationFilter> filterClass = null;
+			Class<? extends Filter> filterClass = null;
 			double rem = 0d;
 			if (remainder != null) {
 				rem = Double.valueOf(remainder);
 			}
 
 			try {
-				filterClass = (Class<? extends ObservationFilter>) Class.forName(name);
+				filterClass = (Class<? extends Filter>) Class.forName(name);
 			} catch (ClassNotFoundException e) {
 				throw new MUSCLERuntimeException(e);
 			}
 
 
 			// try to find constructor with tailFilter
-			Constructor<? extends ObservationFilter> filterConstructor = null;
+			Constructor<? extends Filter> filterConstructor = null;
 			try {
 				if (remainder == null) {
 					filterConstructor = filterClass.getDeclaredConstructor((Class[]) null);
@@ -116,6 +130,11 @@ public abstract class FilterChain extends AbstractFilter<Observation,Observation
 					filter = filterConstructor.newInstance();
 				} else {
 					filter = filterConstructor.newInstance(rem);
+				}
+				if (filter instanceof ThreadedFilter) {
+					ThreadedFilter tfilter = (ThreadedFilter)filter;
+					tfilter.start();
+					threadedFilters.add(tfilter);
 				}
 			} catch (java.lang.InstantiationException e) {
 				throw new MUSCLERuntimeException(e);

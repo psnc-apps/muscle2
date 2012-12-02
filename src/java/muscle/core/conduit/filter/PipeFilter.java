@@ -28,7 +28,7 @@ import muscle.core.model.Observation;
 this filter simply forwards the data to the next filter without altering the data
 @author Jan Hegewald
 */
-public class PipeFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class PipeFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	protected void apply(Observation<E> subject) {
 		put(subject);
 	}

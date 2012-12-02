@@ -21,21 +21,25 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core.conduit.filter;
 
+import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.core.DataTemplate;
+import muscle.core.model.Observation;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
-@author Jan Hegewald
+@author Joris Borgdorff
 */
-public abstract class AbstractFilter<E,F> implements Filter<E,F> {
-	protected BlockingQueue<E> incomingQueue;
-	protected final BlockingQueue<F> outgoingQueue;
+public abstract class AbstractFilter<E extends Serializable,F extends Serializable> implements Filter<E,F> {
+	protected BlockingQueue<Observation<E>> incomingQueue;
+	protected final BlockingQueue<Observation<F>> outgoingQueue;
 	protected QueueConsumer<F> consumer;
+	protected DataTemplate<E> inTemplate;
 	
 	protected AbstractFilter() {
-		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<F>();
+		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<Observation<F>>();
 	}
 	
 	public AbstractFilter(QueueConsumer<F> qc) {
@@ -47,7 +51,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	public void apply() {
 		if (incomingQueue == null) return;
 		while (!incomingQueue.isEmpty()) {
-			E message = incomingQueue.remove();
+			Observation<E> message = incomingQueue.remove();
 			if (message != null) {
 				this.apply(message);
 			}
@@ -55,7 +59,7 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 		consumer.apply();
 	}
 	
-	protected void put(F message) {
+	protected void put(Observation<F> message) {
 		try {
 			this.outgoingQueue.put(message);
 		} catch (InterruptedException ex) {
@@ -68,14 +72,26 @@ public abstract class AbstractFilter<E,F> implements Filter<E,F> {
 	 *
 	 *  To pass the modified message on, call put(F message).
 	 */
-	protected abstract void apply(E subject);
+	protected abstract void apply(Observation<E> subject);
 
 	public void setQueueConsumer(QueueConsumer<F> qc) {
 		this.consumer = qc;
 		this.consumer.setIncomingQueue(this.outgoingQueue);
+		this.setInTemplate(this.consumer.getInTemplate());
 	}
-
-	public void setIncomingQueue(BlockingQueue<E> queue) {
+	
+	public void setIncomingQueue(BlockingQueue<Observation<E>> queue) {
 		this.incomingQueue = queue;
+	}
+	
+	/** Sets the expected DataTemplate, based on the template of the consumer of this filter.
+	 * Override if the DataTemplate is altered by using this filter.
+	 */
+	protected void setInTemplate(DataTemplate<F> consumerTemplate) {
+		this.inTemplate = (DataTemplate<E>)consumerTemplate;		
+	}
+	
+	public DataTemplate<E> getInTemplate() {
+		return this.inTemplate;
 	}
 }

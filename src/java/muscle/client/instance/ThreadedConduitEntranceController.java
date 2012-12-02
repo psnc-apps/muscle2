@@ -20,18 +20,22 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.client.instance;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.LocalManager;
 import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
+import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntrance;
+import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
-import muscle.core.model.Timestamp;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.serialization.DataConverter;
@@ -49,6 +53,8 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 	private boolean processingMessage;
 	private final DataConverter<T,?> serializer;
 	private BlockingQueue<Observation<T>> queue;
+	private boolean isSharedData;
+	private final FilterChain filters;
 	
 	public ThreadedConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
@@ -57,6 +63,32 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 		this.processingMessage = false;
 		this.serializer = new SerializableDataConverter<T>();
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
+		this.isSharedData = false;
+		this.filters = createFilterChain();
+	}
+	
+	/** Create a filter chain from the given arguments */
+	private FilterChain createFilterChain() {
+		ConnectionScheme cs = ConnectionScheme.getInstance();
+		ConduitDescription cd = cs.entranceDescriptionForPortal(portalID).getConduitDescription();
+		List<String> args = cd.getArgs();
+		int entranceArgDiv = args.indexOf("");
+		if (entranceArgDiv < 1) return null;
+		
+		List<String> entranceArgs = new FastArrayList<String>(entranceArgDiv);
+		for (int i = 0; i < entranceArgDiv; i++) {
+			entranceArgs.add(args.get(i));
+		}
+		
+		FilterChain fc = new FilterChain() {
+			protected void apply(Observation subject) {
+				transmitter.transmit(subject);
+			}
+		};
+		
+		fc.init(entranceArgs);
+		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {cd, entranceArgs});
+		return fc;
 	}
 
 	/** Set the transmitter that will be used to transmit messages. Before this
@@ -104,7 +136,11 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 			}
 			
 			try {
-				this.transmit(elem);
+				if (filters == null) {
+					this.transmit(elem);
+				} else {
+					filters.process(elem);
+				}
 			} catch (Throwable ex) {
 				// Could not transmit message; this is fatal.
 				LocalManager.getInstance().shutdown(5);
@@ -160,6 +196,9 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 			transmitter.dispose();
 			transmitter = null;
 		}
+		if (filters != null) {
+			filters.dispose();
+		}
 		queue = null;
 		
 		super.dispose();
@@ -182,8 +221,11 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 
 	@Override
 	public void send(Observation<T> dmsg) {
+		if (this.isSharedData) {
+			dmsg.shouldNotCopy();
+		}
 		// We need to copy the data so that the sending process can modify the data again.
-		Observation<T> msg  = dmsg.copyWithNewData(serializer.copy(dmsg.getData()));
+		Observation<T> msg = dmsg.privateCopy(serializer);
 		
 		try {
 			this.queue.put(msg);
@@ -196,5 +238,9 @@ public class ThreadedConduitEntranceController<T extends Serializable> extends T
 
 		// Make available for processing
 		this.trigger();
+	}
+	
+	public void setSharedData() {
+		this.isSharedData = true;
 	}
 }

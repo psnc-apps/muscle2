@@ -50,7 +50,8 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private volatile boolean processingMessage;
 	private boolean isDone;
 	private final FilterChain filters;
-
+	private boolean isSharedData;
+	
 	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.transmitter = null;
@@ -59,8 +60,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		this.isDone = false;
 		this.transmitterFound = false;
 		this.filters = createFilterChain();
+		this.isSharedData = false;
 	}
-	
+
 	/** Create a filter chain from the given arguments */
 	private FilterChain createFilterChain() {
 		ConnectionScheme cs = ConnectionScheme.getInstance();
@@ -183,6 +185,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " sent through conduit entrance " + this + " does not match expected data type " + dataClass.getSimpleName());
 		}
 		
+		if (this.isSharedData) {
+			msg.shouldNotCopy();
+		}
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
 		this.resetTime(msg.getNextTimestamp());
 		this.transmit(msg);
@@ -201,5 +206,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	@Override
 	public void start() {
 		// Do nothing
+	}
+	
+	public void setSharedData() {
+		this.isSharedData = true;
 	}
 }

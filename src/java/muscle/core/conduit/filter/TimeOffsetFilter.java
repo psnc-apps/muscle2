@@ -24,12 +24,13 @@ package muscle.core.conduit.filter;
 import java.io.Serializable;
 import muscle.core.model.Distance;
 import muscle.core.model.Observation;
+import muscle.core.model.Timestamp;
 
 /**
 modifies timestep with a given offset
-@author Jan Hegewald
+@author Joris Borgdorff
 */
-public class TimeOffsetFilter<E extends Serializable> extends AbstractObservationFilter<E,E> {
+public class TimeOffsetFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	private final Distance offset;
 
 	/** @param newOffset offset in seconds */
@@ -39,6 +40,6 @@ public class TimeOffsetFilter<E extends Serializable> extends AbstractObservatio
 	}
 
 	protected void apply(Observation<E> subject) {
-		put(new Observation<E>(subject.getData(), subject.getTimestamp().add(offset), subject.getNextTimestamp().add(offset)));
+		put(subject.copyWithNewTimestamps(subject.getTimestamp().add(offset), subject.getNextTimestamp().add(offset)));
 	}
 }
