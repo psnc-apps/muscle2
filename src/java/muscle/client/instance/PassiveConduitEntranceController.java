@@ -52,32 +52,38 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private final FilterChain filters;
 	private boolean isSharedData;
 	
-	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
+	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.transmitter = null;
 		this.conduitEntrance = null;
 		this.processingMessage = false;
 		this.isDone = false;
 		this.transmitterFound = false;
-		this.filters = createFilterChain();
+		this.filters = createFilterChain(threaded);
 		this.isSharedData = false;
 	}
 
 	/** Create a filter chain from the given arguments */
-	private FilterChain createFilterChain() {
+	private FilterChain createFilterChain(boolean threaded) {
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		ConduitDescription cd = cs.entranceDescriptionForPortal(portalID).getConduitDescription();
 		List<String> args = cd.getArgs();
 		int entranceArgDiv = args.indexOf("");
-		if (entranceArgDiv < 1) return null;
-		
-		List<String> entranceArgs = new FastArrayList<String>(entranceArgDiv);
+		List<String> entranceArgs;
+		if (threaded) {
+			entranceArgs = new FastArrayList<String>(entranceArgDiv + 2);
+			entranceArgs.add("thread");
+		} else if (entranceArgDiv < 1) {
+			return null;
+		} else {
+			entranceArgs = new FastArrayList<String>(entranceArgDiv);
+		}
 		for (int i = 0; i < entranceArgDiv; i++) {
 			entranceArgs.add(args.get(i));
 		}
 		
 		FilterChain fc = new FilterChain() {
-			protected void apply(Observation subject) {
+			public void queue(Observation subject) {
 				transmitter.transmit(subject);
 			}
 		};

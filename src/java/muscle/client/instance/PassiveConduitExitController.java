@@ -39,29 +39,35 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private final FilterChain filters;
 
-	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
+	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
-		this.filters = createFilterChain();
+		this.filters = createFilterChain(threaded);
 	}
 	
 	/** Create a filter chain from the given arguments */
-	private FilterChain createFilterChain() {
+	private FilterChain createFilterChain(boolean threaded) {
 		ConnectionScheme cs = ConnectionScheme.getInstance();
 		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
 		List<String> args = cd.getArgs();
-		if (args.isEmpty()) return null;
 		int exitArgDiv = args.indexOf("") + 1;
-		if (exitArgDiv == args.size()) return null;
-		List<String> exitArgs = new FastArrayList<String>(args.size() - exitArgDiv);
+		List<String> exitArgs;
+		if (threaded) {
+			exitArgs = new FastArrayList<String>(args.size() - exitArgDiv + 1);
+			exitArgs.add("thread");
+		} else if (exitArgDiv == args.size()) {
+			return null;
+		} else {
+			exitArgs = new FastArrayList<String>(args.size() - exitArgDiv);
+		}
 		for (int i = exitArgDiv; i < args.size(); i++) {
 			exitArgs.add(args.get(i));
 		}
 		
 		FilterChain fc = new FilterChain() {
-			protected void apply(Observation subject) {
+			public void queue(Observation subject) {
 				Serializable data = subject.getData();
 				if (data != null && !dataClass.isInstance(data)) {
 					throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + PassiveConduitExitController.this + " does not match expected data type " + dataClass.getSimpleName());

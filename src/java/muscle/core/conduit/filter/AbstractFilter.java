@@ -34,37 +34,44 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
 */
 public abstract class AbstractFilter<E extends Serializable,F extends Serializable> implements Filter<E,F> {
 	protected BlockingQueue<Observation<E>> incomingQueue;
-	protected final BlockingQueue<Observation<F>> outgoingQueue;
-	protected QueueConsumer<F> consumer;
+	protected Filter<F,?> nextFilter;
 	protected DataTemplate<E> inTemplate;
+	private final static boolean applyDirect = Boolean.valueOf(System.getProperty("muscle.core.conduit.filter.applydirect", "true"));
 	
 	protected AbstractFilter() {
-		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<Observation<F>>();
+		if (!applyDirect) {
+			incomingQueue = new SingleProducerConsumerBlockingQueue<Observation<E>>();
+		}
 	}
 	
-	public AbstractFilter(QueueConsumer<F> qc) {
-		this();
-		this.consumer = qc;
-		this.consumer.setIncomingQueue(this.outgoingQueue);
-	}
-	
+	@Override
 	public void apply() {
-		if (incomingQueue == null) return;
-		while (!incomingQueue.isEmpty()) {
-			Observation<E> message = incomingQueue.remove();
-			if (message != null) {
-				this.apply(message);
+		if (!applyDirect) {
+			while (!incomingQueue.isEmpty()) {
+				Observation<E> message = incomingQueue.remove();
+				if (message != null) {
+					this.apply(message);
+				}
 			}
 		}
-		consumer.apply();
+		nextFilter.apply();
 	}
 	
-	protected void put(Observation<F> message) {
-		try {
-			this.outgoingQueue.put(message);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(AbstractFilter.class.getName()).log(Level.SEVERE, null, ex);
+	@Override
+	public void queue(Observation<E> obs) {
+		if (applyDirect) {
+			apply(obs);
+		} else {
+			this.incomingQueue.add(obs);
 		}
+	}
+	
+	/**
+	 * Put a message intended for the next filter.
+	 * @param message outgoing observation
+	 */
+	protected void put(Observation<F> message) {
+		this.nextFilter.queue(message);
 	}
 	
 	/**
@@ -74,23 +81,18 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	 */
 	protected abstract void apply(Observation<E> subject);
 
-	public void setQueueConsumer(QueueConsumer<F> qc) {
-		this.consumer = qc;
-		this.consumer.setIncomingQueue(this.outgoingQueue);
-		this.setInTemplate(this.consumer.getInTemplate());
+	@Override
+	public void setNextFilter(Filter<F,?> qc) {
+		this.nextFilter = qc;
+		this.setInTemplate(this.nextFilter.getInTemplate());
 	}
 	
-	public void setIncomingQueue(BlockingQueue<Observation<E>> queue) {
-		this.incomingQueue = queue;
-	}
-	
-	/** Sets the expected DataTemplate, based on the template of the consumer of this filter.
-	 * Override if the DataTemplate is altered by using this filter.
-	 */
-	protected void setInTemplate(DataTemplate<F> consumerTemplate) {
+	@Override
+	public void setInTemplate(DataTemplate<F> consumerTemplate) {
 		this.inTemplate = (DataTemplate<E>)consumerTemplate;		
 	}
 	
+	@Override
 	public DataTemplate<E> getInTemplate() {
 		return this.inTemplate;
 	}

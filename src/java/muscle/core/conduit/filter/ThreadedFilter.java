@@ -11,43 +11,45 @@ import muscle.client.LocalManager;
 import muscle.core.DataTemplate;
 import muscle.core.model.Observation;
 import muscle.util.concurrency.SafeThread;
+import muscle.util.data.SerializableData;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.SerializableDataConverter;
 
 /**
  *
  * @author Joris Borgdorff
  */
 public class ThreadedFilter<E extends Serializable> extends SafeThread implements Filter<E,E> {
-	protected final BlockingQueue<Observation<E>> outgoingQueue;
-	protected QueueConsumer<E> consumer;
+	protected final BlockingQueue<Observation<E>> incomingQueue;
+	private final DataConverter<E,SerializableData> converter;
 	protected DataTemplate<E> inTemplate;	
-	private BlockingQueue<Observation<E>> queue;
+	private Filter<E, ?> nextFilter;
 
 	protected ThreadedFilter() {
 		super("Filter");
-		this.outgoingQueue = new SingleProducerConsumerBlockingQueue<Observation<E>>();
-		this.queue = null;
+		this.incomingQueue = new SingleProducerConsumerBlockingQueue<Observation<E>>();
+		this.converter = new SerializableDataConverter<E>();
 	}
 	
-	public ThreadedFilter(QueueConsumer<E> qc) {
-		this();
-		this.consumer = qc;
-		this.consumer.setIncomingQueue(this.outgoingQueue);
+	/** Queue a message, without necessarily processing it. */
+	@Override
+	public synchronized void queue(Observation<E> obs) {
+		this.incomingQueue.add(obs.privateCopy(converter));
 	}
-	
-	protected void execute(Observation<E> message) {
-		if (message != null) {
-			this.apply(message);
-		}
-		consumer.apply();
+
+	/** Apply the filter to at least all the messages queued so far. */
+	@Override
+	public synchronized void apply() {
+		this.notifyAll();
 	}
-	
+
+	/**
+	 * Put a message intended for the next filter.
+	 * @param message outgoing observation
+	 */
 	protected void put(Observation<E> message) {
-		try {
-			this.outgoingQueue.put(message);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(ThreadedFilter.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		this.nextFilter.queue(message);
 	}
 	
 	/**
@@ -59,10 +61,40 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 		put(subject);
 	}
 
-	public void setQueueConsumer(QueueConsumer<E> qc) {
-		this.consumer = qc;
-		this.consumer.setIncomingQueue(this.outgoingQueue);
+	@Override
+	public void setNextFilter(Filter<E,?> qc) {
+		this.nextFilter = qc;
 		this.setInTemplate(qc.getInTemplate());
+	}
+
+	@Override
+	public void setInTemplate(DataTemplate<E> consumerTemplate) {
+		this.inTemplate = consumerTemplate;		
+	}
+	
+	@Override
+	public DataTemplate<E> getInTemplate() {
+		return this.inTemplate;
+	}
+	
+	@Override
+	protected synchronized boolean continueComputation() throws InterruptedException {
+		while (!isDisposed() && (incomingQueue == null || incomingQueue.isEmpty())) {
+			wait();
+		}
+		return !isDisposed();
+	}
+	
+	@Override
+	protected void execute() throws InterruptedException {
+		Observation<E> message;
+		synchronized (this) {
+			message = incomingQueue.remove();
+		}
+		if (message != null) {
+			this.apply(message);
+		}
+		nextFilter.apply();
 	}
 	
 	@Override
@@ -74,42 +106,5 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 	protected void handleException(Throwable ex) {
 		Logger.getLogger(getClass().toString()).log(Level.SEVERE, "Filter had exception.");
 		LocalManager.getInstance().fatalException(ex);
-	}
-	
-	/** Sets the expected DataTemplate, based on the template of the consumer of this filter.
-	 * Override if the DataTemplate is altered by using this filter.
-	 */
-	protected void setInTemplate(DataTemplate<E> consumerTemplate) {
-		this.inTemplate = consumerTemplate;		
-	}
-	
-	public DataTemplate<E> getInTemplate() {
-		return this.inTemplate;
-	}
-		
-	protected synchronized boolean continueComputation() throws InterruptedException {
-		while (!isDisposed() && (queue == null || queue.isEmpty())) {
-			wait();
-		}
-		return !isDisposed();
-	}
-
-	public synchronized void setIncomingQueue(BlockingQueue<Observation<E>> queue) {
-		this.queue = queue;
-		this.notifyAll();
-	}
-
-	public synchronized void apply() {
-		this.notifyAll();
-	}
-
-	@Override
-	protected synchronized void execute() throws InterruptedException {
-		execute(queue.remove());
-	}
-
-	public synchronized void dispose() {
-		this.queue = null;
-		super.dispose();
 	}
 }

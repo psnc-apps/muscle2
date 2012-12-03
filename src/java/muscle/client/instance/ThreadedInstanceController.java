@@ -318,7 +318,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		List<String> portArgs = desc.getArgs();
 		if (portArgs.isEmpty()) {
 			@SuppressWarnings("unchecked")
-			ConduitEntranceControllerImpl<T> s = threaded ? new ThreadedConduitEntranceController<T>(currentID, this, newDataTemplate) : new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate);
+			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate, threaded);
 			portFactory.<T>getTransmitter(this.mainController, s, otherID, shared);
 			entrance = s;
 		} else {
@@ -359,7 +359,7 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 		ConduitExitController<T> exit;
 		if (portArgs.isEmpty()) {
 			@SuppressWarnings("unchecked")
-			ConduitExitControllerImpl<T> s = threaded ? new ThreadedConduitExitController<T>(currentID, this, newDataTemplate) : new PassiveConduitExitController<T>(currentID, this, newDataTemplate);
+			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataTemplate, threaded);
 			portFactory.<T>getReceiver(this.mainController, s, otherID);
 			exit = s;
 		} else {

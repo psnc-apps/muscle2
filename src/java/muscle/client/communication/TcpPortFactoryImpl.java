@@ -13,8 +13,6 @@ import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.client.instance.PassiveConduitExitController;
-import muscle.client.instance.ThreadedConduitEntranceController;
-import muscle.client.instance.ThreadedConduitExitController;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.id.*;
@@ -80,10 +78,6 @@ public class TcpPortFactoryImpl extends PortFactory {
 					messageProcessor.addReceiver(exit.getIdentifier(), recv);				
 				}
 				
-				if (!passive && exit instanceof ThreadedConduitExitController) {
-					((ThreadedConduitExitController)exit).setReceiver(recv);
-				}
-			
 				return recv;
 			}
 

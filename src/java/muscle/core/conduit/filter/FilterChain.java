@@ -8,6 +8,7 @@ import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import muscle.core.DataTemplate;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLERuntimeException;
 
@@ -15,39 +16,33 @@ import muscle.exception.MUSCLERuntimeException;
  *
  * @author Joris Borgdorff
  */
-public abstract class FilterChain<E extends Serializable, F extends Serializable> extends AbstractFilter<E,F> {
-	private List<ThreadedFilter> threadedFilters;
+public abstract class FilterChain<E extends Serializable, F extends Serializable> implements Filter<E,F> {
+	private final List<ThreadedFilter> threadedFilters;
+	private Filter<F,?> nextFilter;
+	private DataTemplate<E> dataTemplate;
+	
+	public FilterChain() {
+		this.threadedFilters = new FastArrayList<ThreadedFilter>();
+		this.nextFilter = null;
+	}
 	
 	public void init(List<String> args) {
-		this.threadedFilters = new FastArrayList<ThreadedFilter>();
-		if (!args.isEmpty()) {
-			QueueConsumer qc = automaticPipeline(args, this);
-			this.setQueueConsumer(qc);
+		if (args.isEmpty()) {
+			throw new IllegalArgumentException("Can not create empty FilterChain");
 		}
+		Filter qc = automaticPipeline(args, this);
+		this.setNextFilter(qc);
 	}
 	
-	public boolean isActive() {
-		return this.consumer != null;
-	}
-
 	public void process(Observation obs) {
-		if (this.isActive()) {
-			put(obs);
-			this.consumer.apply();
-		} else {
-			this.apply(obs);
-		}
+		this.nextFilter.queue(obs);
+		this.nextFilter.apply();
 	}
 	
-	public void apply() {
-		while (!incomingQueue.isEmpty()) {
-			Observation message = incomingQueue.remove();
-			this.apply(message);
-		}
-	}
+	public void apply() {}
 	
-	private QueueConsumer automaticPipeline(List<String> filterNames, QueueConsumer tailFilter) {
-		QueueConsumer filter = tailFilter;
+	private Filter automaticPipeline(List<String> filterNames, Filter tailFilter) {
+		Filter filter = tailFilter;
 		for (int i = filterNames.size() - 1; i >= 0; i--) {
 			filter = filterForName(filterNames.get(i), filter);
 		}
@@ -61,7 +56,7 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 		}
 	}
 	
-	private QueueConsumer filterForName(String fullName, QueueConsumer tailFilter) {
+	private Filter filterForName(String fullName, Filter tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once
 		String name = tmp[0];
@@ -147,10 +142,27 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 		}
 
 		if (filter != null) {
-			filter.setQueueConsumer(tailFilter);
+			filter.setNextFilter(tailFilter);
 			return filter;
 		} else {
 			return tailFilter;
 		}
+	}
+	
+	/**
+	 * Sets the expected DataTemplate, based on the template of the consumer of this filter.
+	 * Override if the DataTemplate is altered by using this filter.
+	 */
+	public void setInTemplate(DataTemplate<F> consumerTemplate) {
+		this.dataTemplate = (DataTemplate<E>)consumerTemplate;
+	}
+	
+	public DataTemplate<E> getInTemplate() {
+		return this.dataTemplate;
+	}
+
+	public void setNextFilter(Filter<F,?> filter) {
+		this.nextFilter = filter;
+		this.setInTemplate(this.nextFilter.getInTemplate());
 	}
 }
