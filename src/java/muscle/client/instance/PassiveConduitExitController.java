@@ -136,6 +136,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 						this.filters.process(msg.getObservation());
 					} catch (Throwable ex) {
 						logger.log(Level.SEVERE, "Could not filter message " + msg + " properly, probably the coupling is not correct.", ex);
+						this.filters.dispose();
 						LocalManager.getInstance().shutdown(4);
 					}
 				}

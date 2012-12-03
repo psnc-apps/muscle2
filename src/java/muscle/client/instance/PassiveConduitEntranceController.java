@@ -174,6 +174,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 				this.filters.process(msg);
 			} catch (Throwable ex) {
 				logger.log(Level.SEVERE, "Could not filter message " + msg + " properly, probably the coupling is not correct.", ex);
+				this.filters.dispose();
 				LocalManager.getInstance().shutdown(14);
 			}
 		}

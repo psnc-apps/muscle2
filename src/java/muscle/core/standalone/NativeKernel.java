@@ -27,8 +27,9 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 
 	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
+	private final Object childLock = new Object();
 	private SerializableDatatype type;
-	private Process child;
+	private Thread processThread;
 
 	private boolean isDone;
 	
@@ -46,7 +47,6 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	public NativeKernel() {
 		super();
 		isDone = false;
-		child = null;
 		type = SerializableDatatype.NULL;
 	}
 	
@@ -164,9 +164,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			}
 		}
 		
-		synchronized (this) {
-			child = pb.start();
-		}
+		Process child = pb.start();
 
 		StreamRipper stdoutR = new StreamRipper("stdout-reader-"+getLocalName(), System.out, child.getInputStream());
 		StreamRipper stderrR = new StreamRipper("stderr-reader-"+getLocalName(), System.err, child.getErrorStream());
@@ -174,13 +172,25 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		stdoutR.start();
 		stderrR.start();
 
-		int exitCode = child.waitFor();
+		try {
+			synchronized (childLock) {
+				processThread = Thread.currentThread();
+			}
+			int exitCode = child.waitFor();
 
-		if (exitCode == 0) {
-			getLogger().log(Level.INFO, "Command {0} finished.", pb.command());
-		} else {
-			getLogger().log(Level.WARNING, "Command {0} failed with exit code {1}.", new Object[]{pb.command(), exitCode});
+			if (exitCode == 0) {
+				getLogger().log(Level.INFO, "Command {0} finished.", pb.command());
+			} else {
+				getLogger().log(Level.WARNING, "Command {0} failed with exit code {1}.", new Object[]{pb.command(), exitCode});
+			}
+		} catch (InterruptedException ex) {
+			child.destroy();
+		} finally {
+			synchronized (childLock) {
+				processThread = null;
+			}
 		}
+
 	}
 	
 	protected void writeContactInformation(String host, String port) throws InterruptedException, IOException {
@@ -238,9 +248,11 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		}
 	}
 	
-	public synchronized void afterExecute() {
-		if (child != null) {
-			child.destroy();
+	public void afterExecute() {
+		synchronized (childLock) {
+			if (processThread != null) {
+				processThread.interrupt();
+			}
 		}
 	}
 	

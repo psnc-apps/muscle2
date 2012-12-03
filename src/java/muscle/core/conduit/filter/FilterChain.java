@@ -20,6 +20,7 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 	private final List<ThreadedFilter> threadedFilters;
 	private Filter<F,?> nextFilter;
 	private DataTemplate<E> dataTemplate;
+	private boolean isDone;
 	
 	public FilterChain() {
 		this.threadedFilters = new FastArrayList<ThreadedFilter>();
@@ -27,6 +28,11 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 	}
 	
 	public boolean isBusy() {
+		synchronized (this) {
+			if (isDone) {
+				return false;
+			}
+		}
 		return this.nextFilter.isProcessing();
 	}
 	
@@ -59,6 +65,13 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 	}
 
 	public void dispose() {
+		synchronized (this) {
+			if (this.isDone) {
+				return;
+			} else {
+				this.isDone = true;
+			}
+		}
 		for (ThreadedFilter f : this.threadedFilters) {
 			f.dispose();
 		}

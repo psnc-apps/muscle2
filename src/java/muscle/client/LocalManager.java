@@ -38,6 +38,7 @@ import muscle.util.JVM;
 public class LocalManager implements InstanceControllerListener, ResolverFactory, ConnectionHandlerListener {
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<InstanceController> controllers;
+	private final List<Thread> controllerThreads;
 	private final LocalManagerOptions opts;
 	private DataConnectionHandler tcpConnectionHandler;
 	private LocalDataHandler localConnectionHandler;
@@ -68,6 +69,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private LocalManager(LocalManagerOptions opts) {
 		this.opts = opts;
 		controllers = new ArrayList<InstanceController>(opts.getAgents().size());
+		controllerThreads = new ArrayList<Thread>(opts.getAgents().size()-1);
 		res = null;
 		tcpConnectionHandler = null;
 		localConnectionHandler = null;
@@ -135,11 +137,14 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			for (int i = 1; i < controllers.size(); i++) {
 				synchronized (controllers) {
 					if (i < controllers.size()) {
-						new Thread(controllers.get(i), controllers.get(i).getLocalName()).start();
+						Thread t = new Thread(controllers.get(i), controllers.get(i).getLocalName());
+						controllerThreads.add(t);
+						t.start();
 					}
 				}
 			}
 			// Run the first instance in the current thread
+			controllerThreads.add(Thread.currentThread());
 			controllers.get(0).run();
 		} catch (OutOfMemoryError er) {
 			logger.log(Level.SEVERE, "Out of memory: too many submodels", er);
@@ -221,6 +226,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			try {
 				this.waitForDisposer();
 			} catch (InterruptedException ex) {}
+			
 			if (!finished) {
 				System.out.println("Submodels not exiting nicely; forcing exit.");
 				Runtime.getRuntime().halt(1);
@@ -234,6 +240,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			// Not waiting more than 15 seconds, and interrupting every second.
 			for (int i = 0; !finished && i < 15; i++) {
 				disposeOfControllersHook.interrupt();
+				for (Thread t : controllerThreads) {
+					t.interrupt();
+				}
 				System.out.print(".");
 				wait(1000);
 			}

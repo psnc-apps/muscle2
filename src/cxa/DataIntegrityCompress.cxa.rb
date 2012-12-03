@@ -22,9 +22,9 @@ cs = cxa.cs
 
 cs.attach('Check' => 'Bounce') {
 	tie('datatype', 'datatype')
-	tie('out', 'in',["muscle.core.conduit.filter.SerializeFilter","muscle.core.conduit.filter.CompressFilter"],["muscle.core.conduit.filter.DecompressFilter","muscle.core.conduit.filter.DeserializeFilter"])
+	tie('out', 'in',["serialize","chunk_32","thread","compress"],["decompress", "dechunk_32", "deserialize"])
 }
 
 cs.attach('Bounce' => 'Check') {
-	tie('out', 'in', ["muscle.core.conduit.filter.SerializeFilter","muscle.core.conduit.filter.CompressFilter"],["muscle.core.conduit.filter.DecompressFilter","muscle.core.conduit.filter.DeserializeFilter"])
+	tie('out', 'in',["serialize", "chunk_32", "thread","compress"],["decompress", "dechunk_32", "deserialize"])
 }
