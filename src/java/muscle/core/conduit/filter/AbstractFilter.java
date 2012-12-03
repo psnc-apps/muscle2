@@ -96,4 +96,8 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	public DataTemplate<E> getInTemplate() {
 		return this.inTemplate;
 	}
+	
+	public synchronized boolean isProcessing() {
+		return nextFilter.isProcessing();
+	}
 }

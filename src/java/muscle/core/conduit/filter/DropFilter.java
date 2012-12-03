@@ -34,9 +34,9 @@ public class DropFilter<E extends Serializable> extends AbstractFilter<E,E> {
 	private int counter;
 	
 	/** @param newInDtSec in seconds */
-	public DropFilter(int newInDtSec) {
+	public DropFilter(double newInDtSec) {
 		super();
-		outRate = newInDtSec;
+		outRate = (int)newInDtSec;
 	}
 
 	protected void apply(Observation<E> subject) {

@@ -47,5 +47,8 @@ public interface Filter<E extends Serializable,F extends Serializable> {
 	public DataTemplate<E> getInTemplate();
 
 	public void setNextFilter(Filter<F,?> filter);
+	
+	/** Whether the filter is currently processing something. */
+	public boolean isProcessing();
 }
 

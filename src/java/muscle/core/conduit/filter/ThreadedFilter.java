@@ -25,6 +25,7 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 	private final DataConverter<E,SerializableData> converter;
 	protected DataTemplate<E> inTemplate;	
 	private Filter<E, ?> nextFilter;
+	private boolean processing;
 
 	protected ThreadedFilter() {
 		super("Filter");
@@ -36,6 +37,7 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 	@Override
 	public synchronized void queue(Observation<E> obs) {
 		this.incomingQueue.add(obs.privateCopy(converter));
+		this.notifyAll();
 	}
 
 	/** Apply the filter to at least all the messages queued so far. */
@@ -90,11 +92,19 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 		Observation<E> message;
 		synchronized (this) {
 			message = incomingQueue.remove();
+			this.processing = true;
 		}
 		if (message != null) {
 			this.apply(message);
 		}
 		nextFilter.apply();
+		synchronized (this) {
+			this.processing = false;
+		}
+	}
+	
+	public synchronized boolean isProcessing() {
+		return (this.processing || !this.incomingQueue.isEmpty() || nextFilter.isProcessing());
 	}
 	
 	@Override

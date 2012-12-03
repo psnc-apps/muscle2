@@ -115,10 +115,10 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	
 	/** Waits until no more messages have to be sent. */
 	public synchronized boolean waitUntilEmpty() throws InterruptedException {
-		while (this.processingMessage && !isDisposed()) {
+		while ((this.processingMessage || (this.filters != null && this.filters.isBusy())) && !isDisposed()) {
 			wait();
 		}
-		return !this.processingMessage;
+		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
@@ -133,6 +133,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 
 	@Override
 	public synchronized void dispose() {
+		if (isDisposed()) {
+			return;
+		}
 		// if we are connected to a conduit, tell conduit to detach this exit
 		if (transmitter != null) {
 			try {
@@ -142,6 +145,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			}
 			transmitter.dispose();
 			transmitterFound = false;
+		}
+		if (this.filters != null) {
+			this.filters.dispose();
 		}
 		
 		this.isDone = true;

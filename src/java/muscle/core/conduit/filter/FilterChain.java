@@ -26,6 +26,14 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 		this.nextFilter = null;
 	}
 	
+	public boolean isBusy() {
+		return this.nextFilter.isProcessing();
+	}
+	
+	public boolean isProcessing() {
+		return false;
+	}
+	
 	public void init(List<String> args) {
 		if (args.isEmpty()) {
 			throw new IllegalArgumentException("Can not create empty FilterChain");
@@ -76,6 +84,14 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 			filter = new ConsoleWriterFilter();
 		} else if (name.equals("linearinterpolation")) {
 			filter = new LinearInterpolationFilterDouble();
+		} else if (name.equals("serialize")) {
+			filter = new SerializeFilter();
+		} else if (name.equals("deserialize")) {
+			filter = new DeserializeFilter();
+		} else if (name.equals("compress")) {
+			filter = new CompressFilter();
+		} else if (name.equals("decompress")) {
+			filter = new DecompressFilter();
 		} else if (name.equals("thread")) {
 			ThreadedFilter tfilter = new ThreadedFilter();
 			tfilter.start();
@@ -93,6 +109,10 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 			filter = new BlockAfterTimeFilter(Double.valueOf(remainder));
 		} else if (name.equals("lineartimeinterpolation")) {
 			filter = new LinearTimeInterpolationFilterDouble(Integer.valueOf(remainder));
+		} else if (name.equals("chunk")) {
+			filter = new ChunkFilter(Integer.valueOf(remainder));
+		} else if (name.equals("dechunk")) {
+			filter = new DechunkFilter(Integer.valueOf(remainder));
 		} // assume name refers to a class name
 		else {
 			Class<? extends Filter> filterClass = null;

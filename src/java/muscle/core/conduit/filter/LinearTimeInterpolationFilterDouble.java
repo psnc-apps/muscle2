@@ -41,11 +41,11 @@ public class LinearTimeInterpolationFilterDouble extends AbstractFilter<double[]
 	private final int dtFactor;
 	private Timestamp lastTime;
 		
-	public LinearTimeInterpolationFilterDouble(int dtFactor) {
+	public LinearTimeInterpolationFilterDouble(double dtFactor) {
 		super();
 		// only works with strictly positive dt
-		assert dtFactor > 0;
-		this.dtFactor = dtFactor;
+		this.dtFactor = (int)dtFactor;
+		assert this.dtFactor > 0;
 	}
 	
 	public void apply(Observation<double[]> subject) {
