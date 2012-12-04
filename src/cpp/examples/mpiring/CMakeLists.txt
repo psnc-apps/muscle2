@@ -4,6 +4,7 @@ project (example_mpiring C)
 set(MPIRING mpiring)
 set(LHC LHC)
 set(PSB PSB)
+FILE (GLOB THIS_JARS *.jar)
 
 if (NOT MPI_COMPILER)
 	message ( STATUS "Searching for available MPI implementations" )
@@ -59,4 +60,4 @@ if (MPI_FLAGS)
 endif()	
 
 install(TARGETS ${MPIRING} ${LHC} ${PSB} DESTINATION share/muscle/examples/mpiring)
-
+install(FILES ${THIS_JARS} DESTINATION share/muscle/examples/lib)

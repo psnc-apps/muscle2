@@ -23,6 +23,10 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 Jan Hegewald
 =end
 
+m = Muscle.LAST
+m.add_classpath "#{ENV['MUSCLE_HOME']}/share/muscle/examples/lib/jna.jar"
+m.add_classpath "#{ENV['MUSCLE_HOME']}/share/muscle/examples/lib/platform.jar"
+
 # configuration file for a MUSCLE CxA
 abort "this is a configuration file for to be used with the MUSCLE bootstrap utility" if __FILE__ == $0
 
