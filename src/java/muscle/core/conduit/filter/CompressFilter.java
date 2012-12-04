@@ -41,7 +41,7 @@ public class CompressFilter extends AbstractFilter<byte[],byte[]> {
 		byte[] bytes = subject.getData();
 		if (bytes.length == 0) {
 			if (finerIsLoggable) logger.log(Level.FINER, "Not compressing 0 bytes...");
-			put(subject.copyWithNewData(new byte[0]));
+			put(subject);
 			return;
 		}
 		if (finerIsLoggable) logger.log(Level.FINEST, "Compressing {0} bytes...", bytes.length);

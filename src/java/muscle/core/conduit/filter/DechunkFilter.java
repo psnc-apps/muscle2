@@ -24,6 +24,10 @@ public class DechunkFilter extends AbstractFilter<byte[], byte[]> {
 	@Override
 	protected void apply(Observation<byte[]> subject) {
 		byte[] data = subject.getData();
+		if (data == null) {
+			put(subject);
+			return;
+		}
 		// Initialize data cache
 		if (this.chunksSoFar == 0) {
 			int total_sz = (data.length + 1) * this.chunks;

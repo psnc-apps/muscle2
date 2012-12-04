@@ -62,6 +62,10 @@ public class Observation<T extends Serializable> implements Serializable {
 		return data;
 	}
 	
+	public boolean hasNull() {
+		return data == null;
+	}
+	
 	public Timestamp getTimestamp() {
 		return siTime;
 	}

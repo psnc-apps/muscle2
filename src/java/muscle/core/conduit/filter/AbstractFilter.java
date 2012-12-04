@@ -23,9 +23,6 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import muscle.core.DataTemplate;
 import muscle.core.model.Observation;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
@@ -35,7 +32,6 @@ import muscle.util.data.SingleProducerConsumerBlockingQueue;
 public abstract class AbstractFilter<E extends Serializable,F extends Serializable> implements Filter<E,F> {
 	protected BlockingQueue<Observation<E>> incomingQueue;
 	protected Filter<F,?> nextFilter;
-	protected DataTemplate<E> inTemplate;
 	private final static boolean applyDirect = Boolean.valueOf(System.getProperty("muscle.core.conduit.filter.applydirect", "true"));
 	
 	protected AbstractFilter() {
@@ -45,12 +41,17 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void apply() {
 		if (!applyDirect) {
 			while (!incomingQueue.isEmpty()) {
 				Observation<E> message = incomingQueue.remove();
 				if (message != null) {
-					this.apply(message);
+					if (message.hasNull()) {
+						put((Observation<F>)message);
+					} else {
+						this.apply(message);
+					}
 				}
 			}
 		}
@@ -70,7 +71,7 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	 * Put a message intended for the next filter.
 	 * @param message outgoing observation
 	 */
-	protected void put(Observation<F> message) {
+	protected final void put(Observation<F> message) {
 		this.nextFilter.queue(message);
 	}
 	
@@ -84,17 +85,6 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	@Override
 	public void setNextFilter(Filter<F,?> qc) {
 		this.nextFilter = qc;
-		this.setInTemplate(this.nextFilter.getInTemplate());
-	}
-	
-	@Override
-	public void setInTemplate(DataTemplate<F> consumerTemplate) {
-		this.inTemplate = (DataTemplate<E>)consumerTemplate;		
-	}
-	
-	@Override
-	public DataTemplate<E> getInTemplate() {
-		return this.inTemplate;
 	}
 	
 	public synchronized boolean isProcessing() {

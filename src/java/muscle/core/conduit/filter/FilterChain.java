@@ -5,21 +5,18 @@
 package muscle.core.conduit.filter;
 
 import eu.mapperproject.jmml.util.FastArrayList;
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.List;
-import muscle.core.DataTemplate;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
- *
+ * Initialize a chain of filters with init(), and override the queue(Observation) to use the outgoing messages of the filter
  * @author Joris Borgdorff
  */
-public abstract class FilterChain<E extends Serializable, F extends Serializable> implements Filter<E,F> {
+public abstract class FilterChain implements Filter {
 	private final List<ThreadedFilter> threadedFilters;
-	private Filter<F,?> nextFilter;
-	private DataTemplate<E> dataTemplate;
+	private Filter nextFilter;
 	private boolean isDone;
 	
 	public FilterChain() {
@@ -53,6 +50,7 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 		this.nextFilter.apply();
 	}
 	
+	@Override
 	public void apply() {}
 	
 	private Filter automaticPipeline(List<String> filterNames, Filter tailFilter) {
@@ -182,20 +180,7 @@ public abstract class FilterChain<E extends Serializable, F extends Serializable
 		}
 	}
 	
-	/**
-	 * Sets the expected DataTemplate, based on the template of the consumer of this filter.
-	 * Override if the DataTemplate is altered by using this filter.
-	 */
-	public void setInTemplate(DataTemplate<F> consumerTemplate) {
-		this.dataTemplate = (DataTemplate<E>)consumerTemplate;
-	}
-	
-	public DataTemplate<E> getInTemplate() {
-		return this.dataTemplate;
-	}
-
-	public void setNextFilter(Filter<F,?> filter) {
+	public void setNextFilter(Filter filter) {
 		this.nextFilter = filter;
-		this.setInTemplate(this.nextFilter.getInTemplate());
 	}
 }

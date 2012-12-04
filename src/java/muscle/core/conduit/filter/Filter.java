@@ -22,8 +22,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 package muscle.core.conduit.filter;
 
 import java.io.Serializable;
-import java.util.concurrent.BlockingQueue;
-import muscle.core.DataTemplate;
 import muscle.core.model.Observation;
 
 /**
@@ -39,13 +37,6 @@ public interface Filter<E extends Serializable,F extends Serializable> {
 	/** Indicate that the incoming queue is non-empty. */
 	public void apply();
 	
-	/**
-	 * Sets the expected DataTemplate, based on the template of the consumer of this filter.
-	 * Override if the DataTemplate is altered by using this filter.
-	 */
-	public void setInTemplate(DataTemplate<F> consumerTemplate);	
-	public DataTemplate<E> getInTemplate();
-
 	public void setNextFilter(Filter<F,?> filter);
 	
 	/** Whether the filter is currently processing something. */
