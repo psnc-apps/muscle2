@@ -205,9 +205,9 @@ public class ThreadedInstanceController implements Runnable, InstanceController 
 			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getLocalName(), ex});
 		}
 
-		listener.isFinished(this);
-
 		this.disposeNoDeregister();
+
+		listener.isFinished(this);
 	}
 	
 	/** Disposes the current instance, without deregistering it.

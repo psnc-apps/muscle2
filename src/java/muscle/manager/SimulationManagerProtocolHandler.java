@@ -20,18 +20,28 @@ import muscle.util.serialization.SerializerWrapper;
  */
 public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,SimulationManager> {
 	private final static Logger logger = Logger.getLogger(SimulationManagerProtocolHandler.class.getName());
+	private final ManagerConnectionHandler handler;
 
-	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener) {
+	public SimulationManagerProtocolHandler(Socket s, SimulationManager listener, ManagerConnectionHandler handler) {
 		// Use control for in and out
 		super(s, listener, true, true, 3);
+		this.handler = handler;
 	}
 
 	@Override
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
+		boolean resubmit;
 		in.refresh();
 		SimulationManagerProtocol magic_number = SimulationManagerProtocol.valueOf(in.readInt());
-		if (magic_number != SimulationManagerProtocol.MAGIC_NUMBER) {
+		if (magic_number == SimulationManagerProtocol.CLOSE) {
+			socket.close();
+			return true;
+		} else if (magic_number == SimulationManagerProtocol.MAGIC_NUMBER_KEEP_ALIVE) {
+			resubmit = true;
+		} else if (magic_number != SimulationManagerProtocol.MAGIC_NUMBER) {
+			resubmit = false;
+		} else {
 			out.writeInt(SimulationManagerProtocol.ERROR.intValue());
 			out.flush();
 			socket.close();
@@ -96,6 +106,10 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 		}
 		out.flush();
 		in.cleanUp();
+		
+		if (resubmit) {
+			handler.resubmit(this);
+		}
 		
 		return success;
 	}

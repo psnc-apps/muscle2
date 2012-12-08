@@ -16,8 +16,8 @@ import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
 import muscle.util.concurrency.Disposable;
+import muscle.util.concurrency.LimitedThreadPool;
 import muscle.util.concurrency.NamedCallable;
-import muscle.util.concurrency.NamedExecutor;
 
 /**
  * Assigns Receivers and Transmitters to Portals.
@@ -25,7 +25,7 @@ import muscle.util.concurrency.NamedExecutor;
  * @author Joris Borgdorff
  */
 public abstract class PortFactory implements Disposable {
-	protected final NamedExecutor executor;
+	protected final LimitedThreadPool executor;
 	protected final ResolverFactory resolverFactory;
 	private Resolver resolver;
 	protected final IncomingMessageProcessor messageProcessor;
@@ -71,10 +71,14 @@ public abstract class PortFactory implements Disposable {
 	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide, boolean shared);
 	
 	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
-		this.executor = new NamedExecutor();
+		this.executor = new LimitedThreadPool(16);
 		this.resolverFactory = rf;
 		this.messageProcessor = msgProcessor;
 		this.resolver = null;
+	}
+	
+	public void start() {
+		this.executor.start();
 	}
 	
 	/** Resolves a PortalID, if not already done. */
@@ -116,10 +120,10 @@ public abstract class PortFactory implements Disposable {
 	
 	/** Frees all resources attached to the PortFactory. After this call, getReceiver() and getTransmitter() can not be called anymore. */
 	public void dispose() {
-		executor.shutdown();
+		this.executor.dispose();
 	}
 	
 	public boolean isDisposed() {
-		return executor.isShutdown();
+		return this.executor.isDisposed();
 	}
 }

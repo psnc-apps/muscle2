@@ -12,6 +12,8 @@ public interface Identifier extends Comparable<Identifier>, Serializable {
 	public String getName();
 	public IDType getType();
 	public boolean isResolved();
+	public boolean canBeResolved();
+	public void willNotBeResolved();
 	public void unResolve();
 	public void resolveLike(Identifier other);
 	public Location getLocation();

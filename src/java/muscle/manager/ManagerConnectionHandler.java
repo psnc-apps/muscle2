@@ -20,7 +20,7 @@ import muscle.net.AbstractConnectionHandler;
  * The protocol is executed as follows
  * @author Joris Borgdorff
  */
-public class ManagerConnectionHandler extends AbstractConnectionHandler<SimulationManager> {
+public class ManagerConnectionHandler extends AbstractConnectionHandler<SimulationManager,Boolean> {
 	private final static Logger logger = Logger.getLogger(ManagerConnectionHandler.class.getName());
 	
 	public ManagerConnectionHandler(SimulationManager listener, ServerSocket ss) {
@@ -29,7 +29,7 @@ public class ManagerConnectionHandler extends AbstractConnectionHandler<Simulati
 
 	@Override
 	protected SimulationManagerProtocolHandler createProtocolHandler(Socket s) {
-		return new SimulationManagerProtocolHandler(s, this.listener);
+		return new SimulationManagerProtocolHandler(s, this.listener, this);
 	}
 	
 	void writeLocation() {

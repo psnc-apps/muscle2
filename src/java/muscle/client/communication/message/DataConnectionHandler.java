@@ -21,7 +21,7 @@ import muscle.util.concurrency.NamedCallable;
  *
  * @author Joris Borgdorff
  */
-public class DataConnectionHandler extends AbstractConnectionHandler<LocalManager> implements IncomingMessageProcessor {
+public class DataConnectionHandler extends AbstractConnectionHandler<LocalManager,Boolean> implements IncomingMessageProcessor {
 	private final ResolverFactory resolverFactory;
 	private final Map<Identifier,Receiver> receivers;
 	private final static Logger logger = Logger.getLogger(DataConnectionHandler.class.getName());
@@ -34,7 +34,7 @@ public class DataConnectionHandler extends AbstractConnectionHandler<LocalManage
 	}
 	
 	@Override
-	protected NamedCallable<?> createProtocolHandler(Socket s) {
+	protected NamedCallable<Boolean> createProtocolHandler(Socket s) {
 		try {
 			return new TcpIncomingMessageHandler(s, receivers, resolverFactory, this);
 		} catch (InterruptedException ex) {
@@ -49,10 +49,6 @@ public class DataConnectionHandler extends AbstractConnectionHandler<LocalManage
 			LocalManager.getInstance().shutdown(6);
 		}
 	}
-	
-	void resubmit(TcpIncomingMessageHandler c) {
-		executor.submit(c);
-	} 
 
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {

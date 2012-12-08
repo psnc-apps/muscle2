@@ -68,4 +68,14 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 	public void resolveLike(Identifier id) {
 		this.ownerID.resolveLike(id);
 	}
+
+	@Override
+	public boolean canBeResolved() {
+		return this.ownerID.canBeResolved();
+	}
+
+	@Override
+	public void willNotBeResolved() {
+		this.ownerID.willNotBeResolved();
+	}
 }

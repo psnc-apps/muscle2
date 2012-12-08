@@ -9,7 +9,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Logger;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -17,10 +19,13 @@ import java.util.logging.Logger;
  */
 public class NamedExecutor {
 	private final ExecutorService executor;
-	private final static Logger logger = Logger.getLogger(NamedExecutor.class.getName());
 	
 	public NamedExecutor() {
 		executor = Executors.newCachedThreadPool();
+	}
+	
+	public NamedExecutor(int threads) {
+		this.executor = new ThreadPoolExecutor(1, threads, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadPoolExecutor.CallerRunsPolicy());
 	}
 	
 	public <T> Future<T> submit(NamedCallable<T> job) {

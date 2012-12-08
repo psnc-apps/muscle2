@@ -9,42 +9,110 @@ import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.id.TcpLocation;
 import muscle.id.Identifier;
 import muscle.id.Location;
+import muscle.id.TcpLocation;
 import muscle.net.AbstractConnectionHandler;
 import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.FileTool;
 import muscle.util.JVM;
+import muscle.util.concurrency.Disposable;
 
 /**
  * Keeps a registry of running submodels and stops simulation once all submodels have finished.
+ * 
+ *
+ * Constraints that must be satisfied:
+ * - every ID will register exactly once (synchronized registration)
+ * - an ID will become available exactly once, during propagation
+ * - an ID will become inactive exactly once, during deregistration
+ * - willActivate will return true if an ID did not deregister (is in stillActive)
+ * - resolve(ID) will return an ID if willActive is true and once the ID is available (in stillActive and in available, waiting for propagation, deregistration and dispose)
+ * - all methods register, resolve, willActivate will return false if the manager is disposed
+ *
  * @author Joris Borgdorff
  */
-public class SimulationManager implements ConnectionHandlerListener {
+public class SimulationManager implements ConnectionHandlerListener, Disposable {
+	private final static Logger logger = Logger.getLogger(SimulationManager.class.getName());
+
+	public static void main(String[] args) {
+		if (args.length == 0) {
+			logger.severe("No instances given for manager to manage. Aborting.");
+			System.exit(21);
+		}
+
+		Set<String> stillActive;
+		if (args.length < 30) {
+			stillActive = new ArraySet<String>(args.length);
+		} else {
+			stillActive = new HashSet<String>(args.length);
+		}
+		stillActive.addAll(Arrays.asList(args));			
+		
+		SimulationManager sm = new SimulationManager(stillActive);
+		ManagerConnectionHandler mch;
+		
+		try {
+			SocketFactory sf = new CrossSocketFactory();
+			InetAddress addr = SocketFactory.getMuscleHost();
+			int port = Integer.parseInt(System.getProperty("muscle.manager.bindport","0"));
+			ServerSocket ss = sf.createServerSocket(port, 1000, addr);
+			mch = new ManagerConnectionHandler(sm, ss);
+			sm.setConnectionHandler(mch);
+			mch.start();
+		} catch (Throwable ex) {
+			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
+			sm.dispose();
+			mch = null;
+			System.exit(1);
+		}
+		if (mch != null) {
+			mch.writeLocation();
+		}
+	}
+	
+	/**
+	 * Contains one identifier per Instance that has correctly registered.
+	 * Only operations performed: put (register), containsKey (register), and get (resolve)
+	 */
 	private final Map<String,Identifier> registered;
+	
+	/**
+	 * Once an identifier has propagated it is available until it deregisters.
+	 * Operations performed: put (propagate), contains (resolve), and remove (deregister)
+	 */
 	private final Set<String> available;
+	
+	/**
+	 * Simulation manager will only wait for instances that are in the stillActive list.
+	 * Operations performed: contains (resolve, willActivate), remove (deregister), isEmpty (deregister)
+	 */
 	private final Set<String> stillActive;
+	/**
+	 * Contains already used locations, for creating correct symlinks.
+	 * Operations performed: put (register), contains (register)
+	 */
+	private final Set<Location> locs;
+	
 	private boolean isDone;
 	private AbstractConnectionHandler connections;
-	private final static Logger logger = Logger.getLogger(SimulationManager.class.getName());
 	private Location location;
-	private Set<Location> locs;
 	
 	private SimulationManager(Set<String> stillActive) {
-		this.stillActive = stillActive;
+		this.stillActive = Collections.synchronizedSet(stillActive);
 		int size = stillActive.size();
-		if (stillActive.size() > 30) {
+		if (size > 30) {
 			this.registered = new HashMap<String,Identifier>(size);
 			this.available = new HashSet<String>(size);
 			this.locs = new HashSet<Location>(size);
@@ -62,145 +130,109 @@ public class SimulationManager implements ConnectionHandlerListener {
 		this.connections = ch;
 	}
 	
-	public synchronized boolean register(Identifier id) {
+	public boolean register(Identifier id) {
 		logger.log(Level.FINE, "Registering ID {0}", id);
-		if (this.registered.containsKey(id.getName())) {
-			logger.log(Level.WARNING, "Registering ID {0} failed: an ID is already registered under the same name.", id);
-			return false;
-		}
-		else if (!id.isResolved()) {
-			logger.log(Level.WARNING, "Registering ID {0} failed, because it is not resolved; can only register ID's that resolved.", id);
-			return false;
-		}
-		else {
-			this.registered.put(id.getName(),id);
-			logger.log(Level.INFO, "Registered ID {0}", id);
-			Location loc = id.getLocation();
-			if (!this.locs.contains(loc)) {
-				this.locs.add(loc);
-				String dir = ((TcpLocation)loc).getTmpDir();
-				if (!dir.equals(((TcpLocation)getLocation()).getTmpDir()) && !dir.isEmpty()) {
-					FileTool.createSymlink(JVM.ONLY.tmpFile("simulation-" + id.getName() + "-et-al"), new File("../" + dir));
-				}
+		String name = id.getName();
+		synchronized (registered) {
+			if (this.registered.containsKey(name)) {
+				logger.log(Level.WARNING, "Registering ID {0} failed: an ID is already registered under the same name.", id);
+				return false;
 			}
-			return true;
+
+			this.registered.put(name,id);
 		}
+		logger.log(Level.INFO, "Registered ID {0}", id);
+		
+		addSimulationLocation(id);
+		return true;
 	}
 	
-	public synchronized boolean propagate(Identifier id) {
+	public boolean propagate(Identifier id) {
 		logger.log(Level.FINER, "Propagating ID {0}", id);
-		if (!this.registered.containsKey(id.getName())) {
-			logger.log(Level.WARNING, "Propagating ID {0} failed: can only propagate registered ID's.", id);
-			return false;
+		String name = id.getName();
+		synchronized (this.registered) {
+			if (!this.registered.containsKey(name)) {
+				logger.log(Level.WARNING, "Propagating ID {0} failed: can only propagate registered ID's.", id);
+				return false;
+			}
 		}
-		else {
-			this.available.add(id.getName());
+		synchronized (this) {
+			this.available.add(name);
 			this.notifyAll();
-			logger.log(Level.FINE, "Propagated ID {0}", id);
-			return true;
-		}		
-	}
-	
-	public synchronized boolean deregister(Identifier id) {
-		logger.log(Level.FINE, "Deregistering ID {0}", id);
-		if (stillActive != null) {
-			if (!stillActive.remove(id.getName())) {
-				logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
-			}
-			else if (logger.isLoggable(Level.INFO) && !stillActive.isEmpty()) {
-				String mult;
-				if (stillActive.size() == 1) {
-					mult = "'" + stillActive.iterator().next() + "' has";
-				} else {
-					mult = stillActive + " have";
-				}
-				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once {1} finished computation.", new Object[] {id, mult});
-			}
-			
-			if (stillActive.isEmpty()) {
-				logger.info("All ID's have finished, quitting MUSCLE now.");
-				this.dispose();
-			} else {
-				this.notifyAll();
-			}
 		}
-		return this.available.remove(id.getName());
+		logger.log(Level.FINE, "Propagated ID {0}", id);
+		return true;
 	}
 	
-	public synchronized boolean resolve(Identifier id) throws InterruptedException {
+	public boolean resolve(Identifier id) throws InterruptedException {
 		logger.log(Level.FINE, "Resolving location of ID {0}", id);
 		String idName = id.getName();
-		// Exit this loop if 1) the ID is resolved; 2) the ID became available; 3) the ID in question quit; 4) the simulationManager quit
-		while (!id.isResolved() && !this.available.contains(idName) && stillActive.contains(idName) && !this.isDone) {
-			logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", idName);
-			wait();
-		}
-		if (!isDone) {
-			if (this.available.contains(idName)) {
-				if (!id.isResolved()) {
-					Identifier resolvedId = this.registered.get(idName);
-					logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
-					id.resolveLike(resolvedId);
-				}
-				return true;
-			} else {
-				// The ID already quit
-				logger.log(Level.FINE, "Location of ID {0} not available: it already quit.", id);		
+		// Exit this loop if 1) the ID became available; 2) the ID in question quit; 3) the simulationManager quit
+		synchronized (this) {
+			while (!this.available.contains(idName) && stillActive.contains(idName) && !this.isDisposed()) {
+				logger.log(Level.FINER, "Location of ID {0} not found yet, waiting...", idName);
+				wait();
 			}
 		}
-		return false;
+		if (stillActive.contains(idName)) {
+			// We exited the loop, so either manager is disposed (in return statement) or it is available
+			Identifier resolvedId = this.registered.get(idName);
+			logger.log(Level.FINE, "Location of ID {0} resolved: {1}", new Object[]{id, resolvedId.getLocation()});
+			id.resolveLike(resolvedId);
+			return !isDisposed();
+		} else {
+			// The ID already quit
+			logger.log(Level.FINE, "Location of ID {0} not available: it already quit.", id);		
+			return false;
+		}
 	}
 	
-	public synchronized boolean willActivate(Identifier id) {
+	public boolean deregister(Identifier id) {
+		logger.log(Level.FINE, "Deregistering ID {0}", id);
+		String name = id.getName();
+		// Must be able to remove identifier, otherwise it was not registered
+		if (!stillActive.remove(name)) {
+			logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
+		} else if (logger.isLoggable(Level.INFO) && !stillActive.isEmpty()) {
+			// Print registration information; not synchronized, no synchronization error (mult = null), print nothing
+			String mult;
+			if (stillActive.size() == 1) {
+				try {
+					mult = "'" + stillActive.iterator().next() + "' has";
+				} catch (Exception ex) {
+					mult = null;
+				}
+			} else {
+				try {
+					mult = stillActive + " have";
+				} catch (Exception ex) {
+					mult = null;
+				}
+			}
+			if (mult != null) {
+				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once {1} finished computation.", new Object[] {id, mult});
+			}
+		}
+
+		// Only occurs if the current remove finished. May be called by multiple threads at once but that's no problem
+		if (stillActive.isEmpty()) {
+			logger.info("All ID's have finished, quitting MUSCLE now.");
+			this.dispose();
+		}
+		
+		synchronized (this) {
+			this.notifyAll();
+			return this.available.remove(name);
+		}
+	}
+	
+	public boolean willActivate(Identifier id) {
 		logger.log(Level.FINE, "Checking whether ID {0} has not deregistered", id);
 		boolean ret = stillActive.contains(id.getName());
 		logger.log(Level.FINE, "ID {0} {1} deregistered", new Object[] {id, ret ? "has not" : "has"});
 		return ret;
 	}
 	
-	public synchronized void dispose() {
-		logger.finer("Stopping Simulation Manager");
-		this.isDone = true;
-		if (this.connections != null) {
-			this.connections.dispose();
-		}
-		notifyAll();
-	}
-	
-	public static void main(String[] args) {
-		Set<String> stillActive = null;
-		if (args.length > 30) {
-			stillActive = new HashSet<String>(args.length);
-		} else if (args.length > 0) {
-			stillActive = new ArraySet<String>(args.length);
-		} else {
-			logger.severe("No instances given for manager to manage. Aborting.");
-			System.exit(21);
-		}
-		stillActive.addAll(Arrays.asList(args));			
-		
-		SimulationManager sm = new SimulationManager(stillActive);
-		ManagerConnectionHandler mch;
-		
-		try {
-			SocketFactory sf = new CrossSocketFactory();
-			InetAddress addr = SocketFactory.getMuscleHost();
-			int port = Integer.parseInt(System.getProperty("muscle.manager.bindport","0"));
-			ServerSocket ss = sf.createServerSocket(port, 10, addr);
-			mch = new ManagerConnectionHandler(sm, ss);
-			mch.start();
-			sm.setConnectionHandler(mch);
-		} catch (Throwable ex) {
-			logger.log(Level.SEVERE, "Could not start connection manager.", ex);
-			sm.dispose();
-			mch = null;
-			System.exit(1);
-		}
-		if (mch != null) {
-			mch.writeLocation();
-		}
-	}
-
 	@Override
 	public void fatalException(Throwable ex) {
 		logger.log(Level.SEVERE, "Fatal exception occurred. Aborting.", ex);
@@ -213,5 +245,41 @@ public class SimulationManager implements ConnectionHandlerListener {
 			location = new TcpLocation(connections.getSocketAddress(), dir);
 		}
 		return location;
+	}
+	
+	
+	// Creates a symlink to the MUSCLE dir in question
+	private void addSimulationLocation(Identifier id) {
+		Location loc = id.getLocation();
+		synchronized (this.locs) {
+			if (this.locs.contains(loc)) {
+				return;
+			}
+			this.locs.add(loc);
+		}
+
+		((TcpLocation)loc).createSymlink("simulation-" + id.getName() + "-et-al", (TcpLocation)getLocation());
+	}
+	
+	@Override
+	public void dispose() {
+		synchronized (this) {
+			if (isDisposed()) {
+				return;
+			}
+			this.isDone = true;
+		}
+		logger.finer("Stopping Simulation Manager");
+		if (this.connections != null) {
+			this.connections.dispose();
+		}
+		synchronized (this) {
+			notifyAll();
+		}
+	}
+
+	@Override
+	public synchronized boolean isDisposed() {
+		return this.isDone;
 	}
 }

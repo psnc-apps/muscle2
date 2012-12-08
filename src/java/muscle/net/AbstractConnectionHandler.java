@@ -25,7 +25,7 @@ import muscle.util.concurrency.SafeThread;
  * 
  * @author Joris Borgdorff
  */
-public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListener> extends SafeThread {
+public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListener, E> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
 	protected final NamedExecutor executor;
@@ -68,7 +68,7 @@ public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListe
 		executor.submit(this.createProtocolHandler(s));
 	}
 	
-	protected abstract NamedCallable<?> createProtocolHandler(Socket s);
+	protected abstract NamedCallable<E> createProtocolHandler(Socket s);
 	
 	public synchronized void dispose() {
 		logger.finer("Stopping connection handler");
@@ -85,5 +85,11 @@ public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListe
 	
 	public InetSocketAddress getSocketAddress() {
 		return (InetSocketAddress)ss.getLocalSocketAddress();
+	}
+	
+	public void resubmit(NamedCallable<E> protocolHandler) {
+		if (!this.isDisposed()) {
+			executor.submit(protocolHandler);
+		}
 	}
 }

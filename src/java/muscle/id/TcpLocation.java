@@ -8,6 +8,8 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import muscle.id.Location;
+import muscle.util.FileTool;
+import muscle.util.JVM;
 
 /**
  *
@@ -42,6 +44,12 @@ public class TcpLocation implements Location {
 	
 	public String getTmpDir() {
 		return this.tmpDir;
+	}
+	
+	public void createSymlink(String name, TcpLocation local) {
+		if (!tmpDir.equals(local.tmpDir) && !tmpDir.isEmpty()) {
+			FileTool.createSymlink(JVM.ONLY.tmpFile(name), new File("../" + tmpDir));
+		}
 	}
 
 	@Override

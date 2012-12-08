@@ -9,9 +9,11 @@ package muscle.id;
  */
 public class InstanceID extends AbstractID {
 	protected Location loc;
+	private boolean canBeResolved;
 	
 	public InstanceID(String name) {
 		this(name, null);
+		this.canBeResolved = true;
 	}
 	
 	public InstanceID(String name, Location loc) {
@@ -20,6 +22,9 @@ public class InstanceID extends AbstractID {
 	}
 
 	public synchronized void resolve(Location loc) {
+		if (!this.canBeResolved()) {
+			throw new IllegalStateException("Can not resolve unresolvable identifier");
+		}
 		this.loc = loc;
 	}
 	
@@ -41,5 +46,16 @@ public class InstanceID extends AbstractID {
 	
 	public void resolveLike(Identifier id) {
 		this.resolve(id.getLocation());
+	}
+
+	@Override
+	public synchronized boolean canBeResolved() {
+		return this.canBeResolved;
+	}
+
+	@Override
+	public synchronized void willNotBeResolved() {
+		this.canBeResolved = false;
+		this.unResolve();
 	}
 }

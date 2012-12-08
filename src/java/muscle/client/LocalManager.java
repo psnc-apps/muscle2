@@ -20,7 +20,6 @@ import muscle.client.communication.message.DataConnectionHandler;
 import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
-import muscle.id.TcpLocation;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
@@ -108,10 +107,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
 		
-		String managerDir = ((TcpLocation)idManipulator.getManagerLocation()).getTmpDir();
-		if (!dir.equals(managerDir) && !managerDir.isEmpty()) {
-			FileTool.createSymlink(JVM.ONLY.tmpFile("manager"), new File("../" + managerDir));
-		}
+		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
 		
 		// Initialize the InstanceControllers
 		for (InstanceClass name : opts.getAgents()) {
@@ -131,11 +127,15 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		// Start listening for connections
 		tcpConnectionHandler.start();
 		localConnectionHandler.start();
+		factory.start();
 		
 		try {
 			// Start all instances but the first in a new thread
 			for (int i = 1; i < controllers.size(); i++) {
 				synchronized (controllers) {
+					if (isDone) {
+						return;
+					}
 					if (i < controllers.size()) {
 						Thread t = new Thread(controllers.get(i), controllers.get(i).getLocalName());
 						controllerThreads.add(t);
@@ -147,7 +147,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			controllerThreads.add(Thread.currentThread());
 			controllers.get(0).run();
 		} catch (OutOfMemoryError er) {
-			logger.log(Level.SEVERE, "Out of memory: too many submodels", er);
+			logger.log(Level.SEVERE, "Out of memory: too many submodels; try decreasing thread memory (e.g. -D -Xss512k)", er);
 			this.shutdown(2);
 		}
 	}
@@ -233,18 +233,29 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			}
 		}
 		
-		public synchronized void waitForDisposer() throws InterruptedException {
-			if (!finished)
-				wait(2000);
+		public void waitForDisposer() throws InterruptedException {
+			synchronized (this) {
+				if (!finished)
+					wait(2000);
+			}
 
 			// Not waiting more than 15 seconds, and interrupting every second.
-			for (int i = 0; !finished && i < 15; i++) {
-				disposeOfControllersHook.interrupt();
-				for (Thread t : controllerThreads) {
-					t.interrupt();
+			for (int i = 0; i < 15; i++) {
+				synchronized (this) {
+					if (finished) {
+						break;
+					}
 				}
-				System.out.print(".");
-				wait(1000);
+				disposeOfControllersHook.interrupt();
+				synchronized(controllers) {
+					for (Thread t : controllerThreads) {
+						t.interrupt();
+					}
+				}
+				synchronized (this) {
+					System.out.print(".");
+					wait(1000);			
+				}
 			}
 			System.out.println();
 		}

@@ -4,11 +4,9 @@
 
 package muscle.client.id;
 
-import muscle.id.TcpLocation;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.exception.MUSCLERuntimeException;
@@ -16,7 +14,7 @@ import muscle.id.*;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
-import muscle.util.concurrency.NamedExecutor;
+import muscle.net.SocketPool;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
@@ -25,52 +23,47 @@ import muscle.util.serialization.SerializerWrapper;
  */
 public class TcpIDManipulator implements IDManipulator {
 	private final static Logger logger = Logger.getLogger(TcpIDManipulator.class.getName());
-	private final NamedExecutor executor;
-	private final SocketFactory sockets;
 	private Resolver resolver;
 	private final InetSocketAddress managerAddr;
 	private final Location location;
 	private Location managerLocation;
 	private boolean searchingForManager;
+	private final SocketPool socketPool;
 	
 	public TcpIDManipulator(SocketFactory sf, InetSocketAddress managerAddr, Location loc) {
-		this.executor = new NamedExecutor();
-		this.sockets = sf;
 		this.managerAddr = managerAddr;
 		this.resolver = null;
 		this.location = loc;
 		this.managerLocation = null;
 		this.searchingForManager = false;
+		this.socketPool = new SocketPool(15, sf, managerAddr, SimulationManagerProtocol.CLOSE.intValue());
 	}
 	
 	public void setResolver(Resolver resolver) {
 		this.resolver = resolver;
 	}
-	
-	public void dispose() {
-		executor.shutdown();
-	}
 
+	public void dispose() {
+		this.socketPool.dispose();
+	}
+	
 	@Override
 	public boolean register(Identifier id, Location loc) {
-		this.checkInstanceID(id);
-		if (!id.isResolved())
+		if (!id.isResolved()) {
 			((InstanceID)id).resolve(loc);
+		}
 
 		return runQuery(id, SimulationManagerProtocol.REGISTER);
 	}
 
 	@Override
 	public boolean propagate(Identifier id) {
-		this.checkInstanceID(id);
-		
 		return runQuery(id, SimulationManagerProtocol.PROPAGATE);
 	}
 	
 	@Override
 	public void search(Identifier id) {
 		if (id.isResolved()) return;
-		this.checkInstanceID(id);
 		if (this.resolver == null) {
 			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
 		}
@@ -79,7 +72,6 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 	
 	public boolean willActivate(Identifier id) {
-		this.checkInstanceID(id);
 		if (this.resolver == null) {
 			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
 		}
@@ -144,22 +136,12 @@ public class TcpIDManipulator implements IDManipulator {
 
 	@Override
 	public boolean delete(Identifier id) {
-		this.checkInstanceID(id);
-		
 		return this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
 	}
 
 	@Override
 	public void deletePlatform() {
 		throw new UnsupportedOperationException("Not supported yet.");
-	}
-		
-	private Future<Boolean> submitQuery(Identifier id, SimulationManagerProtocol action) {
-		ManagerProtocolHandler proto = createProtocolHandler(id, action);
-		if (proto == null) {
-			return null;
-		}
-		return this.executor.submit(proto);
 	}
 
 	private boolean runQuery(Identifier id, SimulationManagerProtocol action) {
@@ -173,18 +155,12 @@ public class TcpIDManipulator implements IDManipulator {
 	
 	private ManagerProtocolHandler createProtocolHandler(Identifier id, SimulationManagerProtocol action) {
 		try {
-			Socket s = this.sockets.createSocket();
-			s.connect(managerAddr);
+			Socket s = socketPool.createSocket(action == SimulationManagerProtocol.LOCATE);
 			return new ManagerProtocolHandler(s, (InstanceID)id, action);
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			logger.log(Level.SEVERE, "Could not open socket to initiate the " + action + " protocol with SimulationManager", ex);
 			return null;
 		}
-	}
-	
-	private void checkInstanceID(Identifier id) {
-		if (!(id instanceof InstanceID))
-			throw new IllegalArgumentException("ID " + id + " is not an InstanceID; can only work with InstanceID's.");
 	}
 	
 	private class ManagerProtocolHandler extends ProtocolHandler<Boolean,TcpIDManipulator> {
@@ -193,7 +169,7 @@ public class TcpIDManipulator implements IDManipulator {
 		private Boolean successful;
 
 		ManagerProtocolHandler(Socket s, InstanceID id, SimulationManagerProtocol action) {
-			super(s, TcpIDManipulator.this, true, true, 3, true);
+			super(s, TcpIDManipulator.this, true, true, 3, false);
 			this.action = action;
 			this.id = id;
 			if (this.action == SimulationManagerProtocol.REGISTER && !this.id.isResolved()) {
@@ -209,7 +185,7 @@ public class TcpIDManipulator implements IDManipulator {
 		protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 			// Send command
 			logger.log(Level.FINER, "Initiating protocol to perform action {0} on ID {1}", new Object[]{action, id});
-			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER.intValue());
+			out.writeInt(SimulationManagerProtocol.MAGIC_NUMBER_KEEP_ALIVE.intValue());
 			out.writeInt(this.action.intValue());
 			if (id == null) {
 				out.writeString("");
@@ -264,6 +240,8 @@ public class TcpIDManipulator implements IDManipulator {
 				}
 			}
 			in.cleanUp();
+			
+			socketPool.socketFinished(this.socket, out);
 			
 			return success;
 		}

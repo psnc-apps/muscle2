@@ -41,6 +41,7 @@ public abstract class SafeThread extends Thread implements Disposable {
 		} catch (Throwable ex) {
 			this.handleException(ex);
 		}
+		this.dispose();
 	}
 	
 	/** Any initialization before execute is called can be done by overriding this method. */
@@ -57,6 +58,9 @@ public abstract class SafeThread extends Thread implements Disposable {
 	 * local variables. When overriding, always also call the super implementation.
 	 */
 	public synchronized void dispose() {
+		if (this.isDone) {
+			return;
+		}
 		this.isDone = true;
 		this.interrupt();
 		this.notifyAll();
