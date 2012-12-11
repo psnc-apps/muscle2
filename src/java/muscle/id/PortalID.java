@@ -30,7 +30,7 @@ public class PortalID<E extends Identifier> extends AbstractID implements Identi
 	private final String combinedName;
 	
 	public PortalID(String newName, E newAgentID) {
-		super(newName);
+		super(newName, getFullName(newName + "@" + newAgentID, IDType.port));
 		this.ownerID = newAgentID;
 		this.combinedName = name+"@"+ownerID.getName();
 	}

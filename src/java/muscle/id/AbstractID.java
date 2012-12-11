@@ -13,11 +13,20 @@ public abstract class AbstractID  implements Identifier {
 	private int hashCode = -1;
 	
 	public AbstractID(String name) {
-		if (this.name == null) {
+		if (name == null) {
 			throw new NullPointerException("Id name may not be null");
 		}
 		this.name = name;
 		this.fullname = getFullName(name, getType());
+		this.hashCode = 47*7+this.fullname.hashCode();
+	}
+
+	public AbstractID(String name, String fullName) {
+		if (name == null) {
+			throw new NullPointerException("Id name may not be null");
+		}
+		this.name = name;
+		this.fullname = fullName;
 		this.hashCode = 47*7+this.fullname.hashCode();
 	}
 
@@ -51,7 +60,9 @@ public abstract class AbstractID  implements Identifier {
 	}
 	
 	public final boolean equals(Object other) {
-		if (other == null || !(other instanceof Identifier)) return false;
+		if (other == null || !(other instanceof Identifier)) {
+			return false;
+		}
 		
 		Identifier iid = (Identifier)other;
 		return hashCode() == iid.hashCode() && this.fullname.equals(iid.getFullName()) && this.getType().equals(iid.getType());

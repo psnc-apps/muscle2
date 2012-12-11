@@ -76,7 +76,6 @@ public class LimitedThreadPool extends SafeThread {
 			}
 		}
 		this.createRunner();
-		System.out.print("#");
 	}
 	
 	private void createRunner() {
@@ -101,7 +100,6 @@ public class LimitedThreadPool extends SafeThread {
 		synchronized (counterLock) {
 			this.numberOfRunners--;
 		}
-		System.out.print("-");
 	}
 
 	@Override
@@ -147,7 +145,6 @@ public class LimitedThreadPool extends SafeThread {
 		}
 		if (!this.queue.isEmpty() && diffTime > TIMEOUT_NEXTGET) {
 			this.createRunner();
-			System.out.print("+");
 		}
 	}
 	

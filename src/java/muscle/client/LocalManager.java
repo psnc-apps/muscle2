@@ -5,12 +5,11 @@
 
 package muscle.client;
 
-import java.io.File;
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +27,6 @@ import muscle.id.*;
 import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
-import muscle.util.FileTool;
 import muscle.util.JVM;
 
 /**
@@ -47,7 +45,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private boolean isDone;
 	private DisposeOfControllersHook disposeOfControllersHook;
 	private ForcefulQuitHook forcefulQuitHook;
-	private boolean isShutdown;
+	private volatile boolean isShutdown;
 	
 	public static void main(String[] args) {
 		try {
@@ -67,8 +65,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	
 	private LocalManager(LocalManagerOptions opts) {
 		this.opts = opts;
-		controllers = new ArrayList<InstanceController>(opts.getAgents().size());
-		controllerThreads = new ArrayList<Thread>(opts.getAgents().size()-1);
+		controllers = new FastArrayList<InstanceController>(opts.getAgents().size());
+		controllerThreads = new FastArrayList<Thread>(opts.getAgents().size());
 		res = null;
 		tcpConnectionHandler = null;
 		localConnectionHandler = null;
@@ -129,23 +127,25 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		localConnectionHandler.start();
 		factory.start();
 		
+		int size = controllers.size();
+		
 		try {
-			// Start all instances but the first in a new thread
-			for (int i = 1; i < controllers.size(); i++) {
-				synchronized (controllers) {
-					if (isDone) {
+			synchronized (controllers) {
+				// Start all instances but the first in a new thread
+				for (int i = 1; i < size; i++) {
+					if (isShutdown) {
 						return;
 					}
-					if (i < controllers.size()) {
-						Thread t = new Thread(controllers.get(i), controllers.get(i).getLocalName());
-						controllerThreads.add(t);
-						t.start();
-					}
+
+					InstanceController ic = controllers.get(i);
+					Thread t = new Thread(ic, ic.getLocalName());
+					controllerThreads.add(t);
+					t.start();
 				}
+				// Run the first instance in the current thread
+				controllerThreads.add(Thread.currentThread());
+				controllers.get(0).run();
 			}
-			// Run the first instance in the current thread
-			controllerThreads.add(Thread.currentThread());
-			controllers.get(0).run();
 		} catch (OutOfMemoryError er) {
 			logger.log(Level.SEVERE, "Out of memory: too many submodels; try decreasing thread memory (e.g. -D -Xss512k)", er);
 			this.shutdown(2);
@@ -173,11 +173,15 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	public void shutdown(int code) {
+		if (isShutdown) {
+			return;
+		}
+		isShutdown = true;
+		// Shutdown may be called during startup, but isDone can not be.
 		synchronized (controllers) {
-			if (isShutdown || isDone) {
+			if (isDone) {
 				return;
 			}
-			isShutdown = true;
 		}
 		logger.severe("Shutting down simulation due to an error");
 		System.exit(code);
@@ -275,10 +279,18 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 				isDone = true;
 
 				logger.log(Level.INFO, "All local submodels have finished; exiting.");
-				if (factory != null) factory.dispose();
-				if (idManipulator != null) idManipulator.dispose();
-				if (tcpConnectionHandler != null) tcpConnectionHandler.dispose();
-				if (localConnectionHandler != null) localConnectionHandler.dispose();
+				if (factory != null) {
+					factory.dispose();
+				}
+				if (idManipulator != null) {
+					idManipulator.dispose();
+				}
+				if (tcpConnectionHandler != null) {
+					tcpConnectionHandler.dispose();
+				}
+				if (localConnectionHandler != null) {
+					localConnectionHandler.dispose();
+				}
 			}
 		}
 	}
