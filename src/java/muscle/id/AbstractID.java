@@ -9,14 +9,28 @@ package muscle.id;
  */
 public abstract class AbstractID  implements Identifier {
 	protected final String name;
+	private final String fullname;
 	private int hashCode = -1;
 	
 	public AbstractID(String name) {
+		if (this.name == null) {
+			throw new NullPointerException("Id name may not be null");
+		}
 		this.name = name;
+		this.fullname = getFullName(name, getType());
+		this.hashCode = 47*7+this.fullname.hashCode();
 	}
 
 	public String getName() {
 		return name;
+	}
+	
+	public String getFullName() {
+		return this.fullname;
+	}
+	
+	public static String getFullName(String name, IDType type) {
+		return name + "#" + type.name();
 	}
 
 	public final int compareTo(Identifier t) {
@@ -40,16 +54,10 @@ public abstract class AbstractID  implements Identifier {
 		if (other == null || !(other instanceof Identifier)) return false;
 		
 		Identifier iid = (Identifier)other;
-		return hashCode() == iid.hashCode() && this.getName().equals(iid.getName()) && this.getType().equals(iid.getType());
+		return hashCode() == iid.hashCode() && this.fullname.equals(iid.getFullName()) && this.getType().equals(iid.getType());
 	}
 	
 	public int hashCode() {
-		if (hashCode == -1) {
-			hashCode = 7;
-			hashCode = 47 * hashCode + (this.getName() != null ? this.getName().hashCode() : 0);
-			hashCode = 47 * hashCode + (this.getType() != null ? this.getType().hashCode() : 0);
-			if (hashCode == -1) hashCode = -2;
-		}
 		return hashCode;
 	}
 }

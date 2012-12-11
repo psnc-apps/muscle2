@@ -6,7 +6,6 @@ package muscle.manager;
 
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.ArraySet;
-import java.io.File;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.id.Identifier;
@@ -25,7 +23,6 @@ import muscle.net.AbstractConnectionHandler;
 import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
-import muscle.util.FileTool;
 import muscle.util.JVM;
 import muscle.util.concurrency.Disposable;
 
@@ -189,25 +186,28 @@ public class SimulationManager implements ConnectionHandlerListener, Disposable 
 	
 	public boolean deregister(Identifier id) {
 		logger.log(Level.FINE, "Deregistering ID {0}", id);
+		int size;
 		String name = id.getName();
 		// Must be able to remove identifier, otherwise it was not registered
 		if (!stillActive.remove(name)) {
 			logger.log(Level.WARNING, "Failed to deregister ID {0}, because it was not registered.", id);
-		} else if (logger.isLoggable(Level.INFO) && !stillActive.isEmpty()) {
+		} else if (logger.isLoggable(Level.INFO) && (size = stillActive.size()) > 0) {
 			// Print registration information; not synchronized, no synchronization error (mult = null), print nothing
 			String mult;
-			if (stillActive.size() == 1) {
+			if (size == 1) {
 				try {
 					mult = "'" + stillActive.iterator().next() + "' has";
 				} catch (Exception ex) {
 					mult = null;
 				}
-			} else {
+			} else if (size < 10) {
 				try {
 					mult = stillActive + " have";
 				} catch (Exception ex) {
-					mult = null;
+					mult = size + " more instances have";
 				}
+			} else {
+				mult = size + " more instances have";
 			}
 			if (mult != null) {
 				logger.log(Level.INFO, "Deregistered {0}; will quit MUSCLE once {1} finished computation.", new Object[] {id, mult});

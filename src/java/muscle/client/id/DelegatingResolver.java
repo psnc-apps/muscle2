@@ -16,21 +16,19 @@ import muscle.id.*;
 public class DelegatingResolver implements Resolver {
 	protected final IDManipulator delegate;
 	/** Stores all resolved IDs */
-	private final ConcurrentMap<String,Identifier> idCache;
 	private final Set<String> expecting;
-	private final Set<String> registeredHere;
+	private final Set<Identifier> registeredHere;
 	private Location here;
-	private final Set<String> searchingNow;
+	private final Set<Identifier> searchingNow;
 	private volatile boolean isDone;
 	private final static Logger logger = Logger.getLogger(DelegatingResolver.class.getName());
-	private final ConcurrentHashMap<String, Identifier> canonicalIds;
+	private final ConcurrentHashMap<Identifier, Identifier> canonicalIds;
 	
 	public DelegatingResolver(IDManipulator newDelegate, Set<String> expecting) {
 		delegate = newDelegate;
-		idCache = new ConcurrentHashMap<String,Identifier>();
-		canonicalIds = new ConcurrentHashMap<String,Identifier>();
-		searchingNow = Collections.newSetFromMap(new ConcurrentHashMap<String,Boolean>());
-		registeredHere = Collections.newSetFromMap(new ConcurrentHashMap<String,Boolean>());
+		canonicalIds = new ConcurrentHashMap<Identifier,Identifier>();
+		searchingNow = Collections.newSetFromMap(new ConcurrentHashMap<Identifier,Boolean>());
+		registeredHere = Collections.newSetFromMap(new ConcurrentHashMap<Identifier,Boolean>());
 		here = delegate.getLocation();
 		this.expecting = expecting;
 		this.isDone = false;
@@ -41,26 +39,16 @@ public class DelegatingResolver implements Resolver {
 	 * a new one if none is available.
 	 */
 	public Identifier getIdentifier(String name, IDType type) {
-		String fullName = name(name, type);
-		
 		// Try cache first, not synchronized as making a new id is not expensive
-		Identifier id = idCache.get(fullName);
-		if (id == null) {
-			logger.log(Level.FINER, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
-			id = delegate.create(name, type);
-			idCache.put(fullName, id);
-		} else {
-			logger.log(Level.FINEST, "Returning identifier ''{0}'' of type {1} from cache", new Object[]{name, type});
-		}
-		return id;
+		logger.log(Level.FINER, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
+		return delegate.create(name, type);
 	}
 	
 	private Identifier canonicalId(Identifier id) {
 		if (id.getType() == IDType.port) {
 			id = ((PortalID)id).getOwnerID();
 		}
-		String fullName = name(id.getName(), id.getType());
-		Identifier altId = canonicalIds.putIfAbsent(fullName, id);
+		Identifier altId = canonicalIds.putIfAbsent(id, id);
 		if (isDisposed()) {
 			if (id.canBeResolved()) {
 				id.willNotBeResolved();
@@ -98,15 +86,13 @@ public class DelegatingResolver implements Resolver {
 		}
 		
 		// See if we have a resolved id in cache
-		String fullName = name(id.getName(), id.getType());
-		
 		if (!isLocal(id)) {
 			boolean searching = false;
 			synchronized (id) {
 				// add a search only if this instance is not already searchd for
-				if (!searchingNow.contains(fullName)) {
+				if (!searchingNow.contains(id)) {
 					searching = true;
-					searchingNow.add(fullName);
+					searchingNow.add(id);
 				}
 			}
 
@@ -114,7 +100,7 @@ public class DelegatingResolver implements Resolver {
 				logger.log(Level.FINE, "Searching to resolve identifier {0}", id);
 				delegate.search(id);
 				synchronized (id) {
-					searchingNow.remove(fullName);
+					searchingNow.remove(id);
 				}
 			}
 		}
@@ -140,18 +126,17 @@ public class DelegatingResolver implements Resolver {
 
 	/** Whether the id resides in the current location */
 	public boolean isLocal(Identifier id) {
-		String name;
 		if (id instanceof PortalID) {
-			name = ((PortalID)id).getOwnerID().getName();
-		} else {
-			name = id.getName();
+			id = ((PortalID)id).getOwnerID();
 		}
+		String name = id.getName();
+
 		try {
 			synchronized (registeredHere) {
-				while (!this.isDisposed() && expecting.contains(name) && !registeredHere.contains(name)) {
+				while (!this.isDisposed() && expecting.contains(name) && !registeredHere.contains(id)) {
 					registeredHere.wait();
 				}
-				return !this.isDisposed() && registeredHere.contains(name);
+				return !this.isDisposed() && registeredHere.contains(id);
 			}
 		} catch (InterruptedException ex) {
 			Logger.getLogger(DelegatingResolver.class.getName()).log(Level.SEVERE, "Could not determine whether id " + id + " is local.", ex);
@@ -166,7 +151,7 @@ public class DelegatingResolver implements Resolver {
 		boolean ret = delegate.register(id, here);
 		synchronized (registeredHere) {
 			if (ret) {
-				registeredHere.add(id.getName());
+				registeredHere.add(id);
 			} else {
 				expecting.remove(id.getName());
 			}
@@ -199,8 +184,7 @@ public class DelegatingResolver implements Resolver {
 	 */
 	public void removeIdentifier(String name, IDType type) {
 		// Still know that it was known, but make it inactive.
-		Identifier id = canonicalId(this.getIdentifier(name, type));
-		id.willNotBeResolved();
+		canonicalId(this.getIdentifier(name, type)).willNotBeResolved();
 	}
 	
 	/** Add an identifier to the resolver. This also removes it from any 
@@ -236,10 +220,6 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 	
-	private static String name(String name, IDType type) {
-		return name + "#" + type.name();
-	}
-	
 	public void dispose() {
 		this.isDone = true;
 		synchronized (registeredHere) {
@@ -263,11 +243,10 @@ public class DelegatingResolver implements Resolver {
 	@Override
 	public boolean identifierMayActivate(Identifier id) {
 		if (id.getType() == IDType.port) {
-			return identifierMayActivate(((PortalID)id).getOwnerID());
+			id = ((PortalID)id).getOwnerID();
 		}
-		id = canonicalId(id);
 		synchronized (registeredHere) {
-			if (registeredHere.contains(id.getName())) {
+			if (registeredHere.contains(id)) {
 				return true;
 			}
 		}
