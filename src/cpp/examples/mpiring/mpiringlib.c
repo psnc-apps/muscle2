@@ -19,19 +19,19 @@ void Ring_Init(const char *_ringName)
 {
   ringName = _ringName;
 
-  assert( MPI_Init (NULL, NULL) == MPI_SUCCESS);
+  MPI_Init (NULL, NULL);
 
-  assert( MPI_Comm_rank (MPI_COMM_WORLD, &rank) == MPI_SUCCESS);
-  assert( MPI_Comm_size (MPI_COMM_WORLD, &size) == MPI_SUCCESS);
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+  MPI_Comm_size (MPI_COMM_WORLD, &size);
 
   printf("Initialized %d node in ring %s.\n", rank, ringName);
 }
 
 void Ring_Broadcast_Params(double *deltaE, double *maxE, int *will_stop)
 {
-	assert( MPI_Bcast(deltaE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
-	assert( MPI_Bcast(maxE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
-	assert( MPI_Bcast(will_stop, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD) == MPI_SUCCESS);
+	MPI_Bcast(deltaE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(maxE, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(will_stop, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
 
@@ -46,15 +46,15 @@ double insertProton(double initialEnergy, double maxEnergy,  void (*energy_callb
 
 	protonE = initialEnergy;
 
-	assert( MPI_Send(&protonE, 1, MPI_DOUBLE, 1, TAG, MPI_COMM_WORLD) == MPI_SUCCESS);
+	MPI_Send(&protonE, 1, MPI_DOUBLE, 1, TAG, MPI_COMM_WORLD);
 
 	while (protonE < maxEnergy)
 	{
-		assert( MPI_Recv(&protonE, 1, MPI_DOUBLE, size -1, TAG, MPI_COMM_WORLD, &status) == MPI_SUCCESS);
+		MPI_Recv(&protonE, 1, MPI_DOUBLE, size -1, TAG, MPI_COMM_WORLD, &status);
 		
 		energy_callback(protonE);
 		
-		assert( MPI_Send(&protonE, 1, MPI_DOUBLE, 1, TAG, MPI_COMM_WORLD) == MPI_SUCCESS);
+		MPI_Send(&protonE, 1, MPI_DOUBLE, 1, TAG, MPI_COMM_WORLD);
 	}
 
 	return protonE;
@@ -77,11 +77,11 @@ void accelerateProtons(double deltaE, double maxEnergy)
 
 	while (protonE < maxEnergy)
 	{
-		assert( MPI_Recv(&protonE, 1, MPI_DOUBLE, from, TAG, MPI_COMM_WORLD, &status) == MPI_SUCCESS);
+		MPI_Recv(&protonE, 1, MPI_DOUBLE, from, TAG, MPI_COMM_WORLD, &status);
 		
 		protonE+=deltaE;
 
-		assert( MPI_Send(&protonE, 1, MPI_DOUBLE, next, TAG, MPI_COMM_WORLD) == MPI_SUCCESS);
+		MPI_Send(&protonE, 1, MPI_DOUBLE, next, TAG, MPI_COMM_WORLD);
 	}
 }
 
