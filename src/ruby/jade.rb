@@ -41,10 +41,14 @@ class Agent
 	
 	def to_s
 		if @args.empty?
-			"#{@name}:#{@cls}"
+			@name + ':' + @cls
 		else
-			"#{@name}:#{@cls}(#{@args.join(',')})"
+			@name + ':' + @cls + '(' << @args.join(',') + ')'
 		end
+	end
+
+	def portal_name
+		@name
 	end
 
 	# visibility
@@ -52,6 +56,9 @@ class Agent
 end
 
 class TerminalAgent < Agent
+	def portal_name
+		@name + '(' + @cls + ')'
+	end
 end
 
 class InstanceAgent < Agent
@@ -59,6 +66,6 @@ end
 
 # test
 if $0 == __FILE__
-puts KernelAgent.new("a", "foo.bar.cls", %w(a b c)).inspect
+puts KernelAgent.new('a', 'foo.bar.cls', %w(a b c)).inspect
 end
 

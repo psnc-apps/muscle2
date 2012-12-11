@@ -24,15 +24,15 @@ Jan Hegewald
 =end
 
 # default configuration file for the MUSCLE bootstrap utility
-abort "this is a configuration file for to be used with the MUSCLE bootstrap utility" if __FILE__ == $0
+abort 'this is a configuration file for to be used with the MUSCLE bootstrap utility' if __FILE__ == $0
 
 m = Muscle.LAST
 
 # some local variables to keep things simple
-base_dir = ENV["MUSCLE_HOME"]
+base_dir = ENV['MUSCLE_HOME']
 
 if base_dir == nil
-  puts "MUSCLE_HOME environment variable is not defined."
+  puts 'MUSCLE_HOME environment variable is not defined.'
   exit 1
 end
 
@@ -42,10 +42,10 @@ require 'tmpdir'
 ## configure java CLASSPATH
 ## classpath must include jade and muscle classes
 ## remember: path separator is ';' on windows systems, else ':' better just use File::PATH_SEPARATOR
-## be careful: ENV["CLASSPATH"] might be nil or an empty string
-#m.add_classpath ENV["CLASSPATH"].split(File::PATH_SEPARATOR) if ENV["CLASSPATH"] != nil
-#m.add_classpath File.expand_path(File.join(base_dir, "build", "muscle.jar"))
-#m.add_classpath Dir.glob("#{base_dir}/thirdparty/*.jar")
+## be careful: ENV['CLASSPATH'] might be nil or an empty string
+#m.add_classpath ENV['CLASSPATH'].split(File::PATH_SEPARATOR) if ENV['CLASSPATH'] != nil
+#m.add_classpath File.expand_path(File.join(base_dir, 'build', 'muscle.jar'))
+#m.add_classpath Dir.glob('#{base_dir}/thirdparty/*.jar')
 
 m.add_classpath default_classpaths
 
@@ -54,7 +54,7 @@ m.add_classpath default_classpaths
 # add our standard path for native libraries
 require 'utilities'
 assert_LIBPATHENV(ENV)
-m.add_libpath "#{ENV[ENV['LIBPATHENV']]}"
+m.add_libpath ENV[ENV['LIBPATHENV']].to_s
 # Library path should be set in terminal, we will not append to it here.
 # Fixes issue where OS X can not find libjava.jnilib
 # m.add_libpath "#{base_dir}/lib"
@@ -69,8 +69,8 @@ e = {
 'quiet' => false,
 'java' => 'java', # java command
 'Xms' => '256m', # default JVM heap size minimum
-'Xmx' => "2048m", # default JVM heap size maximum
-"allkernels" => false,
+'Xmx' => '2048m', # default JVM heap size maximum
+'allkernels' => false,
 'print_env' => false,
 # configure java logging
 'logging_config_path' => "#{logging_path}/logging.properties",

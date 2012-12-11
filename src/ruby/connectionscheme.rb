@@ -32,60 +32,37 @@ $LOAD_PATH << PARENT_DIR
 
 class ConnectionScheme
 
-	def initialize
+	def initialize(cxa)
 		super()
-		@@LAST=self
+		@cxa = cxa
 		@pipelines = []
 	end
 
-	def ConnectionScheme.LAST
-		@@LAST
-	end
-
 	def attach(hsh)
-		raise("can only accept hash with one key/val") if hsh.length != 1
 		if block_given?
 			# store values we need for the #tie, which should be called in the block
-			@current_src_kernel = hsh.keys.first
-			@current_src_agent = Cxa.LAST.get @current_src_kernel
-			@current_tgt_kernel = hsh[@current_src_kernel]
-			@current_tgt_agent = Cxa.LAST.get @current_tgt_kernel
-			raise("can not be nil: #{@current_src_kernel.inspect} #{@current_tgt_kernel.inspect}") if @current_src_kernel.nil? || @current_tgt_kernel.nil?
-			raise("kernels must be defined: #{@current_src_kernel.inspect} #{@current_tgt_kernel.inspect}") if @current_src_agent.nil? || @current_tgt_agent.nil?
+			@current_entrance = '@' << @cxa.get(hsh.keys.first).portal_name
+			@current_exit = '@' << @cxa.get(hsh.values.first).portal_name
+
+			raise("Instances must be defined before coupling: #{hsh.inspect}") if @current_entrance.nil? or @current_exit.nil?
 
 			yield
-			@current_src_kernel = nil
-			@current_tgt_kernel = nil
+			@current_entrance = nil
+			@current_exit = nil
 		else
 			raise("empty attach for #{hsh.inspect}")
 		end
 	end
 
 	def tie(entrance_name, exit_name=entrance_name, filters=[], exit_filters=nil)
-		abort("first arg to tie can not be a #{entrance_name.class}") if(entrance_name.class==Hash) # sanity check
-		tie_single_args(entrance_name, exit_name, filters, exit_filters)
-	end
+		# Combine exit and entrance filters, separated by ''
+		filters.push('', *exit_filters) unless exit_filters.nil?
 
-	# call with (entrance, exit, [conduit])
-	def tie_single_args(entrance_name, exit_name, entrance_filters, exit_filters)
-		entrance = ConduitEntrance.new(@current_src_agent, entrance_name)
-		exit = ConduitExit.new(@current_tgt_agent, exit_name)
-		
-		if exit_filters.nil?
-			filters = entrance_filters
+		if filters.empty?
+			@pipelines << (exit_name + @current_exit + ' -> ' + entrance_name + @current_entrance)
 		else
-			filters = entrance_filters + [""] + exit_filters
+			@pipelines << (exit_name + @current_exit + ' ->(' + filters.join(',') + ') ' + entrance_name + @current_entrance)
 		end
-
-		@pipelines << Pipeline.new(@current_src_kernel, entrance, Conduit.new(filters), exit, @current_tgt_kernel)
-	end
-
-	# alternative version, can be called with a hash do define the entrance=>exit
-	# call with (entrance => exit)
-	# or ({entrance => exit}, conduit)
-	def tie_hash_arg(hsh, filters)
-		raise("can only accept hash with one key/val") if hsh.length != 1
-		tie_single_args(hsh.keys.first, hsh.values.first, filters)
 	end
 
 	# produces cs in old style format
@@ -93,96 +70,19 @@ class ConnectionScheme
 	# e.g.:
 	# data@r muscle.core.conduit.AutomaticConduit#A(multiply_2) data@w
 	def to_s
-		lines = []
-		@pipelines.each do |p|
-			lines << "#{p.exit} #{p.conduit} #{p.entrance}"
-		end
-		lines.join("\n")
+		@pipelines.join("\n")
 	end
 
 	def ConnectionScheme.jclass
 		'muscle.core.ConnectionScheme'
 	end
+end
 
-	# visibility
-	private :tie_hash_arg, :tie_single_args
+def muscle_set_connection_scheme(cs)
+	$muscle_connection_scheme = cs
 end
 
 # helper method for setup files, redirect tie method to ConnectionScheme
-unless respond_to?(:tie, true)
-	def tie(*args)
-		ConnectionScheme.LAST.tie(*args)
-	end
-else
-	raise("method #{self}#tie already defined")
-end
-
-class Pipeline
-	def initialize(src_kernel, entrance, conduit, exit, tgt_kernel)
-		@src_kernel = src_kernel
-		@entrance = entrance
-		@conduit = conduit
-		@exit = exit
-		@tgt_kernel = tgt_kernel
-	end
-	attr_reader :src_kernel, :entrance, :conduit, :exit, :tgt_kernel
-end
-
-class Conduit
-	def initialize(args=[])
-		@args = args
-		@@counter||=-1
-		@@counter+= 1
-		@name = @@counter.to_s
-	end
-
-	def dup
-		@@counter+= 1
-		super
-	end
-
-	def to_s
-		"conduit##{@name}#{"(#{@args.join(',')})" unless @args.empty?}"
-	end	
-end
-
-class Portal
-	def initialize(kernel, name)
-		@kernel = kernel
-		@name = name
-	end
-
-	def to_s
-		if @kernel.kind_of? TerminalAgent
-			"#{@name}@#{@kernel.name}(#{@kernel.cls})"
-		else
-			"#{@name}@#{@kernel.name}"
-		end
-	end
-end
-
-class ConduitEntrance < Portal
-end
-class ConduitExit < Portal
-end
-
-## test
-if $0 == __FILE__
-	cs = ConnectionScheme.new
-
-	cs.attach("k0"=>"k1") {
-		tie("entrance0" => "exit0")
-		tie("entrance1" => "exit1")
-	}
-	#	cs.attach("k1"=>"k0") {
-	#		tie("entrance0" => "exit0")
-	#	}
-	cs.attach("k2"=>"k3") {
-		tie("entrance0" => "exit0")
-		tie("entrance1" => "exit1")
-	}
-
-	#	puts "writing dot file ..."
-	#	require 'csgraph'
-	#	system("open -a Preview #{cs.write_to_graphic_file}")
+def tie(*args)
+	$muscle_connection_scheme.tie(*args)
 end

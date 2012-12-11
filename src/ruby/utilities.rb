@@ -37,22 +37,22 @@ module MuscleUtils
 	def mkTmpPath(arg)
 		require 'fileutils'
 		host = `hostname -f`.chomp
-		time = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
+		time = Time.now.strftime('%Y-%m-%d_%H-%M-%S')
 		tmpdir_path = File.expand_path(arg) + "/#{host}_#{time}_#{Process.pid}"
-		FileUtils::mkdir_p(tmpdir_path + "/.muscle");
+		FileUtils::mkdir_p(tmpdir_path + '/.muscle');
 		return tmpdir_path
 	end
 
 	# returns an array with cpasslaths
 	def default_classpaths
-		base_dir = ENV["MUSCLE_HOME"]
+		base_dir = ENV['MUSCLE_HOME']
 
 		# configure java CLASSPATH
 		# classpath must include jade and muscle classes
 		# remember: path separator is ';' on windows systems, else ':' better just use File::PATH_SEPARATOR
-		# be careful: ENV["CLASSPATH"] might be nil or an empty string
+		# be careful: ENV['CLASSPATH'] might be nil or an empty string
 		cp = []
-		cp += ENV["CLASSPATH"].split(File::PATH_SEPARATOR) if ENV["CLASSPATH"] != nil
+		cp += ENV['CLASSPATH'].split(File::PATH_SEPARATOR) unless ENV['CLASSPATH'].nil?
 		cp += Dir.glob("#{base_dir}/share/muscle/java/*.jar")
 		cp += Dir.glob("#{base_dir}/share/muscle/java/thirdparty/*.jar")
 		cp
@@ -85,43 +85,43 @@ module MuscleUtils
 
 		case RbConfig::CONFIG['host_os']
 		when /mswin|windows/i
-			"windows"
+			'windows'
 		when /linux/i
-			"linux"
+			'linux'
 		when /darwin/i
-			"darwin"
+			'darwin'
 		when /sunos|solaris/i
-			"solaris"
+			'solaris'
 		else
-			"unknown"
+			'unknown'
 		end
 	end
 
 	# set value for LIBPATHENV or abort
 	def assert_LIBPATHENV env
-		if(env["LIBPATHENV"] == nil)
+		if(env['LIBPATHENV'] == nil)
 			# try fo figure out the lib path environment key automatically
 			require 'rbconfig'
-			env["LIBPATHENV"] = 
+			env['LIBPATHENV'] = 
 			if(ENV['LIBPATHENV'] != nil)
 				ENV['LIBPATHENV']
 			elsif( RbConfig::CONFIG['LIBPATHENV'] != nil ) # is nil on mswin or with jruby
 				RbConfig::CONFIG['LIBPATHENV']
 			else
 				case host_os
-				when "windows"
-					"PATH"
-				when "linux"
-					"LD_LIBRARY_PATH"
-				when "darwin"
-					"DYLD_LIBRARY_PATH"
+				when 'windows'
+					'PATH'
+				when 'linux'
+					'LD_LIBRARY_PATH'
+				when 'darwin'
+					'DYLD_LIBRARY_PATH'
 				else
 					nil
 				end
 			end
 
 			# print an error if we can not determine the LIBPATHENV
-			if(env["LIBPATHENV"] == nil)
+			if(env['LIBPATHENV'] == nil)
 				abort("Error: can not determine value of environment key for LIBPATHENV, set an environment variable 'LIBPATHENV' to your preferred value (the value is usually something like 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH' or 'PATH', an environment path variable from where to load dynamic native libraries)")
 			end			
 		end
@@ -130,13 +130,13 @@ module MuscleUtils
 
 	# Detect the MPI rank from common environment variables that are set when MPI is active.
 	def detect_mpi_rank
-		possible_mpi_rank_vars=["OMPI_MCA_orte_ess_vpid",
-			"OMPI_MCA_ns_nds_vpid",
-			"PMI_RANK",
-			"MP_CHILD",
-			"SLURM_PROCID",
-			"X10_PLACE",
-			"MP_CHILD"]
+		possible_mpi_rank_vars=['OMPI_MCA_orte_ess_vpid',
+			'OMPI_MCA_ns_nds_vpid',
+			'PMI_RANK',
+			'MP_CHILD',
+			'SLURM_PROCID',
+			'X10_PLACE',
+			'MP_CHILD']
 
 		rank = nil
 		possible_mpi_rank_vars.each {|var| rank = ENV[var] if ENV.has_key? var }

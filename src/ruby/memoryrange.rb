@@ -24,16 +24,10 @@ Jan Hegewald
 =end
 
 # represent memory range
-class MemoryRange < Range
+class MemoryRange
 	attr_reader :from_mem, :to_mem
-	def initialize(from, from_quantity, to, to_quantity)
-		from = from.to_i
-		to = to.to_i
-		@from_mem = "#{from}#{from_quantity}"
-		@to_mem = "#{to}#{to_quantity}"
-		super(from, to)
-	end
-	def inspect
-		super.inspect.sub(/(\d+)(\.{2,3}\d+)/, "\\1#{@from_quantity}\\2#{@to_quantity}")
+	def initialize(from, to)
+		@from_mem = from
+		@to_mem = to
 	end
 end

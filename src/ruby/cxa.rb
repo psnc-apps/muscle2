@@ -33,9 +33,13 @@ else
 end unless defined? PARENT_DIR
 
 class Cxa
+	@@LAST = nil
+	
 	def initialize(cxa_file = nil, rootenv=Muscle.LAST.env)
+		raise 'Can not load multiple CxA files' if not @@LAST.nil?
 		@@LAST = self
-		@cs = ConnectionScheme.new
+		@cs = ConnectionScheme.new(self)
+		muscle_set_connection_scheme(@cs)
 		
 		# create an env entry in root env
 		rootenv[self.class.jclass] = {}
@@ -44,7 +48,7 @@ class Cxa
 		@instances = {}
 		@terminals = {}
 
-		@env_basename = "cxa.env.rb"
+		@env_basename = 'cxa.env.rb'
 		
 		# load (machine specific) default env
 		load_env(File.expand_path("#{PARENT_DIR}/#{@env_basename}"), true)
@@ -61,7 +65,7 @@ class Cxa
 	end
 	
 	def add_instance(*args)
-		add_to_hash(@instances, "instance", InstanceAgent.new(*args))
+		add_to_hash(@instances, 'instance', InstanceAgent.new(*args))
 	end
 
 	def add_kernel(*args)
@@ -69,7 +73,7 @@ class Cxa
 	end
 	
 	def add_terminal(*args)
-		add_to_hash(@terminals, "terminal", TerminalAgent.new(*args))
+		add_to_hash(@terminals, 'terminal', TerminalAgent.new(*args))
 	end
 	
 	def add_to_hash(hash, name, agent)
@@ -81,30 +85,31 @@ class Cxa
 	end
 
 	def get(name)
-		if @instances.has_key?(name)
-			@instances[name]
-		else
+		inst = @instances[name]
+		if inst.nil?
 			@terminals[name]
+		else
+			inst
 		end
-  	end
+ 	end
 	
 	def generate_cs_file
-	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, "w") do |f|
+	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, 'w') do |f|
       f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"
       f.puts cs.to_s
     end
   end
   
 	# visibility
-	attr_reader :env, :cs, :instances, :terminals
+	attr_reader :env, :cs, :instances
 end
 
 
 ## test
 if $0 == __FILE__
-	cxa = Cxa.new("foo/bar")
+	cxa = Cxa.new('foo/bar')
 
 	cxa.env.merge!({123=>456})
-	cxa.env["kin_viscosity[m2/s]"] = "4E-6"
+	cxa.env['kin_viscosity[m2/s]'] = '4E-6'
 	puts cxa.inspect
 end
