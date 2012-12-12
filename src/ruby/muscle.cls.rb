@@ -305,8 +305,8 @@ class Muscle
 				end
 
 				@env['jvmflags'] << '-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory'
-				@env['jvmflags'] << '-D' << PROP_MTO_ADDRESS << '=' << mtoHost
-				@env['jvmflags'] << '-D' << PROP_MTO_PORT    << '=' << mtoPort.to_s
+				@env['jvmflags'] << '-D' + PROP_MTO_ADDRESS + '=' + mtoHost
+				@env['jvmflags'] << '-D' + PROP_MTO_PORT    + '=' + mtoPort.to_s
 			end
 		end
 		return true
