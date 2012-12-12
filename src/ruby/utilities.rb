@@ -26,6 +26,8 @@ Jan Hegewald
 PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
 
+require 'timeout'
+
 module MuscleUtils
 	# run plain java with muscle classpath applied
 	def java(args)

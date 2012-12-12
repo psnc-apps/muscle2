@@ -166,15 +166,15 @@ end
 manager_pid = 0
 $running_procs = {}
 
-kill_running = lambda do
-	kill_processes($running_procs, 1)
-	$running_procs = nil
-end
-
 signals = ['HUP', 'INT', 'QUIT', 'ILL', 'ABRT', 'FPE', 'BUS', 'SEGV', 'SYS',
 	'PIPE', 'ALRM', 'TERM', 'TTIN', 'TTOU', 'XCPU', 'XFSZ',
 	'PROF', 'USR1', 'USR2']
-signals.each { |sig| Signal.trap(sig, kill_running) }
+signals.each {|sig|
+	Signal.trap(sig) do
+		kill_processes($running_procs, 1)
+		$running_procs = nil
+	end
+}
 
 contact_addr = nil
 
