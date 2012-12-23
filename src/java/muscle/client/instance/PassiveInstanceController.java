@@ -5,12 +5,14 @@
 
 package muscle.client.instance;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.LocalManager;
 import muscle.client.communication.PortFactory;
-import muscle.core.*;
+import muscle.core.ConduitEntranceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.exception.MUSCLEConduitExhaustedException;
 import muscle.exception.MUSCLEDatatypeException;
@@ -19,34 +21,37 @@ import muscle.id.ResolverFactory;
 import muscle.util.concurrency.NamedRunnable;
 
 /**
- *
+ * Runs a submodel in single steps
  * @author Joris Borgdorff
  */
-public class ThreadedInstanceController extends AbstractInstanceController implements NamedRunnable {
-	private final static Logger logger = Logger.getLogger(ThreadedInstanceController.class.getName());
+public class PassiveInstanceController extends AbstractInstanceController {
+	private final static Logger logger = Logger.getLogger(PassiveInstanceController.class.getName());
+	private final NamedRunnable runner;
+	private boolean isInitializing;
 	
-	public ThreadedInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
+	public PassiveInstanceController(NamedRunnable runner, InstanceClass instanceClass, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
 		super(instanceClass, listener, rf, portFactory);
+		this.runner = runner;
+		this.isInitializing = true;
 	}
 	
-	@Override
-	public void run() {		
-		logger.log(Level.INFO, "{0}: connecting...", getName());
+	public boolean init() {
+		super.init();
 		
-		if (!init()) {
-			return;
-		}
-		
-		try {
-			instance.beforeExecute();
+		instance.beforeExecute();
 
-			if (!register()) {
-				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getName());
-				if (!this.isDisposed()) {
-					this.disposeNoDeregister();
-				}
-				return;
+		if (!register()) {
+			logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getName());
+			if (!this.isDisposed()) {
+				this.disposeNoDeregister();
 			}
+			return false;
+		}
+		return true;
+	}
+	
+	public void step() throws OutOfMemoryError {
+		if (isInitializing) {
 			instance.connectPortals();
 			propagate();
 
@@ -55,10 +60,12 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 				logger.log(Level.INFO, instance.infoText());
 			}
 
-			beforeExecute();
 			logger.log(Level.INFO, "{0}: executing", getName());
+			beforeExecute();
+			this.isInitializing = false;
+		} else if (!instance.steppingFinished()) {
 			try {
-				instance.start();
+				instance.step();
 			} catch (MUSCLEConduitExhaustedException ex) {
 				logger.log(Level.SEVERE, getName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
 				LocalManager.getInstance().shutdown(6);
@@ -77,31 +84,36 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 				logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getName(), sw});
 				LocalManager.getInstance().shutdown(8);
 			}
-			try {
-				for (ConduitEntranceController ec : entrances) {
-					if (!ec.waitUntilEmpty()) {
-						logger.log(Level.WARNING, "After executing {0}, waiting for conduit {1}  was ended prematurely", new Object[]{getName(), ec.getLocalName()});
-					}
-				}
-			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, "After executing " + getName() + ", waiting for conduit was interrupted", ex);
-			}
-			afterExecute();
+		} else {
+			this.afterExecute();
 			logger.log(Level.INFO, "{0}: finished", getName());
 			dispose();
-		} catch (OutOfMemoryError er) {
-			logger.log(Level.SEVERE, "Instance " + getName() + " is out of memory. Try increasing with, e.g., heap size -H 1g..4g, or stack size -D -Xss512k.", er);
-			LocalManager.getInstance().shutdown(2);
+		}
+	}
+	
+	public boolean readyForStep() {
+		if (isInitializing) {
+			return true;
+		} else if (instance.steppingFinished()) {
+			if (isExecuting()) {
+				for (ConduitEntranceController ec : entrances) {
+					if (!ec.isEmpty()) {
+						return false;
+					}
+				}
+			}
+			return true;
+		} else {
+			return instance.readyForStep();
 		}
 	}
 
 	@Override
 	public NamedRunnable getRunner() {
-		return this;
+		return this.runner;
 	}
 	
-	protected void disposeNoDeregister() {
-		super.disposeNoDeregister();
-		listener.isFinished(this);
+	public boolean canStep() {
+		return instance.canStep();
 	}
 }

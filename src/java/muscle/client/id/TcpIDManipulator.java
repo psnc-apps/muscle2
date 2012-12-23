@@ -204,6 +204,7 @@ public class TcpIDManipulator implements IDManipulator {
 			if (op == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
 				in.cleanUp();
+				socketPool.discard(this.socket);
 				return Boolean.FALSE;
 			} else if (op == SimulationManagerProtocol.ERROR) {
 				in.cleanUp();

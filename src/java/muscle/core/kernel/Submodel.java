@@ -19,43 +19,143 @@ import muscle.core.model.Timestamp;
  */
 public abstract class Submodel extends Instance {
 	private final static Logger logger = Logger.getLogger(Submodel.class.getName());
+
+	protected enum Step {
+		INIT, END_CONDITION, INTERMEDIATE_OBSERVATION, SOLVING_STEP, FINAL_OBSERVATION, RESTART, END;
+	}
 	private Timestamp currentTime = null;
 	private Distance previousDt;
+	protected Step step = Step.INIT;
 	
 	@Override
 	protected void execute() {
-		previousDt = getScale().getDt();
-		while (true) {
-			this.operationsAllowed = RECV;
-			originTime = this.init(originTime);
-			if (currentTime != null && currentTime.compareTo(originTime) > 0) {
-				logger.log(Level.WARNING, "Jumping back in time when restarting submodel; from {0} to {1}", new Object[]{currentTime, originTime});
-			}
-			currentTime = originTime;
-			for (ConduitExitController exit : this.exits.values()) {
-				exit.resetTime(originTime);
-			}
-			for (ConduitEntranceController entrance : this.entrances.values()) {
-				entrance.resetTime(originTime);
-			}
-			this.resetDt();
-			while (!endCondition()) {
+		while (!steppingFinished()) {
+			this.step();
+		}
+	}
+	
+	public void step() {
+		switch (step) {
+			case INIT:
+				previousDt = getScale().getDt();
+				this.operationsAllowed = RECV;
+				originTime = this.init(originTime);
+				if (currentTime != null && currentTime.compareTo(originTime) > 0) {
+					logger.log(Level.WARNING, "Jumping back in time when restarting submodel; from {0} to {1}", new Object[]{currentTime, originTime});
+				}
+				currentTime = originTime;
+				for (ConduitExitController exit : this.exits.values()) {
+					exit.resetTime(originTime);
+				}
+				for (ConduitEntranceController entrance : this.entrances.values()) {
+					entrance.resetTime(originTime);
+				}
+				this.resetDt();
+				step = Step.END_CONDITION;
+				break;
+			case END_CONDITION:
+				this.operationsAllowed = RECV;
+				if (this.endCondition()) {
+					step = Step.FINAL_OBSERVATION;
+				} else {
+					step = Step.INTERMEDIATE_OBSERVATION;
+				}
+				break;
+			case INTERMEDIATE_OBSERVATION:
 				this.operationsAllowed = SEND;
 				this.intermediateObservation();
+				step = Step.SOLVING_STEP;
+				break;
+			case SOLVING_STEP:
 				this.operationsAllowed = RECV;
 				this.solvingStep();
 				this.resetDt();
 				this.currentTime = this.currentTime.add(getScale().getDt());
-			}
-			this.resetLastDt();
-			this.operationsAllowed = SEND;
-			this.finalObservation();
-			this.resetDt();
-			this.operationsAllowed = RECV;
-			if (!restartSubmodel()) {
+				step = Step.END_CONDITION;
 				break;
+			case FINAL_OBSERVATION:
+				this.resetLastDt();
+				this.operationsAllowed = SEND;
+				this.finalObservation();
+				this.resetDt();
+				step = Step.RESTART;
+				break;
+			case RESTART:
+				this.operationsAllowed = RECV;
+				if (restartSubmodel()) {
+					step = Step.INIT;
+				} else {
+					step = Step.END;
+				}
+				break;
+		}
+	}
+	
+	public boolean readyForStep() {
+		switch (step) {
+			case INIT:
+				return readyForInit();
+			case END_CONDITION:
+				return readyForEndCondition();
+			case INTERMEDIATE_OBSERVATION:
+				return readyForIntermediateObservation();
+			case FINAL_OBSERVATION:
+				return readyForFinalObservation();
+			case SOLVING_STEP:
+				return readyForSolvingStep();
+			case RESTART:
+				return readyForRestart();
+			default:
+				return true;
+		}
+	}
+	
+	protected boolean readyForInit() {
+		for (ConduitExitController ec : exits.values()) {
+			if (!ec.getExit().ready()) {
+				return false;
 			}
 		}
+		return true;
+	}
+
+	protected boolean readyForIntermediateObservation() {
+		for (ConduitEntranceController ec : entrances.values()) {
+			if (!ec.hasTransmitter()) {
+				return false;
+			}
+		}
+		return true;
+	}
+	protected boolean readyForFinalObservation() {
+		for (ConduitEntranceController ec : entrances.values()) {
+			if (!ec.hasTransmitter()) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	protected boolean readyForEndCondition() {
+		return true;
+	}
+	
+	private boolean readyForRestart() {
+		return true;
+	}
+	
+	protected boolean readyForSolvingStep() {
+		for (ConduitExitController ec : exits.values()) {
+			if (!ec.getExit().ready()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public boolean steppingFinished() {
+		return step == Step.END;
 	}
 	
 	private void resetDt() {
@@ -137,5 +237,9 @@ public abstract class Submodel extends Instance {
 	public boolean willStop() {
 		logger.log(Level.FINER, "Submodel time at willstop: {0}; origin time t_0: {1}; end time T+t_0: {2}", new Object[]{currentTime, originTime, originTime.add(getScale().getOmegaT())});
 		return super.willStop() || currentTime.compareTo(originTime.add(getScale().getOmegaT())) >= 0 || currentTime.compareTo(maxTime) >= 0;
+	}
+	
+	public boolean canStep() {
+		return true;
 	}
 }

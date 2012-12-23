@@ -56,7 +56,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 * This is a non-blocking function. If it returns true, that does not guarantee that hasNext returns true.
 	 */
 	public boolean ready() {
-		return !this.queue.isEmpty();
+		return this.nextElem != null || !this.queue.isEmpty();
 	}
 	
 	/**

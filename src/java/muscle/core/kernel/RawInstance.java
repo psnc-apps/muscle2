@@ -38,7 +38,6 @@ A basic kernel, that all kernels must extend
  */
 public abstract class RawInstance extends Module {
 	private static final Logger logger = Logger.getLogger(RawInstance.class.getName());
-	private Object[] arguments;
 	protected Map<String,ConduitEntranceController> entrances = new ArrayMap<String,ConduitEntranceController>();
 	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
 	private boolean acceptPortals;
@@ -112,7 +111,7 @@ public abstract class RawInstance extends Module {
 	 * Override this method to provide own method of starting a slave kernel. 
 	 */
 	public void executeDirectly() {
-		execute();
+		start();
 	}
 
 	/**
@@ -228,23 +227,11 @@ public abstract class RawInstance extends Module {
 		getLogger().log(lvl, msg);
 	}
 
-	public void setArguments(Object[] args) {
-		this.arguments = args;
-	}
-
-	public Object[] getArguments() {
-		if (arguments == null) {
-			return new Object[0];
-		}
-
-		return arguments;
-	}
-
 	// ==============MANAGEMENT====================//
 	
 	public void setInstanceController(InstanceController ic) {
 		this.controller = ic;
-		this.setLocalName(ic.getLocalName());
+		this.setLocalName(ic.getName());
 	}
 	
 	
@@ -280,6 +267,23 @@ public abstract class RawInstance extends Module {
 	}
 	public final void start() {
 		execute();
+	}
+	
+	/** Only execute a single step in the run sequence. */
+	public void step() {
+	}
+	
+	/** Whether a step can finish in non-blocking fashion. */
+	public boolean readyForStep() {
+		return true;
+	}
+	
+	public boolean steppingFinished() {
+		return true;
+	}
+	
+	public boolean canStep() {
+		return false;
 	}
 	
 	public void afterExecute() {

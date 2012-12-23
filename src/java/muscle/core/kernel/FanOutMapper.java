@@ -31,6 +31,15 @@ public abstract class FanOutMapper<T extends Serializable> extends Mapper {
 	}
 	
 	@Override
+	protected boolean readyForContinue() {
+		return onlyExit.ready();
+	}
+	@Override
+	protected boolean readyForReceive() {
+		return onlyExit.ready();
+	}
+	
+	@Override
 	protected final void receiveAll() {
 		value = onlyExit.receiveObservation();
 	}

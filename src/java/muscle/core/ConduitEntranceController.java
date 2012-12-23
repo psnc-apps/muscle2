@@ -29,4 +29,8 @@ public interface ConduitEntranceController<T extends Serializable> extends Porta
 	 * Use only by MUSCLE during finalization phase.
 	 */
 	public boolean waitUntilEmpty() throws InterruptedException;
+	
+	public boolean hasTransmitter();
+	
+	public boolean isEmpty();
 }

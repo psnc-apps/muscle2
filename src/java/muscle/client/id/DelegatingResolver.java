@@ -3,7 +3,6 @@ package muscle.client.id;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;

@@ -2,17 +2,17 @@ package muscle.client;
 
 import com.beust.jcommander.*;
 import eu.mapperproject.jmml.util.ArraySet;
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.id.InstanceClass;
 import muscle.core.kernel.RawInstance;
+import muscle.id.InstanceClass;
 import muscle.net.SocketFactory;
 
 /**
@@ -23,13 +23,16 @@ public class LocalManagerOptions {
 	private JCommander jcom;
 	
 	@Parameter(description="INST_NAME:INST_CLASS ...",required=true,converter=AgentNameConverter.class)
-	private List<InstanceClass> agents = new ArrayList<InstanceClass>();
+	private List<InstanceClass> agents = new FastArrayList<InstanceClass>();
 	
 	@Parameter(names={"-m", "--manager"},required=true,converter=SocketAddressConverter.class)
 	private InetSocketAddress managerAddress;
 	
 	@Parameter(names={"-a", "--address"},converter=SocketAddressConverter.class)
 	private InetSocketAddress localAddress = getLocalAddress(0);
+	
+	@Parameter(names={"-t", "--threads"})
+	private int threads = 0;
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);
@@ -64,6 +67,10 @@ public class LocalManagerOptions {
 	
 	public InetSocketAddress getLocalSocketAddress() {
 		return this.localAddress;
+	}
+	
+	public int getThreads() {
+		return this.threads;
 	}
 	
 	public static class AgentNameConverter implements IStringConverter<InstanceClass> {

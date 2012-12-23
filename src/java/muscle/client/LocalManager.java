@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +20,7 @@ import muscle.client.communication.message.DataConnectionHandler;
 import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
+import muscle.client.instance.MultiControllerRunner;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceController;
@@ -28,13 +30,14 @@ import muscle.net.ConnectionHandlerListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
+import muscle.util.concurrency.NamedRunnable;
 
 /**
  * @author Joris Borgdorff
  */
 public class LocalManager implements InstanceControllerListener, ResolverFactory, ConnectionHandlerListener {
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
-	private final List<InstanceController> controllers;
+	private final List<NamedRunnable> controllers;
 	private final List<Thread> controllerThreads;
 	private final LocalManagerOptions opts;
 	private DataConnectionHandler tcpConnectionHandler;
@@ -65,8 +68,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	
 	private LocalManager(LocalManagerOptions opts) {
 		this.opts = opts;
-		controllers = new FastArrayList<InstanceController>(opts.getAgents().size());
-		controllerThreads = new FastArrayList<Thread>(opts.getAgents().size());
+		controllers = new ArrayList<NamedRunnable>(opts.getAgents().size());
+		controllerThreads = new ArrayList<Thread>(opts.getAgents().size());
 		res = null;
 		tcpConnectionHandler = null;
 		localConnectionHandler = null;
@@ -107,11 +110,30 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
 		
-		// Initialize the InstanceControllers
-		for (InstanceClass name : opts.getAgents()) {
-			Identifier id = res.getIdentifier(name.getName(), IDType.instance);
-			ThreadedInstanceController tc = new ThreadedInstanceController(id, name.getInstanceClass(), this, this, new Object[0], factory);
-			controllers.add(tc);
+		int threads = opts.getThreads();
+		List<InstanceClass> agents = opts.getAgents();
+		if (threads == 0 || threads >= agents.size()) {
+			// Initialize the InstanceControllers
+			for (InstanceClass id : agents) {
+				id.setIdentifier(res.getIdentifier(id.getName(), IDType.instance));
+				ThreadedInstanceController tc = new ThreadedInstanceController(id, this, this, factory);
+				controllers.add(tc);
+			}
+		} else {
+			int offset = 0, nextOffset;
+			int numperthread = agents.size() / threads;
+			int odd = agents.size() % threads;
+			for (InstanceClass id : agents) {
+				id.setIdentifier(res.getIdentifier(id.getName(), IDType.instance));				
+			}
+			for (int i = 0; i < threads; i++) {
+				nextOffset = offset + numperthread;
+				if (i < odd) nextOffset++;
+				List<InstanceClass> ics = agents.subList(offset, nextOffset);
+				MultiControllerRunner mc = new MultiControllerRunner(ics, this, this, factory);
+				controllers.add(mc);
+				offset = nextOffset;
+			}
 		}
 	}
 	
@@ -130,6 +152,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		int size = controllers.size();
 		
 		try {
+			NamedRunnable currentController;
 			synchronized (controllers) {
 				// Start all instances but the first in a new thread
 				for (int i = 1; i < size; i++) {
@@ -137,15 +160,19 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 						return;
 					}
 
-					InstanceController ic = controllers.get(i);
-					Thread t = new Thread(ic, ic.getLocalName());
+					NamedRunnable ic = controllers.get(i);
+					Thread t = new Thread(ic, ic.getName());
 					controllerThreads.add(t);
 					t.start();
 				}
 				// Run the first instance in the current thread
 				controllerThreads.add(Thread.currentThread());
-				controllers.get(0).run();
+				currentController = controllers.get(0);
+				if (isShutdown) {
+					return;
+				}
 			}
+			currentController.run();
 		} catch (OutOfMemoryError er) {
 			logger.log(Level.SEVERE, "Out of memory: too many submodels; try decreasing thread memory (e.g. -D -Xss512k)", er);
 			this.shutdown(2);
@@ -158,8 +185,8 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	}
 	
 	@Override
-	public void isFinished(InstanceController ic) {
-		logger.log(Level.FINE, "Instance {0} is no longer running.", ic.getLocalName());
+	public void isFinished(NamedRunnable ic) {
+		logger.log(Level.FINE, "Instance {0} is no longer running.", ic.getName());
 		synchronized (controllers) {
 			controllers.remove(ic);
 			this.tryQuit();
@@ -191,6 +218,14 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	public void fatalException(Throwable ex) {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
+
+	@Override
+	public void addInstanceController(NamedRunnable instance, Thread fromThread) {
+		synchronized (controllers) {
+			this.controllers.add(instance);
+			this.controllerThreads.add(fromThread);
+		}
+	}
 	
 	private class DisposeOfControllersHook extends Thread {
 		public DisposeOfControllersHook() {
@@ -208,10 +243,10 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			}
 
 			while (!controllers.isEmpty()) {
-				InstanceController ic = null;
+				NamedRunnable ic = null;
 				synchronized (controllers) {
 					if (!controllers.isEmpty()) {
-						ic = controllers.remove(0);
+						ic = controllers.remove(controllers.size() - 1);
 					}
 				}
 				if (ic != null) ic.dispose();

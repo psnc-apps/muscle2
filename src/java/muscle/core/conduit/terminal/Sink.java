@@ -7,9 +7,6 @@ package muscle.core.conduit.terminal;
 import java.io.Serializable;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
-import muscle.core.model.Observation;
-import muscle.core.model.Timestamp;
-import muscle.id.PortalID;
 
 /**
  * Receives messages.
@@ -26,7 +23,15 @@ public abstract class Sink<T extends Serializable> extends Terminal implements C
 		this.entrance = entrance;
 	}
 	
-	public boolean waitUntilEmpty() throws InterruptedException {
+	public boolean waitUntilEmpty() {
+		return true;
+	}
+	
+	public boolean isEmpty() {
+		return true;
+	}
+	
+	public boolean hasTransmitter() {
 		return true;
 	}
 	

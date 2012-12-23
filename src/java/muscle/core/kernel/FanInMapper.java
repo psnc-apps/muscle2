@@ -21,7 +21,7 @@ public abstract class FanInMapper<T extends Serializable> extends Mapper {
 	public void addPortals() {
 		super.addPortals();
 		if (this.entrances.size() != 1) {
-			throw new IllegalStateException("A fan-in mapper only allows a single input, instead of " + entrances.size());
+			throw new IllegalStateException("A fan-in mapper only allows a single output, instead of " + entrances.size());
 		}
 		onlyEntrance = this.entrances.values().iterator().next().getEntrance();
 	}

@@ -121,12 +121,21 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
 	}
 	
+	public synchronized boolean isEmpty() {
+		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
+	}
+	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
 	private synchronized boolean waitForTransmitter() throws InterruptedException {
-		while (transmitter == null && !isDisposed()) {
+		while (!this.transmitterFound && transmitter == null && !isDisposed()) {
 			logger.log(Level.FINE, "ConduitEntrance <{0}> is waiting for connection to transmit over.", portalID);
 			this.wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
+		this.transmitterFound = (transmitter != null);
+		return transmitterFound;
+	}
+	
+	public synchronized boolean hasTransmitter() {
 		this.transmitterFound = (transmitter != null);
 		return transmitterFound;
 	}

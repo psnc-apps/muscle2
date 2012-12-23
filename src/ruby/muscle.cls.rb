@@ -187,7 +187,11 @@ class Muscle
 			# main
 			args << contact_addr
 		end
-
+		
+		if @env['instancethreads']
+			args << '-t' << @env['instancethreads']
+		end
+		
 		puts '=== Running MUSCLE2 Simulation ==='
 		run_command(args)
 	end
