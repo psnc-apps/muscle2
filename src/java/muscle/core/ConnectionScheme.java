@@ -23,7 +23,10 @@ package muscle.core;
 
 import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.FastArrayList;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -31,6 +34,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import muscle.Constant;
 import muscle.id.IDType;
 import muscle.id.Identifier;
@@ -55,6 +59,9 @@ public class ConnectionScheme implements Serializable {
 	public List<String> kernelList; // for otf
 	public List<String> conduitList; // for otf
 	private static final Object instanceLock = new Object();
+	private final static Pattern spacePattern = Pattern.compile("( +?)|(\t+?)");
+	private final static Pattern parensPattern = Pattern.compile("[()]");
+	private final static Pattern commaPattern = Pattern.compile(",");
 	
 	{
 		this.env = CxADescription.ONLY.subenv(this.getClass());
@@ -110,29 +117,23 @@ public class ConnectionScheme implements Serializable {
 		LBMD2Q9Qs@a	muscle.core.conduit.LBMD2Q9Qs2LBMD2Q9Qs	LBMD2Q9Qs@b
 	*/
 	private void init() {
-		String connectionSchemeText = null;
-		try {
-			connectionSchemeText =  FileTool.fileToString(new File(new URI((String)this.env.get(cs_file_uri))), Constant.Text.COMMENT_INDICATOR);
-		}
-		catch(java.net.URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
-		catch(java.io.IOException e) {
-			throw new RuntimeException(e);
-		}
-		
 		// parse input file (this should be done in the CxADescription)
-		String[] lines = connectionSchemeText.split("(\r\n)|(\n)|(\r)");
 		try {
-			for(String line : lines) {
-				String[] items = line.split("( +?)|(\t+?)");
+			File infile = new File(new URI((String)this.env.get(cs_file_uri)));
+			BufferedReader reader = new BufferedReader(new FileReader(infile));
+			String line;		
+			while ((line = reader.readLine()) != null) {
+				if (line.startsWith("#")) {
+					continue;
+				}
+				String[] items = spacePattern.split(line);
 				if(items.length != 3) {
 					logger.severe("connection scheme has unknown format");
 					return;
 				}
-				List<String> exitArgs = new FastArrayList<String>(1);
-				List<String> conduitArgs = new FastArrayList<String>(3);
-				List<String> entranceArgs = new FastArrayList<String>(1);
+				List<String> exitArgs = new FastArrayList<String>(0);
+				List<String> conduitArgs = new FastArrayList<String>(0);
+				List<String> entranceArgs = new FastArrayList<String>(0);
 
 				String exit = parseItem(items[0], exitArgs);
 				String entrance = parseItem(items[2], entranceArgs);
@@ -143,19 +144,23 @@ public class ConnectionScheme implements Serializable {
 				this.addConnection(entrance, entranceArgs, conduitArgs, exit, exitArgs);
 			}
 		} catch (InterruptedException ex) {
-			Logger.getLogger(ConnectionScheme.class.getName()).log(Level.SEVERE, null, ex);
+			throw new RuntimeException(ex);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} catch(java.net.URISyntaxException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
 	private String parseItem(String item, List<String> args) {
-		assert item.indexOf('(') != 0 : "Error: can not start parenthesis at first character";
-		assert item.indexOf('(') != (item.indexOf(')')-1) : "Error: empty (), omit the '()' for an empty arg list";
-		String[] parts = item.split("[()]");
-		assert parts.length > 0;
-		assert parts.length <= 2;
+//		assert item.indexOf('(') != 0 : "Error: can not start parenthesis at first character";
+//		assert item.indexOf('(') != (item.indexOf(')')-1) : "Error: empty (), omit the '()' for an empty arg list";
+		String[] parts = parensPattern.split(item);
+//		assert parts.length > 0;
+//		assert parts.length <= 2;
 		
 		if(parts.length > 1) {
-			String[] sArgs = parts[1].split(",");
+			String[] sArgs = commaPattern.split(parts[1]);
 			args.addAll(Arrays.asList(sArgs));
 		}
 		return parts[0];
