@@ -130,7 +130,9 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 						throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + this + " does not match expected data type " + dataClass.getSimpleName());
 					}
 
-					this.queue.add(msg.getObservation());
+					synchronized (this.queue) {
+						this.queue.add(msg.getObservation());
+					}
 				} else {
 					try {
 						this.filters.process(msg.getObservation());

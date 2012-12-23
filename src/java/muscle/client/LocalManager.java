@@ -5,7 +5,6 @@
 
 package muscle.client;
 
-import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -23,7 +22,6 @@ import muscle.client.id.TcpIDManipulator;
 import muscle.client.instance.MultiControllerRunner;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
-import muscle.core.kernel.InstanceController;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.*;
 import muscle.net.ConnectionHandlerListener;
@@ -146,7 +144,6 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		// Start listening for connections
 		tcpConnectionHandler.start();
-		localConnectionHandler.start();
 		factory.start();
 		
 		int size = controllers.size();
