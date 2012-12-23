@@ -147,12 +147,15 @@ class Muscle
 			if not $?
 				puts 'Simulation Manager exited with an error.'
 				exit 1
-			elsif $?.exitstatus != 0
-				puts 'Simulation Manager exited with an error.'
-				exit $?.exitstatus
 			else
-				puts 'Simulation Manager exited before setting up connection.'
-				exit 0
+				stat = $?.exitstatus
+				if stat
+					puts 'Simulation Manager exited with an error.'
+					exit stat
+				else
+					puts 'Simulation Manager exited before setting up connection.'
+					exit 1
+				end
 			end
 		end
 	end
