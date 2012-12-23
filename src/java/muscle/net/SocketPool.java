@@ -10,8 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import muscle.util.concurrency.Disposable;
 import muscle.util.serialization.ConverterWrapperFactory;
 import muscle.util.serialization.SerializerWrapper;
@@ -22,9 +21,9 @@ import muscle.util.serialization.SerializerWrapper;
  */
 public class SocketPool implements Disposable {
 	private final int limit;
-	private final Queue<Socket> socketPool;
+	private final ArrayBlockingQueue<Socket> socketPool;
 	private boolean isDone;
-	private volatile int size;
+	private int size;
 	private final SocketFactory sockets;
 	private final InetSocketAddress addr;
 	private final int closeValue;
@@ -33,7 +32,7 @@ public class SocketPool implements Disposable {
 		this.sockets = sf;
 		this.size = 0;
 		this.limit = size;
-		this.socketPool = new LinkedList<Socket>();
+		this.socketPool = new ArrayBlockingQueue<Socket>(size);
 		this.isDone = false;
 		this.addr = addr;
 		this.closeValue = closeValue;
@@ -66,37 +65,42 @@ public class SocketPool implements Disposable {
 	}
 
 	public Socket createSocket(boolean longLasting) throws IOException, InterruptedException {
+		Socket s = null;
 		if (!longLasting) {
-			synchronized (this) {
-				Socket s = this.socketPool.poll();
-				while (s == null && this.size >= limit && !isDisposed()) {
+			s = this.socketPool.poll();
+			while (s == null) {
+				synchronized (this) {
+					if (this.size < limit || isDisposed()) {
+						break;
+					}
 					wait();
-					s = this.socketPool.poll();
 				}
-				if (s != null) {
-					return s;
-				}
-				// create a socket below
-				this.size++;
+				s = this.socketPool.poll();
 			}
 		}
-		Socket s = this.sockets.createSocket();
-		s.connect(addr);
+		if (s == null) {
+			synchronized (this) {
+				this.size++;
+			}
+			s = this.sockets.createSocket();
+			s.connect(addr);
+		}
 		return s;
 	}
 	
 	public void socketFinished(Socket s, SerializerWrapper out) throws IOException {
 		synchronized (this) {
-			if (socketPool.size() < limit) {
-				if (!isDisposed()) {
-					this.socketPool.add(s);
+			if (!this.isDisposed()) {
+				boolean succeed = this.socketPool.offer(s);
+				if (succeed) {
 					notify();
 					return;
+				} else {
+					this.size = this.limit;
 				}
-			} else if (this.size < limit) {
-				this.size = limit;
 			}
 		}
+		
 		out.writeInt(closeValue);
 		out.close();
 		s.close();
@@ -104,6 +108,7 @@ public class SocketPool implements Disposable {
 
 	public synchronized void discard(Socket socket) throws IOException {
 		this.size--;
-		socket.close();	
+		socket.close();
+		notify();
 	}
 }
