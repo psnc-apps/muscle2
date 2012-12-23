@@ -217,8 +217,8 @@ public abstract class AbstractInstanceController implements InstanceController {
 			isDone = true;
 		}
 		
-		portFactory.removeReceiver(this.getIdentifier());
 		for (ConduitExitController<?> source : exits) {
+			portFactory.removeReceiver(source.getIdentifier());
 			source.dispose();
 		}
 		for (ConduitEntranceController<?> sink : entrances) {
