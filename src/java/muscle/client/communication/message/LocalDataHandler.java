@@ -5,9 +5,9 @@
 
 package muscle.client.communication.message;
 
-import eu.mapperproject.jmml.util.ArrayMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,20 +27,18 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 
 	public LocalDataHandler() {
 		super("LocalDataHandler");
-		listener = new ArrayMap<Identifier,Receiver>();
+		listener = new ConcurrentHashMap<Identifier,Receiver>();
 		messages = new ConcurrentLinkedQueue<Message>();
 	}
 	
 	@Override
 	protected void execute() throws InterruptedException {
-		while (!messages.isEmpty() && !isDisposed()) {
-			Message msg = messages.remove();
+		Message msg;
+		while ((msg = messages.poll()) != null && !isDisposed()) {
 			Identifier recipient = msg.getRecipient();
 			Receiver recv;
-			synchronized (listener) {
-				recv = listener.get(recipient);
-			}
-
+			recv = listener.get(recipient);
+			
 			if (recv == null) {
 				if (!msg.isSignal() || !(msg.getSignal() instanceof DetachConduitSignal)) {
 					logger.log(Level.WARNING, "No receiver registered for message {0}.", msg);					
@@ -53,9 +51,7 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 
 	@Override
 	public void addReceiver(Identifier id, Receiver recv) {
-		synchronized (listener) {
-			listener.put(id, recv);
-		}
+		listener.put(id, recv);
 	}
 	
 	public final void put(Message msg) {
@@ -78,9 +74,7 @@ public class LocalDataHandler extends SafeTriggeredThread implements IncomingMes
 
 	@Override
 	public void removeReceiver(Identifier id) {
-		synchronized (listener) {
-			listener.remove(id);
-		}
+		listener.remove(id);
 	}
 	
 	@Override
