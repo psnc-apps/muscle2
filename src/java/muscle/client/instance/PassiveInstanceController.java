@@ -51,43 +51,45 @@ public class PassiveInstanceController extends AbstractInstanceController {
 	}
 	
 	public void step() throws OutOfMemoryError {
-		if (isInitializing) {
-			instance.connectPortals();
-			propagate();
+		try {
+			if (isInitializing) {
+				instance.connectPortals();
+				propagate();
 
-			// log info about this controller
-			if (logger.isLoggable(Level.INFO)) {
-				logger.log(Level.INFO, instance.infoText());
-			}
-
-			logger.log(Level.INFO, "{0}: executing", getName());
-			beforeExecute();
-			this.isInitializing = false;
-		} else if (!instance.steppingFinished()) {
-			try {
-				instance.step();
-			} catch (MUSCLEConduitExhaustedException ex) {
-				logger.log(Level.SEVERE, getName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
-				LocalManager.getInstance().shutdown(6);
-			} catch (MUSCLEDatatypeException ex) {
-				logger.log(Level.SEVERE, getName() + " communicated a wrong data type. Check the coupling.", ex);
-				LocalManager.getInstance().shutdown(7);
-			} catch (Exception ex) {
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				ex.printStackTrace(pw);
-				try {
-					pw.close(); sw.close();
-				} catch (IOException ex1) {
-					Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
+				// log info about this controller
+				if (logger.isLoggable(Level.INFO)) {
+					logger.log(Level.INFO, instance.infoText());
 				}
-				logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getName(), sw});
-				LocalManager.getInstance().shutdown(8);
+
+				logger.log(Level.INFO, "{0}: executing", getName());
+				beforeExecute();
+				this.isInitializing = false;
+			} else if (!instance.steppingFinished()) {
+				try {
+					instance.step();
+				} catch (MUSCLEConduitExhaustedException ex) {
+					logger.log(Level.SEVERE, getName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
+					LocalManager.getInstance().shutdown(6);
+				} catch (MUSCLEDatatypeException ex) {
+					logger.log(Level.SEVERE, getName() + " communicated a wrong data type. Check the coupling.", ex);
+					LocalManager.getInstance().shutdown(7);
+				}
+			} else {
+				this.afterExecute();
+				logger.log(Level.INFO, "{0}: finished", getName());
+				dispose();
 			}
-		} else {
-			this.afterExecute();
-			logger.log(Level.INFO, "{0}: finished", getName());
-			dispose();
+		} catch (Exception ex) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			try {
+				pw.close(); sw.close();
+			} catch (IOException ex1) {
+				Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
+			}
+			logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getName(), sw});
+			LocalManager.getInstance().shutdown(8);
 		}
 	}
 	
