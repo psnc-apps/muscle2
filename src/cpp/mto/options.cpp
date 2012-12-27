@@ -91,6 +91,7 @@ bool Options::load(int argc, char **argv)
     
     ("localPortLow", program_options::value<unsigned short>(), "Low limit of the local port range")
     ("localPortHigh", program_options::value<unsigned short>(), "High limit of the local port range")
+    ("TCPBufSize", program_options::value<int>(), "TCP Buffers sizes")
     
     ("internalPort", program_options::value<string>(), "Port to listen for connections to be transported")
     ("internalAddress", program_options::value<string>(), "Address to listen for connections to be transported")
@@ -202,6 +203,14 @@ bool Options::load(int argc, char **argv)
 	  Logger::debug(Logger::MsgType_Config, "Using MPWide");
   }
   read_opts.erase("MPWide");
+
+  if(read_opts.find("TCPBufSize")!=read_opts.end())
+  {
+	tcpBufSize = read_opts["TCPBufSize"].as<int>();	  
+	Logger::debug(Logger::MsgType_Config, "Using custom TCP Buffer sizes: %d", tcpBufSize);
+  }
+  read_opts.erase("TCPBufSize");
+
 
   // Logging
     

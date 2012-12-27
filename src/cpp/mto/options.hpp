@@ -30,14 +30,15 @@ private:
   tcp::endpoint internalEndpoint;             ///< Address and port for listening to clients
   string myName;                              ///< Name as in config file
   bool daemonize;                             ///< If the MTO should go to background
-  bool useMPWide;							  ///< use MPWide
+  bool useMPWide;			      ///< use MPWide
+  int tcpBufSize;			      ///< TCP Buff size
   time_duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
   
   string topologyFilePath;                    ///< Location of the topology
   
   static Options * instance;
   
-  Options() : daemonize(false), useMPWide(false), sockAutoCloseTimeout(seconds(30)) {}
+  Options() : daemonize(false), useMPWide(false), tcpBufSize(0), sockAutoCloseTimeout(seconds(30)) {}
   
 public:
   static Options & getInstance(){if(instance) return *instance; instance = new Options; return *instance;}
@@ -56,6 +57,7 @@ public:
   tcp::endpoint getInternalEndpoint() const {return internalEndpoint;}
   string getMyName() const {return myName;}
   bool getDaemonize() const {return daemonize;}
+  int getTCPBufSize() const {return tcpBufSize;}
   string getTopologyFilePath() const {return topologyFilePath;}
   time_duration getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
   

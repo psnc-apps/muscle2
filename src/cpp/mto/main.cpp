@@ -2,6 +2,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <cstdlib>
 
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -316,8 +317,29 @@ public:
 InitPeerConnection::InitPeerConnection(tcp::socket* _sock)
    : sock(_sock)
 {
-  boost::asio::socket_base::keep_alive option(true);
-  _sock->set_option(option);
+  boost::asio::socket_base::keep_alive keep_alive_option(true);
+  _sock->set_option(keep_alive_option);
+  
+  if (Options::getInstance().getTCPBufSize() != 0) 
+  {
+	boost::asio::socket_base::receive_buffer_size receive_buffer_option( Options::getInstance().getTCPBufSize() );
+	boost::asio::socket_base::send_buffer_size send_buffer_option(  Options::getInstance().getTCPBufSize() );
+
+  	Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn,"Setting custom TCP buffers sizes");
+	_sock->set_option(receive_buffer_option);
+	_sock->set_option(send_buffer_option);
+  } 
+
+  boost::asio::socket_base::receive_buffer_size receive_buffer_option;
+  boost::asio::socket_base::send_buffer_size send_buffer_option;
+
+  _sock->get_option(send_buffer_option);
+  _sock->get_option(receive_buffer_option);
+
+  Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn,"TCP bufers  send=%dkb recv=%dkb",
+	(int)(send_buffer_option.value()/1024),
+	(int)(receive_buffer_option.value()/1024));
+
 
   buf = new char[MtoHello::getSize()];
   function< void(error_code ec) > callback( bind(&InitPeerConnection::allHellosReceived, this, placeholders::error()));
