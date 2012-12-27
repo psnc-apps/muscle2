@@ -27,7 +27,7 @@ public class ModuleFormatter extends SimpleFormatter {
 		this.name = name;
 	}
 	
-	public synchronized String format(LogRecord record) {		
+	public String format(LogRecord record) {		
 		int intLevel = record.getLevel().intValue();
 		String level;
 		if (intLevel >= SEVERE) {

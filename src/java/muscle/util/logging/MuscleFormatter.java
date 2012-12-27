@@ -35,7 +35,7 @@ public class MuscleFormatter extends SimpleFormatter {
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
 	
-	public synchronized String format(LogRecord record) {
+	public String format(LogRecord record) {
 		String loggerName = record.getLoggerName();
 		if (loggerName == null) {
 			loggerName = "?";
