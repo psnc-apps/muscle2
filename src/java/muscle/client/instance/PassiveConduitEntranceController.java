@@ -97,7 +97,6 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	 * is called, the conduit will not be able to send messages.
 	 */
 	public synchronized void setTransmitter(Transmitter<T,?> trans) {
-		logger.log(Level.FINE, "ConduitEntrance <{0}> is now attached.", portalID);
 		this.transmitter = trans;
 		this.notifyAll();
 	}

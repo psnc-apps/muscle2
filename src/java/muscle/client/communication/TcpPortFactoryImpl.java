@@ -27,6 +27,7 @@ import muscle.util.serialization.*;
 public class TcpPortFactoryImpl extends PortFactory {
 	private final SocketFactory socketFactory;
 	private final LocalDataHandler localMsgProcessor;
+	private final static Logger logger = Logger.getLogger(TcpPortFactoryImpl.class.getName());
 		
 	public TcpPortFactoryImpl(ResolverFactory rf, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
 		super(rf, globalMsgProcessor);
@@ -45,7 +46,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 						throw new IllegalStateException("Port already shut down");
 					}
 				} catch (Exception ex) {
-					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Port {0} for {1} will not activate. Aborting.", new Object[]{port, exit});
+					logger.log(Level.SEVERE, "Port {0} for {1} will not activate. Aborting.", new Object[]{port, exit});
 					ic.fatalException(ex);
 					throw ex;
 				}
@@ -99,7 +100,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 						throw new IllegalStateException("Port was not resolved");
 					}
 				} catch (Exception ex) {
-					Logger.getLogger(TcpPortFactoryImpl.class.getName()).log(Level.SEVERE, "Could not resolve port {0} for {1}. Aborting.", new Object[]{port, entrance});
+					logger.log(Level.SEVERE, "Could not resolve port {0} for {1}. Aborting.", new Object[]{port, entrance});
 					ic.fatalException(ex);
 					throw ex;
 				}
@@ -123,6 +124,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 					((TcpTransmitter)trans).start();
 				}
 				entrance.setTransmitter(trans);
+				logger.log(Level.FINE, "<{0}> is now attached.", entrance);
 				return trans;
 			}
 			
