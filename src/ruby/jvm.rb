@@ -77,6 +77,7 @@ class JVM
 		JVM.add_prop(env, command, 'muscle.manager.bindport', 'bindport')
 		JVM.add_prop(env, command, 'muscle.net.bindaddr',     'bindaddr')
 		JVM.add_prop(env, command, 'muscle.net.bindinf',      'bindinf')
+		JVM.add_prop(env, command, 'muscle.client.sleep_when_idle','sleep_when_idle')
 		JVM.add_prop(env, command, PROP_PORT_RANGE_MIN,       'port_min')
 		JVM.add_prop(env, command, PROP_PORT_RANGE_MAX,       'port_max')
 		

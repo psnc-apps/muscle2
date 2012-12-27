@@ -83,7 +83,8 @@ e = {
 'port_min' => ENV['MUSCLE_PORT_MIN'],
 'port_max' => ENV['MUSCLE_PORT_MAX'],
 'stage_files' => [],
-'gzip_stage_files' => []
+'gzip_stage_files' => [],
+'sleep_when_idle' => '50'
 }
 e['muscle.Env dump uri'] = URI.parse "file:#{tmp_path}/.muscle/#{Muscle.jclass}"
 
