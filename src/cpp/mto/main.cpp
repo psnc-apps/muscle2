@@ -318,7 +318,9 @@ InitPeerConnection::InitPeerConnection(tcp::socket* _sock)
    : sock(_sock)
 {
   boost::asio::socket_base::keep_alive keep_alive_option(true);
+  boost::asio::ip::tcp::no_delay no_delay_option(true);
   _sock->set_option(keep_alive_option);
+  _sock->set_option(no_delay_option);
   
   if (Options::getInstance().getTCPBufSize() != 0) 
   {
