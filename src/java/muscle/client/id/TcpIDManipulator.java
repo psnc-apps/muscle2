@@ -84,11 +84,11 @@ public class TcpIDManipulator implements IDManipulator {
 			return new InstanceID(name);
 		}
 		else if (type == IDType.port) {
-			String[] portId = name.split("@");
-			if (portId.length != 2) {
+			int portId = name.indexOf('@');
+			if (portId == -1) {
 				throw new IllegalArgumentException("A port identifier <" + portId + "> must feature a port and owner name, separated by an '@' symbol.");
 			}
-			return new PortalID<InstanceID>(portId[0], new InstanceID(portId[1]));
+			return new PortalID<InstanceID>(name.substring(0, portId), new InstanceID(name.substring(portId+1)));
 		}
 		else {
 			throw new IllegalArgumentException("TcpIDManipulator can only resolve ports and instances, not '" + type + "'.");

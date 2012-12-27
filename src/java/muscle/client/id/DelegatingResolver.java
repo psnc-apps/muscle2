@@ -39,7 +39,6 @@ public class DelegatingResolver implements Resolver {
 	 */
 	public Identifier getIdentifier(String name, IDType type) {
 		// Try cache first, not synchronized as making a new id is not expensive
-		logger.log(Level.FINER, "Creating identifier ''{0}'' of type {1}", new Object[]{name, type});
 		return delegate.create(name, type);
 	}
 	
@@ -98,6 +97,11 @@ public class DelegatingResolver implements Resolver {
 			if (searching) {
 				logger.log(Level.FINE, "Searching to resolve identifier {0}", id);
 				delegate.search(id);
+				if (id.isResolved()) {
+					logger.log(Level.FINE, "Identifier {0} resolved", id);
+				} else {
+					logger.log(Level.WARNING, "Identifier {0} could not be resolved", id);
+				}
 				synchronized (id) {
 					searchingNow.remove(id);
 				}
@@ -115,10 +119,8 @@ public class DelegatingResolver implements Resolver {
 			if (!origId.isResolved()) {
 				origId.resolveLike(id);
 			}
-			logger.log(Level.FINE, "Identifier {0} resolved", id);
 			return true;
 		} else {
-			logger.log(Level.WARNING, "Identifier {0} could not be resolved", id);
 			return false;
 		}
 	}
@@ -161,7 +163,7 @@ public class DelegatingResolver implements Resolver {
 	
 	public void makeAvailable(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
-		logger.log(Level.FINE, "Making identifier {0} available to MUSCLE", id);
+		logger.log(Level.FINER, "Making identifier {0} available to MUSCLE", id);
 		if (id.isResolved()) {
 			this.addResolvedIdentifier(id);
 		} else {
