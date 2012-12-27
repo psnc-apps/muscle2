@@ -57,13 +57,15 @@ public abstract class SafeThread extends Thread implements Disposable {
 	 * Signal the thread to stop its calculation. Can be overridden to clean up
 	 * local variables. When overriding, always also call the super implementation.
 	 */
-	public synchronized void dispose() {
-		if (this.isDone) {
-			return;
+	public void dispose() {
+		synchronized (this) {
+			if (this.isDone) {
+				return;
+			}
+			this.isDone = true;
+			this.notifyAll();
 		}
-		this.isDone = true;
 		this.interrupt();
-		this.notifyAll();
 	}
 	
 	/**
