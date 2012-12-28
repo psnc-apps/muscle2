@@ -20,20 +20,23 @@ public class ConcurrentConsoleHandler extends ConsoleHandler implements LogWrite
 	private final LinkedBlockingQueue<String> records;
 	private final FileLoggerThread loggerThread;
 	private Formatter formatter;
-	private Formatter trivialFormatter;
 	
 	public ConcurrentConsoleHandler() throws IOException {
 		super();
 		this.records = new LinkedBlockingQueue<String>(); 
+		this.formatter = new MuscleFormatter();
 		this.loggerThread = new FileLoggerThread(this, records);
 		this.loggerThread.start();
 	}
 	
 	@Override
 	public void setFormatter(Formatter format) {
-		this.formatter = format;
+		if (format != null) {
+			this.formatter = format;
+		}
 	}
 	
+	@Override
 	public Formatter getFormatter() {
 		return this.formatter;
 	}

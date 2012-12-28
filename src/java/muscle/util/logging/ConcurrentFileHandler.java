@@ -38,12 +38,18 @@ public class ConcurrentFileHandler extends FileHandler implements LogWriter {
 		this.loggerThread = new FileLoggerThread(this, records);
 		this.loggerThread.start();
 		this.bufferWritten = 1;
+		this.formatter = new MuscleDetailFormatter();
 	}
 	
 	@Override
 	public void setFormatter(Formatter format) {
-		this.formatter = format;
-		super.setFormatter(new TrivialFormatter());
+		if (format != null) {
+			this.formatter = format;
+		}
+	}
+	
+	public Formatter getFormatter() {
+		return this.formatter;
 	}
 	
 	@Override
