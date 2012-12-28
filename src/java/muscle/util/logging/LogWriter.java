@@ -5,12 +5,10 @@
 
 package muscle.util.logging;
 
-import java.util.logging.LogRecord;
-
 /**
  *
  * @author Joris Borgdorff
  */
 public interface LogWriter {
-	public void write(LogRecord r);
+	public void write(String msg, int next);
 }

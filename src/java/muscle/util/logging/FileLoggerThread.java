@@ -19,7 +19,6 @@ public class FileLoggerThread extends SafeThread {
 	private final LinkedBlockingQueue<String> records;
 	private final LogWriter logger;
 	private final static String EMPTY = "EMPTY";
-	private final LogRecord dummyRecord;
 
 	FileLoggerThread(LogWriter logger, LinkedBlockingQueue<String> records) {
 		super("FileLoggerThread");
@@ -27,7 +26,6 @@ public class FileLoggerThread extends SafeThread {
 		this.setPriority(MAX_PRIORITY);
 		this.records = records;
 		this.logger = logger;
-		this.dummyRecord = new LogRecord(Level.OFF,"");
 	}
 
 	@Override
@@ -37,8 +35,7 @@ public class FileLoggerThread extends SafeThread {
 		String msg = records.take();
 		// Do not log poison packet
 		if (msg != EMPTY) {
-			dummyRecord.setMessage(msg);
-			logger.write(dummyRecord);
+			logger.write(msg, records.size());
 		}
 	}
 
@@ -62,10 +59,8 @@ public class FileLoggerThread extends SafeThread {
 
 		// Empty the queue
 		String msg;
-		LogRecord extraDummy = new LogRecord(Level.OFF, "");
 		while ((msg = records.poll()) != null) {
-			extraDummy.setMessage(msg);
-			logger.write(extraDummy);
+			logger.write(msg, records.size());
 		}
 		records.offer(EMPTY);
 	}

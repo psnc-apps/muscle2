@@ -32,8 +32,10 @@ public class ConcurrentConsoleHandler extends ConsoleHandler implements LogWrite
 	@Override
 	public void setFormatter(Formatter format) {
 		this.formatter = format;
-		this.trivialFormatter = new TrivialFormatter();
-		super.setFormatter(this.trivialFormatter);
+	}
+	
+	public Formatter getFormatter() {
+		return this.formatter;
 	}
 	
 	@Override
@@ -53,7 +55,8 @@ public class ConcurrentConsoleHandler extends ConsoleHandler implements LogWrite
 		}
 	}
 	
-	public void write(LogRecord record) {
-		super.publish(record);
+	public void write(String msg, int next) {
+		System.err.print(msg);
+		System.err.flush();
 	}
 }

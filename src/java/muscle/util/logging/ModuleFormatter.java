@@ -24,42 +24,54 @@ public class ModuleFormatter extends SimpleFormatter {
 
 	public ModuleFormatter(String name) {
 		super();
-		this.name = name;
+		if (name.length() > 6) {
+			this.name = name.substring(0, 6);
+		} else {
+			if (name.length() < 6) {
+				for (int i = name.length(); i < 6; i++) {
+					name = " " + name;
+				}
+			}
+			this.name = name;
+		}
 	}
 	
-	public String format(LogRecord record) {		
+	public String format(LogRecord record) {
+		StringBuilder sb = new StringBuilder(100);
+		sb.append('(');
+		MuscleFormatter.time(sb);
+		sb.append(' ').append(name);
+		sb.append(") ");
+		
 		int intLevel = record.getLevel().intValue();
-		String level;
 		if (intLevel >= SEVERE) {
-			level = "ERROR: ";
+			sb.append("ERROR: ");
 		} else if (intLevel >= WARNING) {
-			level = "warning: ";
-		} else if (intLevel >= INFO) {
-			level = "";
-		} else {
-			level = "debug: ";
+			sb.append("warning: ");
+		} else if (intLevel < INFO) {
+			sb.append("debug: ");
 		}
 		
-		String msg = formatMessage(record);
-		
+		MuscleFormatter.formatMessage(sb, record);
+		sb.append('\n');
 		Throwable thrown = record.getThrown();
-		String err;
-		if(thrown == null) {
-			err = "";
-		} else {
+		if (thrown != null) {
 			try {
 				StringWriter sw = new StringWriter();
 				PrintWriter pw = new PrintWriter(sw);
-				pw.println("\n[================== ERROR ===================] " + thrown.getClass().getName() + ": " + thrown.getMessage());
 				thrown.printStackTrace(pw);
-				pw.print("[================ END TRACE =================]");
 				pw.close();
-				err = sw.toString();
+				
+				sb.append("[================== ERROR ===================] ")
+						.append(thrown.getClass().getName())
+						.append(": ")
+						.append(thrown.getMessage());
+				sb.append(sw);
+				sb.append("[================ END TRACE =================]\n");
 			} catch (Exception ex) {
-				err = "";
+				// Do nothing
 			}
 		}
-		
-		return String.format(format, System.currentTimeMillis(), this.name, level, msg, err);
+		return sb.toString();
 	}
 }

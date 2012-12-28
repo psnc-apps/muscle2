@@ -32,13 +32,18 @@ formats log messages
 @author Joris Borgdorff
 */
 public class MuscleDetailFormatter extends SimpleFormatter {
-	private final static String format = "[%tF %tT %15.15s: %25.25s.%-20.20s] %s%s%s\n";
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
 	
 	public String format(LogRecord record) {
+		StringBuilder sb = new StringBuilder(200);
 		String loggerName = record.getLoggerName();
+		sb.append('[');
+		MuscleFormatter.date(sb);
+		sb.append(' ');
+		MuscleFormatter.time(sb);
+		
 		String pkg, clazz;
 		if (loggerName == null) {
 			clazz = pkg = "?";
@@ -52,42 +57,47 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 				 pkg = loggerName.substring(0, Math.min(15, classIndex));
 			}
 		}
+		MuscleFormatter.rightAlign(sb, pkg, 15);
+		sb.append(": ");
+		MuscleFormatter.rightAlign(sb, clazz, 25);
+		sb.append('.');
 		
 		String method = record.getSourceMethodName();
 		if (method == null) method = "?";
+		MuscleFormatter.leftAlign(sb, method, 20);
+		sb.append("] ");
 
 		int intLevel = record.getLevel().intValue();
-		String level;
 		if (intLevel >= SEVERE) {
-			level = "ERROR: ";
+			sb.append("ERROR: ");
 		} else if (intLevel >= WARNING) {
-			level = "warning: ";
-		} else if (intLevel >= INFO) {
-			level = "";
-		} else {
-			level = "debug: ";
+			sb.append("warning: ");
+		} else if (intLevel < INFO) {
+			sb.append("debug: ");
 		}
 		
-		String msg = formatMessage(record);
+		MuscleFormatter.formatMessage(sb, record);
+		sb.append('\n');
 		
 		Throwable thrown = record.getThrown();
-		String err;
-		if(thrown == null) {
-			err = "";
-		} else {
+		if (thrown != null) {
 			try {
 				StringWriter sw = new StringWriter();
 				PrintWriter pw = new PrintWriter(sw);
-				pw.println("\n[================== ERROR ===================] " + thrown.getClass().getName() + ": " + thrown.getMessage());
 				thrown.printStackTrace(pw);
-				pw.print("[================ END TRACE =================]");
 				pw.close();
-				err = sw.toString();
+				
+				sb.append("[================== ERROR ===================] ")
+						.append(thrown.getClass().getName())
+						.append(": ")
+						.append(thrown.getMessage());
+				sb.append(sw);
+				sb.append("[================ END TRACE =================]\n");
 			} catch (Exception ex) {
-				err = "";
+				// Do nothing
 			}
 		}
-		Long time = System.currentTimeMillis();
-		return String.format(format, time, time, pkg, clazz, method, level, msg, err);
+
+		return sb.toString();
 	}
 }
