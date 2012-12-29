@@ -21,7 +21,6 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.core;
 
-import eu.mapperproject.jmml.util.ArrayMap;
 import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,13 +34,11 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import muscle.Constant;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
-import muscle.util.FileTool;
 import muscle.util.data.Env;
 
 /**
@@ -50,8 +47,8 @@ describes the p2p connections between kernels
 */
 public class ConnectionScheme implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private final Map<Identifier,Map<String,ExitDescription>> conduitExits = new ArrayMap<Identifier,Map<String,ExitDescription>>();
-	private final Map<Identifier,Map<String,EntranceDescription>> conduitEntrances = new ArrayMap<Identifier,Map<String,EntranceDescription>>();
+	private final Map<Identifier,Map<String,ExitDescription>> conduitExits;
+	private final Map<Identifier,Map<String,EntranceDescription>> conduitEntrances;
 	private LinkedList<ExitDescription> targetExitDescriptions = new LinkedList<ExitDescription>(); // leafs of a connection chain entrance->conduit->exit
 	private static final transient Logger logger = Logger.getLogger(ConnectionScheme.class.getName());
 	protected Env env;
@@ -69,10 +66,10 @@ public class ConnectionScheme implements Serializable {
 
 	private transient final static String cs_file_uri = "cs_file_uri";
 	
-	public static ConnectionScheme getInstance(ResolverFactory rf) {
+	public static ConnectionScheme getInstance(ResolverFactory rf, int size) {
 		synchronized(instanceLock) {
 			if (instance == null) {
-				instance = new ConnectionScheme(rf);
+				instance = new ConnectionScheme(rf, size);
 				instanceLock.notifyAll();
 			}
 		
@@ -95,10 +92,12 @@ public class ConnectionScheme implements Serializable {
 		}
 	}
 	
-	private ConnectionScheme(ResolverFactory rf) {
+	private ConnectionScheme(ResolverFactory rf, int size) {
 		this.rf = rf;
 		kernelList = null;
 		conduitList = null;
+		this.conduitExits = new HashMap<Identifier,Map<String,ExitDescription>>(size*4/3);
+		this.conduitEntrances = new HashMap<Identifier,Map<String,EntranceDescription>>(size*4/3);
 		this.init();
 	}
 
@@ -185,10 +184,12 @@ public class ConnectionScheme implements Serializable {
 	private EntranceDescription addEntrance(PortalID pid, List<String> args) {
 		Identifier ownerID = pid.getOwnerID();
 		EntranceDescription entrance = new EntranceDescription(pid, args);
-		if (!this.conduitEntrances.containsKey(ownerID)) {
-			this.conduitEntrances.put(ownerID, new ArrayMap<String,EntranceDescription>());
+		Map<String,EntranceDescription> entrances = this.conduitEntrances.get(ownerID);
+		if (entrances == null) {
+			entrances = new HashMap<String,EntranceDescription>();
+			this.conduitEntrances.put(ownerID, entrances);
 		}
-		this.conduitEntrances.get(ownerID).put(pid.getPortName(), entrance);
+		entrances.put(pid.getPortName(), entrance);
 		return entrance;
 	}
 	
@@ -196,10 +197,12 @@ public class ConnectionScheme implements Serializable {
 	private ExitDescription addExit(PortalID pid, List<String> args) {
 		Identifier ownerID = pid.getOwnerID();
 		ExitDescription exit = new ExitDescription(pid, args);
-		if (!this.conduitExits.containsKey(ownerID)) {
-			this.conduitExits.put(ownerID, new ArrayMap<String,ExitDescription>());
+		Map<String,ExitDescription> exits = this.conduitExits.get(ownerID);
+		if (exits == null) {
+			exits = new HashMap<String,ExitDescription>();
+			this.conduitExits.put(ownerID, exits);
 		}
-		this.conduitExits.get(ownerID).put(pid.getPortName(), exit);
+		exits.put(pid.getPortName(), exit);
 		return exit;
 	}
 	

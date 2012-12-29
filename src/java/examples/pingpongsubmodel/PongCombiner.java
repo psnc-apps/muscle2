@@ -9,6 +9,7 @@ import muscle.core.kernel.FanInMapper;
  */
 public class PongCombiner extends FanInMapper {
 	@Override
+	@SuppressWarnings("unchecked")
 	protected void receiveAll() {
 		for (ConduitExitController ec : this.exits.values()) {
 			// Overwrite it and take the last value

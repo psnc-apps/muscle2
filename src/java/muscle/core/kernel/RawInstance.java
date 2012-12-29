@@ -20,9 +20,9 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core.kernel;
 
-import eu.mapperproject.jmml.util.ArrayMap;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -38,8 +38,8 @@ A basic kernel, that all kernels must extend
  */
 public abstract class RawInstance extends Module {
 	private static final Logger logger = Logger.getLogger(RawInstance.class.getName());
-	protected Map<String,ConduitEntranceController> entrances = new ArrayMap<String,ConduitEntranceController>();
-	protected Map<String,ConduitExitController> exits = new ArrayMap<String,ConduitExitController>();
+	protected final Map<String,ConduitEntranceController> entrances = new HashMap<String,ConduitEntranceController>();
+	protected final Map<String,ConduitExitController> exits = new HashMap<String,ConduitExitController>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
 	protected Timestamp maxTime = null;
@@ -290,7 +290,7 @@ public abstract class RawInstance extends Module {
 	}
 	
 	public String infoText() {
-		StringBuilder sb = new StringBuilder(25*(1 + exits.size()+entrances.size()));
+		StringBuilder sb = new StringBuilder(25*(4 + exits.size()+entrances.size()));
 		sb.append(getLocalName()).append(" conduit entrances: ").append(entrances.values()).append("\n\t\t  ")
 		  .append(getLocalName()).append(" conduit exits: ").append(exits.values());
 		return sb.toString();
@@ -324,21 +324,24 @@ public abstract class RawInstance extends Module {
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of portals not allowed here");
 		}
+		ConduitExitController old = exits.put(portName, exit);
 		// only add if not already added
-		if (exits.containsKey(portName)) {
+		if (old != null) {
+			exits.put(portName, old);
 			throw new MUSCLERuntimeException("can not add exit twice <" + exit + ">");
 		}
-		exits.put(portName, exit);		
 	}
 	
 	private <T extends Serializable> void addEntranceToList(String portName, ConduitEntranceController<T> entrance) {
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of portals not allowed here");
 		}
+		
+		ConduitEntranceController old = entrances.put(portName, entrance);
 		// only add if not already added
-		if (entrances.containsKey(portName)) {
+		if (old != null) {
+			entrances.put(portName, old);
 			throw new MUSCLERuntimeException("can not add entrance twice <" + entrance + ">");
 		}
-		entrances.put(portName, entrance);		
 	}
 }

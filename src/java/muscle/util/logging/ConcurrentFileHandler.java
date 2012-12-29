@@ -48,6 +48,7 @@ public class ConcurrentFileHandler extends FileHandler implements LogWriter {
 		}
 	}
 	
+	@Override
 	public Formatter getFormatter() {
 		return this.formatter;
 	}

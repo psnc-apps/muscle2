@@ -45,6 +45,7 @@ public abstract class FilterChain implements Filter {
 		this.setNextFilter(qc);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void process(Observation obs) {
 		this.nextFilter.queue(obs);
 		this.nextFilter.apply();
@@ -75,6 +76,7 @@ public abstract class FilterChain implements Filter {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Filter filterForName(String fullName, Filter tailFilter) {
 		// split any args from the preceding filter name
 		String[] tmp = fullName.split("_", 2); // 2 means only split once

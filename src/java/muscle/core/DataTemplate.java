@@ -29,6 +29,7 @@ describes data content and accompanies a DataWrapper
 @author Jan Hegewald
 */
 public class DataTemplate<T> implements Serializable {
+	private static final long serialVersionUID = 1L;
 	// these fields might be null to indicate: any
 	private final Class<?> dataClass; // double.class for double, boolean.class for boolean, int[].class for 1D int array etc.
 	private final Scale scale;

@@ -24,6 +24,7 @@ import muscle.util.serialization.SerializerWrapper;
  * @author Joris Borgdorff
  */
 public class SerializableData implements Serializable {
+	private static final long serialVersionUID = 1L;
 
 	private final SerializableDatatype type;
 	private final Serializable value;

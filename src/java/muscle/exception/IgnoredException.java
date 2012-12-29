@@ -27,6 +27,7 @@ indicates an erroneous command (i.e. method call) which has been skipped
 @author Jan Hegewald
 */
 public class IgnoredException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 	public IgnoredException() {
 		
 	}

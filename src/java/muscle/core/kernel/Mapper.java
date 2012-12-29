@@ -97,6 +97,7 @@ public abstract class Mapper extends Instance {
 	/** Initialize the Mapper. */
 	protected void init() {}
 	
+	@SuppressWarnings("fallthrough")
 	public void step() {
 		switch (step) {
 			case INIT:

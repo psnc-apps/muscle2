@@ -21,7 +21,9 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.client.communication.message;
 
-public interface Signal {
+import java.io.Serializable;
+
+public interface Signal extends Serializable {
 }
 
 

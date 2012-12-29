@@ -34,8 +34,8 @@ loads environment for a muscle platform
 @author Jan Hegewald
 */
 public class Env extends muscle.util.data.Env {
-
 	public static Env ONLY = create();
+	private static final long serialVersionUID = 1L;
 	
 	private static Env create() {		
 		// use java property like:
@@ -45,7 +45,7 @@ public class Env extends muscle.util.data.Env {
 		String rawEnv = System.getProperty(muscle.util.ClassTool.getName(Env.class));
 		
 		if(rawEnv != null) {
-			URI envUri = null;
+			URI envUri;
 			try {
 				envUri = new URI(rawEnv);
 			}
@@ -53,13 +53,13 @@ public class Env extends muscle.util.data.Env {
 				// not an uri, now try to create the env from the raw string
 				return new Env(rawEnv);
 			}
-				// create env with file from uri
-				try {
-					return new Env(new FileReader(new File(envUri)));
-				}
-				catch(FileNotFoundException e) {
-					throw new MUSCLERuntimeException(e);
-				}
+			// create env with file from uri
+			try {
+				return new Env(new FileReader(new File(envUri)));
+			}
+			catch(FileNotFoundException e) {
+				throw new MUSCLERuntimeException(e);
+			}
 		}
 
 		return new Env();

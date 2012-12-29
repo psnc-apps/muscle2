@@ -14,8 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import muscle.client.LocalManager;
 
 /**
@@ -32,6 +30,7 @@ public class LimitedThreadPool extends SafeThread {
 	private int numberOfRunners;
 	private int numberOfWaiting;
 	private LinkedBlockingQueue<TaskFuture> queue;
+	@SuppressWarnings("unchecked")
 	private final TaskFuture EMPTY = new TaskFuture(null);
 	private long lastGet;
 	private final Object counterLock = new Object();

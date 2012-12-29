@@ -21,7 +21,6 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.core;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,9 +32,9 @@ import muscle.util.data.Env;
 singleton which holds information about the current CxA
 @author Jan Hegewald
  */
-public class CxADescription extends muscle.util.data.Env implements Serializable {
-
+public class CxADescription extends muscle.util.data.Env {
 	private final static transient Logger logger = Logger.getLogger(CxADescription.class.getName());
+	private static final long serialVersionUID = 1L;
 
 	public enum Key {
 

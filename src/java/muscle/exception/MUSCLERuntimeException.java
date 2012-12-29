@@ -27,6 +27,7 @@ custom exception
 @author Jan Hegewald
 */
 public class MUSCLERuntimeException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 	public MUSCLERuntimeException() {
 		
 	}

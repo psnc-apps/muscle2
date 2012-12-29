@@ -20,14 +20,13 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
 stores info necessary to setup a conduit
 @author Jan Hegewald
  */
-public class ConduitDescription implements Serializable {
+public class ConduitDescription {
 	private final List<String> additionalArgs;
 	private final EntranceDescription entrance;
 	private final ExitDescription exit;

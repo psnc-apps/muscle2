@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.model.Observation;
-import muscle.id.PortalID;
 
 /**
  * Reads data from a source.

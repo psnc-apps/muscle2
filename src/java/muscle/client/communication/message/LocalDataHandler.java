@@ -36,6 +36,7 @@ public class LocalDataHandler implements Disposable, IncomingMessageProcessor {
 		listener.put(id, recv);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void put(Message msg) {
 		Identifier recipient = msg.getRecipient();
 		Receiver recv = listener.get(recipient);

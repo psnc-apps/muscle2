@@ -83,6 +83,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		}
 		
 		FilterChain fc = new FilterChain() {
+			@SuppressWarnings("unchecked")
 			public void queue(Observation subject) {
 				transmitter.transmit(subject);
 			}

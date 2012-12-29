@@ -17,6 +17,7 @@ public abstract class FanOutMapper<T extends Serializable> extends Mapper {
 	protected ConduitExit<T> onlyExit;
 	protected Observation<T> value;
 
+	@SuppressWarnings("unchecked")
 	public void addPortals() {
 		super.addPortals();
 		if (this.exits.size() != 1) {

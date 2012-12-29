@@ -5,7 +5,6 @@ package muscle.client.instance;
 
 import java.io.Serializable;
 import muscle.core.ConduitExitController;
-import muscle.util.concurrency.Disposable;
 
 /**
  *

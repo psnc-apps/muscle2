@@ -10,6 +10,7 @@ package muscle.exception;
  * @author Joris Borgdorff
  */
 public class MUSCLEDatatypeException extends MUSCLERuntimeException {
+	private static final long serialVersionUID = 1L;
 	public MUSCLEDatatypeException() {
 		
 	}

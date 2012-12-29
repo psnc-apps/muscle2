@@ -25,8 +25,6 @@ import javax.swing.JFrame;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.CxADescription;
-import muscle.core.Scale;
-import muscle.core.model.Distance;
 
 /**
 heat flow calculation wrapped in a MUSCLE kernel for distributed computation
@@ -103,7 +101,7 @@ public class KernelWest extends muscle.core.kernel.CAController {
 	/**
 	custom boundary condition which is using a ghostnode column to synchronize data with the other kernel
 	*/
-   public class GhostBoundaryEast implements BoundaryCondition {
+   public final class GhostBoundaryEast implements BoundaryCondition {
 
       private int lastStep = -1;
 		private double[] remoteSlice;
@@ -120,11 +118,13 @@ public class KernelWest extends muscle.core.kernel.CAController {
 
 			// init local slice
 			localSlice = new double[ny];
-			for(int y = 0; y < ny; y++)
+			for(int y = 0; y < ny; y++) {
 				for(int x = 0; x < nx; x++) {
-					if(applies(x, y))
+					if(applies(x, y)) {
 						localSlice[y] = data[x][y];
+					}
 				}
+			}
 			
 			// set remote slice to be the same as our local one, just for initialization
 			remoteSlice = localSlice;

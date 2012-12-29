@@ -15,7 +15,6 @@ public class ByteJavaObjectConverter<T> extends AbstractDataConverter<T, byte[]>
 	serialize an object
 	 */
 	public byte[] serialize(T object) {
-
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		ObjectOutputStream out;
 		try {
@@ -46,6 +45,7 @@ public class ByteJavaObjectConverter<T> extends AbstractDataConverter<T, byte[]>
 		return byteStream.toByteArray();
 	}
 
+	@SuppressWarnings("unchecked")
 	public T deserialize(byte[] data) {
 		ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
 

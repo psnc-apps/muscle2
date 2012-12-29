@@ -4,8 +4,6 @@
 
 package muscle.manager;
 
-import eu.mapperproject.jmml.util.ArrayMap;
-import eu.mapperproject.jmml.util.ArraySet;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -49,12 +47,7 @@ public class SimulationManager implements ConnectionHandlerListener, Disposable 
 			System.exit(21);
 		}
 
-		Set<String> stillActive;
-		if (args.length < 30) {
-			stillActive = new ArraySet<String>(args.length);
-		} else {
-			stillActive = new HashSet<String>(args.length);
-		}
+		Set<String> stillActive = new HashSet<String>(args.length);
 		stillActive.addAll(Arrays.asList(args));			
 		
 		SimulationManager sm = new SimulationManager(stillActive);
@@ -109,15 +102,9 @@ public class SimulationManager implements ConnectionHandlerListener, Disposable 
 	private SimulationManager(Set<String> stillActive) {
 		this.stillActive = Collections.synchronizedSet(stillActive);
 		int size = stillActive.size();
-		if (size > 30) {
-			this.registered = new HashMap<String,Identifier>(size);
-			this.available = new HashSet<String>(size);
-			this.locs = new HashSet<Location>(size);
-		} else {			
-			this.registered = new ArrayMap<String,Identifier>(size);
-			this.available = new ArraySet<String>(size);
-			this.locs = new ArraySet<Location>(size);
-		}
+		this.registered = new HashMap<String,Identifier>(size*4/3);
+		this.available = new HashSet<String>(size*4/3);
+		this.locs = new HashSet<Location>(size*4/3);
 		this.connections = null;
 		this.isDone = false;
 		this.location = null;

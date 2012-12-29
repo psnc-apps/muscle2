@@ -74,9 +74,11 @@ public class MultiControllerRunner implements NamedRunnable {
 				currentThread.setPriority(Thread.MIN_PRIORITY);
 				isLowPriority = true;
 				if (SLEEP_MS == 0) {
+					// Nothing is happening, see if another thread can resolve the lock
 					Thread.yield();
 				} else {
 					try {
+						// Nothing is happening, wait for a few milliseconds for messages to arrive
 						Thread.sleep(SLEEP_MS);
 					} catch (InterruptedException ex) {
 						//Do nothing

@@ -67,6 +67,7 @@ public class GzipByteDataConverter<T> extends AbstractDataConverter<T, byte[]> {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public T deserialize(byte[] bytes) {
 		try {
 			ByteArrayInputStream byteStream = new ByteArrayInputStream(bytes);

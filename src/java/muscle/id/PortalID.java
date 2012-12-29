@@ -26,6 +26,7 @@ portal identifier
 @author Joris Borgdorff
 */
 public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
+	private static final long serialVersionUID = 1L;
 	protected final E ownerID;
 	private final String combinedName;
 	

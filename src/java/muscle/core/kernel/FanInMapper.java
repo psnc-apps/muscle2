@@ -18,6 +18,7 @@ public abstract class FanInMapper<T extends Serializable> extends Mapper {
 	protected Observation<T> value;
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void addPortals() {
 		super.addPortals();
 		if (this.entrances.size() != 1) {

@@ -23,6 +23,8 @@ package muscle.util.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -39,10 +41,11 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 	public String format(LogRecord record) {
 		StringBuilder sb = new StringBuilder(200);
 		String loggerName = record.getLoggerName();
+		Calendar c = new GregorianCalendar();
 		sb.append('[');
-		MuscleFormatter.date(sb);
+		MuscleFormatter.date(sb, c);
 		sb.append(' ');
-		MuscleFormatter.time(sb);
+		MuscleFormatter.time(sb, c);
 		
 		String pkg, clazz;
 		if (loggerName == null) {

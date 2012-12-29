@@ -31,7 +31,6 @@ import javax.swing.JComponent;
  * @author Jan Hegewald
  */
 public class Temperature {
-
 	private int nx;
 	private int ny;
 	private int dx = 1; // dy=dx
@@ -145,19 +144,21 @@ public class Temperature {
 
 	//
 	public class GraphicsPanel extends javax.swing.JPanel {
+		private static final long serialVersionUID = 1L;
 
-		private Boolean shouldRepaint;
+		private transient boolean shouldRepaint = false;
 
 		public void paintAndWait() {
-
 			shouldRepaint = true;
 			repaint();
 
-			while (shouldRepaint) {
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
+			synchronized (this) {
+				while (shouldRepaint) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 
@@ -165,10 +166,7 @@ public class Temperature {
 		private int paintCount;
 
 		synchronized protected void paintComponent(Graphics gg) {
-
-			if (shouldRepaint == null) {
-				return;
-			} else if (shouldRepaint) {
+			if (shouldRepaint) {
 
 				super.paintComponent(gg);
 
@@ -185,6 +183,7 @@ public class Temperature {
 
 				paintCount++;
 				shouldRepaint = false;
+				notify();
 			}
 		}
 	}

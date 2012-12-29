@@ -11,6 +11,7 @@ import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
 public class Distance extends SIUnit {
 	public final static Distance ZERO = new Distance(0);
 	public final static Distance ONE = new Distance(1);
+	private static final long serialVersionUID = 1L;
 	
 	public Distance(double t) {
 		this(t, Dimension.TIME);

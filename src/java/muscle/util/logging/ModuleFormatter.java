@@ -7,6 +7,7 @@ package muscle.util.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -16,7 +17,6 @@ import java.util.logging.SimpleFormatter;
  * @author Joris Borgdorff
  */
 public class ModuleFormatter extends SimpleFormatter {
-	private final static String format = "(%tT %6.6s) %s%s%s\n";
 	private final static int SEVERE = Level.SEVERE.intValue();
 	private final static int WARNING = Level.WARNING.intValue();
 	private final static int INFO = Level.INFO.intValue();
@@ -39,7 +39,7 @@ public class ModuleFormatter extends SimpleFormatter {
 	public String format(LogRecord record) {
 		StringBuilder sb = new StringBuilder(100);
 		sb.append('(');
-		MuscleFormatter.time(sb);
+		MuscleFormatter.time(sb, new GregorianCalendar());
 		sb.append(' ').append(name);
 		sb.append(") ");
 		

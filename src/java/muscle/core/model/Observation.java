@@ -36,6 +36,7 @@ import muscle.util.serialization.DataConverter;
 public class Observation<T extends Serializable> implements Serializable {
 	private final static Logger logger = Logger.getLogger(Observation.class.getName());
 	private final static boolean isFinestLog = logger.isLoggable(Level.FINEST);
+	private static final long serialVersionUID = 1L;
 	private final Timestamp siTime; // global time where this data belongs to (may be null)
 	private final Timestamp nextSITime; // time of the next observation
 	private final T data; // our unwrapped data

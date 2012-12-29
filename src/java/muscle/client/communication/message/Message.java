@@ -4,8 +4,8 @@
 package muscle.client.communication.message;
 
 import java.io.Serializable;
-import muscle.id.Identifier;
 import muscle.core.model.Observation;
+import muscle.id.Identifier;
 
 /**
  * @author Joris Borgdorff

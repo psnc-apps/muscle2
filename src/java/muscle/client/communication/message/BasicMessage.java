@@ -13,6 +13,7 @@ import muscle.id.Identifier;
  * @author Joris Borgdorff
  */
 public class BasicMessage<E extends Serializable> implements Message<E>, Serializable {
+	private static final long serialVersionUID = 1L;
 	private final Observation<E> obs;
 	private final Identifier recv;
 	private final Signal signal;

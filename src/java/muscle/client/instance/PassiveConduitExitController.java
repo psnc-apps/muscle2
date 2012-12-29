@@ -32,6 +32,7 @@ import muscle.util.serialization.DataConverter;
  * @author Joris Borgdorff
  */
 public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage> {
+	private static final long serialVersionUID = 1L;
 	private ConduitExit<T> conduitExit;
 	private final TakeableQueue<Observation<T>> queue;
 	private volatile boolean isDone;
@@ -67,6 +68,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		}
 		
 		FilterChain fc = new FilterChain() {
+			@SuppressWarnings("unchecked")
 			public void queue(Observation subject) {
 				Serializable data = subject.getData();
 				if (data != null && !dataClass.isInstance(data)) {

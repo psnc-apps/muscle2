@@ -53,7 +53,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			LocalManagerOptions opts = new LocalManagerOptions(args);
 			instance = new LocalManager(opts);
 			instance.init();
-			ConnectionScheme.getInstance(instance);
+			ConnectionScheme.getInstance(instance, opts.getAgents().size());
 			instance.start();
 		} catch (InterruptedException ex) {
 			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Simulation was interrupted. Aborting.", ex);

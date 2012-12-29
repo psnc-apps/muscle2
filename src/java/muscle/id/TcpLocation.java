@@ -16,6 +16,7 @@ import muscle.util.JVM;
  * @author Joris Borgdorff
  */
 public class TcpLocation implements Location {
+	private static final long serialVersionUID = 1L;
 	private final InetAddress addr;
 	private final int port;
 	private final String tmpDir;

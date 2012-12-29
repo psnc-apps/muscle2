@@ -1,16 +1,12 @@
 package muscle.util;
 
 import java.io.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.core.ConnectionScheme;
 
 public class OTFLogger {
@@ -37,13 +33,8 @@ public class OTFLogger {
 	// Number of kernels which ran OTFLogger
 	private int kernelsRun = 0;
 	
-	// Lock for kernelsRun
-	private Lock lockObject = new ReentrantLock();
-	
 	// Timer for time_limit
 	private Timer timer;
-	
-	private Lock lockInstance = new ReentrantLock();
 	
 	// Singletone instance
 	private static OTFLogger instance;	
@@ -93,8 +84,8 @@ public class OTFLogger {
 					if (begin(DIR+"/"+kernel+".otf") != 0)
 						throw new Exception("libotf Manager, writer or handlers failed");
 
-					String[] kernelArray = (String[]) d.kernelList.toArray(new String[d.kernelList.size()]);
-					String conduitArray[] = (String[]) d.conduitList.toArray(new String[d.conduitList.size()]);
+					String[] kernelArray = d.kernelList.toArray(new String[d.kernelList.size()]);
+					String conduitArray[] = d.conduitList.toArray(new String[d.conduitList.size()]);
 
 					if(define(kernelArray, conduitArray) != 0)
 						throw new Exception("could not allocate memory");						
@@ -160,7 +151,7 @@ public class OTFLogger {
 				}
 			}
 			catch(Exception e){
-				e.printStackTrace();
+				Logger.getLogger(OTFLogger.class.getName()).log(Level.WARNING, "OTFLogger failed.", e);
 			}
 		}
 	}

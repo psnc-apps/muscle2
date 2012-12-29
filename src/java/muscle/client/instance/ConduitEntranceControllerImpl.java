@@ -6,7 +6,6 @@ package muscle.client.instance;
 import java.io.Serializable;
 import muscle.client.communication.Transmitter;
 import muscle.core.ConduitEntranceController;
-import muscle.util.concurrency.Disposable;
 
 /**
  *

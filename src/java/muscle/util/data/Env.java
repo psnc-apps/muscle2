@@ -33,10 +33,12 @@ loads environment for multiple classes from a json file
 @author Jan Hegewald
 */
 public class Env extends HashMap<Object,Object> {
+	private static final long serialVersionUID = 1L;
 	public Env() {
 		super();
 	}	
 
+	@SuppressWarnings("unchecked")
 	public Env(Reader in) {
 		super();
 		// treat input as a org.json.simple.JSONObject and put in our env

@@ -27,7 +27,7 @@ import muscle.core.model.Timestamp;
 import muscle.id.Identifiable;
 import muscle.id.PortalID;
 
-public abstract class PassivePortal<T extends Serializable> implements Serializable, Identifiable<PortalID> {
+public abstract class PassivePortal<T extends Serializable> implements Identifiable<PortalID> {
 	protected final PortalID portalID;
 	protected Timestamp customSITime;
 	private int usedCount;

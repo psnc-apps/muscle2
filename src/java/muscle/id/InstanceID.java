@@ -8,6 +8,7 @@ package muscle.id;
  * @author Joris Borgdorff
  */
 public class InstanceID extends AbstractID {
+	private static final long serialVersionUID = 1L;
 	protected Location loc;
 	private boolean canBeResolved;
 	

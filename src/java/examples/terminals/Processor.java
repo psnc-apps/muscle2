@@ -21,6 +21,7 @@ public class Processor extends Submodel {
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public void intermediateObservation() {
 		boolean[] isLarge = new boolean[data.length];
 		for (int i = 0; i < data.length; i++) {

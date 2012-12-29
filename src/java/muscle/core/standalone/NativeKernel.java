@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -50,6 +49,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		type = SerializableDatatype.NULL;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized void send(String entranceName, SerializableData data) {
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
@@ -57,6 +57,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			throw new MUSCLERuntimeException("Unknown entrance: '" + entranceName + "' in " + getLocalName() + " (valid entrances are " + entrances.keySet() + ")");
 		}
 		Distance dt = getScale().getDt();
+		@SuppressWarnings("unchecked")
 		Observation obs = new Observation(data.getValue(), ec.getSITime(), ec.getSITime().add(dt), true);
 		
 		entrance.send(obs);

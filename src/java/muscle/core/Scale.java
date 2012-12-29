@@ -33,6 +33,7 @@ represents time and spatial scale according to SSM in SI units
 @author Jan Hegewald
 */
 public class Scale implements java.io.Serializable {
+	private static final long serialVersionUID = 1L;
 
 	private final Distance dt; // time step (must be seconds when used without quantity)
 	private final Distance omegaT; // total time

@@ -39,6 +39,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
 

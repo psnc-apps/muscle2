@@ -82,6 +82,7 @@ public class Utilities {
       System.out.println(getColor(-0.1));
       javax.swing.JFrame f = new javax.swing.JFrame();
       javax.swing.JPanel p = new javax.swing.JPanel() {
+		   private static final long serialVersionUID = 1L;
          protected void paintComponent(java.awt.Graphics g) {
            for(int i = 0; i < (4*256); i++) {
 

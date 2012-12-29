@@ -414,21 +414,10 @@ public class CrossSocketFactory extends SocketFactory {
 		logger.log(Level.FINE, "Master host: {0}", host);
 		logger.log(Level.FINE, "Master port: {0}", port);
 
-		try {
-			/**
-			 * very ugly but what else we can do if bounded socket is not enough
-			 * for JADE...
-			 * TODO: this can be removed, but after the review
-			 */
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			logger.warning("Wait to resolve socket interrupted.");
-		}
-
 		synchronized (this) {
 			this.mainAddr = new InetSocketAddress(host, port);
 			this.isRetrievingMainPort = false;
-			this.notify();
+			this.notifyAll();
 			return this.mainAddr;
 		}
 	}

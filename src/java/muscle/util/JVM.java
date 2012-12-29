@@ -22,12 +22,7 @@ package muscle.util;
 
 import eu.mapperproject.jmml.util.ArraySet;
 import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
 singleton class which provides access to global (JVM wide) settings

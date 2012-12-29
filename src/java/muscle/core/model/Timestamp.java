@@ -13,6 +13,7 @@ import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
  */
 public class Timestamp extends SIUnit {
 	public final static Timestamp ZERO = new Timestamp(0);
+	private static final long serialVersionUID = 1L;
 	
 	public Timestamp(double t) {
 		this(t, ScaleFactor.SECOND);

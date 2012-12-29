@@ -23,7 +23,6 @@ package muscle.util.logging;
 
 import java.text.MessageFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -41,7 +40,7 @@ public class MuscleFormatter extends SimpleFormatter {
 	public String format(LogRecord record) {
 		StringBuilder sb = new StringBuilder(200);
 		sb.append('[');
-		time(sb);
+		time(sb, new GregorianCalendar());
 		sb.append(' ');
 		String loggerName = record.getLoggerName();
 		if (loggerName == null) {
@@ -122,14 +121,12 @@ public class MuscleFormatter extends SimpleFormatter {
 			sb.append(s);
 		}
 	}
-	static void time(StringBuilder sb) {
-		Calendar c = new GregorianCalendar();
+	static void time(StringBuilder sb, Calendar c) {
 		sb.append(c.get(Calendar.HOUR_OF_DAY)).append(':')
 				.append(c.get(Calendar.MINUTE)).append(':')
 				.append(c.get(Calendar.SECOND));
 	}
-	static void date(StringBuilder sb) {
-		Calendar c = new GregorianCalendar();
+	static void date(StringBuilder sb, Calendar c) {
 		sb.append(c.get(Calendar.YEAR)).append('-')
 				.append(c.get(Calendar.MONTH)).append('-')
 				.append(c.get(Calendar.DATE));

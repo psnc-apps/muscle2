@@ -21,69 +21,17 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.util;
 
-import java.lang.reflect.Array;
-
 /**
 additional functionality for java.lang.Class
 @author Jan Hegewald
 */
 public class ClassTool {
 	/**
-	handle primitives and array as well as the standard classes (which is the only thing the plain java.lang.Class can handle)
-	*/
-	public static Class<?> forName(String name) throws ClassNotFoundException {
-		Class<?> cls = null;
-		
-		// try to get a primitive class for this class-name
-		try {
-			cls = primitiveClassForName(name);
-		}
-		catch (ClassNotFoundException e) {
-		}
-
-		if(cls == null) {
-			// try to get a array class for this class-name
-			try {
-				cls = arrayClassForName(name);
-			}
-			catch (ClassNotFoundException e) {
-			}
-		}
-
-		if(cls == null) {
-			// try to get a full class for this class-name with the standard procedure
-			try {
-				cls = Class.forName(name);
-			} catch (ClassNotFoundException e) {
-				throw new IllegalArgumentException(e);		
-			}
-		}
-		
-		return cls;
-	}
-	
-	
-	/**
 	full name of a class, e.g. "java.lang.String"<br>
 	the method Class#getName often returns null, e.g. if a class has been instantiated via reflection
 	*/
 	public static String getName(Class cls) {
 		return cls.toString().replaceFirst("class ", "");
-	}
-	
-	public static Class<?> arrayClassForName(String name) throws ClassNotFoundException {
-	
-		int index = name.indexOf("[]");
-		if(index > 0) {
-			String componentName = name.substring(0,index);
-			Class<?> componentClass = ClassTool.forName(componentName);
-			// get dimensions of array
-			assert (name.length()-index) % 2 == 0;
-			int dimensions = (name.length()-index) / 2;
-			return ArrayClassBuilder.build(componentClass, dimensions);
-		}
-
-		throw new ClassNotFoundException("can not get array class for <"+name+">");
 	}
 	
 	public static Class<?> primitiveClassForWrapperClass(Class<?> wrapperClass) throws ClassNotFoundException {
@@ -160,49 +108,4 @@ public class ClassTool {
 				
 		throw new IllegalArgumentException("unable to create array class for primitive type <"+primitiveClass.getName()+">");		
 	}
-
-	
-	// helper class to recursively construct multi dimensional array classes
-	private static class ArrayClassBuilder<T> {
-
-		public static Class<?> build(Class<?> componentClass, int dims) {
-			
-			if(dims == 0)
-				return componentClass;
-			if(dims < 0)
-			throw new IllegalArgumentException("array dimensions can not be negative <"+dims+">");		
-
-			if( componentClass.isPrimitive() ) {
-				componentClass = arrayClassForPrimitive(componentClass);
-				dims --;
-				if(dims == 0)
-					return componentClass;
-			}
-			
-			ArrayClassBuilder builder = null;
-			Class<?> tmpClass = componentClass;
-			for(int i = 0; i < dims; i++) {
-				builder = new ArrayClassBuilder(tmpClass);
-				tmpClass = builder.getArrayClass();
-			}
-			
-			return builder.getArrayClass();
-		}
-
-		private T[] arr;
-		
-		private ArrayClassBuilder(Class<T> cls) {
-			if( cls.isPrimitive() )
-				throw new IllegalArgumentException("class can not be a primitive type <"+cls.getName()+">");		
-
-			arr = (T[])Array.newInstance(cls,0);
-		}
-		
-		private Class getArrayClass() {
-			return arr.getClass();
-		}
-	}
 }
-
-
-

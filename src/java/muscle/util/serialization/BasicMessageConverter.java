@@ -20,6 +20,7 @@ public class BasicMessageConverter<E extends Serializable,F extends Serializable
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public BasicMessage<F> serialize(BasicMessage<E> data) {
 		if (data.isSignal()) {
 			return (BasicMessage<F>)data;
@@ -31,6 +32,7 @@ public class BasicMessageConverter<E extends Serializable,F extends Serializable
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public BasicMessage<E> deserialize(BasicMessage<F> data) {
 		if (data.isSignal()) {
 			return (BasicMessage<E>)data;
