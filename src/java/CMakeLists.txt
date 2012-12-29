@@ -4,6 +4,13 @@ PROJECT(MUSCLE Java) # The project has a name MUSCLE and utilizes CXX compiler
 set(JavaMuscle_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
 find_package(JavaMuscle COMPONENTS Runtime Development REQUIRED NO_MODULE)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_JAVA_COMPILE_FLAGS -g:none -nowarn)
+endif()
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_JAVA_COMPILE_FLAGS -Xlint:all -g -Xlint:-rawtypes)
+endif()
+
 include(${CMAKE_SOURCE_DIR}/cmake_scripts/UseJavaMuscle.cmake)
 
 FILE(GLOB THIRDPARTY_JAR ${CMAKE_SOURCE_DIR}/thirdparty/*.jar) 
