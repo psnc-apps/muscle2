@@ -178,7 +178,7 @@ public abstract class RawInstance extends Module {
 	}
 
 	protected <T extends Serializable> ConduitExit<T> addExit(String portName, Class<T> dataClass) {
-		ConduitExitController<T> ec = controller.createConduitExit(false, portName, new DataTemplate<T>(dataClass));
+		ConduitExitController<T> ec = controller.createConduitExit(false, portName, dataClass);
 
 		ConduitExit<T> e = new ConduitExit<T>(ec);
 		ec.setExit(e);
@@ -188,7 +188,7 @@ public abstract class RawInstance extends Module {
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, false, portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, false, portName, dataClass);
 
 		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
@@ -199,7 +199,7 @@ public abstract class RawInstance extends Module {
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addAsynchronousEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, false, portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(true, false, portName, dataClass);
 
 		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);
@@ -210,7 +210,7 @@ public abstract class RawInstance extends Module {
 	}
 
 	protected <T extends Serializable> ConduitEntrance<T> addSharedDataEntrance(String portName, Class<T> dataClass) {
-		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, true, portName, new DataTemplate<T>(dataClass));
+		ConduitEntranceController<T> ec = controller.createConduitEntrance(false, true, portName, dataClass);
 
 		Distance dt = getScale() == null ? Distance.ZERO : getScale().getDt();
 		ConduitEntrance<T> e = new ConduitEntrance<T>(ec, originTime == null ? Timestamp.ZERO : originTime, dt);

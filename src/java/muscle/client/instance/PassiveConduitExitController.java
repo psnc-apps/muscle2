@@ -15,7 +15,6 @@ import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Message;
 import muscle.core.ConduitDescription;
 import muscle.core.ConduitExit;
-import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
@@ -39,8 +38,8 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private final FilterChain filters;
 
-	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded, ConduitDescription desc) {
-		super(newPortalID, newOwnerAgent, newDataTemplate);
+	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc) {
+		super(newPortalID, newOwnerAgent, newDataClass);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
@@ -75,7 +74,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 			@SuppressWarnings("unchecked")
 			public void queue(Observation subject) {
 				Serializable data = subject.getData();
-				if (data != null && !dataClass.isInstance(data)) {
+				if (data != null && dataClass != null && !dataClass.isInstance(data)) {
 					throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + PassiveConduitExitController.this + " does not match expected data type " + dataClass.getSimpleName());
 				}
 
@@ -132,7 +131,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 				if (this.filters == null) {
 					Observation<T> subject = msg.getObservation();
 					T data = subject.getData();
-					if (data != null && !dataClass.isInstance(data)) {
+					if (data != null && dataClass != null && !dataClass.isInstance(data)) {
 						throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + this + " does not match expected data type " + dataClass.getSimpleName());
 					}
 

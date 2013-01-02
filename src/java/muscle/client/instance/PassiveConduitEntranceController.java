@@ -30,7 +30,6 @@ import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntrance;
-import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
@@ -51,8 +50,8 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private final FilterChain filters;
 	private boolean isSharedData;
 	
-	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded, ConduitDescription desc) {
-		super(newPortalID, newOwnerAgent, newDataTemplate);
+	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc) {
+		super(newPortalID, newOwnerAgent, newDataClass);
 		this.transmitter = null;
 		this.conduitEntrance = null;
 		this.processingMessage = false;

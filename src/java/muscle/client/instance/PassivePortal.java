@@ -21,7 +21,6 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 package muscle.client.instance;
 
 import java.io.Serializable;
-import muscle.core.DataTemplate;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Timestamp;
 import muscle.id.Identifiable;
@@ -34,10 +33,10 @@ public abstract class PassivePortal<T extends Serializable> implements Identifia
 	protected final Class<T> dataClass;
 	private final PortalID portalID;
 	
-	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
+	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass) {
 		this.portalID = newPortalID;
 	
-		this.dataClass = newDataTemplate.getDataClass();
+		this.dataClass = newDataClass;
 		// set custom time to 0
 		customSITime = new Timestamp(0d);
 		this.usedCount = 0;

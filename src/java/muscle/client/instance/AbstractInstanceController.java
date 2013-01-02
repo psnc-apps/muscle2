@@ -17,7 +17,6 @@ import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.ConnectionScheme;
-import muscle.core.DataTemplate;
 import muscle.core.conduit.terminal.Sink;
 import muscle.core.conduit.terminal.Source;
 import muscle.core.kernel.InstanceController;
@@ -108,7 +107,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 	}
 	
 	@Override
-	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate) {
+	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, Class<T> newDataClazz) {
 		@SuppressWarnings("unchecked")
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
@@ -121,7 +120,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		ConduitExitController<T> exit;
 		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataTemplate, threaded, desc);
+			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataClazz, threaded, desc);
 			portFactory.getReceiver(this, s, otherID);
 			exit = s;
 		} else {
@@ -150,7 +149,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 	
 	
 	@Override
-	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, boolean shared, String portalName, DataTemplate newDataTemplate) {
+	public <T extends Serializable> ConduitEntranceController<T> createConduitEntrance(boolean threaded, boolean shared, String portalName, Class<T> newDataClazz) {
 		@SuppressWarnings("unchecked")
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, ENTRANCE);
@@ -162,7 +161,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		String[] portArgs = desc.getExitArgs();
 		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate, threaded, desc);
+			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataClazz, threaded, desc);
 			portFactory.<T>getTransmitter(this, s, otherID, shared);
 			entrance = s;
 		} else {
