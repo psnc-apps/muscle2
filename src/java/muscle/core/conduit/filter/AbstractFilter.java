@@ -23,8 +23,8 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import muscle.core.model.Observation;
-import muscle.util.data.SingleProducerConsumerBlockingQueue;
 
 /**
 @author Joris Borgdorff
@@ -36,7 +36,7 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 	
 	protected AbstractFilter() {
 		if (!applyDirect) {
-			incomingQueue = new SingleProducerConsumerBlockingQueue<Observation<E>>();
+			incomingQueue = new LinkedBlockingQueue<Observation<E>>();
 		}
 	}
 	

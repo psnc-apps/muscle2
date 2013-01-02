@@ -205,7 +205,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			this.processingMessage = true;
 		}
 		T data = msg.getData();
-		if (data != null && !dataClass.isInstance(data)) {
+		if (data != null && dataClass != null && !dataClass.isInstance(data)) {
 			throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " sent through conduit entrance " + this + " does not match expected data type " + dataClass.getSimpleName());
 		}
 		

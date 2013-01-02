@@ -6,6 +6,8 @@ package muscle.client.instance;
 import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.Serializable;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.LocalManager;
@@ -20,9 +22,8 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
-import muscle.util.data.SingleProducerConsumerBlockingQueue;
+import muscle.util.data.TakeWrapper;
 import muscle.util.data.Takeable;
-import muscle.util.data.TakeableQueue;
 import muscle.util.serialization.DataConverter;
 
 /**
@@ -32,7 +33,7 @@ import muscle.util.serialization.DataConverter;
 public class PassiveConduitExitController<T extends Serializable> extends PassivePortal<T> implements ConduitExitControllerImpl<T>, Receiver<T,BasicMessage> {
 	private static final long serialVersionUID = 1L;
 	private ConduitExit<T> conduitExit;
-	private final TakeableQueue<Observation<T>> queue;
+	private final BlockingQueue<Observation<T>> queue;
 	private volatile boolean isDone;
 	protected DataConverter<Message<T>,BasicMessage> converter;
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
@@ -40,7 +41,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 
 	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc) {
 		super(newPortalID, newOwnerAgent, newDataClass);
-		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
+		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
 		this.filters = createFilterChain(desc, threaded);
@@ -110,7 +111,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 
 	@Override
 	public Takeable<Observation<T>> getMessageQueue() {
-		return this.queue;
+		return new TakeWrapper<Observation<T>>(this.queue);
 	}
 
 	@Override
@@ -135,9 +136,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 						throw new MUSCLEDatatypeException("Data type "+ data.getClass().getSimpleName() + " received through conduit exit " + this + " does not match expected data type " + dataClass.getSimpleName());
 					}
 
-					synchronized (this.queue) {
-						this.queue.add(msg.getObservation());
-					}
+					this.queue.add(msg.getObservation());
 				} else {
 					try {
 						this.filters.process(msg.getObservation());

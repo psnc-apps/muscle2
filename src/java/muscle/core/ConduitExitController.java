@@ -6,10 +6,7 @@
 package muscle.core;
 
 import java.io.Serializable;
-import java.util.concurrent.BlockingQueue;
 import muscle.core.model.Observation;
-import muscle.id.Identifiable;
-import muscle.id.PortalID;
 import muscle.util.data.Takeable;
 
 /**

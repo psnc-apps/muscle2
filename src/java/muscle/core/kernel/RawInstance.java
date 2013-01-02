@@ -301,7 +301,7 @@ public abstract class RawInstance extends Module {
 			sb.append(", ").append(ecs.next().getIdentifier().getPortName());
 		}
 		sb.append("]\n\t\t  ")
-			.append(getLocalName()).append(" conduit exits (in): ");
+			.append(getLocalName()).append(" conduit exits (in): [");
 		ecs = exits.values().iterator();
 		if (ecs.hasNext()) {
 			sb.append(ecs.next().getIdentifier().getPortName());
@@ -309,7 +309,7 @@ public abstract class RawInstance extends Module {
 		while (ecs.hasNext()) {
 			sb.append(", ").append(ecs.next().getIdentifier().getPortName());
 		}
-		return sb.toString();
+		return sb.append(']').toString();
 	}
 
 	/**

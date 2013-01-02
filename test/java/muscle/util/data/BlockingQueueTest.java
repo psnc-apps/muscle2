@@ -4,13 +4,12 @@
 
 package muscle.util.data;
 
-import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.util.Timer;
 import static org.junit.Assert.*;
 import org.junit.Test;
-import muscle.util.Timer;
 
 /**
  *
@@ -19,30 +18,20 @@ import muscle.util.Timer;
 public class BlockingQueueTest {
 	//private  queue;
 	
-	@Test
-	public void testSizes() {
-		BlockingQueue<String> queue = new SingleProducerConsumerBlockingQueue<String>();
-		assertEquals(0, queue.size());
-		assertTrue(queue.isEmpty());
-		queue.add("something");
-		assertEquals(1, queue.size());
-		assertFalse(queue.isEmpty());
-	}
-	
 	@Test(expected = IllegalStateException.class)
-	public void testEmpty() {
-		BlockingQueue<String> queue = new SingleProducerConsumerBlockingQueue<String>();
+	public void testEmpty() throws InterruptedException {
+		TakeAddable<String> queue = new SingleProducerConsumerBlockingQueue<String>();
 		queue.add("something");
-		assertEquals("something", queue.remove());
+		assertEquals("something", queue.take());
 		assertTrue(queue.isEmpty());
-		queue.remove();
+		queue.take();
 	}
 
 	@Test
 	public void testTakePut() {
-		BlockingQueue<String> queue = new SingleProducerConsumerBlockingQueue<String>();
+		TakeAddable<String> queue = new SingleProducerConsumerBlockingQueue<String>();
 		try {
-			queue.put("something");
+			queue.add("something");
 			assertEquals("something", queue.take());
 		} catch (InterruptedException ex) {
 			throw new RuntimeException(ex);
@@ -50,27 +39,30 @@ public class BlockingQueueTest {
 	}
 
 	@Test
-	public void testSizesFlipside() {
-		BlockingQueue<String> queue = new SingleProducerConsumerBlockingQueue<String>();
-		queue.offer("something1");
-		queue.offer("something2");
-		queue.offer("something3");
-		queue.offer("something4");
-		queue.offer("something5");
-		assertEquals("something1", queue.poll());
-		queue.poll();
-		queue.poll();
-		queue.offer("something6");
-		assertEquals(3, queue.size());
+	public void testSizesFlipside() throws InterruptedException {
+		TakeAddable<String> queue = new SingleProducerConsumerBlockingQueue<String>();
+		queue.add("something1");
+		queue.add("something2");
+		queue.add("something3");
+		queue.add("something4");
+		queue.add("something5");
+		assertEquals("something1", queue.take());
+		queue.take();
+		queue.take();
+		queue.add("something6");
+		queue.take();
+		queue.take();
+		queue.take();
+		assertTrue(queue.isEmpty());
 	}
 	
 	
-	private final static int TESTS = 100;
-	private final static int MSGS_PER_TEST = 100000;
+	private final static int TESTS = 1000;
+	private final static int MSGS_PER_TEST = 10000;
 	
 	public static void main(String[] args) {
 		ExecutorService exec = Executors.newFixedThreadPool(2);
-		int[] nums = {3, 5, 10, 15, 25, 100};
+//		int[] nums = {3, 5, 10, 15, 25, 100};
 		
 //		System.out.println("Old queue implementation");
 //		for (int num : nums) {
@@ -79,10 +71,10 @@ public class BlockingQueueTest {
 //		}
 
 		System.out.println("New queue implementation");
-		for (int num : nums) {
-			System.out.print("Computing time with queue size " + num + "... ");
+//		for (int num : nums) {
+//			System.out.print("Computing time with queue size " + num + "... ");
 			runWithQueue(exec, new SingleProducerConsumerBlockingQueue<String>());
-		}
+//		}
 		
 //		System.out.println("New pointer implementation");
 //		for (int num : nums) {
@@ -97,10 +89,15 @@ public class BlockingQueueTest {
 //			runWithQueue(exec, new ArrayBlockingQueue<String>(num));
 //		}
 //		
-//		System.out.println("Java linked queue implementation");
+//		System.out.println("Multi linked queue implementation");
 //		for (int num : nums) {
 //			System.out.print("Computing time with queue size " + num + "... ");
-//			runWithQueue(exec, new LinkedBlockingQueue<String>());
+//			runWithQueue(exec, new MultiProducerSingleConsumerBlockingQueue<String>());
+
+			System.out.println("Java linked queue implementation");
+//		for (int num : nums) {
+//			System.out.print("Computing time with queue size " + num + "... ");
+			runWithQueue(exec, new LinkedBlockingQueue<String>());
 //		}
 
 		exec.shutdown();
@@ -143,6 +140,8 @@ public class BlockingQueueTest {
 			for (int j = 0; j < TESTS; j++) {
 				for (int i = 0; i < MSGS_PER_TEST; i++) {
 					try {
+//						System.out.print("-");
+//						System.out.flush();
 						q.take();
 					} catch (InterruptedException ex) {
 						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
@@ -191,11 +190,9 @@ public class BlockingQueueTest {
 			String s = " bla";
 			for (int j = 0; j < TESTS; j++) {
 				for (int i = 0; i < MSGS_PER_TEST; i++) {
-					try {
-						q.put(s);
-					} catch (InterruptedException ex) {
-						Logger.getLogger(SingleProducerConsumerBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
-					}
+//					System.out.print("+");
+//					System.out.flush();
+					q.add(s);
 //					lsum += doSemiheavyCalculation(s);
 				}
 				outother += lsum;
@@ -227,7 +224,7 @@ public class BlockingQueueTest {
 //		}
 //	}
 //	
-	private static int doSemiheavyCalculation(String s) {
-		return (int)Math.sin(Math.sqrt(Double.valueOf(s + s)));
-	}
+//	private static int doSemiheavyCalculation(String s) {
+//		return (int)Math.sin(Math.sqrt(Double.valueOf(s + s)));
+//	}
 }

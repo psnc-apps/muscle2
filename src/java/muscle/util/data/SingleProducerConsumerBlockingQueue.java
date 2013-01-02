@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Joris Borgdorff
  */
-public class SingleProducerConsumerBlockingQueue<E> implements TakeableQueue<E> {
+public class SingleProducerConsumerBlockingQueue<E> implements TakeableQueue<E>, TakeAddable<E> {
 	private final TailPointer tail;
 	private final HeadPointer head;
 	

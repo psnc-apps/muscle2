@@ -5,13 +5,13 @@ package muscle.core.conduit.filter;
 
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.LocalManager;
 import muscle.core.model.Observation;
 import muscle.util.concurrency.SafeThread;
 import muscle.util.data.SerializableData;
-import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.serialization.DataConverter;
 import muscle.util.serialization.SerializableDataConverter;
 
@@ -27,7 +27,7 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 
 	protected ThreadedFilter() {
 		super("Filter");
-		this.incomingQueue = new SingleProducerConsumerBlockingQueue<Observation<E>>();
+		this.incomingQueue = new LinkedBlockingQueue<Observation<E>>();
 		this.converter = new SerializableDataConverter<E>();
 	}
 	
