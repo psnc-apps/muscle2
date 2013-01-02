@@ -3,8 +3,6 @@ package examples.pingpong;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitExit;
 import muscle.core.kernel.CAController;
-import muscle.util.data.SerializableData;
-import muscle.util.serialization.SerializableDataConverter;
 
 public class Ping extends CAController {
 	private ConduitEntrance<byte[]> entrance;
@@ -32,7 +30,6 @@ public class Ping extends CAController {
 
 		// helper with results for a single test
 		long[] totalTimes = new long[runs];
-		long[] serializationTimes = new long[runs];
 		byte[] data = new byte[1024];
 
 		// Making noise in order to give time for JVM to stabilize
@@ -67,7 +64,6 @@ public class Ping extends CAController {
 	}
 	
 	private long doComputation(int size, long[] totalTimes, int runs, int steps) {
-		SerializableDataConverter<byte[]> converter = new SerializableDataConverter<byte[]>();
 		byte[] data = new byte[size];
 		long sum = 0;
 		for (int test = 0; test < runs; test++) {
@@ -94,21 +90,9 @@ public class Ping extends CAController {
 		// nano -> micro
 		avg /= 1000d;
 		stdDev /= 1000d;
-		// MB/s -> 2*((KBytes/1024)/(micro/1000000)) -> 2*1000000*KBytes/1024*micro ->  15625*size / 8*avg
+		// MB/s -> 2*((bytes/1024*1024)/(micro/1000000)) -> 2*1000000*Bytes/(1024*1024*micro) ->  15625*size / 8192*avg
 		double speed = (15625l * size) / (8192d*avg);
-		System.out.printf("| %10d| %10d| %10.0f| %10.0f| %10.1f| %13.1f| \n", size, sum/1000000, avg, stdDev, 100*stdDev/avg, speed == 0 ? Double.NaN : speed);
-	}
-
-	private double average(long[] times, int factor) {
-		return ((double) sum(times)) / (times.length * factor);
-	}
-	
-	private long sum(long[] times) {
-		long sum = 0;
-		for (long time : times) {
-			sum += time;
-		}
-		return sum;
+		System.out.printf("| %10d| %10d| %10.0f| %10.0f| %10.1f| %13.1f| \n", size/1024, sum/1000000, avg, stdDev, 100*stdDev/avg, speed == 0 ? Double.NaN : speed);
 	}
 
 	private double stdDev(long[] times, double avg, int factor) {
