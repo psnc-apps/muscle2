@@ -46,6 +46,7 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 		MuscleFormatter.date(sb, c);
 		sb.append(' ');
 		MuscleFormatter.time(sb, c);
+		sb.append(' ');
 		
 		String pkg, clazz;
 		if (loggerName == null) {

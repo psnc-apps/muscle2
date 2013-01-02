@@ -40,8 +40,7 @@ public class ModuleFormatter extends SimpleFormatter {
 		StringBuilder sb = new StringBuilder(100);
 		sb.append('(');
 		MuscleFormatter.time(sb, new GregorianCalendar());
-		sb.append(' ').append(name);
-		sb.append(") ");
+		sb.append(' ').append(name).append(") ");
 		
 		int intLevel = record.getLevel().intValue();
 		if (intLevel >= SEVERE) {

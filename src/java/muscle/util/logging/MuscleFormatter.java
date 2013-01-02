@@ -122,13 +122,34 @@ public class MuscleFormatter extends SimpleFormatter {
 		}
 	}
 	static void time(StringBuilder sb, Calendar c) {
-		sb.append(c.get(Calendar.HOUR_OF_DAY)).append(':')
-				.append(c.get(Calendar.MINUTE)).append(':')
-				.append(c.get(Calendar.SECOND));
+		int t = c.get(Calendar.HOUR_OF_DAY);
+		if (t < 10)	{
+			sb.append('0');
+		}
+		sb.append(t).append(':');
+		t = c.get(Calendar.MINUTE);
+		if (t < 10) {
+			sb.append('0');
+		}
+		sb.append(t).append(':');
+		t = c.get(Calendar.SECOND);
+		if (t < 10) {
+			sb.append('0');
+		}
+		sb.append(t);
 	}
 	static void date(StringBuilder sb, Calendar c) {
-		sb.append(c.get(Calendar.YEAR)).append('-')
-				.append(c.get(Calendar.MONTH)).append('-')
-				.append(c.get(Calendar.DATE));
+		int t = c.get(Calendar.YEAR);
+		sb.append(t).append('-');
+		t = c.get(Calendar.MONTH);
+		if (t < 10) {
+			sb.append('0');
+		}
+		sb.append(t).append('-');
+		t = c.get(Calendar.DATE);
+		if (t < 10) {
+			sb.append('0');
+		}
+		sb.append(t);
 	}
 }
