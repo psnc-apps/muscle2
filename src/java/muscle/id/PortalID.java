@@ -25,31 +25,30 @@ package muscle.id;
 portal identifier
 @author Joris Borgdorff
 */
-public class PortalID<E extends Identifier> extends AbstractID implements Identifier {
+public class PortalID extends AbstractID implements Identifier {
 	private static final long serialVersionUID = 1L;
-	protected final E ownerID;
-	private final String combinedName;
+	protected final Identifier ownerID;
+	private final String portName;
 	
-	public PortalID(String newName, E newAgentID) {
-		super(newName, getFullName(newName + "@" + newAgentID, IDType.port));
+	public PortalID(String newName, String newPortName, Identifier newAgentID) {
+		super(newName);
 		this.ownerID = newAgentID;
-		this.combinedName = name+"@"+ownerID.getName();
+		this.portName = newPortName;
+	}
+	
+	public PortalID(String newPortName, Identifier newAgentID) {
+		this(newPortName + "@" + newAgentID.getName(), newPortName, newAgentID);
 	}
 	
 	public boolean isResolved() {
 		return ownerID.isResolved();
 	}
 	
-	@Override
-	public String getName() {
-		return combinedName;
-	}
-	
 	public String getPortName() {
-		return name;
+		return portName;
 	}
 	
-	public E getOwnerID() {
+	public Identifier getOwnerID() {
 		return this.ownerID;
 	}
 	

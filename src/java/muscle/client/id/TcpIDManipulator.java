@@ -57,8 +57,8 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 
 	@Override
-	public boolean propagate(Identifier id) {
-		return runQuery(id, SimulationManagerProtocol.PROPAGATE);
+	public void propagate(Identifier id) {
+		this.runQuery(id, SimulationManagerProtocol.PROPAGATE);
 	}
 	
 	@Override
@@ -86,9 +86,10 @@ public class TcpIDManipulator implements IDManipulator {
 		else if (type == IDType.port) {
 			int portId = name.indexOf('@');
 			if (portId == -1) {
-				throw new IllegalArgumentException("A port identifier <" + portId + "> must feature a port and owner name, separated by an '@' symbol.");
+				throw new IllegalArgumentException("A port identifier <" + name + "> must feature a port and owner name, separated by an '@' symbol.");
 			}
-			return new PortalID<InstanceID>(name.substring(0, portId), new InstanceID(name.substring(portId+1)));
+			Identifier owner = resolver.getIdentifier(name.substring(portId+1), IDType.instance);
+			return new PortalID(name, name.substring(0, portId), owner);
 		}
 		else {
 			throw new IllegalArgumentException("TcpIDManipulator can only resolve ports and instances, not '" + type + "'.");
@@ -135,8 +136,8 @@ public class TcpIDManipulator implements IDManipulator {
 	}
 
 	@Override
-	public boolean delete(Identifier id) {
-		return this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
+	public void delete(Identifier id) {
+		this.runQuery(id, SimulationManagerProtocol.DEREGISTER);
 	}
 
 	@Override

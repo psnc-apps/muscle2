@@ -2,7 +2,11 @@ package muscle.client;
 
 import com.beust.jcommander.*;
 import eu.mapperproject.jmml.util.FastArrayList;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -22,7 +26,7 @@ import muscle.net.SocketFactory;
 public class LocalManagerOptions {
 	private JCommander jcom;
 	
-	@Parameter(description="INST_NAME:INST_CLASS ...",required=true,converter=AgentNameConverter.class)
+	@Parameter(description="INST_NAME:INST_CLASS ...",converter=AgentNameConverter.class)
 	private List<InstanceClass> agents = new FastArrayList<InstanceClass>();
 	
 	@Parameter(names={"-m", "--manager"},required=true,converter=SocketAddressConverter.class)
@@ -33,6 +37,9 @@ public class LocalManagerOptions {
 	
 	@Parameter(names={"-t", "--threads"})
 	private int threads = 0;
+	
+	@Parameter(names={"-f", "--instances-file"})
+	private File instancesFile = null;
 	
 	public LocalManagerOptions(String... args) {
 		this.jcom = new JCommander(this);
@@ -49,13 +56,27 @@ public class LocalManagerOptions {
 		jcom.usage();
 	}
 	
-	public List<InstanceClass> getAgents() {
+	public List<InstanceClass> getAgents() throws FileNotFoundException, IOException {
+		if (this.instancesFile != null) {
+			BufferedReader reader = new BufferedReader(new FileReader(this.instancesFile));
+			try {
+				String line;
+				AgentNameConverter converter = new AgentNameConverter();
+				while ((line = reader.readLine()) != null) {
+					this.agents.add(converter.convert(line));
+				}
+			} finally {
+				reader.close();
+				this.instancesFile = null;
+			}
+		}
 		return this.agents;
 	}
 	
-	public Set<String> getAgentNames() {
-		Set<String> set = new HashSet<String>(this.agents.size());
-		for (InstanceClass cl : this.agents) {
+	public Set<String> getAgentNames() throws FileNotFoundException, IOException {
+		List<InstanceClass> ics = this.getAgents();
+		Set<String> set = new HashSet<String>(ics.size());
+		for (InstanceClass cl : ics) {
 			set.add(cl.getName());
 		}
 		return set;
@@ -76,32 +97,28 @@ public class LocalManagerOptions {
 	public static class AgentNameConverter implements IStringConverter<InstanceClass> {
 		@Override
 		public InstanceClass convert(String value) {
-			String[] s = value.split(":");
-			if (s.length < 2) {
+			int index = value.indexOf(':');
+			if (index == -1) {
 				throw new ParameterException("An Instance should be specified by a name and a class, separated by a colon (:); argument " + value + " is not formatted as such.");
-			} else if (s.length > 2) {
+			} else if (index == 0) {
+					throw new ParameterException("An Instance name may not be empty; argument " + value + " does not specify a name.");
+			} else if (index == value.length() - 1) {
+				throw new ParameterException("An Instance class may not be empty; argument " + value + " does not specify a class.");				
+			} else if (index != value.lastIndexOf(':')) {
 				throw new ParameterException("The name or class of an instance may not contain a colon; argument " + value + " contains too many colons.");
 			}
 			
 			Class<?> clazz;
 			
-			if (s[0].equals("")) {
-				throw new ParameterException("An Instance name may not be empty; argument " + value + " does not specify a name.");
-			}
-			
-			if (s[1].equals("")) {
-				throw new ParameterException("An Instance class may not be empty; argument " + value + " does not specify a class.");
-			} else {
-				try {
-					clazz = Class.forName(s[1]);
-				} catch (ClassNotFoundException ex) {
-					throw new ParameterException("Instance class " + s[1] + " of argument " + value + " is not found; make sure the cxa file and the class name match, and that all sources are included in the CLASSPATH.\nHINT: adjust the cxa file to include your build directory with\nm = Muscle.LAST\nm.add_classpath File.dirname(__FILE__)+\"[REL_PATH_TO_CLASSES]\"\n");
-				}
+			try {
+				clazz = Class.forName(value.substring(index + 1));
+			} catch (ClassNotFoundException ex) {
+				throw new ParameterException("Instance class " + value.substring(index + 1) + " of argument " + value + " is not found; make sure the cxa file and the class name match, and that all sources are included in the CLASSPATH.\nHINT: adjust the cxa file to include your build directory with\nm = Muscle.LAST\nm.add_classpath File.dirname(__FILE__)+\"[REL_PATH_TO_CLASSES]\"\n");
 			}
 			if (!RawInstance.class.isAssignableFrom(clazz)) {
 				throw new ParameterException("Can only instantiate classes inhereting muscle.core.kernel.RawKernel");
 			}
-			return new InstanceClass(s[0], clazz);		
+			return new InstanceClass(value.substring(0, index), clazz);
 		}
 	}
 	

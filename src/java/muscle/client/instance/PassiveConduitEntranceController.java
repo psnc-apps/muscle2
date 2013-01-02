@@ -30,7 +30,6 @@ import muscle.client.communication.Transmitter;
 import muscle.client.communication.message.DetachConduitSignal;
 import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntrance;
-import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
@@ -52,23 +51,27 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private final FilterChain filters;
 	private boolean isSharedData;
 	
-	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded) {
+	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded, ConduitDescription desc) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.transmitter = null;
 		this.conduitEntrance = null;
 		this.processingMessage = false;
 		this.isDone = false;
 		this.transmitterFound = false;
-		this.filters = createFilterChain(threaded);
+		this.filters = createFilterChain(desc, threaded);
 		this.isSharedData = false;
 	}
 
 	/** Create a filter chain from the given arguments */
-	private FilterChain createFilterChain(boolean threaded) {
-		ConnectionScheme cs = ConnectionScheme.getInstance();
-		ConduitDescription cd = cs.entranceDescriptionForPortal(portalID).getConduitDescription();
-		List<String> args = cd.getArgs();
-		int entranceArgDiv = args.indexOf("");
+	private FilterChain createFilterChain(ConduitDescription desc, boolean threaded) {
+		String[] args = desc.getArgs();
+		int entranceArgDiv = -1;
+		for (int i = 0; i < args.length; i++) {
+			if ("".equals(args[i])) {
+				entranceArgDiv = i;
+				break;
+			}
+		}
 		List<String> entranceArgs;
 		if (threaded) {
 			entranceArgs = new FastArrayList<String>(entranceArgDiv + 2);
@@ -79,7 +82,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			entranceArgs = new FastArrayList<String>(entranceArgDiv);
 		}
 		for (int i = 0; i < entranceArgDiv; i++) {
-			entranceArgs.add(args.get(i));
+			entranceArgs.add(args[i]);
 		}
 		
 		FilterChain fc = new FilterChain() {
@@ -90,7 +93,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		};
 		
 		fc.init(entranceArgs);
-		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {cd, entranceArgs});
+		logger.log(Level.INFO, "The conduit entrance ''{0}'' will use filter(s) {1}.", new Object[] {desc.getEntrance(), entranceArgs});
 		return fc;
 	}
 
@@ -128,7 +131,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
 	private synchronized boolean waitForTransmitter() throws InterruptedException {
 		while (!this.transmitterFound && transmitter == null && !isDisposed()) {
-			logger.log(Level.FINE, "ConduitEntrance <{0}> is waiting for connection to transmit over.", portalID);
+			logger.log(Level.FINE, "ConduitEntrance <{0}> is waiting for connection to transmit over.", getLocalName());
 			this.wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
 		this.transmitterFound = (transmitter != null);
@@ -150,7 +153,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			try {
 				transmitter.signal(new DetachConduitSignal());
 			} catch (Exception ex) {
-				logger.log(Level.WARNING, "Could not detach {0}", this.portalID);
+				logger.log(Level.WARNING, "Could not detach {0}", getLocalName());
 			}
 			transmitter.dispose();
 			transmitterFound = false;
@@ -168,11 +171,11 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private void transmit(Observation<T> msg) {
 		try {
 			if (!transmitterFound && !waitForTransmitter()) {
-				logger.log(Level.SEVERE, "ConduitEntrance {0} quit before message could be sent.", portalID);
+				logger.log(Level.SEVERE, "ConduitEntrance {0} quit before message could be sent.", getLocalName());
 				return;
 			}
 		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "Could not send observation for ConduitEntrance " + portalID, ex);
+			logger.log(Level.SEVERE, "Could not send observation for ConduitEntrance " + getLocalName(), ex);
 			return;
 		}
 
@@ -191,7 +194,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	}
 	
 	public String toString() {
-		return "out:" + this.getIdentifier();
+		return "out:" + this.getLocalName();
 	}
 
 	@Override

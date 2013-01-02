@@ -15,7 +15,11 @@ import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.client.instance.PassiveConduitExitController;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
-import muscle.id.*;
+import muscle.exception.ExceptionListener;
+import muscle.id.Identifier;
+import muscle.id.PortalID;
+import muscle.id.Resolver;
+import muscle.id.ResolverFactory;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.*;
@@ -29,8 +33,8 @@ public class TcpPortFactoryImpl extends PortFactory {
 	private final LocalDataHandler localMsgProcessor;
 	private final static Logger logger = Logger.getLogger(TcpPortFactoryImpl.class.getName());
 		
-	public TcpPortFactoryImpl(ResolverFactory rf, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
-		super(rf, globalMsgProcessor);
+	public TcpPortFactoryImpl(ResolverFactory rf, ExceptionListener listener, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
+		super(rf, listener, globalMsgProcessor);
 		this.localMsgProcessor = localMsgProcessor;
 		this.socketFactory = sf;
 	}
@@ -51,7 +55,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 					throw ex;
 				}
 				@SuppressWarnings("unchecked")
-				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
+				PortalID instancePort = port;
 				
 				boolean passive = exit instanceof PassiveConduitExitController;
 				
@@ -104,8 +108,7 @@ public class TcpPortFactoryImpl extends PortFactory {
 					ic.fatalException(ex);
 					throw ex;
 				}
-				@SuppressWarnings("unchecked")
-				PortalID<InstanceID> instancePort = (PortalID<InstanceID>)port;
+				PortalID instancePort = port;
 				
 				Resolver res = getResolver();
 				Transmitter trans;

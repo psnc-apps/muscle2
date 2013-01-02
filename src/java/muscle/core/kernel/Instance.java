@@ -31,18 +31,17 @@ public abstract class Instance extends RawInstance {
 	 */
 	@Override
 	protected void addPortals() {
-		ConnectionScheme cs = ConnectionScheme.getInstance();
-		Map<String, ? extends PortDescription> ports = cs.entranceDescriptionsForIdentifier(this.controller.getIdentifier());
+		Map<String,ConduitDescription> ports = this.controller.getEntranceDescriptions();
 		if (ports != null) {
-			for (PortDescription entrance : ports.values()) {
-				this.addEntrance(entrance.getID().getPortName(), Serializable.class);
+			for (ConduitDescription entrance : ports.values()) {
+				this.addEntrance(entrance.getEntrance().getPortName(), Serializable.class);
 			}
 		}
 		logger.log(Level.FINE, "{0}: added all conduit entrances", getLocalName());
-		ports = cs.exitDescriptionsForIdentifier(this.controller.getIdentifier());
+		ports = this.controller.getExitDescriptions();
 		if (ports != null) {
-			for (PortDescription exit : ports.values()) {
-				this.addExit(exit.getID().getPortName(), Serializable.class);
+			for (ConduitDescription exit : ports.values()) {
+				this.addExit(exit.getExit().getPortName(), Serializable.class);
 			}
 		}
 		logger.log(Level.FINE, "{0}: added all conduit exits", getLocalName());

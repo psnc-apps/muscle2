@@ -18,9 +18,6 @@ import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
-import muscle.core.EntranceDescription;
-import muscle.core.ExitDescription;
-import muscle.core.PortDescription;
 import muscle.core.conduit.terminal.Sink;
 import muscle.core.conduit.terminal.Source;
 import muscle.core.kernel.InstanceController;
@@ -30,7 +27,6 @@ import muscle.id.Identifier;
 import muscle.id.InstanceClass;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 
 /**
  *
@@ -41,8 +37,8 @@ public abstract class AbstractInstanceController implements InstanceController {
 	private final static boolean ENTRANCE = true;
 	private final static boolean EXIT = false;
 	
-	private Map<String, ExitDescription> exitDescriptions;
-	private Map<String, EntranceDescription> entranceDescriptions;
+	private Map<String, ConduitDescription> exitDescriptions;
+	private Map<String, ConduitDescription> entranceDescriptions;
 	
 	protected RawInstance instance;
 	private boolean isDone;
@@ -52,25 +48,24 @@ public abstract class AbstractInstanceController implements InstanceController {
 	protected final List<ConduitExitController<?>> exits = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
 	protected final List<ConduitEntranceController<?>> entrances = new ArrayList<ConduitEntranceController<?>>(); //these are the conduit entrances
 	protected final InstanceControllerListener listener;
-	private final ResolverFactory resolverFactory;
+	private final Resolver resolver;
 	private final PortFactory portFactory;
 	private boolean isExecuting;
 
-	public AbstractInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
+	public AbstractInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
 		this.id = instanceClass.getIdentifier();
 		this.instanceClass = instanceClass.getInstanceClass();
 		this.instance = null;
 		this.listener = listener;
-		this.resolverFactory = rf;
+		this.resolver = res;
 		this.portFactory = portFactory;
 		this.isDone = false;
 		this.isExecuting = false;
+		this.entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
+		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
 	}
 	
 	public boolean init() {
-		ConnectionScheme cs = ConnectionScheme.getInstance();
-		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
-		this.entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
 		try {
 			instance = (RawInstance) this.instanceClass.newInstance();
 			instance.setInstanceController(this);
@@ -101,12 +96,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 			isDone = true;
 		}
 		// Deregister with the resolver
-		try {
-			Resolver r = resolverFactory.getResolver();
-			r.deregister(this);
-		} catch (InterruptedException ex) {
-			logger.log(Level.SEVERE, "Could not deregister {0}: {1}", new Object[] {getName(), ex});
-		}
+		this.resolver.deregister(this);
 
 		this.disposeNoDeregister();
 	}
@@ -123,19 +113,19 @@ public abstract class AbstractInstanceController implements InstanceController {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, EXIT);
 		
-		EntranceDescription desc = ConnectionScheme.getInstance().entranceDescriptionForPortal(otherID);
+		ConduitDescription desc = this.exitDescriptions.get(portalName);
 		if (desc == null) {
 			throw new IllegalArgumentException("Can not create ConduitExit " + currentID + ": it is not defined in the CxA file.");
 		}
-		List<String> portArgs = desc.getArgs();
+		String[] portArgs = desc.getEntranceArgs();
 		ConduitExitController<T> exit;
-		if (portArgs.isEmpty()) {
+		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataTemplate, threaded);
+			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataTemplate, threaded, desc);
 			portFactory.getReceiver(this, s, otherID);
 			exit = s;
 		} else {
-			String portName = portArgs.get(0);
+			String portName = portArgs[0];
 			try {
 				Object srcObj =Class.forName(portName).newInstance();
 				if (!(srcObj instanceof Source)) {
@@ -165,18 +155,18 @@ public abstract class AbstractInstanceController implements InstanceController {
 		PortalID currentID = new PortalID(portalName, getIdentifier());
 		PortalID otherID = getOtherPortalID(currentID, ENTRANCE);
 		ConduitEntranceController<T> entrance;
-		ExitDescription desc = ConnectionScheme.getInstance().exitDescriptionForPortal(otherID);
+		ConduitDescription desc = this.entranceDescriptions.get(portalName);
 		if (desc == null) {
 			throw new IllegalArgumentException("Can not create ConduitEntrance " + currentID + ": it is not defined in the CxA file.");
 		}
-		List<String> portArgs = desc.getArgs();
-		if (portArgs.isEmpty()) {
+		String[] portArgs = desc.getExitArgs();
+		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate, threaded);
+			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataTemplate, threaded, desc);
 			portFactory.<T>getTransmitter(this, s, otherID, shared);
 			entrance = s;
 		} else {
-			String portName = portArgs.get(0);
+			String portName = portArgs[0];
 			try {
 				Object sinkObj =Class.forName(portName).newInstance();
 				if (!(sinkObj instanceof Sink)) {
@@ -234,25 +224,19 @@ public abstract class AbstractInstanceController implements InstanceController {
 		
 	private PortalID getOtherPortalID(PortalID id, boolean entrance) {
 		ConduitDescription desc = null;
-		PortDescription port = null;
-		Map<String,? extends PortDescription> descriptions = entrance ? entranceDescriptions : exitDescriptions;
+		Map<String,ConduitDescription> descriptions = entrance ? entranceDescriptions : exitDescriptions;
 		
 		if (descriptions != null) {
-			port = descriptions.get(id.getPortName());
-		}
-		if (port == null) {
-			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
-		} else {
-			desc = port.getConduitDescription();
+			desc = descriptions.get(id.getPortName());
 		}
 		if (desc == null) {
 			throw new IllegalStateException("Port " + id + " is initialized in code but is not listed in the connection scheme. It will not work until this port is added in the connection scheme.");
 		}
 
 		if (entrance) {
-			return desc.getExitDescription().getID();
+			return desc.getExit();
 		} else {
-			return desc.getEntranceDescription().getID();
+			return desc.getEntrance();
 		}
 	}
 				
@@ -271,23 +255,23 @@ public abstract class AbstractInstanceController implements InstanceController {
 	
 	protected boolean register() {
 		try {
-			Resolver locator = resolverFactory.getResolver();
-			return locator.register(this);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
-			return false;
+			return this.resolver.register(this);
 		} catch (Exception ex) {
 			return false;
 		}
 	}
 	
 	protected void propagate() {
-		try {
-			Resolver locator = resolverFactory.getResolver();
-			locator.makeAvailable(this);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (Exception ex) {
-		}
+		// All ports are connected, so we don't need the descriptions anymore
+		this.entranceDescriptions = null;
+		this.exitDescriptions = null;
+		this.resolver.makeAvailable(this);
+	}
+	
+	public Map<String,ConduitDescription> getExitDescriptions() {
+		return this.exitDescriptions;
+	}
+	public Map<String,ConduitDescription> getEntranceDescriptions() {
+		return this.entranceDescriptions;
 	}
 }

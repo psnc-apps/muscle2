@@ -35,7 +35,7 @@ class JVM
 	def JVM.add_pref(env, command, prefix, value)
 		command << (prefix << env[value].to_s) if env[value]
 	end
-	def JVM.build_command(jargs, env)
+	def JVM.build_command(clazz, jargs, env)
 		# build command to launch a java application
 		command = []
 		
@@ -81,7 +81,7 @@ class JVM
 		JVM.add_prop(env, command, PROP_PORT_RANGE_MIN,       'port_min')
 		JVM.add_prop(env, command, PROP_PORT_RANGE_MAX,       'port_max')
 		
-		command << jargs unless jargs.nil? # the java class to launch
+		command << clazz << jargs # the java class to launch
 		
 		return command.join(' ')
 	end

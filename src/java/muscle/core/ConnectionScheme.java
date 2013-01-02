@@ -26,19 +26,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 import muscle.util.data.Env;
 
 /**
@@ -47,57 +42,26 @@ describes the p2p connections between kernels
 */
 public class ConnectionScheme implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private final Map<Identifier,Map<String,ExitDescription>> conduitExits;
-	private final Map<Identifier,Map<String,EntranceDescription>> conduitEntrances;
-	private LinkedList<ExitDescription> targetExitDescriptions = new LinkedList<ExitDescription>(); // leafs of a connection chain entrance->conduit->exit
+	private final Map<Identifier,Map<String,ConduitDescription>> conduitExits;
+	private final Map<Identifier,Map<String,ConduitDescription>> conduitEntrances;
 	private static final transient Logger logger = Logger.getLogger(ConnectionScheme.class.getName());
 	protected Env env;
-	private final ResolverFactory rf;
-	public List<String> kernelList; // for otf
+	public List<Identifier> kernelList; // for otf
 	public List<String> conduitList; // for otf
-	private static final Object instanceLock = new Object();
-	private final static Pattern spacePattern = Pattern.compile("( +?)|(\t+?)");
-	private final static Pattern parensPattern = Pattern.compile("[()]");
-	private final static Pattern commaPattern = Pattern.compile(",");
+	private final Resolver resolver;
 	
 	{
 		this.env = CxADescription.ONLY.subenv(this.getClass());
 	}
 
 	private transient final static String cs_file_uri = "cs_file_uri";
-	
-	public static ConnectionScheme getInstance(ResolverFactory rf, int size) {
-		synchronized(instanceLock) {
-			if (instance == null) {
-				instance = new ConnectionScheme(rf, size);
-				instanceLock.notifyAll();
-			}
-		
-			return instance;
-		}
-	}
 
-	private static ConnectionScheme instance;
-	
-	public static ConnectionScheme getInstance() {
-		synchronized (instanceLock) {
-			try {
-				while (instance == null) {
-					instanceLock.wait();
-				}
-			} catch (InterruptedException ex) {
-				Logger.getLogger(ConnectionScheme.class.getName()).log(Level.SEVERE, null, ex);
-			}
-			return instance;
-		}
-	}
-	
-	private ConnectionScheme(ResolverFactory rf, int size) {
-		this.rf = rf;
+	public ConnectionScheme(Resolver res, int size) {
+		this.resolver = res;
 		kernelList = null;
 		conduitList = null;
-		this.conduitExits = new HashMap<Identifier,Map<String,ExitDescription>>(size*4/3);
-		this.conduitEntrances = new HashMap<Identifier,Map<String,EntranceDescription>>(size*4/3);
+		this.conduitExits = new HashMap<Identifier,Map<String,ConduitDescription>>(size*4/3);
+		this.conduitEntrances = new HashMap<Identifier,Map<String,ConduitDescription>>(size*4/3);
 		this.init();
 	}
 
@@ -120,30 +84,44 @@ public class ConnectionScheme implements Serializable {
 		try {
 			File infile = new File(new URI((String)this.env.get(cs_file_uri)));
 			BufferedReader reader = new BufferedReader(new FileReader(infile));
-			String line;		
+			String line;
+			
+			List<String> exitArgs = new FastArrayList<String>(1);
+			List<String> entranceArgs = new FastArrayList<String>(1);
+			List<String> conduitArgs = new FastArrayList<String>(5);
+			final String[] empty = new String[0];
+
 			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("#")) {
+				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
 				}
-				String[] items = spacePattern.split(line);
-				if(items.length != 3) {
+				int firstSpace = line.indexOf(' ');
+				if (firstSpace == -1) {
 					logger.severe("connection scheme has unknown format");
 					return;
 				}
-				List<String> exitArgs = new FastArrayList<String>(0);
-				List<String> conduitArgs = new FastArrayList<String>(0);
-				List<String> entranceArgs = new FastArrayList<String>(0);
-
-				String exit = parseItem(items[0], exitArgs);
-				String entrance = parseItem(items[2], entranceArgs);
-				parseItem(items[1], conduitArgs);
+				int secondSpace = line.indexOf(' ', firstSpace + 1);
+				if (secondSpace == -1 || line.lastIndexOf(' ') != secondSpace) {
+					logger.severe("connection scheme has unknown format");
+					return;
+				}
+								
+				String exit = parseItem(line.substring(0, firstSpace), exitArgs);
+				String entrance = parseItem(line.substring(secondSpace + 1), entranceArgs);
+				parseItem(line.substring(firstSpace + 1, secondSpace), conduitArgs);
 				// get conduit class,id,args from item[1] which is e.g.: conduit.foo.bar#42(arg1,arg2)
 				
-				
-				this.addConnection(entrance, entranceArgs, conduitArgs, exit, exitArgs);
+				this.addConnection(entrance, entranceArgs.toArray(empty), conduitArgs.toArray(empty), exit, exitArgs.toArray(empty));
+				if (exitArgs.size() > 0) {
+					exitArgs = new FastArrayList<String>(1);
+				}
+				if (entranceArgs.size() > 0) {
+					entranceArgs = new FastArrayList<String>(1);
+				}
+				if (conduitArgs.size() > 0) {
+					conduitArgs = new FastArrayList<String>(5);
+				}
 			}
-		} catch (InterruptedException ex) {
-			throw new RuntimeException(ex);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		} catch(java.net.URISyntaxException e) {
@@ -152,71 +130,63 @@ public class ConnectionScheme implements Serializable {
 	}
 	
 	private String parseItem(String item, List<String> args) {
-//		assert item.indexOf('(') != 0 : "Error: can not start parenthesis at first character";
-//		assert item.indexOf('(') != (item.indexOf(')')-1) : "Error: empty (), omit the '()' for an empty arg list";
-		String[] parts = parensPattern.split(item);
-//		assert parts.length > 0;
-//		assert parts.length <= 2;
-		
-		if(parts.length > 1) {
-			String[] sArgs = commaPattern.split(parts[1]);
-			args.addAll(Arrays.asList(sArgs));
+		String ret = item;
+		int index = item.indexOf('(');
+		if (index != -1) {
+			if (index == 0) {
+				throw new IllegalArgumentException("May not start item " + item + " with argument list");
+			}
+			if (item.charAt(item.length() - 1) != ')') {
+				throw new IllegalArgumentException("Illegal ending of after arguments: " + item);
+			}
+			int argsIndex = index;
+			
+			while (index != -1) {
+				int commaIndex = item.indexOf(',', index + 1);
+				if (commaIndex == -1) {
+					args.add(item.substring(index + 1, item.length() - 1));
+				} else {
+					args.add(item.substring(index + 1, commaIndex));
+				}
+				index = commaIndex;
+			}
+			ret = item.substring(0, argsIndex);
 		}
-		return parts[0];
+		return ret;
 	}
 	
 	/**
 	declares a new edge (entrance->conduit->exit) of our graph
 	*/
-	public void addConnection(String entranceID, List<String> entranceArgs, List<String> conduitArgs, String exitID, List<String> exitArgs) throws InterruptedException {
-		Resolver r = rf.getResolver();
-		EntranceDescription entrance = addEntrance((PortalID)r.getIdentifier(entranceID, IDType.port), entranceArgs);
-		ExitDescription exit = addExit((PortalID)r.getIdentifier(exitID, IDType.port), exitArgs);
-		ConduitDescription conduit = new ConduitDescription(conduitArgs, entrance, exit);
-
-		exit.setConduitDescription(conduit);
-		entrance.setConduitDescription(conduit);
-
-		this.targetExitDescriptions.add(exit);
+	public void addConnection(String entranceID, String[] entranceArgs, String[] conduitArgs, String exitID, String[] exitArgs) {
+		PortalID entrance = (PortalID)resolver.getIdentifier(entranceID, IDType.port);
+		PortalID exit = (PortalID)resolver.getIdentifier(exitID, IDType.port);
+		
+		ConduitDescription conduit = new ConduitDescription(conduitArgs, entrance, entranceArgs, exit, exitArgs);
+		
+		addPortal(conduit, this.conduitEntrances, entrance);
+		addPortal(conduit, this.conduitExits, exit);
 	}
-
 	
-	private EntranceDescription addEntrance(PortalID pid, List<String> args) {
-		Identifier ownerID = pid.getOwnerID();
-		EntranceDescription entrance = new EntranceDescription(pid, args);
-		Map<String,EntranceDescription> entrances = this.conduitEntrances.get(ownerID);
-		if (entrances == null) {
-			entrances = new HashMap<String,EntranceDescription>();
-			this.conduitEntrances.put(ownerID, entrances);
+	private void addPortal(ConduitDescription conduit, Map<Identifier,Map<String,ConduitDescription>> descs, PortalID port) {
+		Map<String, ConduitDescription> conduits = descs.get(port.getOwnerID());
+		if (conduits == null) {
+			conduits = new HashMap<String,ConduitDescription>();
+			descs.put(port.getOwnerID(), conduits);
 		}
-		entrances.put(pid.getPortName(), entrance);
-		return entrance;
+		conduits.put(port.getPortName(), conduit);
 	}
 	
-	
-	private ExitDescription addExit(PortalID pid, List<String> args) {
-		Identifier ownerID = pid.getOwnerID();
-		ExitDescription exit = new ExitDescription(pid, args);
-		Map<String,ExitDescription> exits = this.conduitExits.get(ownerID);
-		if (exits == null) {
-			exits = new HashMap<String,ExitDescription>();
-			this.conduitExits.put(ownerID, exits);
-		}
-		exits.put(pid.getPortName(), exit);
-		return exit;
-	}
-	
-	public Map<String,EntranceDescription> entranceDescriptionsForIdentifier(Identifier id) {
+	public Map<String,ConduitDescription> entranceDescriptionsForIdentifier(Identifier id) {
 		return this.conduitEntrances.get(id);
 	}
-	
-	
-	public Map<String,ExitDescription> exitDescriptionsForIdentifier(Identifier id) {
+		
+	public Map<String,ConduitDescription> exitDescriptionsForIdentifier(Identifier id) {
 		return this.conduitExits.get(id);
 	}
 	
-	public EntranceDescription entranceDescriptionForPortal(PortalID id) {
-		Map<String, EntranceDescription> map = this.conduitEntrances.get(id.getOwnerID());
+	public ConduitDescription entranceDescriptionForPortal(PortalID id) {
+		Map<String, ConduitDescription> map = this.conduitEntrances.get(id.getOwnerID());
 		if (map == null) {
 			return null;
 		} else {
@@ -224,105 +194,40 @@ public class ConnectionScheme implements Serializable {
 		}
 	}
 	
-	public ExitDescription exitDescriptionForPortal(PortalID id) {
-		Map<String, ExitDescription> map = this.conduitExits.get(id.getOwnerID());
+	public ConduitDescription exitDescriptionForPortal(PortalID id) {
+		Map<String, ConduitDescription> map = this.conduitExits.get(id.getOwnerID());
 		if (map == null) {
 			return null;
 		} else {
 			return map.get(id.getPortName());
 		}
-	}
-	
-	public LinkedList<ExitDescription> getConnectionSchemeRoot() {
-		return this.targetExitDescriptions;
-	}
-
-	@Override
-	public String toString() {
-
-		StringWriter writer = new StringWriter();
-		PrintWriter out = new PrintWriter(writer);
-
-		// print header
-		out.printf("\n========== target connection scheme <%s>\n  %-20s <- %-60s -< %-20s\n  ----------\n", ""/*COASTTool.getCXARessource("ConnectionScheme")*/, "<exit name>", "<conduit>#<id>(<ARG1,..,ARGN>)", "<entrance name>");
-
-		for(ExitDescription exit : this.targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription entrance = conduit.getEntranceDescription();
-
-			List<String> args = new FastArrayList<String>(conduit.getArgs().toArray(new String[0]));
-			out.printf("  %-20s -- %-20s -> %-20s\n", exit.getID(), args, entrance.getID());
-		}
-		
-		out.println("==========");
-
-		return writer.toString();
-	}
-	
-	/** for otf */
-	public String getEntrance(String dstSink) {
-		for (ExitDescription exit : targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription entrance = conduit.getEntranceDescription();
-
-			conduitList.add(exit.getID().getName());
-			conduitList.add(entrance.getID().getName());
-
-			if (dstSink.equals(exit.getID().getName())) {
-				return (entrance.getID().getName());
-			}
-		}
-		return "";
 	}
 
 	/** for otf */
 	public void generateLists() {
-		conduitList = new ArrayList<String>();
-		kernelList = new ArrayList<String>();
-
-		for (ExitDescription exit : targetExitDescriptions) {
-			ConduitDescription conduit = exit.getConduitDescription();
-			EntranceDescription entrance = conduit.getEntranceDescription();
-			String exitName = exit.getID().getName();
-			
-			conduitList.add(exitName);
-
-			try{
-			//	System.out.println("Adding entrance" + entrance.getID());
-				String entranceName = entrance.getID().getName();
-				conduitList.add(entranceName);					
-			}
-			catch (Exception e)
-			{
-				//conduitList.add(entrance.getID());
-			}
-
-
-			String temp1 = exitName.substring(exitName.indexOf("@") + 1);
-			if (!kernelList.contains(temp1)) {
-				kernelList.add(temp1);
-			}
-
-			String temp2;
-			try{
-				String entranceName = entrance.getID().getName();
-				temp2 = entranceName.substring(entranceName.indexOf("@") + 1);
-				if (!kernelList.contains(temp2))
-				{
-					//System.out.println("Adding kernel "+temp2);
-					kernelList.add(temp2);
+		{
+			Set<Identifier> kernelSet = new HashSet<Identifier>(this.conduitExits.size() + this.conduitEntrances.size());
+			kernelSet.addAll(this.conduitExits.keySet());
+			kernelSet.addAll(this.conduitEntrances.keySet());
+			kernelList = new ArrayList<Identifier>(kernelSet);
+		}
+		
+		{
+			Set<String> portSet = new HashSet<String>();
+			for (Map<String, ConduitDescription> descs : this.conduitEntrances.values()) {
+				for (ConduitDescription conduit : descs.values()) {
+					portSet.add(conduit.getExit().getName());
+					portSet.add(conduit.getEntrance().getName());
 				}
 			}
-			catch (Exception e)
-			{
-
-			}
+			conduitList = new ArrayList<String>(portSet);
 		}
+
 		Collections.sort(kernelList);
 		Collections.sort(conduitList);
 	}
 	
-	public List<String> getKernels() {
+	public List<Identifier> getKernels() {
 		if (kernelList == null) {
 			this.generateLists();
 		}

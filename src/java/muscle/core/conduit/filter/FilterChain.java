@@ -79,11 +79,15 @@ public abstract class FilterChain implements Filter {
 	@SuppressWarnings("unchecked")
 	private Filter filterForName(String fullName, Filter tailFilter) {
 		// split any args from the preceding filter name
-		String[] tmp = fullName.split("_", 2); // 2 means only split once
-		String name = tmp[0];
-		String remainder = null;
-		if (tmp.length > 1) {
-			remainder = tmp[1];
+		String name;
+		String remainder;
+		int underscoreIndex = fullName.lastIndexOf('_');
+		if (underscoreIndex == -1) {
+			name = fullName;
+			remainder = null;
+		} else {
+			name = fullName.substring(0, underscoreIndex);
+			remainder = fullName.substring(underscoreIndex + 1);
 		}
 
 		Filter filter = null;

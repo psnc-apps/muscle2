@@ -13,13 +13,13 @@ import muscle.id.Location;
  * @author Joris Borgdorff
  */
 public interface IDManipulator {
-	public boolean propagate(Identifier id);
+	public void propagate(Identifier id);
 	public boolean register(Identifier id, Location loc);
 	public void search(Identifier id);
 	public boolean willActivate(Identifier id);
 	public Identifier create(String name, IDType idType);
 	public Location getLocation();
 	public Location getManagerLocation();
-	public boolean delete(Identifier id);
+	public void delete(Identifier id);
 	public void deletePlatform();
 }

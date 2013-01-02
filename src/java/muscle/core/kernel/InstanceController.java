@@ -4,6 +4,8 @@
 package muscle.core.kernel;
 
 import java.io.Serializable;
+import java.util.Map;
+import muscle.core.ConduitDescription;
 import muscle.core.ConduitEntranceController;
 import muscle.core.ConduitExitController;
 import muscle.core.DataTemplate;
@@ -21,4 +23,6 @@ public interface InstanceController extends Identifiable, Disposable {
 	public <T extends Serializable> ConduitExitController<T> createConduitExit(boolean threaded, String portalName, DataTemplate newDataTemplate);
 	public boolean isExecuting();
 	public void fatalException(Throwable ex);
+	public Map<String, ConduitDescription> getEntranceDescriptions();
+	public Map<String, ConduitDescription> getExitDescriptions();
 }

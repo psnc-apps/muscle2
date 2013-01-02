@@ -15,7 +15,6 @@ import muscle.client.communication.message.DetachConduitSignal;
 import muscle.client.communication.message.Message;
 import muscle.core.ConduitDescription;
 import muscle.core.ConduitExit;
-import muscle.core.ConnectionScheme;
 import muscle.core.DataTemplate;
 import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.InstanceController;
@@ -40,31 +39,36 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private final FilterChain filters;
 
-	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded) {
+	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate, boolean threaded, ConduitDescription desc) {
 		super(newPortalID, newOwnerAgent, newDataTemplate);
 		this.queue = new SingleProducerConsumerBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
-		this.filters = createFilterChain(threaded);
+		this.filters = createFilterChain(desc, threaded);
 	}
 	
 	/** Create a filter chain from the given arguments */
-	private FilterChain createFilterChain(boolean threaded) {
-		ConnectionScheme cs = ConnectionScheme.getInstance();
-		ConduitDescription cd = cs.exitDescriptionForPortal(portalID).getConduitDescription();
-		List<String> args = cd.getArgs();
-		int exitArgDiv = args.indexOf("") + 1;
+	private FilterChain createFilterChain(ConduitDescription desc, boolean threaded) {
+		String[] args = desc.getArgs();
+		int exitArgDiv = 0;
+		for (int i = 0; i < args.length; i++) {
+			if ("".equals(args[i])) {
+				exitArgDiv = i + 1;
+				break;
+			}
+		}
+
 		List<String> exitArgs;
 		if (threaded) {
-			exitArgs = new FastArrayList<String>(args.size() - exitArgDiv + 1);
+			exitArgs = new FastArrayList<String>(args.length - exitArgDiv + 1);
 			exitArgs.add("thread");
-		} else if (exitArgDiv == args.size()) {
+		} else if (exitArgDiv == args.length) {
 			return null;
 		} else {
-			exitArgs = new FastArrayList<String>(args.size() - exitArgDiv);
+			exitArgs = new FastArrayList<String>(args.length - exitArgDiv);
 		}
-		for (int i = exitArgDiv; i < args.size(); i++) {
-			exitArgs.add(args.get(i));
+		for (int i = exitArgDiv; i < args.length; i++) {
+			exitArgs.add(args[i]);
 		}
 		
 		FilterChain fc = new FilterChain() {
@@ -80,7 +84,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		};
 		
 		fc.init(exitArgs);
-		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {cd, exitArgs});
+		logger.log(Level.INFO, "The conduit exit ''{0}'' will use filter(s) {1}.", new Object[] {desc.getExit(), exitArgs});
 		return fc;
 	}
 	
@@ -102,7 +106,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	}
 
 	public String toString() {
-		return "in:" + this.getIdentifier().toString();
+		return "in:" + this.getLocalName();
 	}
 
 	@Override

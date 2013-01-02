@@ -28,5 +28,5 @@ public interface Resolver extends Disposable {
 	/** At current location */
 	public void makeAvailable(InstanceController id);
 	/** At current location */
-	public boolean deregister(InstanceController id);
+	public void deregister(InstanceController id);
 }

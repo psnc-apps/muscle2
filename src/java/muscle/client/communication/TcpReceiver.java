@@ -9,7 +9,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.message.BasicMessage;
 import muscle.client.communication.message.Message;
-import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.util.data.SingleProducerConsumerBlockingQueue;
 import muscle.util.serialization.DataConverter;
@@ -18,10 +17,10 @@ import muscle.util.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage,InstanceID,PortalID<InstanceID>> implements Receiver<T,BasicMessage> {
+public class TcpReceiver<T extends Serializable> extends AbstractCommunicatingPoint<Message<T>,BasicMessage> implements Receiver<T,BasicMessage> {
 	private volatile BlockingQueue<Message<T>> queue;
 	
-	public TcpReceiver(DataConverter<Message<T>,BasicMessage> converter, PortalID<InstanceID> portalID) {
+	public TcpReceiver(DataConverter<Message<T>,BasicMessage> converter, PortalID portalID) {
 		super(converter, portalID);
 		this.queue = new SingleProducerConsumerBlockingQueue<Message<T>>();
 	}

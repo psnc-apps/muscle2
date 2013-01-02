@@ -75,7 +75,7 @@ public class OTFLogger {
 			if(kernelsRun++ == 0) {
 				log("init");			
 				try {				
-					d = ConnectionScheme.getInstance();
+//					d = ConnectionScheme.getInstance();
 					d.generateLists();
 					if(! (new File(DIR)).exists())
 						if(!(new File(DIR)).mkdir())
@@ -196,24 +196,6 @@ public class OTFLogger {
 		}
 	}
 	
-	// Display all conduits and kernels
-	private void displayConduitsKernels() {
-		try {
-			Iterator i = d.conduitList.iterator();
-			while (i.hasNext()) {
-				log("displayConduitsKernels Conduit:" + i.next());
-			}
-
-			Iterator j = d.kernelList.iterator();
-			while (j.hasNext()) {
-				log("displayConduitsKernels kernel:" + j.next());
-			}
-
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "{0} {1}", new Object[]{OTFLogger.class.getName(), e.getMessage()});
-		}
-	}
-	
 	// Gets conduit part of the sink index from conduits list
 	private int getConduitIndex(String sink) {
 		return d.conduitList.indexOf(sink) + 1;
@@ -223,14 +205,6 @@ public class OTFLogger {
 	// Get kernel part of the sink index from kernels list
 	private int getKernelIndex(String sink) {
 		return d.kernelList.indexOf(sink.substring(sink.indexOf("@") + 1)) + 1;
-	}
-
-	// Get entrace of given sink
-	public String getEntrance(String sink) {
-		if(enabled)
-			return d.getEntrance(sink);
-		else 
-			return "";
 	}
 
 	// Gets size of given data

@@ -4,6 +4,9 @@
 
 package muscle.manager;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -18,7 +21,7 @@ import muscle.id.Identifier;
 import muscle.id.Location;
 import muscle.id.TcpLocation;
 import muscle.net.AbstractConnectionHandler;
-import muscle.net.ConnectionHandlerListener;
+import muscle.exception.ExceptionListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
@@ -38,18 +41,47 @@ import muscle.util.concurrency.Disposable;
  *
  * @author Joris Borgdorff
  */
-public class SimulationManager implements ConnectionHandlerListener, Disposable {
+public class SimulationManager implements ExceptionListener, Disposable {
 	private final static Logger logger = Logger.getLogger(SimulationManager.class.getName());
 
 	public static void main(String[] args) {
+		Set<String> stillActive;
 		if (args.length == 0) {
 			logger.severe("No instances given for manager to manage. Aborting.");
+			System.err.println("Usage: SimulationManager (-f INSTANCE_FILE|INSTANCE...)");
 			System.exit(21);
 		}
+		if (args[0].equals("-f")) {
+			if (args.length != 2) {
+				System.err.println("Usage: SimulationManager (-f INSTANCE_FILE|INSTANCE...)");
+				System.exit(21);
+			}
+			
+			stillActive = new HashSet<String>(100);
+			BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new FileReader(args[1]));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					stillActive.add(line);
+				}
+			} catch (IOException ex) {
+				logger.log(Level.SEVERE, "Could not load instances file", ex);
+				System.err.println("Usage: SimulationManager (-f INSTANCE_FILE|INSTANCE...)");
+				System.exit(21);
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (IOException ex) {
+					}
+				}
+			}
+		} else {
+			stillActive = new HashSet<String>(args.length*4/3);
+			stillActive.addAll(Arrays.asList(args));
+		}
 
-		Set<String> stillActive = new HashSet<String>(args.length);
-		stillActive.addAll(Arrays.asList(args));			
-		
 		SimulationManager sm = new SimulationManager(stillActive);
 		ManagerConnectionHandler mch;
 		

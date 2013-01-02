@@ -18,6 +18,7 @@ import muscle.id.ResolverFactory;
 import muscle.util.concurrency.Disposable;
 import muscle.util.concurrency.LimitedThreadPool;
 import muscle.util.concurrency.NamedCallable;
+import muscle.exception.ExceptionListener;
 
 /**
  * Assigns Receivers and Transmitters to Portals.
@@ -70,8 +71,8 @@ public abstract class PortFactory implements Disposable {
 	 */
 	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide, boolean shared);
 	
-	protected PortFactory(ResolverFactory rf, IncomingMessageProcessor msgProcessor) {
-		this.executor = new LimitedThreadPool(16);
+	protected PortFactory(ResolverFactory rf, ExceptionListener listener, IncomingMessageProcessor msgProcessor) {
+		this.executor = new LimitedThreadPool(16, listener);
 		this.resolverFactory = rf;
 		this.messageProcessor = msgProcessor;
 		this.resolver = null;

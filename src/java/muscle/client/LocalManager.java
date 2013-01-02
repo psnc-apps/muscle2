@@ -24,7 +24,7 @@ import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.*;
-import muscle.net.ConnectionHandlerListener;
+import muscle.exception.ExceptionListener;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
@@ -33,11 +33,10 @@ import muscle.util.concurrency.NamedRunnable;
 /**
  * @author Joris Borgdorff
  */
-public class LocalManager implements InstanceControllerListener, ResolverFactory, ConnectionHandlerListener {
+public class LocalManager implements InstanceControllerListener, ResolverFactory, ExceptionListener {
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<NamedRunnable> controllers;
 	private final List<Thread> controllerThreads;
-	private final LocalManagerOptions opts;
 	private DataConnectionHandler tcpConnectionHandler;
 	private LocalDataHandler localConnectionHandler;
 	private DelegatingResolver res;
@@ -49,25 +48,33 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 	private volatile boolean isShutdown;
 	
 	public static void main(String[] args) {
-		try {
+		{
 			LocalManagerOptions opts = new LocalManagerOptions(args);
-			instance = new LocalManager(opts);
-			instance.init();
-			ConnectionScheme.getInstance(instance, opts.getAgents().size());
+			try {
+				instance = new LocalManager(opts.getAgents().size());
+			} catch (IOException ex) {
+				Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not load agents from file.", ex);
+				System.exit(120);
+			}
+			try {
+				instance.init(opts);
+			} catch (IOException ex) {
+				Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not start listening for data connections. Aborting.", ex);
+				System.exit(120);
+			}
+		}
+
+		try {
 			instance.start();
 		} catch (InterruptedException ex) {
 			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Simulation was interrupted. Aborting.", ex);
-			System.exit(121);
-		} catch (IOException ex) {
-			Logger.getLogger(LocalManager.class.getName()).log(Level.SEVERE, "Could not start listening for data connections. Aborting.", ex);
-			System.exit(120);
+			System.exit(121);	
 		}
 	}
 	
-	private LocalManager(LocalManagerOptions opts) {
-		this.opts = opts;
-		controllers = new ArrayList<NamedRunnable>(opts.getAgents().size());
-		controllerThreads = new ArrayList<Thread>(opts.getAgents().size());
+	private LocalManager(int size) {
+		controllers = new ArrayList<NamedRunnable>(size);
+		controllerThreads = new ArrayList<Thread>(size);
 		res = null;
 		tcpConnectionHandler = null;
 		localConnectionHandler = null;
@@ -77,7 +84,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		isShutdown = false;
 	}
 	
-	private void init() throws IOException {
+	private void init(LocalManagerOptions opts) throws IOException {
 		SocketFactory sf = new CrossSocketFactory();
 		
 		// Local address, accepting data connections
@@ -99,7 +106,7 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		localConnectionHandler = new LocalDataHandler();
 		
 		// Create new conduit exits/entrances using this location.
-		factory = new TcpPortFactoryImpl(this, sf, tcpConnectionHandler, localConnectionHandler);
+		factory = new TcpPortFactoryImpl(this, this, sf, tcpConnectionHandler, localConnectionHandler);
 		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
@@ -107,28 +114,31 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		idManipulator.setResolver(res);
 		
 		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
-		
+		ConnectionScheme connections = new ConnectionScheme(res, opts.getAgents().size());
+			
 		int threads = opts.getThreads();
 		List<InstanceClass> agents = opts.getAgents();
 		if (threads == 0 || threads >= agents.size()) {
 			// Initialize the InstanceControllers
-			for (InstanceClass id : agents) {
-				id.setIdentifier(res.getIdentifier(id.getName(), IDType.instance));
-				ThreadedInstanceController tc = new ThreadedInstanceController(id, this, this, factory);
+			for (InstanceClass inst : agents) {
+				Identifier id = res.getIdentifier(inst.getName(), IDType.instance);
+				inst.setIdentifier(id);
+				ThreadedInstanceController tc = new ThreadedInstanceController(inst, this, res, factory, connections);
 				controllers.add(tc);
 			}
 		} else {
 			int offset = 0, nextOffset;
 			int numperthread = agents.size() / threads;
 			int odd = agents.size() % threads;
-			for (InstanceClass id : agents) {
-				id.setIdentifier(res.getIdentifier(id.getName(), IDType.instance));				
+			for (InstanceClass inst : agents) {
+				Identifier id = res.getIdentifier(inst.getName(), IDType.instance);
+				inst.setIdentifier(id);
 			}
 			for (int i = 0; i < threads; i++) {
 				nextOffset = offset + numperthread;
 				if (i < odd) nextOffset++;
 				List<InstanceClass> ics = agents.subList(offset, nextOffset);
-				MultiControllerRunner mc = new MultiControllerRunner(ics, this, this, factory);
+				MultiControllerRunner mc = new MultiControllerRunner(ics, this, res, factory, connections);
 				controllers.add(mc);
 				offset = nextOffset;
 			}

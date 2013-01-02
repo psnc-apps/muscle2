@@ -39,7 +39,8 @@ public abstract class AbstractID  implements Identifier {
 	}
 	
 	public static String getFullName(String name, IDType type) {
-		return name + "#" + type.name();
+		StringBuilder sb = new StringBuilder(name.length() + type.name().length() + 1);
+		return sb.append(name).append('#').append(type.name()).toString();
 	}
 
 	public final int compareTo(Identifier t) {

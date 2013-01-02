@@ -159,7 +159,7 @@ elsif m.env['use_mpi']
 	# non-root rank
 	if rank and rank.to_i > 0		
 		runner = 'muscle.util.MpiSlaveKernelExecutor'
-		m.exec_mpi([runner, active_instances.first.cls])
+		m.exec_mpi(runner, [active_instances.first.cls])
 	end
 end
 
@@ -185,11 +185,19 @@ if m.env['main']
 		puts 'Running both MUSCLE2 Simulation Manager and the Simulation'
 	end
 
-	muscle_main_args = []
-	muscle_main_args << 'muscle.manager.SimulationManager'
-	muscle_main_args << instances.keys
+	muscle_main_class = 'muscle.manager.SimulationManager'
+	if instances.size > 30
+		instances_path = "#{m.muscle_tmp_path}/instances.param"
+		File.open(instances_path, 'w') do |f|
+			f.puts instances.keys.join("\n")
+		end
+		muscle_main_args = ['-f', instances_path]
+	else
+		muscle_main_args = instances.keys
+	end
+	
 	if $running_procs != nil
-		manager_pid = m.run_manager(muscle_main_args)
+		manager_pid = m.run_manager(muscle_main_class, muscle_main_args)
 		if manager_pid != -1
 			$running_procs[manager_pid] = 'Simulation Manager'
 		end
@@ -215,10 +223,19 @@ if m.env['main']
 end
 
 if not active_instances.empty?
-	muscle_local_args = ['muscle.client.LocalManager'] + active_instances
+	muscle_local_class = 'muscle.client.LocalManager'
+	if active_instances.size > 30
+		instance_class_path = "#{m.muscle_tmp_path}/instance_classes.param"
+		File.open(instance_class_path, 'w') do |f|
+			f.puts active_instances.join("\n")
+		end
+		muscle_local_args = ['-f', instance_class_path]
+	else
+		muscle_local_args = active_instances
+	end
 
 	if $running_procs != nil
-		pid = m.run_client(muscle_local_args, contact_addr)
+		pid = m.run_client(muscle_local_class, muscle_local_args, contact_addr)
 		if pid != -1
 			$running_procs[pid] = 'Simulation'
 		end

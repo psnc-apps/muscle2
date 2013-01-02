@@ -20,40 +20,52 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
-import java.util.List;
+import muscle.id.PortalID;
 
 /**
 stores info necessary to setup a conduit
 @author Jan Hegewald
  */
 public class ConduitDescription {
-	private final List<String> additionalArgs;
-	private final EntranceDescription entrance;
-	private final ExitDescription exit;
+	private final String[] conduitArgs;
+	private final PortalID entrance;
+	private final String[] entranceArgs;
+	private final PortalID exit;
+	private final String[] exitArgs;
 	
-	public ConduitDescription(List<String> newAdditionalArgs, EntranceDescription newEntrance, ExitDescription newExit) {
-		additionalArgs = newAdditionalArgs;
+	public ConduitDescription(String[] newAdditionalArgs, PortalID newEntrance, String[] newEntranceArgs, PortalID newExit, String[] newExitArgs) {
+		conduitArgs = newAdditionalArgs;
 		entrance = newEntrance;
+		entranceArgs = newEntranceArgs;
 		exit = newExit;
+		exitArgs = newExitArgs;
 		if (entrance == null || exit == null) {
 			throw new IllegalArgumentException("Entrance and exit may not be null for ConduitDescription");
 		}
 	}
 
-	public List<String> getArgs() {
-		return additionalArgs;
+	public String[] getArgs() {
+		return conduitArgs;
+	}
+	
+	public String[] getExitArgs() {
+		return exitArgs;
 	}
 
-	public EntranceDescription getEntranceDescription() {
+	public PortalID getExit() {
+		return exit;
+	}
+	
+	public String[] getEntranceArgs() {
+		return entranceArgs;
+	}
+	
+	public PortalID getEntrance() {
 		return entrance;
-	}
-
-	public ExitDescription getExitDescription() {
-		return this.exit;
 	}
 	
 	public String toString() {
-		return entrance.getID().getName() + " -> " + exit.getID().getName();
+		return entrance + " -> " + exit;
 	}
 
 	public boolean equals(Object b) {

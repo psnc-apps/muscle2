@@ -21,11 +21,11 @@ public class DelegatingResolver implements Resolver {
 	private final Set<Identifier> searchingNow;
 	private volatile boolean isDone;
 	private final static Logger logger = Logger.getLogger(DelegatingResolver.class.getName());
-	private final ConcurrentHashMap<Identifier, Identifier> canonicalIds;
+	private final ConcurrentHashMap<String, Identifier> canonicalIds;
 	
 	public DelegatingResolver(IDManipulator newDelegate, Set<String> expecting) {
 		delegate = newDelegate;
-		canonicalIds = new ConcurrentHashMap<Identifier,Identifier>();
+		canonicalIds = new ConcurrentHashMap<String,Identifier>();
 		searchingNow = Collections.newSetFromMap(new ConcurrentHashMap<Identifier,Boolean>());
 		registeredHere = Collections.newSetFromMap(new ConcurrentHashMap<Identifier,Boolean>());
 		here = delegate.getLocation();
@@ -38,33 +38,45 @@ public class DelegatingResolver implements Resolver {
 	 * a new one if none is available.
 	 */
 	public Identifier getIdentifier(String name, IDType type) {
-		// Try cache first, not synchronized as making a new id is not expensive
-		return delegate.create(name, type);
+		if (type == IDType.instance) {
+			// Try cache first, not synchronized as making a new id is not expensive
+			Identifier id = canonicalIds.get(name);
+			if (id == null) {
+				return canonicalId(delegate.create(name, IDType.instance));
+			} else {
+				return id;
+			}
+		} else {
+			return delegate.create(name, type);
+		}
 	}
 	
 	private Identifier canonicalId(Identifier id) {
 		if (id.getType() == IDType.port) {
 			id = ((PortalID)id).getOwnerID();
 		}
-		Identifier altId = canonicalIds.putIfAbsent(id, id);
-		if (isDisposed()) {
-			if (id.canBeResolved()) {
-				id.willNotBeResolved();
-				synchronized (id) {
-					id.notifyAll();
+		if (id.getType() == IDType.instance) {
+			Identifier altId = canonicalIds.putIfAbsent(id.getName(), id);
+			if (isDisposed()) {
+				if (id.canBeResolved()) {
+					id.willNotBeResolved();
+					synchronized (id) {
+						id.notifyAll();
+					}
+				}
+				if (altId != null && altId.canBeResolved()) {
+					altId.willNotBeResolved();
+					synchronized (altId) {
+						altId.notifyAll();
+					}
 				}
 			}
-			if (altId != null && altId.canBeResolved()) {
-				altId.willNotBeResolved();
-				synchronized (altId) {
-					altId.notifyAll();
-				}
+			if (altId != null) {
+				id = altId;
 			}
+			return id;
 		}
-		if (altId != null) {
-			id = altId;
-		}
-		return id;
+		return null;
 	}
 	
 	/**
@@ -173,11 +185,12 @@ public class DelegatingResolver implements Resolver {
 	}
 	
 	/** Deregisters a local InstanceController. */
-	public boolean deregister(InstanceController controller) {
+	@Override
+	public void deregister(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		logger.log(Level.FINE, "Deregistering identifier {0}", id);
 		removeIdentifier(id.getName(), id.getType());
-		return delegate.delete(id);
+		delegate.delete(id);
 	}
 	
 	/**

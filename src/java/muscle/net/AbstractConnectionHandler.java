@@ -4,6 +4,7 @@
 
 package muscle.net;
 
+import muscle.exception.ExceptionListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -25,7 +26,7 @@ import muscle.util.concurrency.SafeThread;
  * 
  * @author Joris Borgdorff
  */
-public abstract class AbstractConnectionHandler<T extends ConnectionHandlerListener, E> extends SafeThread {
+public abstract class AbstractConnectionHandler<T extends ExceptionListener, E> extends SafeThread {
 	protected final ServerSocket ss;
 	protected final T listener;
 	protected final NamedExecutor executor;

@@ -17,10 +17,10 @@ import muscle.util.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public class LocalTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<T>,InstanceID,PortalID<InstanceID>> implements Transmitter<T, Observation<T>> {
+public class LocalTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<T>> implements Transmitter<T, Observation<T>> {
 	private final LocalDataHandler dataHandler;
 	
-	public LocalTransmitter(LocalDataHandler dataHandler, DataConverter<Observation<T>, Observation<T>> converter, PortalID<InstanceID> portalID) {
+	public LocalTransmitter(LocalDataHandler dataHandler, DataConverter<Observation<T>, Observation<T>> converter, PortalID portalID) {
 		super(converter, portalID);
 		this.dataHandler = dataHandler;
 	}

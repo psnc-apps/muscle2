@@ -15,6 +15,7 @@ import muscle.core.kernel.InstanceControllerListener;
 import muscle.exception.MUSCLEConduitExhaustedException;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.InstanceClass;
+import muscle.id.Resolver;
 import muscle.id.ResolverFactory;
 import muscle.util.concurrency.NamedRunnable;
 
@@ -25,8 +26,8 @@ import muscle.util.concurrency.NamedRunnable;
 public class ThreadedInstanceController extends AbstractInstanceController implements NamedRunnable {
 	private final static Logger logger = Logger.getLogger(ThreadedInstanceController.class.getName());
 	
-	public ThreadedInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
-		super(instanceClass, listener, rf, portFactory);
+	public ThreadedInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
+		super(instanceClass, listener, res, portFactory, cs);
 	}
 	
 	@Override

@@ -3,12 +3,12 @@
  * and open the template in the editor.
  */
 
-package muscle.net;
+package muscle.exception;
 
 /**
  * Main communication point of a ConnectionHandler
  * @author Joris Borgdorff
  */
-public interface ConnectionHandlerListener {
+public interface ExceptionListener {
 	public void fatalException(Throwable ex);
 }

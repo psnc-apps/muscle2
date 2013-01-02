@@ -13,11 +13,12 @@ import java.util.logging.Logger;
 import muscle.client.LocalManager;
 import muscle.client.communication.PortFactory;
 import muscle.core.ConduitEntranceController;
+import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.exception.MUSCLEConduitExhaustedException;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.InstanceClass;
-import muscle.id.ResolverFactory;
+import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
 
 /**
@@ -29,8 +30,8 @@ public class PassiveInstanceController extends AbstractInstanceController {
 	private final NamedRunnable runner;
 	private boolean isInitializing;
 	
-	public PassiveInstanceController(NamedRunnable runner, InstanceClass instanceClass, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
-		super(instanceClass, listener, rf, portFactory);
+	public PassiveInstanceController(NamedRunnable runner, InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
+		super(instanceClass, listener, res, portFactory, cs);
 		this.runner = runner;
 		this.isInitializing = true;
 	}

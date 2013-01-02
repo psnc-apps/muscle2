@@ -28,14 +28,14 @@ import muscle.id.Identifiable;
 import muscle.id.PortalID;
 
 public abstract class PassivePortal<T extends Serializable> implements Identifiable<PortalID> {
-	protected final PortalID portalID;
 	protected Timestamp customSITime;
 	private int usedCount;
 	protected final static long WAIT_FOR_ATTACHMENT_MILLIS = 10000l;
 	protected final Class<T> dataClass;
+	private final PortalID portalID;
 	
 	PassivePortal(PortalID newPortalID, InstanceController newOwnerAgent, DataTemplate<T> newDataTemplate) {
-		portalID = newPortalID;
+		this.portalID = newPortalID;
 	
 		this.dataClass = newDataTemplate.getDataClass();
 		// set custom time to 0
@@ -46,9 +46,10 @@ public abstract class PassivePortal<T extends Serializable> implements Identifia
 	public String getLocalName() {
 		return portalID.getName();
 	}
-
+	
+	@Override
 	public PortalID getIdentifier() {
-		return portalID;
+		return this.portalID;
 	}
 
 	/**
@@ -62,18 +63,6 @@ public abstract class PassivePortal<T extends Serializable> implements Identifia
 		this.customSITime = t;
 	}
 	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == null || !obj.getClass().equals(this.getClass())) return false;
-		
-		return ((PassivePortal) obj).portalID.equals(portalID);
-	}
-
-	@Override
-	public int hashCode() {
-		return portalID.hashCode();
-	}
-
 	@Override
 	public String toString() {
 		return getLocalName() + " used: " + usedCount + " SI time: " + getSITime();

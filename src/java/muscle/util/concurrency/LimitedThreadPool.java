@@ -1,10 +1,11 @@
-/*
+ /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 
 package muscle.util.concurrency;
 
+import muscle.exception.ExceptionListener;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -34,14 +35,16 @@ public class LimitedThreadPool extends SafeThread {
 	private final TaskFuture EMPTY = new TaskFuture(null);
 	private long lastGet;
 	private final Object counterLock = new Object();
+	private final ExceptionListener listener;
 
-	public LimitedThreadPool(int limit) {
+	public LimitedThreadPool(int limit, ExceptionListener listener) {
 		super("LimitedThreadPool");
 		this.limit = limit;
 		this.numberOfRunners = 0;
 		this.numberOfWaiting = 0;
 		this.lastGet = Long.MAX_VALUE;
 		queue = new LinkedBlockingQueue<TaskFuture>();
+		this.listener = listener;
 	}
 	
 	public <T> Future<T> submit(NamedCallable<T> task) {
@@ -70,29 +73,14 @@ public class LimitedThreadPool extends SafeThread {
 			throw new RejectedExecutionException("Executor was halted");
 		}
 		synchronized (counterLock) {
-			if (this.numberOfWaiting > 0 || this.numberOfRunners >= this.limit) {
-				return;
+			if (this.numberOfWaiting == 0 && this.numberOfRunners < this.limit) {
+				new TaskRunner().start();
+				this.numberOfRunners++;
 			}
 		}
-		this.createRunner();
-	}
-	
-	private void createRunner() {
-		new TaskRunner().start();
-		
-		boolean offeredEmpty = false;
-		synchronized (counterLock) {
-			this.numberOfRunners++;
-			if (this.numberOfRunners > this.limit) {
-				this.queue.add(EMPTY);
-				offeredEmpty = true;
-			}
-		}
-
-		if (isDisposed() && !offeredEmpty) {
+		if (isDisposed()) {
 			this.queue.add(EMPTY);
 		}
-		
 	}
 		
 	private void runnerIsDisposed() {
@@ -125,7 +113,7 @@ public class LimitedThreadPool extends SafeThread {
 
 	@Override
 	protected void handleException(Throwable ex) {
-		LocalManager.getInstance().fatalException(ex);
+		listener.fatalException(ex);
 	}
 
 	@Override
@@ -143,7 +131,13 @@ public class LimitedThreadPool extends SafeThread {
 			diffTime -= lastGet;
 		}
 		if (!this.queue.isEmpty() && diffTime > TIMEOUT_NEXTGET) {
-			this.createRunner();
+			synchronized (counterLock) {
+				new TaskRunner().start();
+				this.numberOfRunners++;
+				if (this.numberOfRunners > this.limit) {
+					this.queue.add(EMPTY);
+				}
+			}
 		}
 	}
 	

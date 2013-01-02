@@ -125,7 +125,7 @@ class Muscle
 		end
 	end
 	
-	def run_manager(args)
+	def run_manager(clazz, args)
 		tmpXmx = @env['Xmx']
 		tmpXms = @env['Xms']
 		@env['Xms'] = '20m'
@@ -133,7 +133,7 @@ class Muscle
 		@env[:as_manager] = true
 
 		puts '=== Running MUSCLE2 Simulation Manager ==='
-		pid = run_command(args)
+		pid = run_command(clazz, args)
 
 		@env.delete(:as_manager)		
 		@env['Xms'] = tmpXms
@@ -182,7 +182,7 @@ class Muscle
 		File.open(contact_file_name, 'rb').read
 	end
 	
-	def run_client(args, contact_addr)
+	def run_client(clazz, args, contact_addr)
 		args << '-m'
 		if @env['manager']
 			args << @env['manager']
@@ -196,7 +196,7 @@ class Muscle
 		end
 		
 		puts '=== Running MUSCLE2 Simulation ==='
-		run_command(args)
+		run_command(clazz, args)
 	end
 	
 	def add_to_command(command, kernel_name, prop)
@@ -250,8 +250,8 @@ class Muscle
 		exec_command(command)
 	end
 	
-	def exec_mpi(args)
-		command = JVM.build_command(args, @env)
+	def exec_mpi(clazz, args)
+		command = JVM.build_command(clazz, args, @env)
 		exec_command(command)
 	end
 	
@@ -265,8 +265,8 @@ class Muscle
 		end
 	end
 
-	def run_command(args)
-		command = JVM.build_command(args, @env)
+	def run_command(clazz, args)
+		command = JVM.build_command(clazz, args, @env)
 		if @env['verbose']
 			puts command
 		end

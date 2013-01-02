@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.PortFactory;
+import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.InstanceClass;
-import muscle.id.ResolverFactory;
+import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
 
 /**
@@ -22,33 +23,34 @@ import muscle.util.concurrency.NamedRunnable;
  */
 public class MultiControllerRunner implements NamedRunnable {
 	private final String name;
-	private final PortFactory portFactory;
-	private final ResolverFactory rf;
-	private final InstanceControllerListener listener;
-	private final List<InstanceClass> instances;
+	private PortFactory portFactory;
+	private Resolver resolver;
+	private InstanceControllerListener listener;
+	private List<InstanceClass> instances;
 	private final List<PassiveInstanceController> controllers;
 	private boolean isDone;
 	private static final Logger logger = Logger.getLogger(MultiControllerRunner.class.getName());
 	private final static int SLEEP_MS = Integer.valueOf(System.getProperty("muscle.client.sleep_when_idle", "0"));
+	private ConnectionScheme connectionScheme;
 	
-	public MultiControllerRunner(List<InstanceClass> instances, InstanceControllerListener listener, ResolverFactory rf, PortFactory portFactory) {
+	public MultiControllerRunner(List<InstanceClass> instances, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
 		this.name = "MultiController-" + instances.iterator().next();
 		this.instances = instances;
 		this.listener = listener;
-		this.rf = rf;
+		this.resolver = res;
 		this.portFactory = portFactory;
 		this.controllers = new FastArrayList<PassiveInstanceController>(instances.size());
 		this.isDone = false;
+		this.connectionScheme = cs;
 	}
 	
-	@Override
-	public void run() {
+	private void init() {
 		int threaded = 0;
 		for (InstanceClass ic : instances) {
 			if (this.isDisposed()) {
 				return;
 			}
-			PassiveInstanceController controller = new PassiveInstanceController(this, ic, listener, rf, portFactory);
+			PassiveInstanceController controller = new PassiveInstanceController(this, ic, listener, resolver, portFactory, connectionScheme);
 			if (controller.init()) {
 				if (controller.canStep() || threaded == instances.size() - 1) {
 					synchronized (controllers) {
@@ -59,11 +61,22 @@ public class MultiControllerRunner implements NamedRunnable {
 					Thread t = new Thread(runner, runner.getName());
 					listener.addInstanceController(runner, t);
 					t.start();
+					threaded++;
 				}
 			} else {
 				dispose();
 			}
 		}
+		this.connectionScheme = null;
+		this.resolver = null;
+		this.portFactory = null;
+		this.instances = null;
+	}
+	
+	@Override
+	public void run() {
+		this.init();
+		
 		final Thread currentThread = Thread.currentThread();
 		final int defaultPriority = currentThread.getPriority();
 		boolean isLowPriority = false;

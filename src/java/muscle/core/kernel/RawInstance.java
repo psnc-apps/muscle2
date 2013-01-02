@@ -23,6 +23,7 @@ package muscle.core.kernel;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -290,9 +291,24 @@ public abstract class RawInstance extends Module {
 	}
 	
 	public String infoText() {
-		StringBuilder sb = new StringBuilder(25*(4 + exits.size()+entrances.size()));
-		sb.append(getLocalName()).append(" conduit entrances: ").append(entrances.values()).append("\n\t\t  ")
-		  .append(getLocalName()).append(" conduit exits: ").append(exits.values());
+		StringBuilder sb = new StringBuilder(100 + 15*(exits.size()+entrances.size()));
+		sb.append(getLocalName()).append(" conduit entrances (out): [");
+		Iterator<? extends Portal> ecs = entrances.values().iterator();
+		if (ecs.hasNext()) {
+			sb.append(ecs.next().getIdentifier().getPortName());
+		}
+		while (ecs.hasNext()) {
+			sb.append(", ").append(ecs.next().getIdentifier().getPortName());
+		}
+		sb.append("]\n\t\t  ")
+			.append(getLocalName()).append(" conduit exits (in): ");
+		ecs = exits.values().iterator();
+		if (ecs.hasNext()) {
+			sb.append(ecs.next().getIdentifier().getPortName());
+		}
+		while (ecs.hasNext()) {
+			sb.append(", ").append(ecs.next().getIdentifier().getPortName());
+		}
 		return sb.toString();
 	}
 
