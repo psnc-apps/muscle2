@@ -11,8 +11,8 @@ import muscle.util.serialization.DataConverter;
  *
  * @author Joris Borgdorff
  */
-public abstract class AbstractCommunicatingPoint<E,F> implements CommunicatingPoint {
-	protected final DataConverter<E, F> converter;
+public abstract class AbstractCommunicatingPoint<E,F> implements CommunicatingPoint<E,F> {
+	protected DataConverter<E, F> converter;
 	protected final PortalID portalID;
 	private boolean isDone;
 
@@ -20,6 +20,10 @@ public abstract class AbstractCommunicatingPoint<E,F> implements CommunicatingPo
 		this.converter = converter;
 		this.portalID = portalID;
 		this.isDone = false;
+	}
+	
+	public void setDataConverter(DataConverter<E,F> converter) {
+		this.converter = converter;
 	}
 	
 	public synchronized void dispose() {

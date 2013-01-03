@@ -13,6 +13,8 @@ public interface Identifier extends Comparable<Identifier>, Serializable {
 	public IDType getType();
 	public String getFullName();
 	public boolean isResolved();
+	public boolean isAvailable();
+	public void setAvailable(boolean available);
 	public boolean canBeResolved();
 	public void willNotBeResolved();
 	public void unResolve();

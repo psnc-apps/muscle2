@@ -27,10 +27,8 @@ import muscle.exception.ExceptionListener;
  */
 public abstract class PortFactory implements Disposable {
 	protected final LimitedThreadPool executor;
-	protected final ResolverFactory resolverFactory;
-	private Resolver resolver;
+	protected final Resolver resolver;
 	protected final IncomingMessageProcessor messageProcessor;
-	private final static Logger logger = Logger.getLogger(PortFactory.class.getName());
 	
 	/**
 	 * Assigns a Receiver to a ConduitExitController in a Thread.
@@ -71,11 +69,10 @@ public abstract class PortFactory implements Disposable {
 	 */
 	protected abstract <T extends Serializable> NamedCallable<Transmitter<T,?>> getTransmitterTask(InstanceController ic, ConduitEntranceControllerImpl<T> localInstance, PortalID otherSide, boolean shared);
 	
-	protected PortFactory(ResolverFactory rf, ExceptionListener listener, IncomingMessageProcessor msgProcessor) {
+	protected PortFactory(Resolver res, ExceptionListener listener, IncomingMessageProcessor msgProcessor) {
 		this.executor = new LimitedThreadPool(16, listener);
-		this.resolverFactory = rf;
+		this.resolver = res;
 		this.messageProcessor = msgProcessor;
-		this.resolver = null;
 	}
 	
 	public void start() {
@@ -84,35 +81,17 @@ public abstract class PortFactory implements Disposable {
 	
 	/** Resolves a PortalID, if not already done. */
 	protected boolean resolvePort(PortalID port) throws InterruptedException {
-		if (!port.isResolved()) {
-			Resolver res = getResolver();
-			// Could not find resolver
-			if (res == null) return false;
-			
-			res.resolveIdentifier(port);
-			if (!port.isResolved()) return false;
+		if (port.isAvailable()) {
+			return true;
+		} else {
+			resolver.resolveIdentifier(port);
+			return port.isAvailable();
 		}
-		return true;
 	}
 	
 		/** Resolves a PortalID, if not already done. */
 	protected boolean portWillActivate(PortalID port) throws InterruptedException {
-		Resolver res = getResolver();
-		// Could not find resolver
-		if (res == null) return false;
-			
-		return res.identifierMayActivate(port);
-	}
-	
-	protected synchronized Resolver getResolver() {
-		if (resolver == null) {
-			try {
-				resolver = resolverFactory.getResolver();
-			} catch (InterruptedException ex) {
-				logger.log(Level.SEVERE, "Could not find resolver", ex);
-			}
-		}
-		return resolver;
+		return resolver.identifierMayActivate(port);
 	}
 	
 	public void removeReceiver(Identifier id) {

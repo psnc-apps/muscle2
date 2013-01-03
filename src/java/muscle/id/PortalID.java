@@ -78,4 +78,14 @@ public class PortalID extends AbstractID implements Identifier {
 	public void willNotBeResolved() {
 		this.ownerID.willNotBeResolved();
 	}
+
+	@Override
+	public boolean isAvailable() {
+		return ownerID.isAvailable();
+	}
+
+	@Override
+	public void setAvailable(boolean available) {
+		ownerID.setAvailable(available);
+	}
 }

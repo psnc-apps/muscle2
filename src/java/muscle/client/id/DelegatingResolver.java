@@ -88,8 +88,8 @@ public class DelegatingResolver implements Resolver {
 	public boolean resolveIdentifier(Identifier origId) throws InterruptedException  {
 		Identifier id = canonicalId(origId);
 		
-		if (id.isResolved()) {
-			if (!origId.isResolved()) {
+		if (id.isAvailable()) {
+			if (!origId.isAvailable()) {
 				origId.resolveLike(id);
 			}
 			return true;
@@ -122,13 +122,13 @@ public class DelegatingResolver implements Resolver {
 
 		synchronized (id) {
 			// When a search was not conducted, there is a search going
-			while (!id.isResolved() && id.canBeResolved()) {
+			while (!id.isAvailable() && id.canBeResolved()) {
 				id.wait();
 			}
 		}
 		
-		if (id.isResolved()) {
-			if (!origId.isResolved()) {
+		if (id.isAvailable()) {
+			if (!origId.isAvailable()) {
 				origId.resolveLike(id);
 			}
 			return true;
@@ -177,7 +177,8 @@ public class DelegatingResolver implements Resolver {
 		Identifier id = controller.getIdentifier();
 		logger.log(Level.FINER, "Making identifier {0} available to MUSCLE", id);
 		if (id.isResolved()) {
-			this.addResolvedIdentifier(id);
+			id.setAvailable(true);
+			this.addAvailableIdentifier(id);
 		} else {
 			throw new IllegalStateException("Controller must be resolved to make it available.");
 		}
@@ -204,16 +205,20 @@ public class DelegatingResolver implements Resolver {
 	/** Add an identifier to the resolver. This also removes it from any 
 	 *  search list it might be on.
 	 */
-	public void addResolvedIdentifier(Identifier origId) {
-		if (!origId.isResolved()) {
+	public void addAvailableIdentifier(Identifier origId) {
+		if (!origId.isAvailable()) {
 			throw new IllegalArgumentException("ID " + origId + " is not resolved, but Resolver only accepts resolved IDs");
 		}
 		
 		Identifier id = canonicalId(origId);
-		if (!id.canBeResolved()) {
-			origId.willNotBeResolved();
-		} else if (!id.isResolved()) {
-			id.resolveLike(origId);
+		if (!id.isAvailable()) {
+			if (!id.canBeResolved()) {
+				origId.willNotBeResolved();
+			} else if (!id.isResolved()) {
+				id.resolveLike(origId);
+			} else {
+				id.setAvailable(true);
+			}
 		}
 		
 		synchronized (id) {

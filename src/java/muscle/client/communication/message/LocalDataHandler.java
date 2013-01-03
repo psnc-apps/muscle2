@@ -6,17 +6,12 @@
 package muscle.client.communication.message;
 
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
-import muscle.id.PortalID;
 import muscle.util.concurrency.Disposable;
-import muscle.util.concurrency.SafeTriggeredThread;
 
 /**
  *
@@ -42,7 +37,7 @@ public class LocalDataHandler implements Disposable, IncomingMessageProcessor {
 		Receiver recv = listener.get(recipient);
 
 		if (recv == null) {
-			if (!msg.isSignal() || !(msg.getSignal() instanceof DetachConduitSignal)) {
+			if (!(msg.getSignal() instanceof DetachConduitSignal)) {
 				logger.log(Level.WARNING, "No receiver registered for message {0}.", msg);					
 			}
 		} else {

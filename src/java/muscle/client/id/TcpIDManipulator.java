@@ -39,7 +39,7 @@ public class TcpIDManipulator implements IDManipulator {
 		this.socketPool = new SocketPool(15, sf, managerAddr, SimulationManagerProtocol.CLOSE.intValue());
 	}
 	
-	public void setResolver(Resolver resolver) {
+	public synchronized void setResolver(Resolver resolver) {
 		this.resolver = resolver;
 	}
 
@@ -63,7 +63,9 @@ public class TcpIDManipulator implements IDManipulator {
 	
 	@Override
 	public void search(Identifier id) {
-		if (id.isResolved()) return;
+		if (id.isResolved()) {
+			return;
+		}
 		if (this.resolver == null) {
 			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
 		}
@@ -230,7 +232,8 @@ public class TcpIDManipulator implements IDManipulator {
 				if (success || action == SimulationManagerProtocol.WILL_ACTIVATE) {
 					if (action == SimulationManagerProtocol.LOCATE) {
 						this.id.resolve(decodeLocation(in));
-						resolver.addResolvedIdentifier(id);
+						this.id.setAvailable(true);
+						resolver.addAvailableIdentifier(id);
 					}
 					logger.log(Level.FINE, "Successfully finished the {0} protocol for ID {1}", new Object[]{action, id});
 				}

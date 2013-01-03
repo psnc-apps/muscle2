@@ -13,7 +13,7 @@ public interface Resolver extends Disposable {
 	/** Get an identifier non-blocking, unresolved. */
 	public Identifier getIdentifier(String name, IDType type);
 	/** removes blocks */
-	public void addResolvedIdentifier(Identifier id);
+	public void addAvailableIdentifier(Identifier id);
 	/** removes blocks */
 	public void canNotResolveIdentifier(Identifier id);
 	/** removes blocks */

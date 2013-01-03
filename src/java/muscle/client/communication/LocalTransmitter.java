@@ -34,7 +34,7 @@ public class LocalTransmitter<T extends Serializable> extends AbstractCommunicat
 
 	public final void signal(Signal signal) {
 		@SuppressWarnings("unchecked")
-		Message<T> msg = new BasicMessage(signal, portalID);
+		Message<T> msg = new BasicMessage<T>(signal, portalID);
 		this.dataHandler.put(msg);
 	}
 }

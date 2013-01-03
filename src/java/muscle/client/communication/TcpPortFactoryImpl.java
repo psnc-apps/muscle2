@@ -12,14 +12,12 @@ import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
-import muscle.client.instance.PassiveConduitExitController;
 import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.exception.ExceptionListener;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.NamedCallable;
 import muscle.util.serialization.*;
@@ -33,8 +31,8 @@ public class TcpPortFactoryImpl extends PortFactory {
 	private final LocalDataHandler localMsgProcessor;
 	private final static Logger logger = Logger.getLogger(TcpPortFactoryImpl.class.getName());
 		
-	public TcpPortFactoryImpl(ResolverFactory rf, ExceptionListener listener, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
-		super(rf, listener, globalMsgProcessor);
+	public TcpPortFactoryImpl(Resolver res, ExceptionListener listener, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
+		super(res, listener, globalMsgProcessor);
 		this.localMsgProcessor = localMsgProcessor;
 		this.socketFactory = sf;
 	}
@@ -49,6 +47,9 @@ public class TcpPortFactoryImpl extends PortFactory {
 					if (!portWillActivate(port)) {
 						throw new IllegalStateException("Port already shut down");
 					}
+					if (!(exit instanceof Receiver)) {
+						throw new IllegalArgumentException("ConduitExitController must be a receiver");
+					}
 				} catch (Exception ex) {
 					logger.log(Level.SEVERE, "Port {0} for {1} will not activate. Aborting.", new Object[]{port, exit});
 					ic.fatalException(ex);
@@ -57,31 +58,17 @@ public class TcpPortFactoryImpl extends PortFactory {
 				@SuppressWarnings("unchecked")
 				PortalID instancePort = port;
 				
-				boolean passive = exit instanceof PassiveConduitExitController;
-				
-				Receiver recv;
+				Receiver recv = (Receiver)exit;
 				DataConverter converter;
 				
-				Resolver res = getResolver();
-				if (res.isLocal(instancePort)) {
+				if (resolver.isLocal(instancePort)) {
 					converter = new PipeConverter();
-					if (passive) {
-						recv = (PassiveConduitExitController)exit;
-						((PassiveConduitExitController)recv).setDataConverter(converter);
-					} else {
-						recv = new TcpReceiver<T>(converter, instancePort);					
-					}
 					localMsgProcessor.addReceiver(exit.getIdentifier(), recv);				
 				} else {
 					converter = new BasicMessageConverter(new SerializableDataConverter());
-					if (passive) {
-						recv = (PassiveConduitExitController)exit;
-						((PassiveConduitExitController)recv).setDataConverter(converter);
-					} else {
-						recv = new TcpReceiver<T>(converter, instancePort);
-					}
 					messageProcessor.addReceiver(exit.getIdentifier(), recv);				
 				}
+				recv.setDataConverter(converter);
 				
 				return recv;
 			}
@@ -109,11 +96,10 @@ public class TcpPortFactoryImpl extends PortFactory {
 					throw ex;
 				}
 				PortalID instancePort = port;
-				
-				Resolver res = getResolver();
+
 				Transmitter trans;
 				DataConverter converter;
-				if (res.isLocal(instancePort)) {
+				if (resolver.isLocal(instancePort)) {
 					if (shared) {
 						converter = new PipeConverter<Observation<T>>();
 						entrance.setSharedData();

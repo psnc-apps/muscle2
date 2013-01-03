@@ -93,14 +93,21 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 						logger.log(Level.INFO, "Sending message to {0} succeeded at try {1}", new Object[]{portalID, tries});
 					}
 				} catch (MUSCLERuntimeException ex) {
-					if (isDisposed()) break;
-					else throw ex;
+					if (isDisposed()) {
+						break;
+					} else {
+						throw ex;
+					}
 				} catch (SocketException ex) {
-					if (isDisposed()) break;
+					if (isDisposed()) {
+						break;
+					}
 					logger.log(Level.SEVERE, "Message not sent: socket was closed by " + portalID + ".", ex);
 					throw new MUSCLERuntimeException(ex);
 				} catch (Exception ex) {
-					if (isDisposed()) break;
+					if (isDisposed()) {
+						break;
+					}
 					String t = sent ? "" : "; tried " + tries + "/4 times.";
 					if (signal == null) {
 						logger.log(Level.WARNING, "Failed to send message to " + portalID + t, ex);

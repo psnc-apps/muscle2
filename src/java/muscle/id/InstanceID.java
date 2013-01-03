@@ -11,10 +11,12 @@ public class InstanceID extends AbstractID {
 	private static final long serialVersionUID = 1L;
 	protected Location loc;
 	private boolean canBeResolved;
+	private boolean isAvailable;
 	
 	public InstanceID(String name) {
 		this(name, null);
 		this.canBeResolved = true;
+		this.isAvailable = false;
 	}
 	
 	public InstanceID(String name, Location loc) {
@@ -39,6 +41,7 @@ public class InstanceID extends AbstractID {
 	
 	public synchronized void unResolve() {
 		this.loc = null;
+		this.isAvailable = false;
 	}
 
 	public Location getLocation() {
@@ -47,6 +50,7 @@ public class InstanceID extends AbstractID {
 	
 	public void resolveLike(Identifier id) {
 		this.resolve(id.getLocation());
+		this.isAvailable = id.isAvailable();
 	}
 
 	@Override
@@ -58,5 +62,13 @@ public class InstanceID extends AbstractID {
 	public synchronized void willNotBeResolved() {
 		this.canBeResolved = false;
 		this.unResolve();
+	}
+	
+	public synchronized boolean isAvailable() {
+		return this.isAvailable;
+	}
+	
+	public synchronized void setAvailable(boolean available) {
+		this.isAvailable = available;
 	}
 }

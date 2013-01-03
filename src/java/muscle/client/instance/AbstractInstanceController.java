@@ -203,15 +203,18 @@ public abstract class AbstractInstanceController implements InstanceController {
 	 */
 	protected void disposeNoDeregister() {
 		synchronized (this) {
+			if (this.isDone) {
+				return;
+			}
 			isDone = true;
 		}
 		
-		for (ConduitExitController<?> source : exits) {
-			portFactory.removeReceiver(source.getIdentifier());
-			source.dispose();
+		for (ConduitExitController<?> in : exits) {
+			portFactory.removeReceiver(in.getIdentifier());
+			in.dispose();
 		}
-		for (ConduitEntranceController<?> sink : entrances) {
-			sink.dispose();
+		for (ConduitEntranceController<?> out : entrances) {
+			out.dispose();
 		}
 		
 		if (this.isExecuting()) {

@@ -23,8 +23,8 @@ import muscle.client.instance.MultiControllerRunner;
 import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceControllerListener;
-import muscle.id.*;
 import muscle.exception.ExceptionListener;
+import muscle.id.*;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
@@ -105,13 +105,13 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		tcpConnectionHandler = new DataConnectionHandler(ss, this);
 		localConnectionHandler = new LocalDataHandler();
 		
-		// Create new conduit exits/entrances using this location.
-		factory = new TcpPortFactoryImpl(this, this, sf, tcpConnectionHandler, localConnectionHandler);
-		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
+		
+		// Create new conduit exits/entrances using this location.
+		factory = new TcpPortFactoryImpl(res, this, sf, tcpConnectionHandler, localConnectionHandler);
 		
 		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
 		ConnectionScheme connections = new ConnectionScheme(res, opts.getAgents().size());
@@ -136,7 +136,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			}
 			for (int i = 0; i < threads; i++) {
 				nextOffset = offset + numperthread;
-				if (i < odd) nextOffset++;
+				if (i < odd) {
+					nextOffset++;
+				}
 				List<InstanceClass> ics = agents.subList(offset, nextOffset);
 				MultiControllerRunner mc = new MultiControllerRunner(ics, this, res, factory, connections);
 				controllers.add(mc);
@@ -256,7 +258,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 						ic = controllers.remove(controllers.size() - 1);
 					}
 				}
-				if (ic != null) ic.dispose();
+				if (ic != null) {
+					ic.dispose();
+				}
 				tryQuit();
 			}
 			forcefulQuitHook.notifyDisposerFinished();
@@ -281,8 +285,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		
 		public void waitForDisposer() throws InterruptedException {
 			synchronized (this) {
-				if (!finished)
+				if (!finished) {
 					wait(2000);
+				}
 			}
 
 			// Not waiting more than 15 seconds, and interrupting every second.
