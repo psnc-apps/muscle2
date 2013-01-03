@@ -16,7 +16,6 @@ import muscle.exception.MUSCLEConduitExhaustedException;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.InstanceClass;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 import muscle.util.concurrency.NamedRunnable;
 
 /**
@@ -43,9 +42,7 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 
 			if (!register()) {
 				logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getName());
-				if (!this.isDisposed()) {
-					this.disposeNoDeregister();
-				}
+				this.disposeNoDeregister(false);
 				return;
 			}
 			instance.connectPortals();
@@ -101,8 +98,8 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 		return this;
 	}
 	
-	protected void disposeNoDeregister() {
-		super.disposeNoDeregister();
+	protected void disposeNoDeregister(boolean force) {
+		super.disposeNoDeregister(force);
 		listener.isFinished(this);
 	}
 }

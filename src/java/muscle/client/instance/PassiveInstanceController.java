@@ -43,9 +43,7 @@ public class PassiveInstanceController extends AbstractInstanceController {
 
 		if (!register()) {
 			logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getName());
-			if (!this.isDisposed()) {
-				this.disposeNoDeregister();
-			}
+			this.disposeNoDeregister(false);
 			return false;
 		}
 		return true;

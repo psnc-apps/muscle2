@@ -97,7 +97,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		// Deregister with the resolver
 		this.resolver.deregister(this);
 
-		this.disposeNoDeregister();
+		this.disposeNoDeregister(true);
 	}
 	
 	@Override
@@ -199,11 +199,11 @@ public abstract class AbstractInstanceController implements InstanceController {
 	}
 	
 		/** Disposes the current instance, without deregistering it.
-	 *   It will only be executed once per instance, after this it becomes a no-op.
+	 *   It will only be executed once per instance, after this it becomes a no-op, unless force is true.
 	 */
-	protected void disposeNoDeregister() {
+	protected void disposeNoDeregister(boolean force) {
 		synchronized (this) {
-			if (this.isDone) {
+			if (!force && this.isDisposed()) {
 				return;
 			}
 			isDone = true;
