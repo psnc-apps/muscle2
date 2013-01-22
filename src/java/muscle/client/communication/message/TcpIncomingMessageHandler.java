@@ -16,7 +16,6 @@ import muscle.core.model.Timestamp;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 import muscle.net.ProtocolHandler;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
@@ -32,9 +31,9 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	private final DataConnectionHandler connectionHandler;
 	private final Resolver resolver;
 	
-	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, ResolverFactory rf, DataConnectionHandler handler) throws InterruptedException {
+	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, Resolver res, DataConnectionHandler handler) {
 		super(s, receivers, false, true, 3);
-		this.resolver = rf.getResolver();
+		this.resolver = res;
 		this.connectionHandler = handler;
 	}
 	

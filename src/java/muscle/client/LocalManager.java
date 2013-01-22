@@ -33,7 +33,7 @@ import muscle.util.concurrency.NamedRunnable;
 /**
  * @author Joris Borgdorff
  */
-public class LocalManager implements InstanceControllerListener, ResolverFactory, ExceptionListener {
+public class LocalManager implements InstanceControllerListener, ExceptionListener {
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<NamedRunnable> controllers;
 	private final List<Thread> controllerThreads;
@@ -102,13 +102,14 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 		socketAddr = new InetSocketAddress(address, port);
 		String dir = JVM.ONLY.getTmpDirName();
 		TcpLocation loc = new TcpLocation(socketAddr, dir);
-		tcpConnectionHandler = new DataConnectionHandler(ss, this);
-		localConnectionHandler = new LocalDataHandler();
 		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
+		
+		tcpConnectionHandler = new DataConnectionHandler(ss, res);
+		localConnectionHandler = new LocalDataHandler();
 		
 		// Create new conduit exits/entrances using this location.
 		factory = new TcpPortFactoryImpl(res, this, sf, tcpConnectionHandler, localConnectionHandler);
@@ -186,11 +187,6 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 			logger.log(Level.SEVERE, "Out of memory: too many submodels; try decreasing thread memory (e.g. -D -Xss512k)", er);
 			this.shutdown(2);
 		}
-	}
-	
-	@Override
-	public Resolver getResolver() {
-		return this.res;
 	}
 	
 	@Override
@@ -328,6 +324,9 @@ public class LocalManager implements InstanceControllerListener, ResolverFactory
 				logger.log(Level.INFO, "All local submodels have finished; exiting.");
 				if (factory != null) {
 					factory.dispose();
+				}
+				if (res != null) {
+					res.dispose();
 				}
 				if (idManipulator != null) {
 					idManipulator.dispose();

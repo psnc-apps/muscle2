@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import muscle.client.LocalManager;
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
-import muscle.id.ResolverFactory;
+import muscle.id.Resolver;
 import muscle.net.AbstractConnectionHandler;
 import muscle.util.concurrency.NamedCallable;
 
@@ -22,25 +22,20 @@ import muscle.util.concurrency.NamedCallable;
  * @author Joris Borgdorff
  */
 public class DataConnectionHandler extends AbstractConnectionHandler<LocalManager,Boolean> implements IncomingMessageProcessor {
-	private final ResolverFactory resolverFactory;
+	private final Resolver resolver;
 	private final Map<Identifier,Receiver> receivers;
 	private final static Logger logger = Logger.getLogger(DataConnectionHandler.class.getName());
 
-	public DataConnectionHandler(ServerSocket ss, ResolverFactory rf) {
+	public DataConnectionHandler(ServerSocket ss, Resolver res) {
 		super(ss, LocalManager.getInstance());
 		logger.log(Level.CONFIG, "Listening for data connections on {0}:{1}", new Object[]{ss.getInetAddress().getHostAddress(), ss.getLocalPort()});
-		this.resolverFactory = rf;
+		this.resolver = res;
 		this.receivers = new ConcurrentHashMap<Identifier,Receiver>();
 	}
 	
 	@Override
 	protected NamedCallable<Boolean> createProtocolHandler(Socket s) {
-		try {
-			return new TcpIncomingMessageHandler(s, receivers, resolverFactory, this);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(DataConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
-			return null;
-		}
+		return new TcpIncomingMessageHandler(s, receivers, resolver, this);
 	}
 	
 	void result(Boolean bool) {

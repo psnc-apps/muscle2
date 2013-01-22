@@ -11,14 +11,13 @@ import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.kernel.InstanceController;
+import muscle.exception.ExceptionListener;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
-import muscle.id.ResolverFactory;
 import muscle.util.concurrency.Disposable;
 import muscle.util.concurrency.LimitedThreadPool;
 import muscle.util.concurrency.NamedCallable;
-import muscle.exception.ExceptionListener;
 
 /**
  * Assigns Receivers and Transmitters to Portals.
