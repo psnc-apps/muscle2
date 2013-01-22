@@ -5,6 +5,7 @@
 package muscle.id;
 
 /**
+ * Different types of Identifier.
  * @author Joris Borgdorff
  */
 public enum IDType {

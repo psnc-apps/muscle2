@@ -44,10 +44,12 @@ public class PortalID extends AbstractID implements Identifier {
 		return ownerID.isResolved();
 	}
 	
+	/** Get only the name of the identified port, not of its instance. */
 	public String getPortName() {
 		return portName;
 	}
 	
+	/** Get the identifier of the Instance that this port belongs to. */
 	public Identifier getOwnerID() {
 		return this.ownerID;
 	}

@@ -12,7 +12,7 @@ import muscle.util.FileTool;
 import muscle.util.JVM;
 
 /**
- *
+ * The TCP/IP location of a MUSCLE component, including a local temporary directory that results are written to.
  * @author Joris Borgdorff
  */
 public class TcpLocation implements Location {
@@ -47,6 +47,7 @@ public class TcpLocation implements Location {
 		return this.tmpDir;
 	}
 	
+	/** Create a symlink in the current temporary directory to the temporary directory of this location. */
 	public void createSymlink(String name, TcpLocation local) {
 		if (!tmpDir.equals(local.tmpDir) && !tmpDir.isEmpty()) {
 			FileTool.createSymlink(JVM.ONLY.tmpFile(name), new File("../" + tmpDir));
