@@ -87,9 +87,8 @@ public class ConnectionScheme implements Serializable {
 			String line;
 			
 			List<String> exitArgs = new FastArrayList<String>(1);
-			List<String> entranceArgs = new FastArrayList<String>(1);
-			List<String> conduitArgs = new FastArrayList<String>(5);
-			final String[] empty = new String[0];
+			List<String> entranceArgs = new FastArrayList<String>(5);
+			List<String> conduitArgs = new FastArrayList<String>(1);
 
 			while ((line = reader.readLine()) != null) {
 				if (line.startsWith("#") || line.isEmpty()) {
@@ -110,8 +109,15 @@ public class ConnectionScheme implements Serializable {
 				String entrance = parseItem(line.substring(secondSpace + 1), entranceArgs);
 				parseItem(line.substring(firstSpace + 1, secondSpace), conduitArgs);
 				// get conduit class,id,args from item[1] which is e.g.: conduit.foo.bar#42(arg1,arg2)
-				
-				this.addConnection(entrance, entranceArgs.toArray(empty), conduitArgs.toArray(empty), exit, exitArgs.toArray(empty));
+		
+
+				this.addConnection(
+					entrance, 
+					entranceArgs.toArray(new String[entranceArgs.size()]), 
+					conduitArgs.toArray(new String[conduitArgs.size()]), 
+					exit, 
+					exitArgs.toArray(new String[exitArgs.size()]));
+
 				if (exitArgs.size() > 0) {
 					exitArgs = new FastArrayList<String>(1);
 				}
