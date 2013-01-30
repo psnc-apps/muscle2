@@ -89,6 +89,9 @@ public class ConnectionScheme implements Serializable {
 			List<String> exitArgs = new FastArrayList<String>(1);
 			List<String> entranceArgs = new FastArrayList<String>(5);
 			List<String> conduitArgs = new FastArrayList<String>(1);
+			
+			// Use shared emptyArgs if no arguments are given. Since it is
+			// immutable, it will save space if there are a lot of conduits created.
 			String[] emptyArgs = {};
 			
 			while ((line = reader.readLine()) != null) {
