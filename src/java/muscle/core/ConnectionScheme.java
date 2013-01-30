@@ -125,6 +125,8 @@ public class ConnectionScheme implements Serializable {
 					exit, 
 					exitSize == 0     ? emptyArgs : exitArgs.toArray(    new String[exitSize]));
 
+				// If a exit, entrance, or conduit was created with arguments, be sure to
+				// create a new arraylist to start from scratch
 				if (exitSize     > 0) {
 					exitArgs =     new FastArrayList<String>(1);
 				}
