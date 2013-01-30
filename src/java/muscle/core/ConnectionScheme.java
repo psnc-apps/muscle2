@@ -89,7 +89,8 @@ public class ConnectionScheme implements Serializable {
 			List<String> exitArgs = new FastArrayList<String>(1);
 			List<String> entranceArgs = new FastArrayList<String>(5);
 			List<String> conduitArgs = new FastArrayList<String>(1);
-
+			String[] emptyArgs = {};
+			
 			while ((line = reader.readLine()) != null) {
 				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
@@ -110,22 +111,25 @@ public class ConnectionScheme implements Serializable {
 				parseItem(line.substring(firstSpace + 1, secondSpace), conduitArgs);
 				// get conduit class,id,args from item[1] which is e.g.: conduit.foo.bar#42(arg1,arg2)
 		
-
+				int entranceSize = entranceArgs.size();
+				int conduitSize = conduitArgs.size();
+				int exitSize = exitArgs.size();
+				
 				this.addConnection(
 					entrance, 
-					entranceArgs.toArray(new String[entranceArgs.size()]), 
-					conduitArgs.toArray(new String[conduitArgs.size()]), 
+					entranceSize == 0 ? emptyArgs : entranceArgs.toArray(new String[entranceSize]), 
+					conduitSize == 0  ? emptyArgs : conduitArgs.toArray( new String[conduitSize]), 
 					exit, 
-					exitArgs.toArray(new String[exitArgs.size()]));
+					exitSize == 0     ? emptyArgs : exitArgs.toArray(    new String[exitSize]));
 
-				if (exitArgs.size() > 0) {
-					exitArgs = new FastArrayList<String>(1);
+				if (exitSize     > 0) {
+					exitArgs =     new FastArrayList<String>(1);
 				}
-				if (entranceArgs.size() > 0) {
+				if (entranceSize > 0) {
 					entranceArgs = new FastArrayList<String>(1);
 				}
-				if (conduitArgs.size() > 0) {
-					conduitArgs = new FastArrayList<String>(5);
+				if (conduitSize  > 0) {
+					conduitArgs =  new FastArrayList<String>(5);
 				}
 			}
 		} catch(IOException e) {
