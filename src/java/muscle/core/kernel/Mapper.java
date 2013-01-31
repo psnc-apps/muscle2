@@ -33,17 +33,20 @@ public abstract class Mapper extends Instance {
 	}
 	
 	/**
-	 * Read from all conduits.
+	 * Read from all conduits. Override to read from conduits, process it, and save the relevant results for sending.
 	 */
 	protected abstract void receiveAll();
 
 	/**
-	 * Write to all conduits.
+	 * Write to all conduits. Override to process data, and write to conduits, and do any post-processing.
 	 */
 	protected abstract void sendAll();
 
 	/**
 	 * Whether the mapper should continue computation.
+	 * By default, this is determined by checking all conduit exits whether they will receive a next message. If not,
+	 * it will return false. If some conduits have a next messages and others do not, it will return false and output a warning,
+	 * since those messages are then considered lost.
 	 */
 	protected boolean continueComputation() {
 		int next = 0;
@@ -62,6 +65,10 @@ public abstract class Mapper extends Instance {
 		}
 	}
 	
+	/**
+	 * Whether the mapper can call {@see continueComputation()} without blocking.
+	 * This implementation checks whether each conduit exit returns true for {@see muscle.core.ConduitExit.ready()}.
+	 */
 	protected boolean readyForContinue() {
 		for (ConduitExitController ec : this.exits.values()) {
 			if (!ec.getExit().ready()) {
@@ -71,6 +78,10 @@ public abstract class Mapper extends Instance {
 		return true;
 	}
 	
+	/**
+	 * Whether the mapper can call {@see sendAll()} without blocking.
+	 * This implementation checks whether each conduit entrance has its transmitter set.
+	 */
 	protected boolean readyForSend() {
 		for (ConduitEntranceController ec : entrances.values()) {
 			if (!ec.hasTransmitter()) {
@@ -80,6 +91,10 @@ public abstract class Mapper extends Instance {
 		return true;
 	}
 
+	/**
+	 * Whether the mapper can call {@see receiveAll()} without blocking.
+	 * This implementation checks whether each conduit exit returns true for {@see muscle.core.ConduitExit.ready()}.
+	 */
 	protected boolean readyForReceive() {
 		for (ConduitExitController ec : this.exits.values()) {
 			if (!ec.getExit().ready()) {
@@ -89,6 +104,10 @@ public abstract class Mapper extends Instance {
 		return true;
 	}
 	
+	/**
+	 * Get the scale of the Mapper.
+	 * Since normally a mapper does not have a scale, this implementation returns null.
+	 */
 	@Override
 	public Scale getScale() {
 		return null;
@@ -141,10 +160,16 @@ public abstract class Mapper extends Instance {
 		}
 	}
 	
+	@Override
 	public boolean steppingFinished() {
 		return this.step == Step.END;
 	}
 	
+	/**
+	 * Whether the mapper has the step function implemented correctly.
+	 * Returns true.
+	 */
+	@Override
 	public boolean canStep() {
 		return true;
 	}

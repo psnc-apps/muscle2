@@ -48,7 +48,8 @@ public abstract class RawInstance extends Module {
 	private Scale currentScale = null;
 
 	/**
-	currently returns true if all portals of this kernel have passed a maximum timestep given in the cxa properties
+	 * Whether the instance should stop execution.
+	 * The function only makes sense for instances with a time scale. It checks if any of the conduits have sent or received messages with a timestamp at least as large as its total time, or the global max_timesteps property.
 	 */
 	public boolean willStop() {
 		if (originTime == null) {
@@ -95,7 +96,9 @@ public abstract class RawInstance extends Module {
 		return portalTime.compareTo(omegaT) >= 0;
 	}
 
-	// in case we want do do custom initialization where we need e.g. the JADE services already activated
+	/**
+	 * Override to perform any startup procedures before the conduits are connected.
+	 */
 	protected void beforeSetup() {
 	}
 
@@ -116,13 +119,10 @@ public abstract class RawInstance extends Module {
 	}
 
 	/**
-	 * SI Scale will be specified in the CxA file, not in MUSCLE.
-	return the SI scale of a kernel<br>
-	for a 1D kernel with dx=1meter and dt=1second this would e.g. be<br>
-	javax.measure.DecimalMeasure<javax.measure.quantity.Duration> dt = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.SECOND);<br>
-	javax.measure.DecimalMeasure<javax.measure.quantity.Length> dx = javax.measure.DecimalMeasure.valueOf(new java.math.BigDecimal(1), javax.measure.unit.SI.METER);<br>
-	return new Scale(dt,dx);
-	* return null if the kernel is dimensionless
+	 * SI Scale can be specified in the CxA file, not in MUSCLE.
+	 * This implementation caches the scale, using the scale in the CxA or if set, the scale specified in {@see setScale()}.
+	 * Override to have a dynamic scale.
+	 * @return the scale, or null if the kernel is dimensionless.
 	 */
 	public Scale getScale() {
 		if (this.currentScale == null) {
@@ -235,26 +235,6 @@ public abstract class RawInstance extends Module {
 		this.setLocalName(ic.getName());
 	}
 	
-	
-	/**
-	prints info about a given kernel to stdout
-	 */
-	public static String info(Class<? extends RawInstance> controllerClass) {
-		// instantiates a controller which is not intended to run as a JADE agent
-		RawInstance kernel = null;
-		try {
-			kernel = controllerClass.newInstance();
-		} catch (java.lang.InstantiationException e) {
-			throw new RuntimeException(e);
-		} catch (java.lang.IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-
-		kernel.connectPortals();
-
-		return kernel.infoText();
-	}
-	
 	// currently we can not add portals dynamically during runtime
 	// add all portals here (and only here) at once
 	public final void connectPortals() {
@@ -266,6 +246,7 @@ public abstract class RawInstance extends Module {
 	public final void beforeExecute() {
 		beforeSetup();
 	}
+
 	public final void start() {
 		execute();
 	}
@@ -279,17 +260,29 @@ public abstract class RawInstance extends Module {
 		return true;
 	}
 	
+	/** Whether the instance has finished all steps. */
 	public boolean steppingFinished() {
 		return true;
 	}
 	
+	/** Whether the instance has the stepping functionality implemented.
+	 * Returns false, override to indicate that stepping is implemented */
 	public boolean canStep() {
 		return false;
 	}
 	
+	/**
+	 * Any cleanup actions that should be performed after execution.
+	 * Ensure that this function does not do heavy or long-lasting tasks, since it may block MUSCLE or be interrupted.
+	 * No communication should take place in this function.
+	 */
 	public void afterExecute() {
 	}
 	
+	/**
+	 * Give textual information about the instance.
+	 * This implementation lists the name and the ports.
+	 */
 	public String infoText() {
 		StringBuilder sb = new StringBuilder(100 + 15*(exits.size()+entrances.size()));
 		sb.append(getLocalName()).append(" conduit entrances (out): [");
@@ -312,30 +305,6 @@ public abstract class RawInstance extends Module {
 		return sb.append(']').toString();
 	}
 
-	/**
-	pass one or more controller class names to get an info about these controllers
-	 */
-	public static void main(String[] args) throws java.lang.ClassNotFoundException {
-
-		if (args.length > 0) {
-			ArrayList<Class<? extends RawInstance>> classes = new ArrayList<Class<? extends RawInstance>>();
-			for (String arg : args) {
-				try {
-					@SuppressWarnings("unchecked")
-					Class<? extends RawInstance> c = (Class<? extends RawInstance>) Class.forName(arg);
-					classes.add(c);
-				} catch (ClassCastException e) {
-					Logger.getLogger(RawInstance.class.getName()).log(Level.SEVERE, "Class " + arg + " does not represent a RawKernel", e);
-				}
-			}
-
-			for (Class<? extends RawInstance> c : classes) {
-				System.out.println(RawInstance.info(c) + "\n");
-			}
-
-		}
-	}
-	
 	private <T extends Serializable> void addExitToList(String portName, ConduitExitController<T> exit) {
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of portals not allowed here");

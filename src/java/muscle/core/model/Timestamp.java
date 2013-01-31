@@ -8,7 +8,12 @@ import eu.mapperproject.jmml.util.numerical.ScaleFactor;
 import eu.mapperproject.jmml.util.numerical.ScaleFactor.Dimension;
 
 /**
- *
+ * A measure of time.
+ * 
+ * It extends the SIUnit class, which means it is a double at a certain timescale. This way, no precision is lost
+ * when referring to picoseconds or peta-years. It also allows it to be parsed as a string. The default scale is
+ * seconds.
+ * 
  * @author Joris Borgdorff
  */
 public class Timestamp extends SIUnit {
@@ -67,8 +72,11 @@ public class Timestamp extends SIUnit {
 		return t1.compareTo(t2) < 0 ? t1 : t2;
 	}
 	
+	/**
+	 * Create a new Timestamp given a String containing a time.
+	 * Valid formats include '1 s', '3.1e-4 ms', '1.3 hr', '2 years'
+	 */
 	public static Timestamp valueOf(String s) {
-		SIUnit si = SIUnit.valueOf(s);
-		return new Timestamp(si);
+		return new Timestamp(SIUnit.valueOf(s));
 	}
 }

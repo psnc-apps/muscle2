@@ -61,7 +61,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		this.isSharedData = false;
 	}
 
-	/** Create a filter chain from the given arguments */
+	/** Create a filter chain from the given arguments. If threaded (asynchronous), it will first add a "thread" filter. */
 	private FilterChain createFilterChain(ConduitDescription desc, boolean threaded) {
 		String[] args = desc.getArgs();
 		int entranceArgDiv = -1;
