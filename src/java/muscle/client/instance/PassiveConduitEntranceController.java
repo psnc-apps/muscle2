@@ -152,7 +152,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			try {
 				transmitter.signal(new DetachConduitSignal());
 			} catch (Exception ex) {
-				logger.log(Level.WARNING, "Could not detach {0}", getLocalName());
+				logger.log(Level.WARNING, "Could not detach " + getLocalName(), ex);
 			}
 			transmitter.dispose();
 			transmitterFound = false;

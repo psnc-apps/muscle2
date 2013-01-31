@@ -125,7 +125,9 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		if (dmsg != null) {
 			if (msg.isSignal()) {
 				if (msg.getSignal() instanceof DetachConduitSignal) {
-					queue.add(null);
+					@SuppressWarnings("unchecked")
+					Observation<T> empty = Observation.EMPTY;
+					queue.add(empty);
 					this.dispose();
 				}
 			} else {

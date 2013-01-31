@@ -42,6 +42,8 @@ public class Observation<T extends Serializable> implements Serializable {
 	private final T data; // our unwrapped data
 	private transient boolean isIndependent = false;
 	private transient boolean mayCopy = true;
+	@SuppressWarnings("unchecked")
+	public final static Observation EMPTY = new Observation(null, null, null);
 	
 	public Observation(T newData, Timestamp newSITime, Timestamp newNextSITime) {
 		this(newData, newSITime, newNextSITime, false, true);

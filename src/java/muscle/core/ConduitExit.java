@@ -82,7 +82,8 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		} catch (InterruptedException ex) {
 			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
 		}
-		if (this.nextElem == null) {
+		if (this.nextElem == Observation.EMPTY) {
+			this.nextElem = null;
 			this.isDone = true;
 		}
 		
