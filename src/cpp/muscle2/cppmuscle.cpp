@@ -122,18 +122,22 @@ int env::detect_mpi_rank() {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::detect_mpi_rank() ");
 #endif
-	const char *possible_mpi_rank_vars[]={"OMPI_MCA_orte_ess_vpid",
+	const char *possible_mpi_rank_vars[]={
+		                    "OMPI_COMM_WORLD_RANK",
+		                    "MV2_COMM_WORLD_RANK",
+			  "OMPI_MCA_orte_ess_vpid",
 	                                      "OMPI_MCA_ns_nds_vpid",
 	                                      "PMI_RANK",
 	                                      "MP_CHILD",
 	                                      "SLURM_PROCID",
-	                                      "X10_PLACE",
-	                                      "MP_CHILD"};
+	                                      "X10_PLACE"};
 	int irank = 0;
-	for (int i = 0; i < 7; i++) {
+	const size_t len = sizeof(possible_mpi_rank_vars)/sizeof(const char *);
+	for (size_t i = 0; i < len; i++) {
 		const char *rank = getenv(possible_mpi_rank_vars[i]);
 		if (rank != NULL) {
 			irank = atoi(rank);
+			break;
 		}
 	}
 	return irank;
