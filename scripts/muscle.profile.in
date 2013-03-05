@@ -1,8 +1,9 @@
 #!/bin/sh
 
 export MUSCLE_HOME="@MUSCLE_PREFIX@"
-export PATH="$MUSCLE_HOME/bin:$PATH"
-export INCLUDE_PATH="$MUSCLE_HOME/include:$INCLUDE_PATH"
+export MUSCLE_CLASSPATH="@MUSCLE_CLASSPATH@"
+export PATH="$PATH:$MUSCLE_HOME/bin"
+export INCLUDE_PATH="$INCLUDE_PATH:$MUSCLE_HOME/include"
 
 if [ `uname` = "Darwin" ]
 then

@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
 PROJECT(MUSCLE Java) # The project has a name MUSCLE and utilizes CXX compiler
 
 set(JavaMuscle_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")

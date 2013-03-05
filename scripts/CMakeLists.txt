@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 2.6)
 PROJECT(scripts CXX) # The project has a name MUSCLE and utilizes CXX compiler
 
 set (MUSCLE_PREFIX ${CMAKE_INSTALL_PREFIX})
-
+set (MUSCLE_CLASSPATH ${})
 configure_file (
 	  "${PROJECT_SOURCE_DIR}/muscle.profile.in"
 	  "${PROJECT_BINARY_DIR}/muscle.profile"

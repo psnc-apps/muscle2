@@ -1,4 +1,3 @@
-
 enable_testing()
 
 add_test(MuscleVersion muscle2 --version)
@@ -44,5 +43,3 @@ endif (BUILD_CPP)
 
 #legacy examples
 #do_test("NativeExample.cxa.rb" "r w" "got: 2.0")
-
-

@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-
 PROJECT(muscleruby)
 
 FILE(GLOB THIS_RUBY_FILES *.rb)

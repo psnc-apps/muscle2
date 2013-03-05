@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
 project(example_simplecpp2 CXX)
 
 add_executable(simplecpp2 Sender.cpp)

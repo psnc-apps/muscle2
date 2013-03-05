@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 2.6)
+
 PROJECT(MUSCLE)
+
+# Set policy to use modules from CMake if available,
+# but use the ones in cmake_scripts otherwise
+if(POLICY CMP00017)
+	cmake_policy(SET CMP0017 NEW)
+endif()
+
+if(NOT CMAKE_MODULE_PATH)
+  set(CMAKE_MODULE_PATH)
+endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_scripts")
 
 option(BUILD_CPP "Build CPP part of MUSCLE" ON)
 option(BUILD_MPI_EXAMPLES "Build MPI examples" ON)
@@ -21,8 +33,6 @@ set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib") #this is importat for 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_scripts")
-
 set(MUSCLE2_LIB muscle2_cpp)
 set(MUSCLE_JAVA muscle_java)
 
@@ -40,8 +50,8 @@ if (BUILD_CPP)
 	add_subdirectory(src/cpp/examples/simplecpp2)
 	add_subdirectory(src/cpp/examples/pingpongcpp)
 	add_subdirectory(src/cpp/examples/dataintegrity)
+	add_subdirectory(src/cpp/examples/transmutable2)
     if (BUILD_MPI_EXAMPLES)
-		
 		# Get MPI variables from the command-line
 		if (NOT DEFINED MPI_C_FLAGS AND DEFINED ENV{MPI_C_FLAGS})
 			set(MPI_C_FLAGS $ENV{MPI_C_FLAGS})
@@ -81,7 +91,6 @@ if (BUILD_CPP)
 			message ("MPI has not been found; not building MPI examples")
 		endif (MPI_C_FOUND)
     endif (BUILD_MPI_EXAMPLES)
-	add_subdirectory(src/cpp/examples/transmutable2)
 endif (BUILD_CPP)
 
 if (BUILD_MTO)
@@ -98,7 +107,7 @@ add_subdirectory(scripts)
 add_subdirectory(doc)
 
 if (BUILD_CPACK_SCRIPTS)
-	include(cmake_scripts/CPackMuscle.cmake)
+	include(CPackMuscle)
 endif (BUILD_CPACK_SCRIPTS)
 
 include(test/regression/CMakeLists.txt)

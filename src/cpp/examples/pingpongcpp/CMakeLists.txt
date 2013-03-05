@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
 project(example_pingpongcpp CXX)
 
 add_executable(ping Ping.cpp)

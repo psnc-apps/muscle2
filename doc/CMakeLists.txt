@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
 PROJECT(MUSCLE-Documentation) 
 
 option(BUILD_API_DOC CACHE "Build API documentation using Doxygen")

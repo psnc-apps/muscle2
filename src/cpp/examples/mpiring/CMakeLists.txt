@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 2.6)
-
 project (example_mpiring C)
 set(MPIRING mpiring)
 set(LHC LHC)

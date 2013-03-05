@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-
 PROJECT(muscle2-cpp CXX C)
 
 set(MUSCLE2CPP_VERSION "1.0")
