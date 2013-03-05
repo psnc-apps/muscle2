@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <mpi.h>
+#include <stdio.h>
 #include <assert.h>
 
 #include <muscle2/cmuscle.h>
