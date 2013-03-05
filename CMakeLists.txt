@@ -39,7 +39,6 @@ if (BUILD_CPP)
 	add_subdirectory(src/cpp/examples/pingpongcpp)
 	add_subdirectory(src/cpp/examples/dataintegrity)
     if (BUILD_MPI_EXAMPLES)
-		set(MPIMuscle_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
 		
 		# Get MPI variables from the command-line
 		if (NOT DEFINED MPI_C_FLAGS AND DEFINED ENV{MPI_C_FLAGS})
@@ -56,8 +55,17 @@ if (BUILD_CPP)
 		endif()
 		
 		message ( STATUS "Searching for available MPI implementations" )
-		find_package (MPIMuscle)
-	
+
+		set(MPIMuscle_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
+		if (DEFINED CMAKE_CURRENT_LIST_DIR)
+			find_package (MPIMuscle)
+		else(DEFINED CMAKE_CURRENT_LIST_DIR)
+			# Compatibility CMake <2.83
+			set(CMAKE_CURRENT_LIST_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
+			find_package (MPIMuscle)
+			set(CMAKE_CURRENT_LIST_DIR)
+		endif(DEFINED CMAKE_CURRENT_LIST_DIR)
+			
 		if (MPI_C_FOUND)
 			message (STATUS "Found MPI Compiler: " ${MPI_C_COMPILER} )
 	        add_subdirectory(src/cpp/examples/simplempi)
