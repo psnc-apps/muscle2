@@ -1,6 +1,6 @@
+#include <mpi.h>
 #include <stdlib.h>
 #include <muscle2/cmuscle.h>
-#include <mpi.h>
 
 int main(int argc, char *argv[])
 {
