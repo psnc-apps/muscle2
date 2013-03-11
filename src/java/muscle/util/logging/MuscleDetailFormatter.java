@@ -91,10 +91,7 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 				thrown.printStackTrace(pw);
 				pw.close();
 				
-				sb.append("[================== ERROR ===================] ")
-						.append(thrown.getClass().getName())
-						.append(": ")
-						.append(thrown.getMessage());
+				sb.append("[================== ERROR ===================] ");
 				sb.append(sw);
 				sb.append("[================ END TRACE =================]\n");
 			} catch (Exception ex) {

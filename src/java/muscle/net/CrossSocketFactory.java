@@ -221,7 +221,7 @@ public class CrossSocketFactory extends SocketFactory {
 				putConnectionData(InetAddress.getLocalHost()
 					.getHostAddress(), ss.getLocalPort());
 			} catch (IOException ex) {
-				throw new IOException("Could not connect to QCG-Coordinator", ex);
+				throw new IOException("Cannot communicate with QCG-Coordinator", ex);
 			}
 		}
 		return ss;
