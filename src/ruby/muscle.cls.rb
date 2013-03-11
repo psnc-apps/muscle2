@@ -286,12 +286,12 @@ class Muscle
 			return false
 		else
 			mto = @env['mto'] || ENV['MUSCLE_MTO']
-			if (! mto.nil?)
+			if not mto.nil?
 				mtoHost = mto.split(':')[0]
 				mtoPort = mto.split(':')[1]
 			end
 
-			if(mtoPort.nil? or mtoHost.nil?)
+			if mtoPort.nil? or mtoHost.nil?
 				puts 'Warning: intercluster specified, but no MTO address/port given.'
 				puts 'Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_MTO was not set?'
 				puts 'To specify the MTO address manually, use the flag --mto.'

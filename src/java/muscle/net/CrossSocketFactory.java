@@ -217,9 +217,12 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 
 		if (port == qcgMagicPort) {
-			putConnectionData(InetAddress.getLocalHost()
+			try {
+				putConnectionData(InetAddress.getLocalHost()
 					.getHostAddress(), ss.getLocalPort());
-
+			} catch (IOException ex) {
+				throw new IOException("Could not connect to QCG-Coordinator", ex);
+			}
 		}
 		return ss;
 	}
@@ -254,7 +257,6 @@ public class CrossSocketFactory extends SocketFactory {
 		URL url = new URL(coordinatorURL);
 
 		sendHTTPRequest(url, message.toString());
-
 	}
 
 	/**
@@ -292,7 +294,6 @@ public class CrossSocketFactory extends SocketFactory {
 				while ((line = brd.readLine()) != null) {
 					response.append(line);
 				}
-				
 			} finally {
 
 				if (osw != null) {

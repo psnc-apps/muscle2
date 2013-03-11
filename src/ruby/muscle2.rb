@@ -78,12 +78,12 @@ if m.env.has_key?('cxa_file')
 		# load CxA configuration
 		cxa = m.load_cxa
 	rescue LoadError
-		puts "--cxa does not specify a valid file: <#{m.env['cxa_file']}> not found."
+		puts "CxA file <#{m.env['cxa_file']}> not found. Modify the value of --cxa."
 		exit 1
 	end
 else
 	# No more useful actions without a CxA file
-	puts '--cxa option missing. Aborting.'
+	puts 'No CxA file given; use --cxa. Aborting.'
 	exit 1
 end
 
@@ -102,7 +102,7 @@ end
 
 def show_info(msg, instances, exit_value=1)
 	puts "#{msg}Possible instance names:\n--------\n", instances.keys
-	puts "--------\nTo run all instances use the --allkernels flag."
+	puts "--------\nTo run all instances use --allkernels."
 	exit exit_value
 end
 
@@ -119,6 +119,19 @@ elsif args.size > 0
 	args.each {|arg| active_instances << instances[arg]}
 end
 
+if m.env.has_key?('qcg')
+  if not m.env.has_key?('intercluster')
+    puts "Warning: --qcg is specified but --intercluster is not. Ignoring --qcg.\n\n"
+    m.env.delete('qcg')
+  elsif not ENV.has_key?('QCG_COORDINATOR_URL')
+    puts "QCG_COORDINATOR_URL environment variable must be set to use --qcg.\nAsk administrator for an appropriate value."
+    exit 1
+  elsif not ENV.has_key?('SESSION_ID')
+    puts "SESSION_ID environment variable must be set to use --qcg.\nSet the same arbitrary but globally unique string for all parts of a single simulation."
+    exit 1
+  end
+end
+
 if active_instances.empty? and !m.env['main'] || m.env['use_mpi'] || m.env['native']
 	# Unless we're only running main, we need to give an active instance
 	show_info('No instance names given. ', instances)
@@ -130,13 +143,12 @@ elsif active_instances.size > 1 and m.env['use_mpi']
 	puts 'Multiple instances provided for MPI code. Aborting.'
 	exit 1  
 elsif active_instances.size > 1 and m.env['native']
-	puts 'Warning: multiple instances provided for native code. Ignoring the --native flag.'
-	m.env['native'] = false
+	puts 'Warning: multiple instances provided for native code. Ignoring --native.'
+	m.env.delete('native')
 end
 
-# Apply MTO arguments, if any
+# Apply MTO arguments, if any, and if possible
 if m.env.has_key?('intercluster') and not m.apply_intercluster
-	puts 'Intercluster was not properly specified.'
 	exit 1
 end
 
