@@ -46,6 +46,7 @@ if (BUILD_CPP)
 	endif (BUILD_FORTRAN)
 	# muscle2 CPP core 
 	add_subdirectory(src/cpp/muscle2)
+	add_subdirectory(src/cpp/mpimuscle)
 	# Examples CPP
 	add_subdirectory(src/cpp/examples/simplecpp2)
 	add_subdirectory(src/cpp/examples/pingpongcpp)
