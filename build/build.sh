@@ -24,8 +24,6 @@ MODE="install"
 if [ -f "$HOSTNAME.conf" ]; then
 	. "$HOSTNAME.conf"
 	echo "Using configuration in $HOSTNAME.conf"
-	# Don't install in INSTALL_PREFIX, but in subdirectory with Debug and Release branches
-	MODE="maintenance"
 else
 	echo "No preset configuration for $HOSTNAME is present; performing regular installation"
 fi
@@ -34,8 +32,6 @@ if [ -f "$PBS_O_HOST.conf" ]
 then
 	. "$PBS_O_HOST.conf"
 	echo "Using PBS configuration in $PBS_O_HOST.conf"
-	# Don't install in INSTALL_PREFIX, but in subdirectory with Debug and Release branches
-	MODE="maintenance"
 
 fi
 
