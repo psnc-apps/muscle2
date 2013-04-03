@@ -178,7 +178,7 @@ end
 manager_pid = 0
 $running_procs = {}
 
-signals = ['HUP', 'INT', 'QUIT', 'ILL', 'ABRT', 'FPE', 'BUS', 'SEGV', 'SYS',
+signals = ['HUP', 'INT', 'QUIT', 'ABRT', 'SYS',
 	'PIPE', 'ALRM', 'TERM', 'TTIN', 'TTOU', 'XCPU', 'XFSZ',
 	'PROF', 'USR1', 'USR2']
 signals.each {|sig|
