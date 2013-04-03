@@ -36,7 +36,7 @@ cxa.env["w:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplecpp2/s
 cxa.env["r:dt"] = 1
 
 # declare kernels
-cxa.add_kernel('w', 'examples.simplecpp2.Sender')
+cxa.add_kernel('w', 'muscle.core.standalone.NativeKernel')
 cxa.add_kernel('r', 'examples.simplejava.ConsoleWriter')
 
 # configure connection scheme
