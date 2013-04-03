@@ -27,13 +27,13 @@ public class Processor extends Submodel {
 		for (int i = 0; i < data.length; i++) {
 			isLarge[i] = (data[i] > 2);
 		}
-		System.out.println("Sending data...");
+		log("Sending data...");
 		out("largeMask").send(isLarge);
 	}
 
 	@Override
 	public void solvingStep() {
-		System.out.println("Processing data...");
+		log("Processing data...");
 		for (int i = 0; i < data.length; i++) {
 			data[i]++;
 		}
