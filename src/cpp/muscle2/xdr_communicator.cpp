@@ -33,7 +33,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 	int op = opcode;
 	if (!xdr_int(&xdro, &op)) throw muscle_exception("Can not write int");
 	
-	if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY || opcode == PROTO_HAS_NEXT)
+	if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY || opcode == PROTO_HAS_NEXT || opcode == PROTO_HAS_PROPERTY)
 	{
 		char *cid = (char *)(*identifier).c_str(); //we are encoding only - so this is safe
 		if (!xdr_string(&xdro, &cid, (*identifier).length())) throw muscle_exception("Can not write identifier");
@@ -205,6 +205,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			break;
 		case PROTO_WILL_STOP:
 		case PROTO_HAS_NEXT:
+		case PROTO_HAS_PROPERTY:
 			//decode answer
 			if (!xdr_bool(&xdri, (bool_t *)result)) throw muscle_exception("Can not read boolean");
 			break;

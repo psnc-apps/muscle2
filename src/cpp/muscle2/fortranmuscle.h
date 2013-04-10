@@ -18,6 +18,8 @@ void muscle_finalize_(void);
 void muscle_kernel_name_(char * result, int reslen);
 /** Get a property. Result (const) string is stored in *result. */
 void muscle_get_property_(const char* name, char* result, int len, int reslen);
+/** Whether a property exists. Result (const) boolean is stored in *result. */
+void muscle_has_property_(const char* name, int* result, int len);
 /** Whether the current instantiation should stop. Result (const) boolean is stored in *result. */
 void muscle_will_stop_(int *result);
 

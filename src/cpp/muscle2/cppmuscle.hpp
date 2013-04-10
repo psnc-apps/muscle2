@@ -59,6 +59,7 @@ class cxa
 public:
 	static std::string kernel_name(void);
 	static std::string get_property(std::string name);
+	static bool has_property(std::string name);
 	static std::string get_properties(void);
 };
 

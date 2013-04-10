@@ -80,6 +80,14 @@ void muscle_get_property_(const char* name, char *result, int len, int reslen)
 	c2fstr(muscle::cxa::get_property(sname).c_str(), result, reslen);
 }
 
+void muscle_has_property_(const char* name, int *result, int len)
+{
+	char *cstr = f2cstr(name, len);
+	std::string sname(cstr);
+	free(cstr);
+	*result = muscle::cxa::has_property(sname);
+}
+
 void muscle_receive_(const char *entrance_name, void *array, int *size, muscle_datatype_t *type, int len)
 {
 	char *cstr = f2cstr(entrance_name, len);

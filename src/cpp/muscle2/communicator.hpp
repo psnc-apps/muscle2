@@ -18,6 +18,7 @@ typedef enum {
 	// CxA
 	PROTO_KERNEL_NAME = 1,
 	PROTO_PROPERTY = 2,
+	PROTO_HAS_PROPERTY = 10,
 	PROTO_PROPERTIES = 6,
 	PROTO_TMP_PATH = 7,
 	// Logger

@@ -2,7 +2,7 @@ program sender
   	implicit none
 	double precision :: allData(1:65536)
 	integer :: i, sz
-	logical(4) :: wstop
+	logical(4) :: wstop, hasProp
 	character(len=255) :: propName, kernelName, prop, portName
 	enum, bind(c)
 		enumerator :: MUSCLE_DOUBLE, MUSCLE_FLOAT, MUSCLE_INT32, MUSCLE_INT64, MUSCLE_STRING, MUSCLE_BOOLEAN, MUSCLE_RAW
@@ -13,9 +13,13 @@ program sender
 	call MUSCLE_Kernel_Name(kernelName)
 	write (*,*) kernelName
 	
-	propName = "command"//char(0)
-	call MUSCLE_Get_Property(propName, prop)
-	write (*,*) prop
+	propName = "dt"//char(0)
+	call MUSCLE_Has_Property(propName, hasProp)
+	write (*,*) hasProp
+	if (hasProp) then
+		call MUSCLE_Get_Property(propName, prop)
+		write (*,*) prop
+	end if
 	
 	do i = 1, 65536
 		allData(i) = i

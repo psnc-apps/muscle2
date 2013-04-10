@@ -31,7 +31,7 @@ cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 4
 cxa.env["r:dt"] = 1;
-cxa.env["w:dt"] = 1;
+#cxa.env["w:dt"] = 1;
 cxa.env["w:command"] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplefortran/sender"
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 

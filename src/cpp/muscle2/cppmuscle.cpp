@@ -168,6 +168,23 @@ std::string cxa::get_property(std::string name)
 	return prop_value_str;
 }
 
+bool cxa::has_property(std::string name)
+{
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::cxa::has_property(%s) ", name.c_str());
+#endif
+	bool has_prop;
+	muscle_comm->execute_protocol(PROTO_HAS_PROPERTY, &name, MUSCLE_BOOLEAN, NULL, 0, &has_prop, NULL);
+
+#ifdef CPPMUSCLE_TRACE
+	const char *bool_str = has_prop ? "true" : "false";
+	logger::finest("muscle::cxa::has_property(%s) = %s", name.c_str(), bool_str);
+#endif
+	return has_prop;
+}
+
+
 std::string cxa::get_properties()
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");

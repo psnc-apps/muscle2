@@ -79,6 +79,7 @@ public class NativeGateway extends Thread implements Disposable {
 		public String getKernelName();
 		/* OPCODE = 2 */
 		public String getProperty(String name);
+		/* OPCODE = 10 */
 		public boolean hasProperty(String name);
 		/* OPCODE = 3 */
 		public boolean willStop();
@@ -234,6 +235,15 @@ public class NativeGateway extends Thread implements Disposable {
 					{
 						if (isFinestLog) logger.finest("getLogLevel() request.");
 						out.writeInt(listener.getLogLevel());
+						break;
+					}
+					case 10:
+					{
+						if (isFinestLog) logger.finest("hasProperty() request.");
+						String name = in.readString();
+						boolean result = listener.hasProperty(name);
+						out.writeBoolean(result);
+						if (isFinestLog) logger.log(Level.FINEST, "hasProperty({0}) = {1} request.", new Object[] {name, Boolean.valueOf(result)});
 						break;
 					}
 					default:
