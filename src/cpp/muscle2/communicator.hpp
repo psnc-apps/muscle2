@@ -25,8 +25,8 @@ typedef enum {
 	PROTO_LOG_LEVEL = 9
 } muscle_protocol_t;
 
-extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int buf_len);
-extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int buf_len);
+extern "C" size_t communicator_write_to_socket(void *socket_handle, void *buf, int buf_len);
+extern "C" size_t communicator_read_from_socket(void *socket_handle, void *buf, int buf_len);
 
 namespace muscle {
 

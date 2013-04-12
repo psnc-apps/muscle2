@@ -115,7 +115,7 @@ ComplexData::ComplexData(void *data, muscle_datatype_t type, size_t len)
 		this->type = muscle_data_t_as_complex[type];
 		if (is_muscle_complex_t_array[this->type])
 		{
-			this->dims.push_back(len);
+			this->dims.push_back((int)len);
 		}
 	}
 	ComplexData::checkDimensions(this->type, &this->dims);
@@ -247,7 +247,7 @@ muscle_complex_t ComplexData::getType(muscle_datatype_t type)
 
 void ComplexData::checkDimensions(muscle_complex_t type, std::vector<int>* dimensions)
 {
-	unsigned int size = dimensions->size();
+	size_t size = dimensions->size();
 	if (is_muscle_complex_t_array[type] && size != 1) {
 		throw std::invalid_argument("An array should only have a single dimension");
 	}

@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int buf_len)
+extern "C" size_t communicator_read_from_socket(void *socket_handle, void *buf, int buf_len)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "xdr_read_from_socket:" << buf_len << endl;
@@ -20,7 +20,7 @@ extern "C" int communicator_read_from_socket(void *socket_handle, void *buf, int
 	return read(*(int *)socket_handle, buf, buf_len);
 }
 
-extern "C" int communicator_write_to_socket(void *socket_handle, void *buf, int buf_len)
+extern "C" size_t communicator_write_to_socket(void *socket_handle, void *buf, int buf_len)
 {
 #ifdef CPPMUSCLE_TRACE
 	cout << "xdr_write_to_socket:" << buf_len << endl;

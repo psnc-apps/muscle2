@@ -33,7 +33,7 @@ char *f2cstr(const char *str, int len)
 
 void c2fstr(const char *cstr, char *fstr, int reslen)
 {
-	int len = strlen(cstr);
+	size_t len = strlen(cstr);
 	if (len > reslen) {
 		logger::severe("Can not store string ''%s'' of size %d in Fortran string of size %d", cstr, len, reslen);
 		len = reslen;

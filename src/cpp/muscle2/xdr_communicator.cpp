@@ -8,6 +8,7 @@
 #include <rpc/xdr.h>
 #include <cmath>
 #include "exception.hpp"
+#include <cstdlib>
 #define M2_XDR_BUFSIZE (64*1024+1)
 
 namespace muscle {
@@ -36,7 +37,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 	if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY || opcode == PROTO_HAS_NEXT || opcode == PROTO_HAS_PROPERTY)
 	{
 		char *cid = (char *)(*identifier).c_str(); //we are encoding only - so this is safe
-		if (!xdr_string(&xdro, &cid, (*identifier).length())) throw muscle_exception("Can not write identifier");
+		if (!xdr_string(&xdro, &cid, (unsigned int)(*identifier).length())) throw muscle_exception("Can not write identifier");
 	}
 	if (opcode == PROTO_SEND)
 	{
@@ -47,14 +48,16 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		if (type == MUSCLE_COMPLEX) {
 			ComplexData *data = (ComplexData *)msg;
 			msg = data->getData();
-			count_int = data->length();
+            /* Check if it is not out of bounds? (unsigned long to unsigned int) */
+			count_int = (unsigned int)data->length();
 			sz = data->sizeOfPrimitive();
 			ctype = data->getType();
 			dims = data->getDimensions();
 		}
 		else
 		{
-			count_int = msg_len;
+            /* Check if it is not out of bounds? (unsigned long to unsigned int) */
+			count_int = (unsigned int)msg_len;
 			ctype = ComplexData::getType(type);
 			sz = ComplexData::sizeOfPrimitive(ctype);
 			// No extra dimensions
@@ -135,7 +138,8 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 				// search for nul character, within the maximum bounds of the buffer
 				char *null_ptr = (char *)memchr(result_ptr, 0, M2_XDR_BUFSIZE);
 				if (null_ptr) {
-					len = null_ptr - result_ptr + 1;
+                    /* Check if it is not out of bounds? (unsigned long to unsigned int) */
+					len = (unsigned int)(null_ptr - result_ptr + 1);
 				} else {
 					// nul not found, so add the nul character at the maximum buffer length
 					result_ptr[M2_XDR_BUFSIZE - 1] = 0;
@@ -221,7 +225,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 		case PROTO_TMP_PATH:
 		case PROTO_PROPERTIES:
 			//decode answer
-			if (!xdr_string(&xdri, (char **)result, *result_len)) throw muscle_exception("Can not read internal string");
+			if (!xdr_string(&xdri, (char **)result, (unsigned int)*result_len)) throw muscle_exception("Can not read internal string");
 			break;
 		case PROTO_FINALIZE:
 			break;
@@ -278,7 +282,8 @@ int XdrCommunicator::send_array(muscle_complex_t type, char **msg, unsigned int 
 			return xdr_bytes(&xdro, msg, len, M2_XDR_BUFSIZE);
 		default:
 			xdrproc_t proc = get_proc(type);
-			return xdr_array(&xdro, msg, len, M2_XDR_BUFSIZE, sz, proc);
+            /* Check if sz is not out of bounds? (unsigned long to unsigned int) */
+			return xdr_array(&xdro, msg, len, M2_XDR_BUFSIZE, (unsigned int)sz, proc);
 	}
 }
 
@@ -289,7 +294,8 @@ int XdrCommunicator::recv_array(muscle_complex_t type, char **result, unsigned i
 			return xdr_bytes(&xdri, result, len, M2_XDR_BUFSIZE);
 		default:
 			xdrproc_t proc = get_proc(type);
-			return xdr_array(&xdri, result, len, M2_XDR_BUFSIZE, sz, proc);
+            /* Check if sz is not out of bounds? (unsigned long to unsigned int) */
+			return xdr_array(&xdri, result, len, M2_XDR_BUFSIZE, (unsigned int)sz, proc);
 	}
 }
 

@@ -174,7 +174,7 @@ bool cxa::has_property(std::string name)
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::has_property(%s) ", name.c_str());
 #endif
-	bool has_prop;
+	bool has_prop = false;
 	muscle_comm->execute_protocol(PROTO_HAS_PROPERTY, &name, MUSCLE_BOOLEAN, NULL, 0, &has_prop, NULL);
 
 #ifdef CPPMUSCLE_TRACE
@@ -444,7 +444,7 @@ void env::muscle2_kill(void)
 		}
 		logger::info("Stopping Java MUSCLE (pid=%u).", muscle_pid);
 
-		if (pid < 0) {
+		if (muscle_pid < 0) {
 			logger::warning("MUSCLE did not quit correctly.");
 			muscle_pid = -1;
 			break;
