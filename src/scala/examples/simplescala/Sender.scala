@@ -5,14 +5,14 @@ import muscle.core.ConduitEntrance
 
 class Sender extends Submodel {
 	private[this] var data: Array[Array[Double]] = Array.ofDim[Double](2,2)
-	private[this] var entrance: ConduitEntrance[Array[Array[Double]]] = _
-
-	override def addPortals() {
-		entrance = addEntrance("data", classOf[Array[Array[Double]]])	
-	}
+	private[this] lazy val entrance: ConduitEntrance[Array[Array[Double]]] = { out("data") }
 
 	override def intermediateObservation() {
 		entrance.send(data)
 	}
+
+    override def solvingStep() {
+        data(0)(1) += 1
+    }
 }
 
