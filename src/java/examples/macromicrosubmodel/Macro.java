@@ -21,7 +21,6 @@ public class Macro extends Submodel {
 		return super.init(previousTime);
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void intermediateObservation() {
 		out("macroObs").send(data);
 	}

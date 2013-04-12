@@ -33,7 +33,6 @@ public class Micro extends Submodel {
 		firstValue++;
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void finalObservation() {
 		out("microObs").send(firstValue);
 	}

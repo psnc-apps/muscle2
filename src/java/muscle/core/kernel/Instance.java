@@ -54,7 +54,7 @@ public abstract class Instance extends RawInstance {
 	 * @throws IllegalStateException if called while not in a sending operator
 	 * @return a ConduitEntrance with the given name
 	 */
-	protected ConduitEntrance out(String outName) {
+	protected <T extends Serializable> ConduitEntrance<T> out(String outName) {
 		if ((operationsAllowed & SEND) != SEND) {
 			throw new IllegalStateException("May only send information while in a sending operator");
 		}
@@ -62,7 +62,9 @@ public abstract class Instance extends RawInstance {
 		if (ec == null) {
 			throw new IllegalArgumentException("ConduitEntrance " + outName + " in Instance " + getLocalName() + " is called but is not defined in the MUSCLE CxA file.");
 		} else {
-			return ec.getEntrance();
+			@SuppressWarnings("unchecked")
+			ConduitEntrance<T> entrance = ec.getEntrance();
+			return entrance;
 		}
 	}
 	
@@ -73,7 +75,7 @@ public abstract class Instance extends RawInstance {
 	 * @throws IllegalStateException if called while not in a receiving operator
 	 * @return a ConduitExit with the given name
 	 */
-	protected ConduitExit in(String inName) {
+	protected <T extends Serializable> ConduitExit<T> in(String inName) {
 		if ((operationsAllowed & RECV) != RECV) {
 			throw new IllegalStateException("May not receive information while in a sending operator");
 		}
@@ -82,7 +84,9 @@ public abstract class Instance extends RawInstance {
 		if (ec == null) {
 			throw new IllegalArgumentException("ConduitExit " + inName + " in Instance " + getLocalName() + " is called but it is not defined in the MUSCLE CxA file.");
 		} else {
-			return ec.getExit();
+			@SuppressWarnings("unchecked")
+			ConduitExit<T> exit = ec.getExit();
+			return exit;
 		}
 	}
 }

@@ -19,7 +19,6 @@ public class Sender extends Submodel {
 		return super.init(previousTime);
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void intermediateObservation() {
 		out("data").send(data);
 	}

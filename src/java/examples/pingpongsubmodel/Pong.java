@@ -17,7 +17,6 @@ public class Pong extends Submodel {
 		return obs.getTimestamp();
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void finalObservation() {
 		out("out").send(data);
 	}
