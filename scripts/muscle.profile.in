@@ -5,14 +5,16 @@ export MUSCLE_CORE_CLASSPATH="@MUSCLE_CLASSPATH@"
 export PATH="$PATH:$MUSCLE_HOME/bin"
 export INCLUDE_PATH="$INCLUDE_PATH:$MUSCLE_HOME/include"
 
-if [ `uname` = "Darwin" ]
-then
+if [ -d "$MUSCLE_HOME/share/muscle/python/modules" ]; then
+    export PYTHONPATH="$PYTHONPATH:$MUSCLE_HOME/share/muscle/python/modules"
+fi
+
+if [ `uname` = "Darwin" ]; then
 	export DYLD_LIBRARY_PATH="$MUSCLE_HOME/lib:$DYLD_LIBRARY_PATH"
 else 
 	export LD_LIBRARY_PATH="$MUSCLE_HOME/lib:$LD_LIBRARY_PATH"
 fi
 
-if [ -f "$MUSCLE_HOME/etc/muscle.defaults" ]
-then
+if [ -f "$MUSCLE_HOME/etc/muscle.defaults" ]; then
 	. "$MUSCLE_HOME/etc/muscle.defaults"
 fi
