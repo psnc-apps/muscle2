@@ -1,22 +1,19 @@
 #ifndef MUSCLE_EXCEPTION_HPP
 #define MUSCLE_EXCEPTION_HPP
 
-#include "logger.hpp"
 #include <exception>
+#include <stdexcept>
+
+#include "logger.hpp"
 
 namespace muscle {
 
-class muscle_exception : std::exception {
+class muscle_exception : public std::runtime_error {
 
 public:
-	muscle_exception (std::string msg) throw() {
-		desc = "MUSCLE exception: " + msg;
-		logger::severe(desc.c_str());
+	muscle_exception (std::string msg) throw() : std::runtime_error(msg) {
+		logger::severe(msg.c_str());
 	};
-	virtual const char* what() const throw() { return desc.c_str(); };
-	virtual ~muscle_exception() throw() {};
-private:
-	std::string desc;
 };
 
 }

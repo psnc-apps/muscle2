@@ -6,7 +6,6 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
-#include "cppmuscle.hpp"
 #include <string.h>
 
 using namespace std;
@@ -16,10 +15,11 @@ namespace muscle {
 const char *logger_name = 0;
 FILE *logger_fd = 0;
 int logger_level = MUSCLE_LOG_ALL;
+bool will_log = true;
 	
 void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 
 	va_list args;
 	va_start(args, message);
@@ -29,7 +29,7 @@ void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 
 void logger::severe(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_SEVERE, message, &args);
@@ -38,7 +38,7 @@ void logger::severe(const char *message, ...)
 
 void logger::warning(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_WARNING, message, &args);
@@ -47,7 +47,7 @@ void logger::warning(const char *message, ...)
 
 void logger::info(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_INFO, message, &args);
@@ -56,7 +56,7 @@ void logger::info(const char *message, ...)
 
 void logger::config(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_CONFIG, message, &args);
@@ -65,7 +65,7 @@ void logger::config(const char *message, ...)
 
 void logger::fine(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINE, message, &args);
@@ -74,7 +74,7 @@ void logger::fine(const char *message, ...)
 
 void logger::finer(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINER, message, &args);
@@ -83,7 +83,7 @@ void logger::finer(const char *message, ...)
 
 void logger::finest(const char *message, ...)
 {
-	if (!env::is_main_processor) return;
+	if (!will_log) return;
 	va_list args;
 	va_start(args, message);
 	logger::format(MUSCLE_LOG_FINEST, message, &args);
@@ -161,7 +161,7 @@ inline void logger::format(const muscle_loglevel_t level, const char *message, v
 	}
 }
 
-void logger::initialize(const char *_name, const char *_tmp_path, int _level)
+void logger::initialize(const char *_name, const char *_tmp_path, int _level, bool _will_log)
 {
 	logger_name = strdup(_name);
 	if (strlen(_tmp_path) + strlen(_name) > 506) {
@@ -172,6 +172,7 @@ void logger::initialize(const char *_name, const char *_tmp_path, int _level)
 	sprintf(filename, "%s/%s.native.log", _tmp_path, _name);
 	logger_fd = fopen(filename,"a");
 	logger_level = _level;
+    will_log = _will_log;
 }
 
 void logger::finalize()

@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
+#include <sys/select.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -88,7 +89,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	muscle_tmp_path = muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
 	muscle_comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
 	
-	logger::initialize(muscle_kernel_name.c_str(), muscle_tmp_path.c_str(), log_level);
+	logger::initialize(muscle_kernel_name.c_str(), muscle_tmp_path.c_str(), log_level, is_main_processor);
 	return MUSCLE_SUCCESS;
 }
 
@@ -106,7 +107,7 @@ void env::finalize(void)
 		int status;
 		waitpid(muscle_pid, &status, 0);
 		muscle_pid = -1;
-		if (WIFEXITED(status)) 
+		if (WIFEXITED(status))
 		{
 			if (WEXITSTATUS(status)) logger::severe("MUSCLE execution failed with status %d.", WEXITSTATUS(status));
 		}
@@ -305,21 +306,65 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		char hostparts[272];
 
 		logger::fine("Reading Java MUSCLE contact info from FIFO %s", muscle_tmpfifo);
-		FILE *fp = fopen(muscle_tmpfifo, "r");
-		if(fp == 0 || ferror(fp))
-		{	
-			logger::severe("Could not open temporary file %s", muscle_tmpfifo);
-			return;
-		}		
-		char *cs = fgets(hostparts, 272, fp);
-		if (cs == NULL) {
-			logger::severe("Could not read temporary file %s", muscle_tmpfifo);
-			return;
-		} else if (fgetc(fp) != EOF) {
-			logger::severe("Specified host name '%272s...' is too long", hostparts);
-			return;
-		}
-		fclose(fp);
+		// Need to set read-write to get correct select behaviour
+		// http://www.outflux.net/blog/archives/2008/03/09/using-select-on-a-fifo/
+        int fd = open(muscle_tmpfifo, O_RDWR|O_NONBLOCK);
+        bool succeeded = false;
+        fd_set fd_read, fd_err;
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 200000; // 0.2 sec
+        
+        while (!succeeded) {
+            FD_ZERO(&fd_read); FD_ZERO(&fd_err);
+            FD_SET(fd, &fd_read); FD_SET(fd, &fd_err);
+            int res = select(fd+1, &fd_read, (fd_set *)0, &fd_err, &timeout);
+            if (res == -1 || FD_ISSET(fd, &fd_err)) {
+                logger::severe("Could not read temporary file %s.", muscle_tmpfifo);
+                break;
+            }
+            if (FD_ISSET(fd, &fd_read)) {
+                FILE *fp = fdopen(fd, "r");
+                if(fp == 0 || ferror(fp))
+                {
+                    logger::severe("Could not open temporary file %s", muscle_tmpfifo);
+                    break;
+                }
+                char *cs = fgets(hostparts, 272, fp);
+                if (cs == NULL) {
+                    logger::severe("Could not read temporary file %s", muscle_tmpfifo);
+                    fclose(fp);
+                    fd = -1;
+                    break;
+                } else if (fgetc(fp) != EOF) {
+                    logger::severe("Specified host name '%272s...' is too long", hostparts);
+                    fclose(fp);
+                    fd = -1;
+                    break;
+                }
+                succeeded = true;
+            } else {
+                int status;
+                int pid = waitpid(muscle_pid, &status, WNOHANG);
+                if (pid == muscle_pid) {
+                    if (WIFEXITED(status))
+                    {
+                        if (WEXITSTATUS(status)) logger::severe("MUSCLE execution failed with status %d.", WEXITSTATUS(status));
+                    }
+                    else if (WIFSIGNALED(status))
+                    {
+                        logger::severe("MUSCLE execution terminated by signal %s.", strsignal(WTERMSIG(status)));
+                    }
+                    else logger::severe("MUSCLE failed");
+                    muscle_pid = -1;
+                    break;
+                }
+            }
+        }
+        if (fd != -1) close(fd);
+
+        if (!succeeded)
+            return;
 		
 		char *indexColon = strrchr(hostparts, ':');
 		if (indexColon == NULL) {			
@@ -456,7 +501,7 @@ void env::muscle2_kill(void)
 			break;
 		}
 		
-		// Wait for MUSLCE until a) MUSCLE has exit or b) 30 seconds have passed.
+		// Wait for MUSCLE until a) MUSCLE has exit or b) 30 seconds have passed.
 		while ((pid = waitpid(muscle_pid, &status, WNOHANG)) == 0 && i < 150) {
 			// 200.000 us = 0.2 s
 			usleep(200000);

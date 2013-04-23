@@ -200,6 +200,8 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		sb.append(host).append(':').append(port);
 		fw.append(sb);
 		fw.close();
+		
+		logger.log(Level.FINE, "''{0}'' wrote contact information {1}:{2} for executable to file {3}", new Object[]{getLocalName(), host, port, TMPFILE});
 
 		synchronized (this) {
 			while (!isDone) {
