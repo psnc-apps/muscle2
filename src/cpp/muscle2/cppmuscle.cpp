@@ -306,9 +306,8 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 		char hostparts[272];
 
 		logger::fine("Reading Java MUSCLE contact info from FIFO %s", muscle_tmpfifo);
-		// Need to set read-write to get correct select behaviour
-		// http://www.outflux.net/blog/archives/2008/03/09/using-select-on-a-fifo/
-        int fd = open(muscle_tmpfifo, O_RDWR|O_NONBLOCK);
+		
+		int fd = open(muscle_tmpfifo, O_RDONLY|O_NONBLOCK);
         bool succeeded = false;
         fd_set fd_read, fd_err;
         struct timeval timeout;
