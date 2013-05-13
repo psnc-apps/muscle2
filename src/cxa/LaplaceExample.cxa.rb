@@ -31,9 +31,10 @@ cxa = Cxa.LAST
 
 cxa.env["max_timesteps"] = 10000
 cxa.env["default_dt"] = 1
-cxa.env["nx"] = 200/2
+cxa.env["nx"] = 100
 cxa.env["ny"] = 50
-cxa.env["dx"] = 2
+cxa.env["dx"] = 4
+cxa.env["wrapAround"] = false 
 cxa.env["cxa_path"] = File.dirname(__FILE__)
 
 # declare kernels
@@ -44,9 +45,15 @@ cxa.add_kernel('west', 'examples.laplace.KernelWest')
 cs = cxa.cs
 
 cs.attach('east' => 'west') {
-	tie('east', 'east')
+	tie('westBoundary', 'remoteEast')
+	if cxa.env["wrapAround"]
+		tie('eastBoundary', 'remoteWest')
+	end
 }
 
 cs.attach('west' => 'east') {
-	tie('west', 'west')
+	tie('eastBoundary', 'remoteWest')
+	if cxa.env["wrapAround"]
+		tie('westBoundary', 'remoteEast')
+	end
 }
