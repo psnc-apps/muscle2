@@ -1,0 +1,11 @@
+// Comment
+# Comment
+
+# host definiton
+# <name> <address> [<port>]
+# if port is ommited, this MTO will not listen for incomming connections
+
+A localhost
+B localhost 5100
+C localhost
+D localhost 5300

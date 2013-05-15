@@ -152,10 +152,13 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 		InetAddress inetAddr = InetAddress.getByAddress(addr);
 		int port = in.readInt();
 		String tmpDir;
-		if (locType == LocationType.TCP_DIR_LOCATION) {
-			tmpDir = in.readString();
-		} else {
-			tmpDir = "";
+		switch (locType) {
+			case TCP_DIR_LOCATION:
+				tmpDir = in.readString();
+				break;
+			default:
+				tmpDir = "";
+				break;
 		}
 		return new TcpLocation(inetAddr, port, tmpDir);
 	}

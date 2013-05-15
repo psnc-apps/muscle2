@@ -44,5 +44,11 @@ if (BUILD_EXAMPLES)
     endif (BUILD_CPP)
 endif(BUILD_EXAMPLES)
 
+if (BUILD_MTO)
+  set(MTO_TESTER ${CMAKE_INSTALL_PREFIX}/share/muscle/examples/mto/mto_tester)
+  add_test (MTOTest ${MTO_TESTER})
+  set_tests_properties (MTOTest PROPERTIES PASS_REGULAR_EXPRESSION "0 of")
+  set_tests_properties (MTOTest PROPERTIES TIMEOUT 5)
+endif (BUILD_MTO)
 #legacy examples
 #do_test("NativeExample.cxa.rb" "r w" "got: 2.0")

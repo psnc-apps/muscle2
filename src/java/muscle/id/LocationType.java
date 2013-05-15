@@ -15,10 +15,11 @@ public enum LocationType {
 		return ordinal();
 	}
 	public static LocationType valueOf(int n) {
-		if (n == 0) {
-			return TCP_LOCATION;
-		} else {
-			return TCP_DIR_LOCATION;
+		switch (n) {
+			case 0:
+				return TCP_LOCATION;
+			default:
+				return TCP_DIR_LOCATION;
 		}
 	}
 }

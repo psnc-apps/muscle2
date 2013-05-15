@@ -1,7 +1,6 @@
 Requirements:
 
   CMAKE
-  Boost >= 1.35
 
 Build - typical cmake build:
 
@@ -32,12 +31,14 @@ Client communication:
 
   REQUEST:
 
-    T|S S S S|s s|D D D D|d d|I I I I
+    T|z|S S S S S S S S S S S S S S S S|s s|b|D D D D D D D D D D D D D D D D|d d|I I I I
 
     T type (1b)
-      S source address (4b)
+    z source address in IPv4 (1) or IPv6 (2) (1b)
+      S source address (IPv6 or IPv4), (16b)
               s source port (2b)
-                  D destination address (4b)
+                b source address in IPv4 (1) or IPv6 (2) (1b)
+                  S destination address (IPv6 or IPv4), (16b)
                           d desination port (2b)
                               IIII some session id (unused)
   
@@ -54,9 +55,10 @@ Client communication:
     2 - connect
     3 - response to connect
 
-  Source and dest adresses are written in network format (127.0.0.0 will be written as 0x01 0x00 0x00 0x7f)
-  Ports, tye and length are written in 'normal' big-endian (most significant byte first) notation (port 22 is 0x00 0x16) 
-
+  All data is written in network byte order, which is big-endian (127.0.0.1
+  will be written as 0x7f 0x00 0x00 0x01). The IPv4 address will be
+  contained in the first 4 bytes of the destination address field, the IPv6
+  address will take the full 16 bytes.
 
   1) BIND
   
@@ -66,21 +68,5 @@ Client communication:
 
     Client sends a request with type 2 and src/dest address/port to the MTO.
     Client waits for the response. If response is 0, the connect succeeded.
-     ( If the response is non-zero (i.e. 1), the connection failed and MTO closes the connection )
-    Client exchanes data with peer normally.
-
-
-Building user space boost & building with boost
-
-  If no boost or only boost < 1.35 is available, one needs to:
-
-  Download boost (from http://www.boost.org/users/download/ )
-  Unpack and run:
-
-    ./bootstrap.sh --with-libraries=system,program_options   # this will set up only the required part
-    ./b2   # this will build boost
-
-  To use the boost with CMAKE, one has to run 
-
-    BOOST_ROOT=/path/to/unpacked/boost cmake ..
-
+    If the response is non-zero (i.e. 1), the connection failed and MTO closes the connection
+    Client exchanges data with peer normally.

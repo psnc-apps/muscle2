@@ -57,14 +57,24 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}, pos = {5}", new Object[] {id, off, len, b[off], b[off+len-1], pos});
+			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b = {3}, pos = {4}", new Object[] {id, off, len, bytesToHex(b, off, len), pos});
 			out.write(b, off, len);
 			pos+=len;
 			
 			traceFile.write(b, off, len);
 		}
-
-		
+	}
+	
+	public static String bytesToHex(byte[] bytes, int off, int len) {
+		final char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+		char[] hexChars = new char[len * 2];
+		int v;
+		for (int j = 0; j < len; j++) {
+			v = bytes[off + j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		return new String(hexChars);
 	}
 
 	public static class LoggableInputStream extends FilterInputStream {
@@ -110,8 +120,8 @@ public class CrossSocketFactory extends SocketFactory {
 			try {
 				int bread = in.read(b, off, len);
 				
-				if (bread != -1) {
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}, pos = {6}", new Object[] {id, bread, off, b[off], off+bread-1, b[off+bread-1], pos});
+				if (bread >= 0) {
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, off = {2}, b = {3}, pos = {4}", new Object[] {id, bread, off, bytesToHex(b, off, bread), pos});
 					traceFile.write(b, off, bread);
 					pos+=bread;
 				} else {
@@ -502,11 +512,9 @@ public class CrossSocketFactory extends SocketFactory {
 			super.connect(new InetSocketAddress(mtoAddr, mtoPort), timeout);
 
 			// prepare & send request
-			MtoRequest req = new MtoRequest();
-			req.setSource((InetSocketAddress) getLocalSocketAddress());
-			req.setDestination(processedEndpoint);
-			req.type = MtoRequest.TYPE_CONNECT;
-
+			MtoRequest req = new MtoRequest(MtoRequest.TYPE_CONNECT,
+				(InetSocketAddress)getLocalSocketAddress(), processedEndpoint);
+			
 			super.getOutputStream().write(req.write().array());
 
 			// Read answer
@@ -519,7 +527,7 @@ public class CrossSocketFactory extends SocketFactory {
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
-			int response = new DataInputStream(super.getInputStream()).readInt();
+			long response = new DataInputStream(super.getInputStream()).readLong();
 			if (response != 0) {
 				close();
 				throw new IOException("MTO denied connection");
@@ -576,21 +584,14 @@ public class CrossSocketFactory extends SocketFactory {
 		// If one registers loopback, do it only if the MTO is on loopback as well
 		if(isa.getAddress().isLoopbackAddress() && ! mtoAddr.isLoopbackAddress()) {
 			return;
-		}
+		}		
 		
-		if( ! (isa.getAddress() instanceof Inet4Address ) ) {
-			return;
-		}
-		
-		
-		MtoRequest r = new MtoRequest();
-		r.type = MtoRequest.TYPE_REGISTER;
-		r.setSource(isa);
+		MtoRequest r = new MtoRequest(MtoRequest.TYPE_REGISTER, isa, null);
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
 		try {
 			s.getOutputStream().write(r.write().array());
-		}  finally {
+		} finally {
 			s.close();
 		}
 	}
