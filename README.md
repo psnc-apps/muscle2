@@ -1,4 +1,4 @@
-MUSCLE 2.0-RC1
+MUSCLE 2.0
 =============
 
 The multiscale coupling library and environment (MUSCLE 2) computes multiscale models on local or
