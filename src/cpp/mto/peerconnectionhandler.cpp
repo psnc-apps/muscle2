@@ -1,3 +1,23 @@
+/*
+* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
+*
+* GNU Lesser General Public License
+* 
+* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
+* 
+* MUSCLE is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+* 
+* MUSCLE is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Lesser General Public License for more details.
+* 
+* You should have received a copy of the GNU Lesser General Public License
+* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "peerconnectionhandler.hpp"
 
 #include <cassert>
@@ -274,14 +294,14 @@ void PeerConnectionHandler::handleClose(Header h)
 {
   startReadHeader();
 
-  Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got connection close reuqest for %s:%hu - %s:%hu from %s",
+  Logger::info(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got connection close reuqest for %s:%hu - %s:%hu from %s",
                   ip::address_v4(h.srcAddress).to_string().c_str(), h.srcPort,
                   ip::address_v4(h.dstAddress).to_string().c_str(), h.dstPort,
                   socketEndpt.address().to_string().c_str()
           );
   
   if(autoClose)
-    Logger::debug(Logger::MsgType_PeerConn, "Peer %s is using the wrong connection handler!", socketEndpt.address().to_string().c_str());
+    Logger::error(Logger::MsgType_PeerConn, "Peer %s is using the wrong connection handler!", socketEndpt.address().to_string().c_str());
   
 
   Identifier id(h);

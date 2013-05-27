@@ -8,7 +8,7 @@ set(MUSCLE2PYTHON_VERSION "1.0")
 #    set (PYTHON_BUILD_ARGS ${PYTHON_BUILD_ARGS} -c${PYTHON_COMPILER})
 #endif()
 
-find_package(PythonLibs)
+find_package(PythonLibsMuscle 2.6)
 if (PYTHONLIBS_FOUND)
     add_library(${MUSCLE2_PYTHON} SHARED pythonmuscle.cpp)
     set_target_properties(${MUSCLE2_PYTHON} PROPERTIES OUTPUT_NAME muscle)

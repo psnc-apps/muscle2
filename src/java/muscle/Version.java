@@ -28,7 +28,7 @@ just the version of this MUSCLE
 @author Jan Hegewald
 */
 public class Version {
-	private final static String VERSION_NUM = "2.0-RC1";
+	private final static String VERSION_NUM = "2.0";
 	private final static String INFO_TEXT = "Multiscale Coupling Library and Environment (MUSCLE) version " + VERSION_NUM + "\n\t$Revision$\n\t$Date$\n\t";
 	
 	public static String info() {
