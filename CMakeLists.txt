@@ -15,7 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_scripts")
 
 option(BUILD_CPP "Build C++ part of MUSCLE" ON)
 option(BUILD_FORTRAN "Build FORTRAN part of MUSCLE (depends on C++)" OFF)
-option(BUILD_PYTHON "Build PYTHON part of MUSCLE (depends on C++)" ON)
+option(BUILD_PYTHON "Build PYTHON part of MUSCLE (depends on C++)" OFF)
 option(BUILD_EXAMPLES "Build example models" ON)
 option(BUILD_MPI_EXAMPLES "Build MPI examples (depends on C++)" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
