@@ -18,44 +18,25 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "constants.hpp"
+#include "manager/localmto.h"
+#include "net/async_cservice.h"
+
 #include <iostream>
 #include <map>
 #include <set>
-#include <algorithm>
 #include <cstdlib>
 
 #include <unistd.h>
 #include <signal.h>
 
-#include "constants.hpp"
-#include "manager/localmto.h"
-#include "net/async_cservice.h"
-
 using namespace std;
-// // // // //      Forward declarations      // // // // //
-
-//struct MtoPeer;
-
-//void startListeningForClients();
-//
-//void startConnectingToPeers();
-//
-///** Starts establishing connection with a peer proxy */
-//void startConnectingToPeer(muscle::endpoint where);
-//
-//void setSocketOptions(muscle::socket_opts& opts);
 
 // // // // //           Varialbles           // // // // //
 muscle::async_service *asyncService;
 LocalMto *localMto;
 
-/** Open connections tunneled via proxy */
-//map<Identifier, Connection*> remoteConnections;
-
-/** dictionary of mto name -> mto config */
-map<string, mto_config> mtoConfigs;
-
-// Reaction on signal - currently sigint
+// Reaction on signal - currently sigint, sigquit and sigterm
 void signalReceived(int signum)
 {
   unsigned short min;                               ///< Lower bound for the port range
