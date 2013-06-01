@@ -10,6 +10,7 @@
 #define __CMuscle__time__
 
 #include <sys/time.h>
+#include <stdint.h>
 #include <string>
 
 #define TIME_STR_MAX_LEN 35

@@ -11,6 +11,7 @@
 
 #include <string>
 #include <sys/socket.h>
+#include <stdint.h>
 
 #define MUSCLE_ENDPOINT_IPV4 1
 #define MUSCLE_ENDPOINT_IPV6 2
