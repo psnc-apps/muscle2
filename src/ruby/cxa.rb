@@ -22,11 +22,11 @@
 
 == Author
    Jan Hegewald
-=endgewald
 =end
 
-require 'jade'
 require 'connectionscheme'
+require 'components'
+require 'instance'
 
 if File.symlink? __FILE__
 	PARENT_DIR = File.dirname(File.expand_path(File.readlink(__FILE__)))
@@ -38,24 +38,35 @@ class Cxa
 	@@LAST = nil
 	
 	def initialize(cxa_file = nil, rootenv=Muscle.LAST.env)
-		raise 'Can not load multiple CxA files' if not @@LAST.nil?
 		@@LAST = self
-		@cs = ConnectionScheme.new(self)
-		muscle_set_connection_scheme(@cs)
+		@components = Components.instance
+		@cs = ConnectionScheme.new(self.components)
 		
-		# create an env entry in root env
+		# create an env entry in root env, and make it global
 		rootenv[self.class.jclass] = {}
-		@env = rootenv[self.class.jclass]
-		
-		@instances = {}
-		@terminals = {}
-
-		@env_basename = 'cxa.env.rb'
+		@env = rootenv[self.class.jclass]		
 		
 		# load (machine specific) default env
-		load_env(File.expand_path("#{PARENT_DIR}/#{@env_basename}"), true)
-		# load cxa specific env
-		load_env(File.expand_path(cxa_file), true) unless cxa_file.nil?	
+		load_file "#{PARENT_DIR}/cxa.env.rb"
+		# load user cxa
+		unless cxa_file.nil?
+			load_file cxa_file
+			self.env["cxa_path"] = File.dirname(cxa_file)
+		end
+		
+		self.env.merge!(self.components.env)
+	end
+	
+	def load_file(cxa_file)
+		# Set globals for use in the CxA file
+		$env = self.env
+		$muscle_connection_scheme = self.cs
+
+		load_env(File.expand_path(cxa_file), true)
+
+		# After loading, remove the global $env variable again
+		$env = nil
+		$muscle_connection_scheme
 	end
 	
 	def Cxa.jclass
@@ -67,43 +78,34 @@ class Cxa
 	end
 	
 	def add_instance(*args)
-		add_to_hash(@instances, 'instance', InstanceAgent.new(*args))
+		Instance.new(*args)
 	end
 
 	def add_kernel(*args)
-		add_instance(*args)
+		Instance.new(*args)
 	end
 	
 	def add_terminal(*args)
-		add_to_hash(@terminals, 'terminal', TerminalAgent.new(*args))
+		Terminal.new(*args)
 	end
 	
-	def add_to_hash(hash, name, agent)
-		if hash.has_key?(agent.name)
-			puts "Error: #{name} <#{agent.name}> is defined twice." 
-			exit 4
-		end
-		hash[agent.name] = agent
-	end
-
 	def get(name)
-		inst = @instances[name]
-		if inst.nil?
-			@terminals[name]
-		else
-			inst
-		end
+		self.components.get(name)
  	end
+	
+	def instances
+		self.components.instances
+	end
 	
 	def generate_cs_file
 	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, 'w') do |f|
       f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"
-      f.puts cs.to_s
+      f.puts self.components.coupling_s
     end
   end
   
-	# visibility
-	attr_reader :env, :cs, :instances
+  	# visibility
+	attr_reader :env, :cs, :components
 end
 
 

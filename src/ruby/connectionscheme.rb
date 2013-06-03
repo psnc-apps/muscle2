@@ -32,55 +32,35 @@ end unless defined? PARENT_DIR
 $LOAD_PATH << PARENT_DIR
 
 class ConnectionScheme
-
-	def initialize(cxa)
+	def initialize(comps)
 		super()
-		@cxa = cxa
+		@components = comps
 		@pipelines = []
 	end
 
 	def attach(hsh)
-		if block_given?
-			# store values we need for the #tie, which should be called in the block
-			@current_entrance = '@' << @cxa.get(hsh.keys.first).portal_name
-			@current_exit = '@' << @cxa.get(hsh.values.first).portal_name
+		raise "empty attach for #{hsh.inspect}" unless block_given?
+		
+		# store values we need for the #tie, which should be called in the block
+		@current_entrance = self.components.get(hsh.keys.first)
+		@current_exit = self.components.get(hsh.values.first)
 
-			raise("Instances must be defined before coupling: #{hsh.inspect}") if @current_entrance.nil? or @current_exit.nil?
+		raise "Instances must be defined before coupling: #{hsh.inspect}" if self.current_entrance.nil? or self.current_exit.nil?
 
-			yield
-			@current_entrance = nil
-			@current_exit = nil
-		else
-			raise("empty attach for #{hsh.inspect}")
-		end
+		yield
+		@current_entrance = nil
+		@current_exit = nil
 	end
 
 	def tie(entrance_name, exit_name=entrance_name, filters=[], exit_filters=nil)
-		# Combine exit and entrance filters, separated by ''
-		filters.push('', *exit_filters) unless exit_filters.nil?
-
-		if filters.empty?
-			@pipelines << (exit_name + @current_exit + ' -> ' + entrance_name + @current_entrance)
-		else
-			@pipelines << (exit_name + @current_exit + ' ->(' + filters.join(',') + ') ' + entrance_name + @current_entrance)
-		end
-	end
-
-	# produces cs in old style format
-	# {exit name} {{full class name of conduit}[#ID][(carg0,cargn)]} {entrance name}
-	# e.g.:
-	# data@r muscle.core.conduit.AutomaticConduit#A(multiply_2) data@w
-	def to_s
-		@pipelines.join("\n")
+		self.current_entrance.couple(self.current_exit, {entrance_name => exit_name}, filters, exit_filters)
 	end
 
 	def ConnectionScheme.jclass
 		'muscle.core.ConnectionScheme'
 	end
-end
-
-def muscle_set_connection_scheme(cs)
-	$muscle_connection_scheme = cs
+	
+	attr_reader :current_entrance, :current_exit, :components
 end
 
 # helper method for setup files, redirect tie method to ConnectionScheme

@@ -37,15 +37,14 @@ class Muscle
 		@cxa = nil
 		
 		# set value for LIBPATHENV or abort
-		assert_LIBPATHENV @env
+		assert_LIBPATHENV self.env
 
-		@env_basename = 'muscle.env.rb'
 		# load (machine specific) default env
-		load_env(File.expand_path("#{PARENT_DIR}/#{@env_basename}"), true)
+		load_env(File.expand_path("#{PARENT_DIR}/muscle.env.rb"), true)
 	end
 	
 	def add_env(e)
-		@env.merge!(e) do |key, oldval, newval| 
+		self.env.merge!(e) do |key, oldval, newval| 
 			if(key == 'CLASSPATH' && oldval != nil)
 				oldval= newval << File::PATH_SEPARATOR << oldval
 			else
@@ -57,14 +56,14 @@ class Muscle
 	# helper method to add path variables
 	def add_path(hsh)
 		hsh.each do |path_key,path|
-			@env[path_key] = '' if @env[path_key] == nil
+			self.env[path_key] = '' if self.env[path_key] == nil
 			if(path.class == Array)
-				@env[path_key] = (@env[path_key].split(File::PATH_SEPARATOR) + path).join(File::PATH_SEPARATOR)
+				self.env[path_key] = (self.env[path_key].split(File::PATH_SEPARATOR) + path).join(File::PATH_SEPARATOR)
 			else
-				@env[path_key] = (@env[path_key].split(File::PATH_SEPARATOR) + path.split(File::PATH_SEPARATOR)).join(File::PATH_SEPARATOR)		
+				self.env[path_key] = (self.env[path_key].split(File::PATH_SEPARATOR) + path.split(File::PATH_SEPARATOR)).join(File::PATH_SEPARATOR)		
 			end
 			# delete any empty items
-			@env[path_key] = ((@env[path_key].split(File::PATH_SEPARATOR)).delete_if {|x| x==''}).join(File::PATH_SEPARATOR)	
+			self.env[path_key] = ((self.env[path_key].split(File::PATH_SEPARATOR)).delete_if {|x| x==''}).join(File::PATH_SEPARATOR)	
 		end
 	end
 
@@ -75,16 +74,16 @@ class Muscle
 
 	def add_libpath(p)
 		add_path('libpath'=>p)
-		ENV[@env['LIBPATHENV']] = @env['libpath']
+		ENV[self.env['LIBPATHENV']] = self.env['libpath']
 	end
 
 	def load_cxa
-		@cxa = Cxa.new(@env['cxa_file'], @env)
+		@cxa = Cxa.new(self.env['cxa_file'], self.env)
 	end
 
 	# overwrite env setting
 	def set(hsh)
-		@env.merge!(hsh)
+		self.env.merge!(hsh)
 	end
 
 	def Muscle.jclass
@@ -98,39 +97,39 @@ class Muscle
 	def print_env(keys)
 		if keys == true
 			# print the complete env (sorted)
-			@env.keys.sort.each {|k| puts "#{k.inspect}=>#{env[k].inspect}"}
+			self.env.keys.sort.each {|k| puts "#{k.inspect}=>#{self.env[k].inspect}"}
 		else
 			# print value for the specified key(s)
 			if(keys.size == 1)
 				# print raw value if output is for a single key (useful if you want to further process the output, e.g. CLASSPATH)
-				puts @env[keys.first] if @env.has_key? keys.first
+				puts self.env[keys.first] if self.env.has_key? keys.first
 			else
-				keys.each {|k| puts "#{k.inspect}=>#{env[k].inspect}" if @env.has_key? k}
+				keys.each {|k| puts "#{k.inspect}=>#{self.env[k].inspect}" if self.env.has_key? k}
 			end
 		end
 	end
 	
 	def stage_files
-		files = @env['stage_files']
+		files = self.env['stage_files']
 		
 		if files.size == 1
 			puts "Staging file #{files.first.inspect}"
 		elsif files.size > 1
 			puts "Staging files #{files.inspect}"
 		end
-		files.push(@env['cxa_file'])
+		files.push(self.env['cxa_file'])
 
 		for file in files do
 			dir = Dir.glob(file)
 			if dir.empty?
 				puts "\tWarning: filename #{file} does not result in any files."
 			end
-			FileUtils::cp_r(dir, @env['tmp_path'])
+			FileUtils::cp_r(dir, self.env['tmp_path'])
 		end
 	end
 
 	def gzip_stage_files
-		files = @env['gzip_stage_files']
+		files = self.env['gzip_stage_files']
 		
 		if files.size == 1
 			puts "Zipping and staging file #{files.first.inspect}"
@@ -141,25 +140,25 @@ class Muscle
 		end
 		
 		for file in files do
-			if not system("tar --exclude=.git --exclude=.svn --exclude=.hg -czf #{@env['tmp_path']}/#{File.basename(file)}.tgz #{file}")
+			if not system("tar --exclude=.git --exclude=.svn --exclude=.hg -czf #{self.env['tmp_path']}/#{File.basename(file)}.tgz #{file}")
 				puts "\tWarning: filename #{file} could not be compressed or staged."
 			end
 		end
 	end
 	
 	def run_manager(clazz, args)
-		tmpXmx = @env['Xmx']
-		tmpXms = @env['Xms']
-		@env['Xms'] = '20m'
-		@env['Xmx'] = '100m'
-		@env[:as_manager] = true
+		tmpXmx = self.env['Xmx']
+		tmpXms = self.env['Xms']
+		self.env['Xms'] = '20m'
+		self.env['Xmx'] = '100m'
+		self.env[:as_manager] = true
 
 		puts '=== Running MUSCLE2 Simulation Manager ==='
 		pid = run_command(clazz, args)
 
-		@env.delete(:as_manager)		
-		@env['Xms'] = tmpXms
-		@env['Xmx'] = tmpXmx
+		self.env.delete(:as_manager)		
+		self.env['Xms'] = tmpXms
+		self.env['Xmx'] = tmpXmx
 		
 		return pid
 	end
@@ -206,15 +205,15 @@ class Muscle
 	
 	def run_client(clazz, args, contact_addr)
 		args << '-m'
-		if @env['manager']
-			args << @env['manager']
+		if self.env['manager']
+			args << self.env['manager']
 		else
 			# main
 			args << contact_addr
 		end
 		
-		if @env['instancethreads']
-			args << '-t' << @env['instancethreads']
+		if self.env['instancethreads']
+			args << '-t' << self.env['instancethreads']
 		end
 		
 		puts '=== Running MUSCLE2 Simulation ==='
@@ -222,7 +221,7 @@ class Muscle
 	end
 	
 	def add_to_command(command, kernel_name, prop)
-		cenv = @cxa.env
+		cenv = self.cxa.env
 		key = "#{kernel_name}:#{prop}"
 		if cenv.has_key?(key)
 			command << cenv[key]
@@ -243,7 +242,7 @@ class Muscle
 			exit 1
 		end
 
-		args = @cxa.env["#{kernel_name}:args"]
+		args = self.cxa.env["#{kernel_name}:args"]
 		if args
 			puts "Args: #{args}"
 			native_command << args.split(' ')
@@ -273,14 +272,14 @@ class Muscle
 	end
 	
 	def exec_mpi(clazz, args)
-		command = JVM.build_command(clazz, args, @env)
+		command = JVM.build_command(clazz, args, self.env)
 		exec_command(command)
 	end
 	
 	def exec_command(command)
 		puts "Executing #{command}"
 		
-		if @env.has_key?('execute') and not @env['execute']
+		if self.env.has_key?('execute') and not self.env['execute']
 			exit 0
 		else
 			exec(command)
@@ -288,12 +287,12 @@ class Muscle
 	end
 
 	def run_command(clazz, args)
-		command = JVM.build_command(clazz, args, @env)
-		if @env['verbose']
+		command = JVM.build_command(clazz, args, self.env)
+		if self.env['verbose']
 			puts command
 		end
 		
-		if @env.has_key?('execute') and not @env['execute']
+		if self.env.has_key?('execute') and not self.env['execute']
 			return -1
 		else
 			return Process.fork {exec(command)}
@@ -301,13 +300,13 @@ class Muscle
 	end
 	
 	def apply_intercluster
-		if(env['port_min'].nil? or @env['port_max'].nil?)
+		if(self.env['port_min'].nil? or self.env['port_max'].nil?)
 			puts 'Warning: intercluster specified, but no local port range given.'
 			puts 'Maybe $MUSCLE_HOME/etc/muscle.profile was not sourced and $MUSCLE_PORT_MIN or $MUSCLE_PORT_MAX were not set?'
 			puts 'To specify them manually, use the flags --port-min and --port-max.'
 			return false
 		else
-			mto = @env['mto'] || ENV['MUSCLE_MTO']
+			mto = self.env['mto'] || ENV['MUSCLE_MTO']
 			if not mto.nil?
 				mtoHost = mto.split(':')[0]
 				mtoPort = mto.split(':')[1]
@@ -319,32 +318,32 @@ class Muscle
 				puts 'To specify the MTO address manually, use the flag --mto.'
 				return false
 			else
-				if @env.has_key?('qcg')
-					if @env.has_key?('main')
-						@env['bindport'] = 22 #master
+				if self.env.has_key?('qcg')
+					if self.env.has_key?('main')
+						self.env['bindport'] = 22 #master
 					else
-						@env['manager'] = 'localhost:22' #slave
+						self.env['manager'] = 'localhost:22' #slave
 					end
 				else
-					@env['localport'] = 0 
+					self.env['localport'] = 0 
 				end
 
-				if not @env.has_key?('jvmflags')
-					@env['jvmflags'] = []
+				if not self.env.has_key?('jvmflags')
+					self.env['jvmflags'] = []
 				end
 
-				@env['jvmflags'] << '-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory'
-				@env['jvmflags'] << '-D' + PROP_MTO_ADDRESS + '=' + mtoHost
-				@env['jvmflags'] << '-D' + PROP_MTO_PORT    + '=' + mtoPort.to_s
+				self.env['jvmflags'] << '-Dpl.psnc.muscle.socket.factory=muscle.net.CrossSocketFactory'
+				self.env['jvmflags'] << '-D' + PROP_MTO_ADDRESS + '=' + mtoHost
+				self.env['jvmflags'] << '-D' + PROP_MTO_PORT    + '=' + mtoPort.to_s
 			end
 		end
 		return true
 	end
 	
 	def muscle_tmp_path
-		"#{@env['tmp_path']}/.muscle"
+		"#{self.env['tmp_path']}/.muscle"
 	end
 	
 	# visibility
-	attr_reader :env, :env_basename
+	attr_reader :env, :cxa
 end
