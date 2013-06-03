@@ -1,31 +1,14 @@
-=begin
-== Copyright and License
-   Copyright 2008,2009 Complex Automata Simulation Technique (COAST) consortium
-   Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
+# Use the native kernel from MUSCLE
+py_kern = Instance.new('py_kern', 'muscle.core.standalone.NativeKernel')
 
-   GNU Lesser General Public License
+# define the coupling
+py_kern.couple(py_kern, 'out' => 'in')
 
-   This file is part of MUSCLE (Multiscale Coupling Library and Environment).
+# Set the properties
+$env['max_timesteps'] = 5
 
-   MUSCLE is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+# Use your favorite python interpreter
+py_kern['command'] = '/usr/bin/python'
+# With your script as the argument
+py_kern['args'] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplepython/simplepython.py"
 
-   MUSCLE is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-=end
-cxa = Cxa.LAST
-cxa.add_instance('py_kern', 'muscle.core.standalone.NativeKernel')
-
-cxa.env['py_kern:command'] = '/usr/bin/python'
-cxa.env['py_kern:args'] = ENV['MUSCLE_HOME'] + "/share/muscle/examples/simplepython/simplepython.py"
-
-cxa.cs.attach('py_kern' => 'py_kern') {
-	tie('out', 'in')
-}
