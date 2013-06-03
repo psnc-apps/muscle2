@@ -6,7 +6,7 @@ check = Instance.new('Check', 'examples.dataintegrity.Check')
 check.couple(bounce, 'datatype')
 # 3.93s user 0.55s system 79% cpu 5.617 total
 check.couple(bounce, {'out' => 'in'}, ["serialize","chunk_4","compress","thread"], ["decompress", "dechunk_4", "deserialize"])
-bounce.couple(check, {'out', 'in'}, ["serialize","chunk_4","compress","thread"], ["decompress", "dechunk_4", "deserialize"])
+bounce.couple(check, {'out' => 'in'}, ["serialize","chunk_4","compress","thread"], ["decompress", "dechunk_4", "deserialize"])
 
 # configure cxa properties
 $env["max_timesteps"] = 1;
