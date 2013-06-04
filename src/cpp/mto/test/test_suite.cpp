@@ -158,13 +158,13 @@ public:
     {
         if (first)
         {
-            assertEquals(code, 1ul, "first call to async_service");
-            assertEquals("test string", (const char *)data, "user data passes unmodified");
-            assertEquals(flag, 1, "flag passes unmodified");
+            assertEquals<size_t>(code, 1, "first call to async_service");
+            assertEquals<const char *>("test string", (const char *)data, "user data passes unmodified");
+            assertEquals<int>(flag, 1, "flag passes unmodified");
             service->erase_timer(code);
         }
         else
-            assertEquals(code, 2ul, "second call to async_service");
+            assertEquals<size_t>(code, 2, "second call to async_service");
     }
 };
 
@@ -180,8 +180,8 @@ void testTime()
     assert(t < d.time_after(), "evaluation up to now takes less than 10 seconds");
     muscle::duration dnine(9,1);
     assert(dnine.time_after().duration_until() < d && dnine < d.time_after().duration_until(), "Evaluation of time and duration has the right ordering and takes less than a second");
-    assertEquals(dnine.seconds(), 9l, "seconds match given");
-    assertEquals(dnine.useconds(), 9000001u, "microseconds match given");
+    assertEquals<long>(dnine.seconds(), 9, "seconds match given");
+    assertEquals<unsigned>(dnine.useconds(), 9000001, "microseconds match given");
 }
 
 void testAsyncConnectServerSocket()
@@ -326,7 +326,7 @@ void testEndpoint()
     assertEquals<int>(buf[2], 50, "second IPv4 segment matches 50");
     assertEquals<int>(buf[3], 56, "third IPv4 segment matches 56");
     assertEquals<int>(buf[4], 52, "last IPv4 segment matches 52");
-    assertEquals(*(uint16_t *)&buf[17],htons(50022), "port matches 50022");
+    assertEquals<uint16_t>(*(uint16_t *)&buf[17],htons(50022), "port matches 50022");
     // 146.50.56.52 = 146*256^3 + 50*256^2 + 56*256 + 52 = 2452764724
     
     muscle::endpoint bep((char *)buf);
