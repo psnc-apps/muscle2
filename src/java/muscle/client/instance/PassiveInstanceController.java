@@ -60,8 +60,21 @@ public class PassiveInstanceController extends AbstractInstanceController {
 	public boolean init() {
 		super.init();
 		
-		instance.beforeExecute();
-
+		try {
+			instance.beforeExecute();
+		} catch (Exception ex) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			try {
+				pw.close(); sw.close();
+			} catch (IOException ex1) {
+				Logger.getLogger(ThreadedInstanceController.class.getName()).log(Level.SEVERE, null, ex1);
+			}
+			logger.log(Level.SEVERE, "{0} was halted due to an error.\n====TRACE====\n{1}==END TRACE==", new Object[]{getName(), sw});
+			LocalManager.getInstance().shutdown(9);
+		}
+		
 		if (!register()) {
 			logger.log(Level.SEVERE, "Could not register {0}; it may already have been registered. {0} was halted.", getName());
 			this.disposeNoDeregister(false);
