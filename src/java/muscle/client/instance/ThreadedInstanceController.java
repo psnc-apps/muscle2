@@ -66,17 +66,17 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 				this.disposeNoDeregister(false);
 				return;
 			}
-			instance.connectPortals();
-			propagate();
-
-			// log info about this controller
-			if (logger.isLoggable(Level.INFO)) {
-				logger.log(Level.INFO, instance.infoText());
-			}
-
-			beforeExecute();
-			logger.log(Level.INFO, "{0}: executing", getName());
 			try {
+				instance.connectPortals();
+				propagate();
+
+				// log info about this controller
+				if (logger.isLoggable(Level.INFO)) {
+					logger.log(Level.INFO, instance.infoText());
+				}
+
+				beforeExecute();
+				logger.log(Level.INFO, "{0}: executing", getName());
 				instance.start();
 			} catch (MUSCLEConduitExhaustedException ex) {
 				logger.log(Level.SEVERE, getName() + " was prematurely halted, by trying to receive a message from a stopped submodel.", ex);
