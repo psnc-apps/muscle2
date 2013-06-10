@@ -3,14 +3,17 @@ require 'set'
 class Component
 	@@comps = Components.instance
 	
-	def initialize(name, cls, args=[])
+	def initialize(name, cls, with_env = {})
 		@name = name
 		@cls = cls
-		@args = args
 		@env = {}
 		@out = Set.new
 		@in = Set.new
 		@couplings = []
+		with_env.each { |k, v|
+			self[k] = v
+		}
+
 		@@comps.add(self)
 	end
 
@@ -19,11 +22,7 @@ class Component
 	end
 
 	def to_s
-		if self.args.empty?
-			self.name + ':' + self.cls
-		else
-			self.name + ':' + self.cls + '(' << self.args.join(',') + ')'
-		end
+		self.name + ':' + self.cls
 	end
 
 	def portal_name
@@ -60,7 +59,7 @@ class Component
 		self.env[self.name + ':' + key] = value
 	end
 	
-	attr_reader :env, :in, :cls, :name, :args, :couplings
+	attr_reader :env, :in, :cls, :name, :couplings
 end
 
 class Instance < Component

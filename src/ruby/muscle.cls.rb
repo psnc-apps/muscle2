@@ -67,7 +67,6 @@ class Muscle
 		end
 	end
 
-
 	def add_classpath(p)
 		add_path('CLASSPATH'=>p)
 	end
@@ -346,4 +345,12 @@ class Muscle
 	
 	# visibility
 	attr_reader :env, :cxa
+end
+
+def add_classpath(p)
+	Muscle.LAST.add_classpath(p)
+end
+
+def add_libpath(p)
+	Muscle.LAST.add_libpath(p)
 end
