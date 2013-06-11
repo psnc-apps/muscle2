@@ -24,7 +24,6 @@ package muscle.core.conduit.terminal;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -36,10 +35,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 /**
- *
+ * Reads JSON data from a URL
  * @author Joris Borgdorff
  */
-public class JSONSource extends Source<HashMap<String,Serializable>> {
+public class JSONSource extends Source<HashMap<String,Object>> {
 	int iteration = 0;
 	URL url;
 
@@ -55,37 +54,41 @@ public class JSONSource extends Source<HashMap<String,Serializable>> {
 	}
 	
 	@Override
-	public Observation<HashMap<String, Serializable>> take() throws InterruptedException {
-		Logger.getLogger(JSONSource.class.getName()).log(Level.INFO, "Source takes next");
-
+	/**
+	 * Get the JSON HashMap from the given URL.
+	 * The keys of the hashmap are keys, the objects should be tested for their
+	 * datatype, which can be Boolean, Long, String, HashMap or Double, ArrayList or null.
+	 */
+	public Observation<HashMap<String, Object>> take() throws InterruptedException {
 		BufferedReader in = null;
-		Observation<HashMap<String,Serializable>> obs = null;
+		Observation<HashMap<String,Object>> obs = null;
 		
 		try {
 			in = new BufferedReader(new InputStreamReader(url.openStream()));
 			JSONObject jsonHash = (JSONObject)JSONValue.parse(in);
 
+			// Will only work if the keys of the JSON object are strings, which
+			// they always are.
 			@SuppressWarnings("unchecked")
-			HashMap<String,Serializable> map = new HashMap<String,Serializable>(jsonHash);
+			HashMap<String,Object> map = new HashMap<String,Object>(jsonHash);
 
-			obs = new Observation<HashMap<String,Serializable>>(map, new Timestamp(iteration), new Timestamp(++iteration));
+			// Each iteration simply takes the old timestamp and a new timestamp
+			obs = new Observation<HashMap<String,Object>>(map, new Timestamp(iteration), new Timestamp(++iteration));
 		} catch (IOException ex) {
 			Logger.getLogger(JSONSource.class.getName()).log(Level.SEVERE, "Can not connect to URL <" + url + "> with JSON source.", ex);
 		} finally {
 			try {
 				if (in != null)
 					in.close();
-			} catch (IOException ex) {
-			}
+			} catch (IOException ex) {}
 		}
 		
 		return obs;
 	}
 
 	@Override
+	/** Will always be able to get a new data point by polling the URL again, so never empty */
 	public boolean isEmpty() {
-		Logger.getLogger(JSONSource.class.getName()).log(Level.INFO, "Source has next");
-		// is not empty: has data
 		return false;
 	}
 }
