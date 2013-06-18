@@ -1,23 +1,24 @@
-/*
-* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-*
-* GNU Lesser General Public License
-* 
-* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-* 
-* MUSCLE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* 
-* MUSCLE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License
-* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/**************************************************************
+ * This file is part of the MPWide communication library
+ *
+ * Written by Derek Groen with thanks going out to Steven Rieder,
+ * Simon Portegies Zwart, Joris Borgdorff, Hans Blom and Tomoaki Ishiyama.
+ * for questions, please send an e-mail to: 
+ *                                     djgroennl@gmail.com
+ * MPWide is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published 
+ * by the Free Software Foundation, either version 3 of the License, 
+ * or (at your option) any later version.
+ *
+ * MPWide is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
+ * **************************************************************/
+
 /* TestRestart.cpp
  * MPWide Test Case.
  * Written by Derek Groen, Sept. 2009.

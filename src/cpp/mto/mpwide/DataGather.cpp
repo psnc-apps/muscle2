@@ -1,23 +1,24 @@
-/*
-* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-*
-* GNU Lesser General Public License
-* 
-* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-* 
-* MUSCLE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* 
-* MUSCLE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License
-* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/**************************************************************
+ * This file is part of the MPWide communication library
+ *
+ * Written by Derek Groen with thanks going out to Steven Rieder,
+ * Simon Portegies Zwart, Joris Borgdorff, Hans Blom and Tomoaki Ishiyama.
+ * for questions, please send an e-mail to: 
+ *                                     djgroennl@gmail.com
+ * MPWide is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published 
+ * by the Free Software Foundation, either version 3 of the License, 
+ * or (at your option) any later version.
+ *
+ * MPWide is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
+ * **************************************************************/
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -189,8 +190,10 @@ int main(int argc, char** argv){
       char fn[256];
       strcpy(fn,filelist.at(0).c_str());
 
-      MPW_Send(fn,256,0);
-      MPW_Send((char*) &nfsize,4,0);
+      int *ch = {0};
+      
+      MPW_Send(fn,256,ch,1);
+      MPW_Send((char*) &nfsize,4,ch,1);
       cout << "Starting main loop."<< endl;
 
       for(long i = 0; i<fsize;i+=buffer_size) {
@@ -229,8 +232,10 @@ int main(int argc, char** argv){
 
       cout << "Receiving file header info." << endl;
 
-      MPW_Recv(fname_temp,256,0);
-      MPW_Recv((char*) &rs_n,4,0);
+      int *ch = {0};
+      
+      MPW_Recv(fname_temp,256,ch,1);
+      MPW_Recv((char*) &rs_n,4,ch,1);
 
       sprintf(fname,"%s/%s",local_dir,fname_temp);
 

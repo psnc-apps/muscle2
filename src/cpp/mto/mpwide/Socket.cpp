@@ -1,24 +1,23 @@
-/*
-* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-*
-* GNU Lesser General Public License
-* 
-* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-* 
-* MUSCLE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* 
-* MUSCLE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License
-* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
-// Implementation of the Socket class.
+/**************************************************************
+ * This file is part of the MPWide communication library
+ *
+ * Written by Derek Groen with thanks going out to Steven Rieder,
+ * Simon Portegies Zwart, Joris Borgdorff, Hans Blom and Tomoaki Ishiyama.
+ * for questions, please send an e-mail to: 
+ *                                     djgroennl@gmail.com
+ * MPWide is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published 
+ * by the Free Software Foundation, either version 3 of the License, 
+ * or (at your option) any later version.
+ *
+ * MPWide is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
+ * **************************************************************/
 
 #define REPORT_BUFFERSIZES 0
 
@@ -31,19 +30,15 @@
 #include <cstdlib>
 #include <stdio.h>
 
-
 #define min(X,Y)   ((X) < (Y) ? (X) : (Y))
-
 using namespace std;
 
 Socket::Socket() :
   m_sock ( -1 )
 {
-
   memset ( &m_addr,
 	   0,
 	   sizeof ( m_addr ) );
-
 //  set_non_blocking(true);
 }
 
@@ -55,10 +50,7 @@ Socket::~Socket()
 
 bool Socket::create()
 {
-  m_sock = socket ( AF_INET,
-		    SOCK_STREAM,
-		    0 );
-
+  m_sock = socket ( AF_INET, SOCK_STREAM, 0);
   s_sock = m_sock;
 
   if ( ! is_valid() ) {
@@ -75,28 +67,23 @@ bool Socket::create()
   /* Setting a window size. */
   if(WINSIZE > 0) {
     setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (char *) &WINSIZE, sizeof(WINSIZE));
-
     setsockopt(m_sock, SOL_SOCKET, SO_RCVBUF, (char *) &WINSIZE, sizeof(WINSIZE));
   }
 
   return true;
-
 }
 
 void Socket::setWin(int size)
 {
   if(size > 0) {
     setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(int));
-
     setsockopt(m_sock, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(int));
   }
-
 }
 
 void Socket::close()
 {
   shutdown(m_sock,SHUT_RDWR);
-//  cout << "Closing Socket" << endl;
   ::close(m_sock);
 }
 
@@ -107,30 +94,20 @@ void Socket::closeServer()
 
 bool Socket::bind ( const int port )
 {
-
   if ( ! is_valid() )
     {
       cout << "bind: Invalide socket. " << endl;
       return false;
     }
-
-
-
   m_addr.sin_family = AF_INET;
   m_addr.sin_addr.s_addr = INADDR_ANY;
-  m_addr.sin_port = htons ( port );
-
-  int bind_return = ::bind ( m_sock,
-			     ( struct sockaddr * ) &m_addr,
-			     sizeof ( m_addr ) );
-
-
+  m_addr.sin_port = htons(port);
+  int bind_return = ::bind(m_sock, (struct sockaddr *) &m_addr, sizeof (m_addr));
   if ( bind_return == -1 )
     {
       cout << "bind: Failed to bind." << endl;
       return false;
     }
-
   return true;
 }
 
@@ -142,10 +119,7 @@ bool Socket::listen() const
       cout << "listen: Invalid socket." << endl;
       return false;
     }
-
   int listen_return = ::listen ( m_sock, MAXCONNECTIONS );
-
-
   if ( listen_return == -1 )
     {
       cout << "listen: Failed to listen." << endl;
@@ -161,10 +135,8 @@ bool Socket::listen() const
 
   cout << "Channel-specific tcp window sizes (send/recv): " << tcp_sbuf << "/" << tcp_rbuf << endl;
   #endif
-
   return true;
 }
-
 
 bool Socket::accept ( Socket& new_socket ) const
 {
@@ -185,11 +157,9 @@ bool Socket::accept ( Socket& new_socket ) const
 
 bool Socket::send ( const char* s, long long int size ) const
 {
-
   struct timeval timeout;
   timeout.tv_sec = 10;
   timeout.tv_usec = 0;
-
 
   /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
   int ok = 0;
@@ -197,11 +167,8 @@ bool Socket::send ( const char* s, long long int size ) const
   fd_set sock;
   FD_ZERO(&sock);
   FD_SET(m_sock,&sock);
-
   ok = select(m_sock+1, (fd_set *) 0, &sock, (fd_set *) 0, &timeout);
-
   int count = 0;
-
   while(ok<1) {
 
     struct timeval timeout;
@@ -257,11 +224,9 @@ int Socket::recv ( char* s, long long int size ) const
   int count = 0;
 
   while(ok<1) {
-
     struct timeval timeout;
     timeout.tv_sec = 10;
     timeout.tv_usec = 0;
-
     FD_ZERO(&sock);
     FD_SET(m_sock,&sock);
 
@@ -306,13 +271,11 @@ int Socket::recv ( char* s, long long int size ) const
 int Socket::irecv ( char* s, long long int size ) const
 {
   int status = ::recv ( m_sock, s, size, 0 );
-
   if ( status < 0 ) {
     cout << "irecv: status = " << status << " errno = " << errno << "/" << strerror(errno) << endl;
     return 0;
     exit(-1);
   }
-
   return status;
 }
 
@@ -324,7 +287,6 @@ int Socket::isend ( const char* s, long long int size ) const
     exit(-1);
     return 0;
   }
-
   return status;
 }
 
@@ -341,7 +303,6 @@ int Socket::select_me (int mask, int timeout_val) const
  2 if we check for read only.
 */
 {
-
   /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
   int ok = 0;
   int access = 0;
@@ -357,7 +318,6 @@ int Socket::select_me (int mask, int timeout_val) const
   timeout.tv_usec = 0;
 
   //  cout << "select(): mask = " << mask << endl;
-
   ok = select(m_sock+1, &rsock, &wsock, (fd_set *) 0, &timeout);
   if(ok) {
     if(mask%2 == 0) {
@@ -379,15 +339,12 @@ bool Socket::connect ( const string host, const int port )
 
   m_addr.sin_family = AF_INET;
   m_addr.sin_port = htons ( port );
-
   int status = inet_pton ( AF_INET, host.c_str(), &m_addr.sin_addr );
 
   if ( errno == EAFNOSUPPORT ) return false;
-
 //  status = ::connect ( m_sock, ( sockaddr * ) &m_addr, sizeof ( m_addr ) );
 
   set_non_blocking(true);
-
   status = ::connect(m_sock, ( sockaddr *) &m_addr, sizeof(m_addr));
   if(status == false)
   {   
@@ -395,9 +352,7 @@ bool Socket::connect ( const string host, const int port )
   }   
 
 //  set_non_blocking(false);
-
   int write = select_me(1,1);
- 
   set_non_blocking(false);
 
   #if REPORT_BUFFERSIZES > 0
@@ -409,7 +364,6 @@ bool Socket::connect ( const string host, const int port )
 
   cout << "Channel-specific tcp window sizes (send/recv): " << tcp_sbuf << "/" << tcp_rbuf << endl;
   #endif
-
   int error_buf = 0;
   socklen_t err_len = sizeof(error_buf);
   getsockopt(m_sock, SOL_SOCKET, SO_ERROR, (char*) &error_buf, &err_len);
@@ -435,23 +389,14 @@ int Socket::select_me (int mask) const
 
 void Socket::set_non_blocking ( const bool b )
 {
-
   int opts;
-
-  opts = fcntl ( m_sock,
-		 F_GETFL );
-
-  if ( opts < 0 )
-    {
-      return;
-    }
-
-  if ( b )
+  opts = fcntl (m_sock, F_GETFL);
+  if(opts < 0) return;
+  if(b) {
     opts = ( opts | O_NONBLOCK );
-  else
+  }
+  else {
     opts = ( opts & ~O_NONBLOCK );
-
-  fcntl ( m_sock,
-	  F_SETFL,opts );
-
+  }
+  fcntl(m_sock, F_SETFL, opts);
 }

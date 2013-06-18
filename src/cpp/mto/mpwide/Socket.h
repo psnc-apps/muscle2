@@ -1,28 +1,26 @@
-/*
-* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-*
-* GNU Lesser General Public License
-* 
-* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-* 
-* MUSCLE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* 
-* MUSCLE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License
-* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
-// Definition of the Socket class
+/**************************************************************
+ * This file is part of the MPWide communication library
+ *
+ * Written by Derek Groen with thanks going out to Steven Rieder,
+ * Simon Portegies Zwart, Joris Borgdorff, Hans Blom and Tomoaki Ishiyama.
+ * for questions, please send an e-mail to: 
+ *                                     djgroennl@gmail.com
+ * MPWide is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published 
+ * by the Free Software Foundation, either version 3 of the License, 
+ * or (at your option) any later version.
+ *
+ * MPWide is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
+ * **************************************************************/
 
 #ifndef Socket_class
 #define Socket_class
-
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -31,7 +29,6 @@
 #include <unistd.h>
 #include <string>
 #include <arpa/inet.h>
-
 
 const int MAXHOSTNAME = 200;
 const int MAXCONNECTIONS = 5;
@@ -65,19 +62,16 @@ class Socket
   int select_me (int mask, int timeout_val) const;
 
   void set_non_blocking ( const bool );
-
   void setWin(int size);
 
   bool is_valid() const { return m_sock != -1; }
 
   void close();
-
   void closeServer();
 
   int getSock() const { return m_sock; }
 
  private:
-
   int m_sock;
   int s_sock; //socket descriptor for server.
   sockaddr_in m_addr;
@@ -88,6 +82,5 @@ class Socket
   #endif
 
 };
-
 
 #endif

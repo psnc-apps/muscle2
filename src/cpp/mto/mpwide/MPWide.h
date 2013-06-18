@@ -1,23 +1,23 @@
-/*
-* Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-*
-* GNU Lesser General Public License
-* 
-* This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-* 
-* MUSCLE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-* 
-* MUSCLE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License
-* along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/**************************************************************
+ * This file is part of the MPWide communication library
+ *
+ * Written by Derek Groen with thanks going out to Steven Rieder,
+ * Simon Portegies Zwart, Joris Borgdorff, Hans Blom and Tomoaki Ishiyama.
+ * for questions, please send an e-mail to: 
+ *                                     djgroennl@gmail.com
+ * MPWide is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published 
+ * by the Free Software Foundation, either version 3 of the License, 
+ * or (at your option) any later version.
+ *
+ * MPWide is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
+ * **************************************************************/
 #include <iostream>
 #include <cassert>
 using namespace std;
@@ -25,12 +25,10 @@ using namespace std;
 /* Enable/disable software-based packet pacing. */
 #define PacingMode 1
 
-
-//void MPW_Init_c (char** url, int* ports, int numsockets);
-//void MPW_Init1_c (char* url, int port);
-
-
 char* MPW_DNSResolve(char* host);
+
+/* Enable/disable autotuning. Set before initialization. */
+void MPW_setAutoTuning(bool b);
 
 /* Print all connections. */
 void MPW_Print();
@@ -43,13 +41,14 @@ int MPW_CreatePath(string host, int server_side_base_port, int num_streams);
 // Return 0 on success (negative on failure).
 int MPW_DestroyPath(int path);
 
-//int MPW_Send(char* sendbuf, int sendsize, int path);
-//int MPW_Recv(char* recvbuf, int recvsize, int path);
+void MPW_Send(char* sendbuf, long long int sendsize, int path);
+void MPW_Recv(char* recvbuf, long long int recvsize, int path);
 void MPW_SendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int path);
 // returns the size of the newly received data. 
 int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int maxrecvsize, int path);
 
-/* Initialize the Cosmogrid library. */
+
+/* Initialize MPWide. */
 void MPW_Init(string* url, int* server_side_ports, int* client_side_ports, int num_channels);
 void MPW_Init(string* url, int* server_side_ports, int num_channels); //this call omits client-side port binding.
 void MPW_Init(string url, int port);
@@ -57,7 +56,8 @@ void MPW_Init(string url);
 void MPW_Init();
 
 /* Set tcp window size. */
-void setWin(int channel, int size);
+void MPW_setWin(int channel, int size);
+void MPW_setPathWin(int path, int size);
 
 /* Close channels. */
 void MPW_CloseChannels(int* channels , int num_channels);
@@ -66,10 +66,6 @@ void MPW_ReOpenChannels(int* channels, int num_channels);
 
 /* Close all sockets and free data structures related to the library. */
 int MPW_Finalize();
-
-/* Exchanges buffers between the two machines. */
-//string MPW_SendRecv(string buf);
-//void MPW_SendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int channel);
 
 /* Perform this using multiple channels. */
 void MPW_PSendRecv(char** sendbuf, long long int* sendsize, char** recvbuf, long long int* recvsize, int* channel, int num_channels);
@@ -80,17 +76,12 @@ long long int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf
 
 /* Message relaying/forwarding for communication nodes. */
 void MPW_Relay(int* channels, int* channels2, int num_channels);
-void MPW_Relay1(int* channels, int* channels2, int num_channels);
-
-/* Test the socket library. */
-void MPW_Test(int num_channels);
-void MPW_TinyTest(int num_channels, int flag);
 
 /* Send data, receive nothing. */
-void MPW_Send(char* buf, long long int size, int channel);
+void MPW_Send(char* buf, long long int size, int* channels, int num_channels);
 
-/* Returns the length of the received data. */
-int MPW_Recv(char* buf, long long int size, int channel);
+/* Receive data. Will not return until the data is received. */
+void MPW_Recv(char* buf, long long int size, int* channels, int num_channels);
 
 /* Recv from one set of channels. Send out through the other set. */
 long long int MPW_DCycle(char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize,
@@ -106,7 +97,13 @@ void MPW_splitBuf(char* buf, long long int bsize, int num_chunks, char** split_b
 void MPW_Barrier(int channel);
 
 /* Adjust the global feeding pace. */
-void MPW_setFeedingPace(int sending, int receiving);
+void MPW_setChunkSize(int sending, int receiving);
+
+/* Non-blocking functionalities. */
+int MPW_ISendRecv( char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int path);
+bool MPW_Has_NBE_Finished(int NBE_id);
+void MPW_Wait(int NBE_id);
+
 
 #if PacingMode == 1
 /* Get and set rates for pacing data. */
