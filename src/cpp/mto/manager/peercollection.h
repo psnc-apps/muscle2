@@ -68,7 +68,7 @@ public:
     PeerConnectionHandler *get(PeerConnectionHandler *h) const;
     
     /** Create a new PeerConnectionHandler from given socket */
-    PeerConnectionHandler *create(const muscle::ClientSocket *sock, std::vector<MtoHello>& hellos);
+    PeerConnectionHandler *create(muscle::ClientSocket *sock, std::vector<MtoHello>& hellos);
     
     /** Update the header information of the given handler */
     void update(PeerConnectionHandler *handler, const Header& h);
@@ -79,7 +79,7 @@ public:
      listen for succesful sends, and it should delete the char pointer of data once
      it is completely sent. The errorlistener should clean up the socket, since it will
      not be able to make a full introduction. */
-    void introduce(const muscle::ClientSocket *sock);
+    void introduce(muscle::ClientSocket *sock);
 };
 
 #endif /* defined(__CMuscle__PeerCollection__) */

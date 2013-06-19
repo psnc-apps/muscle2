@@ -46,11 +46,6 @@ class socket
 public:
     virtual ~socket() {}
 
-    // Check if the socket is readable / writable. Timeout is MUSCLE_SOCKET_TIMEOUT seconds.
-    // Override MUSCLE_SOCKET_TIMEOUT to choose a different number of seconds
-    virtual int select(int mask) const = 0;
-    virtual int select(int mask, time timeout) const = 0;
-
     virtual std::string str() const;
     virtual std::string str();
     const endpoint& getAddress() const;
@@ -61,13 +56,14 @@ public:
     virtual bool operator == (const socket & s1) const
     { return getSock() == s1.getSock(); }
     async_service *getServer() const;
-    virtual void async_cancel() const = 0;
+    virtual void async_cancel() = 0;
+
+    virtual bool isBusy() { return false; }
 protected:
     socket(endpoint& ep, async_service *service);
     socket(async_service *service);
     socket(const socket& other);
     socket();
-    virtual void setBlocking (const bool) = 0;
     
     endpoint address;
     async_service *server;
@@ -86,22 +82,24 @@ public:
     virtual ssize_t recv (void* s, size_t size) const = 0;
 
     // Light-weight, non-blocking
-    virtual ssize_t isend (const void* s, size_t size) const = 0;
-    virtual ssize_t irecv (void* s, size_t size) const = 0;
+    virtual ssize_t isend (const void* s, size_t size) = 0;
+    virtual ssize_t irecv (void* s, size_t size) = 0;
 
     // asynchronous, light-weight, non-blocking
-    virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send) const = 0;
-    virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv) const = 0;
+    virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send) = 0;
+    virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv) = 0;
 
-    virtual void async_cancel() const;
+    virtual void async_cancel();
+    
     virtual ~ClientSocket() { async_cancel(); }
 };
 
 class ServerSocket : virtual public socket
 {
 public:
+    virtual ClientSocket *accept(const socket_opts& opts) = 0;
     virtual size_t async_accept(int user_flag, async_acceptlistener *accept) = 0;
-    virtual void async_cancel() const;
+    virtual void async_cancel();
     virtual ~ServerSocket() { async_cancel(); }
 protected:
     ServerSocket(const socket_opts& opts);

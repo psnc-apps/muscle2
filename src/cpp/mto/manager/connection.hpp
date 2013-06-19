@@ -24,7 +24,7 @@ class Connection : public muscle::async_recvlistener, public muscle::async_sendl
 {
 protected:
     /** Local side of the connection */
-    const muscle::ClientSocket *sock;
+    muscle::ClientSocket *sock;
     
     /** Represents the remote end */
     PeerConnectionHandler *secondMto;
@@ -53,7 +53,7 @@ protected:
 public:
     Connection() : sock(0), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0), mto(0) {}    
     /** Opening connection from REMOTE */
-    Connection(Header h, const muscle::ClientSocket* s, PeerConnectionHandler * toMto, LocalMto *mto, bool remotePeerConnected);
+    Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler * toMto, LocalMto *mto, bool remotePeerConnected);
     
     virtual ~Connection();
     

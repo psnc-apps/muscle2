@@ -8,7 +8,7 @@
 
 using namespace muscle;
 
-PeerConnectionHandler::PeerConnectionHandler(const ClientSocket * _socket, LocalMto *mto)
+PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *mto)
 : socket(_socket), pendingOperatons(0), closing(false), service(_socket->getServer()), mto(mto)
 {
     dataBufffer = new char[Header::getSize()];
@@ -155,7 +155,7 @@ PeerConnectionHandler::HandleConnected::HandleConnected(Header& header, PeerConn
     ClientSocket::async_connect(t->service, PCH_MAKE_CONNECT, h.dst, this);
 }
 
-void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, const muscle::ClientSocket *newSocket)
+void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket)
 {
     if(t->closing)
     {

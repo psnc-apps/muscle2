@@ -31,14 +31,14 @@ public:
 struct HelloReader : public muscle::async_recvlistener
 {
 private:
-    const muscle::ClientSocket * sock;
+    muscle::ClientSocket * sock;
     char * buf;
     int refs;
     std::vector<MtoHello>& hellos;
     Initiator *initiator;
     
 public:
-    HelloReader(const muscle::ClientSocket * _sock, Initiator *init, std::vector<MtoHello>& hellos_);
+    HelloReader(muscle::ClientSocket * _sock, Initiator *init, std::vector<MtoHello>& hellos_);
     
     virtual ~HelloReader();
     /** Triggered on accept; reads the header and constructs a connection */

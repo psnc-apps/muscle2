@@ -9,6 +9,9 @@
 #include "../net/csocket.h"
 #include "../net/async_cservice.h"
 #include "../util/option_parser.hpp"
+#include "../util/thread.h"
+//#include "../net/mpsocket.h"
+//#include "../net/async_mpservice.h"
 
 #include <iostream>
 #include <cstring>
@@ -96,12 +99,12 @@ class async_ss : public muscle::async_acceptlistener, muscle::async_recvlistener
 public:
     muscle::async_service * const service;
     int i;
-    const muscle::ServerSocket *ss;
-    const muscle::ClientSocket *cs;
-    const muscle::ClientSocket *as;
-    async_ss(muscle::async_service *s, const muscle::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
+    muscle::ServerSocket *ss;
+    muscle::ClientSocket *cs;
+    muscle::ClientSocket *as;
+    async_ss(muscle::async_service *s, muscle::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
     
-    virtual void async_accept(size_t code, int flag, const muscle::ClientSocket *sock)
+    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock)
     {
         i++;
         if (i == 1) {
@@ -254,15 +257,113 @@ void testSocket()
         cout << "\t\t(received: " << string(s) << ")" << endl;
         assert(sock.irecv(s, sizeof(s)) > 0, "Receiving (async)");
     } catch (const exception& ex) {
-        assert(false, "Connection to existing host (" + string(ex.what()) + ")");
+        assertFalse("Connection to existing host (" + string(ex.what()) + ")");
     }
     
     muscle::endpoint nep("XXXnapoli.science.uva.nl", 50022);
     try {
         muscle::CClientSocket sock(nep, NULL);
-        assert(false, "Do not connect to non-existing host");
+        assertFalse("Do not connect to non-existing host");
     } catch (const exception& ex) {
-        assert(true, "Do not connect to non-existing host (" + string(ex.what()) + ")");
+        assertTrue("Do not connect to non-existing host (" + string(ex.what()) + ")");
+    }
+}
+
+struct mutexThreadData {
+    muscle::mutex m;
+    int data;
+};
+
+void *testMutexThread(void *d)
+{
+    mutexThreadData *data = (mutexThreadData *)d;
+    
+    {
+        muscle::mutex_lock lock = data->m.acquire();
+        data->data++;
+    }
+    usleep(150);
+    {
+        muscle::mutex_lock lock = data->m.acquire();
+        while (data->data != 2) {
+            lock.wait();
+        }
+        data->data++;
+    }
+    
+    return NULL;
+}
+
+void testMutex()
+{
+    cout << endl << "mutex" << endl << endl;
+
+    mutexThreadData data;
+    data.data = 0;
+    
+    pthread_t t;
+    ::pthread_create(&t, NULL, &testMutexThread, &data);
+    usleep(50);
+    {
+        muscle::mutex_lock lock = data.m.acquire();
+        assertEquals(data.data, 1, "data is increased in thread");
+    }
+    {
+        muscle::mutex_lock lock = data.m.acquire();
+        data.data++;
+        lock.notify();
+        usleep(150);
+        assertEquals(data.data, 2, "data is increased in local memory");
+    }
+    usleep(100);
+    {
+        muscle::mutex_lock lock = data.m.acquire();
+        assertEquals(data.data, 3, "Notify woke up thread");
+    }
+    
+    ::pthread_join(t, NULL);
+    assertTrue("Joined thread");
+}
+
+class test_thread : public muscle::thread
+{
+    int *data;
+    muscle::duration timeout;
+public:
+    test_thread(int *data, muscle::duration timeout) : data(data), timeout(timeout) { }
+    virtual void *run()
+    {
+        timeout.sleep();
+        ++(*data);
+        return data;
+    }
+};
+
+void testThread()
+{
+    cout << endl << "thread" << endl << endl;
+    
+    int data = 0;
+    muscle::duration timeout(0, 100);
+    test_thread t(&data, timeout);
+    assertEquals(t.isDone(), false, "Not done before execution");
+    assertEquals(data, 0, "Increase only after timeout");
+    int newResult = *(int *)t.getResult();
+    assertEquals(t.isDone(), true, "Done after execution");
+    assertEquals(data, newResult, "Result matches");
+    assertEquals(data, 1, "Result is expected");
+}
+
+
+void testMPSocket()
+{
+    cout << endl << "MPWide socket" << endl << endl;
+    muscle::endpoint epServ("localhost", 5001);
+    
+    try {
+        
+    } catch (const exception& ex) {
+        assert(false, "Connection to existing host (" + string(ex.what()) + ")");
     }
 }
 
@@ -356,6 +457,8 @@ int main(int argc, char * argv[])
     muscle::time t0 = muscle::time::now();
 
     try {
+        testMutex();
+        testThread();
         testEndpoint();
         testSocket();
         testTime();

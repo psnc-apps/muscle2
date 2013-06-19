@@ -39,7 +39,7 @@ public:
     InternalAcceptor(muscle::ServerSocket *ss, LocalMto *mto) : Acceptor(ss, mto, ACCEPT_INTERNAL) {}
     
     /** Triggered on accept; reads the header and constructs a connection */
-    virtual void async_accept(size_t code, int flag, const muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
 };
 
 struct ExternalAcceptor : public Acceptor
@@ -48,7 +48,7 @@ public:
     ExternalAcceptor(muscle::ServerSocket * sock, LocalMto *mto) : Acceptor(sock, mto, ACCEPT_INTERNAL) {}
     
     /** Triggered on accept; reads the header and constructs a connection */
-    virtual void async_accept(size_t code, int flag, const muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
 };
 
 /**
@@ -57,12 +57,12 @@ public:
 class InitPeerConnection : public Initiator
 {
 private:
-    const muscle::ClientSocket * const sock;
+    muscle::ClientSocket * const sock;
     std::vector<MtoHello> hellos;
     LocalMto * const mto;
     
 public:
-    InitPeerConnection(const muscle::ClientSocket *_sock, LocalMto *mto);
+    InitPeerConnection(muscle::ClientSocket *_sock, LocalMto *mto);
     virtual void allHellosRead();
     virtual void allHellosFailed(const muscle::muscle_exception& ex);
 };
@@ -71,7 +71,7 @@ class InitConnection : public muscle::async_recvlistener, public muscle::async_s
 {
 private:
     // Set to null if it needs to be preserved for another object
-    const muscle::ClientSocket *sock;
+    muscle::ClientSocket *sock;
     LocalMto * const mto;
     char *reqBuf;
     int refs;
@@ -79,7 +79,7 @@ private:
     void registerAddress(const Request &request);
     void connect(const Request &request);
 public:
-    InitConnection(const muscle::ClientSocket *sock, LocalMto *mto);
+    InitConnection(muscle::ClientSocket *sock, LocalMto *mto);
     virtual ~InitConnection() { if (sock) delete sock; delete [] reqBuf; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);

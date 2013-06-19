@@ -9,7 +9,7 @@ set(TESTER mto_tester)
 
 #set(CMAKE_BUILD_TYPE Debug)
 
-#find_package(Threads)
+find_package(Threads)
 
 #set (Boost_DIR "" CACHE PATH "Location of the directory with CMake config for Boost")
 
@@ -35,15 +35,17 @@ set(TESTER mto_tester)
             main.cpp
             initiators/connectors.cpp initiators/helloreader.cpp initiators/acceptors.cpp
             manager/peerconnectionhandler.cpp manager/connection.cpp manager/options.cpp manager/localmto.cpp manager/peercollection.cpp manager/connectioncollection.cpp
-            net/messages.cpp net/endpoint.cpp net/socket.cpp net/csocket.cpp net/async_service.cpp net/async_cservice.cpp
-            util/logger.cpp util/option_parser.cpp util/time.cpp)
+            net/messages.cpp net/endpoint.cpp net/socket.cpp net/csocket.cpp net/async_service.cpp net/async_cservice.cpp net/mpsocket.cpp net/async_mpservice.cpp
+            util/logger.cpp util/option_parser.cpp util/time.cpp util/mutex.cpp util/thread.cpp
+            mpwide/MPWide.cpp mpwide/Socket.cpp)
 #target_link_libraries(${MTO} ${Boost_LIBRARIES} )
-#    target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
+    target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
     # Tester for the MTO 
-    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp util/logger.cpp net/endpoint.cpp net/async_service.cpp net/async_cservice.cpp)
+    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp util/logger.cpp net/endpoint.cpp net/async_service.cpp net/async_cservice.cpp util/thread.cpp util/mutex.cpp net/mpsocket.cpp net/async_mpservice.cpp
+            mpwide/MPWide.cpp mpwide/Socket.cpp)
 #    target_link_libraries(${TESTER} ${Boost_LIBRARIES} )
-#    target_link_libraries(${TESTER} ${CMAKE_THREAD_LIBS_INIT} )
+    target_link_libraries(${TESTER} ${CMAKE_THREAD_LIBS_INIT} )
 
     install(TARGETS ${MTO} DESTINATION bin)
     install(TARGETS ${TESTER} DESTINATION share/muscle/examples/mto)

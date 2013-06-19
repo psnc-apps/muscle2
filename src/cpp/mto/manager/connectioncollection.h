@@ -28,7 +28,7 @@ public:
     ConnectionCollection(LocalMto *mto) : mto(mto) {}
     
     Connection *get(Header h);
-    Connection *create(const muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected);
+    Connection *create(muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected);
     void erase(Header h);
     void replacePeer(PeerConnectionHandler *oldh, PeerConnectionHandler *newh);
     void peerDied(PeerConnectionHandler *handler);    

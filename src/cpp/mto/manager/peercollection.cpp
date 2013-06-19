@@ -36,7 +36,7 @@ PeerConnectionHandler *PeerCollection::get(PeerConnectionHandler *peer) const
     return peer;
 }
 
-PeerConnectionHandler *PeerCollection::create(const muscle::ClientSocket *sock, std::vector<MtoHello> &hellos)
+PeerConnectionHandler *PeerCollection::create(muscle::ClientSocket *sock, std::vector<MtoHello> &hellos)
 {
     PeerConnectionHandler * handler = new PeerConnectionHandler(sock, mto);
     set<PeerConnectionHandler *> allPeers;
@@ -233,7 +233,7 @@ bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hel
     return true;
 }
 
-void PeerCollection::introduce(const muscle::ClientSocket *sock)
+void PeerCollection::introduce(muscle::ClientSocket *sock)
 {
     for (peers_t::iterator peer = peers.begin(); peer != peers.end(); peer++)
     {

@@ -20,11 +20,8 @@ namespace muscle {
     {
     public:
         virtual size_t connect(int user_flag, muscle::endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
-        virtual void erase_connect(size_t);
     protected:
-        virtual int select(const ClientSocket **sender, const ClientSocket **receiver, const ServerSocket **listener, const ClientSocket **connect, duration& timeout) const;
-        virtual void run_accept(const ServerSocket *sock, bool hasErr);
-        virtual void run_connect(const ClientSocket *connect, bool hasErr);
+        virtual int select(ClientSocket **sender, ClientSocket **receiver, ServerSocket **listener, ClientSocket **connect, duration& timeout) const;
     };
 }
 

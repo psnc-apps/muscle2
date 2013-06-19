@@ -10,7 +10,7 @@
 
 using namespace std;
 
-HelloReader::HelloReader(const muscle::ClientSocket* _sock, Initiator *init, vector< MtoHello >& hellos_)
+HelloReader::HelloReader(muscle::ClientSocket* _sock, Initiator *init, vector< MtoHello >& hellos_)
 : sock(_sock), initiator(init), hellos(hellos_), refs(1)
 {
     buf = new char[MtoHello::getSize()];

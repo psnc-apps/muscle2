@@ -26,7 +26,7 @@ private:
     muscle::async_service *service;
     muscle::socket_opts opts;
     const muscle::duration timeout;
-    const muscle::ClientSocket *sock;
+    muscle::ClientSocket *sock;
     size_t timer;
     size_t sockId;
     std::vector<MtoHello> hellos;
@@ -40,7 +40,7 @@ public:
     virtual void async_execute(size_t code, int flag, void *user_data);
     
     /** Executed when connecting state changed (new connection, or some error)  */
-    virtual void async_accept(size_t code, int flag, const muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
     

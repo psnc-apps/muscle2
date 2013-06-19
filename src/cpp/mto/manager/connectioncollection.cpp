@@ -29,7 +29,7 @@ Connection *ConnectionCollection::get(Header h)
     }
 }
 
-Connection *ConnectionCollection::create(const muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected)
+Connection *ConnectionCollection::create(muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected)
 {
     Logger::debug(Logger::MsgType_ClientConn,
                   "Creating connection %s", h.str().c_str());

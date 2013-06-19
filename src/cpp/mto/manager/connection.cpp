@@ -13,7 +13,7 @@
 #define CONN_TIMEOUT_CLOSE 5 // don't free
 
 /* from remote */
-Connection::Connection(Header h, const muscle::ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
+Connection::Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
 : sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), referenceCount(0), secondMto(t), mto(mto), closing_timer(0)
 {
     assert(secondMto != NULL);

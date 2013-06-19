@@ -29,7 +29,7 @@ namespace muscle {
         virtual int select(int mask) const;
         virtual int select(int mask, time timeout) const;
 
-        virtual int getSock() const;
+        virtual int getSock() const { return sockfd; }
         virtual bool operator < (const csocket & s1) const { return sockfd < s1.sockfd; }
         virtual bool operator == (const csocket & s1) const { return sockfd == s1.sockfd; }
     protected:
@@ -48,8 +48,8 @@ namespace muscle {
     class CClientSocket : public ClientSocket, public csocket
     {
     public:
-        CClientSocket(const ServerSocket& parent);
-        CClientSocket(const ServerSocket& parent, const socket_opts& opts);
+//        CClientSocket(const ServerSocket& parent);
+        CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts);
         CClientSocket(endpoint& ep, async_service *service);
         CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts);
         
@@ -58,18 +58,17 @@ namespace muscle {
         virtual ssize_t recv (void* s, size_t size) const;
         
         // Light-weight, non-blocking
-        virtual ssize_t isend (const void* s, size_t size) const;
-        virtual ssize_t irecv (void* s, size_t size) const;
+        virtual ssize_t isend (const void* s, size_t size);
+        virtual ssize_t irecv (void* s, size_t size);
         // asynchronous, light-weight, non-blocking
-        virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send) const;
-        virtual ssize_t async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver) const;
+        virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send);
+        virtual ssize_t async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver);
         virtual int hasError() const;
     protected:
         virtual void connect(bool blocking);
     // Disallowed - is problematic for destructor
     private:
         CClientSocket(const CClientSocket& other) {}
-        void initFromParent(const ServerSocket& parent);
     };
     
     class CServerSocket : public ServerSocket, public csocket
@@ -78,6 +77,7 @@ namespace muscle {
         CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts);
         
         virtual size_t async_accept(int user_flag, async_acceptlistener *accept);
+        virtual ClientSocket *accept(const socket_opts& opts);
     protected:
         virtual void init();
         virtual void listen(int max_connections);

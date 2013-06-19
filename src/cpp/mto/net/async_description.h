@@ -66,7 +66,7 @@ namespace muscle {
     class async_acceptlistener : public async_listener
     {
     public:
-        virtual void async_accept(size_t code, int user_flag, const ClientSocket *newSocket) = 0;
+        virtual void async_accept(size_t code, int user_flag, ClientSocket *newSocket) = 0;
     };
     
     struct async_description

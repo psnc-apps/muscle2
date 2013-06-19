@@ -21,7 +21,7 @@ class PeerConnectionHandler : public muscle::async_recvlistener
     void readHeader();
     
 public:
-    PeerConnectionHandler(const muscle::ClientSocket * _socket, LocalMto *mto);
+    PeerConnectionHandler(muscle::ClientSocket * _socket, LocalMto *mto);
     virtual ~PeerConnectionHandler();
     
     inline std::string str() { return socket->getAddress().str(); }
@@ -80,7 +80,7 @@ protected:
     std::map<Identifier, PeerConnectionHandler*> fwdMap;
     
     /** Ptr to this inter-proxy socket */
-    const muscle::ClientSocket *socket;
+    muscle::ClientSocket *socket;
     
     LocalMto *mto;
     char *dataBufffer;
@@ -118,7 +118,7 @@ protected:
         PeerConnectionHandler *t;
         HandleConnected(Header& header, PeerConnectionHandler *thiz);
         
-        virtual void async_accept(size_t code, int user_flag, const muscle::ClientSocket *newSocket);
+        virtual void async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket);
         virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
         virtual void async_done(size_t code, int user_flag);
     };

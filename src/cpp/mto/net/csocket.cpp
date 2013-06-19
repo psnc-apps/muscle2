@@ -65,11 +65,6 @@ namespace muscle {
         setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(bool));
     }
     
-    int csocket::getSock() const
-    {
-        return sockfd;
-    }
-    
     void csocket::setWin(int size)
     {
         assert(size > 0);
@@ -143,14 +138,8 @@ namespace muscle {
         connect(true);
     }
 
-    CClientSocket::CClientSocket(const ServerSocket& parent) : socket(parent)
+    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd)
     {
-        initFromParent(parent);
-    }
-
-    CClientSocket::CClientSocket(const ServerSocket& parent, const socket_opts& opts) : socket(parent)
-    {
-        initFromParent(parent);
         setOpts(opts);
     }
         
@@ -160,19 +149,7 @@ namespace muscle {
         setOpts(opts);
         connect(opts.blocking_connect != 0);
     }
-
-    void CClientSocket::initFromParent(const ServerSocket& parent)
-    {
-        struct sockaddr addr;
-        parent.getAddress().getSockAddr(addr);
-        socklen_t socklen = sizeof(struct sockaddr);
-        sockfd = ::accept (parent.getSock(), &addr, &socklen);
-        
-        if (sockfd < 0)
-            throw muscle_exception("Failed to accept socket: " + string(strerror(errno)));
-
-    }
-
+    
     void CClientSocket::connect(bool blocking)
     {
         setBlocking(blocking);
@@ -230,22 +207,22 @@ namespace muscle {
         return s_ptr - (unsigned char *)s;
     }
     
-    ssize_t CClientSocket::irecv(void* s, size_t size) const
+    ssize_t CClientSocket::irecv(void* s, size_t size)
     {
         return ::recv(sockfd, s, size, 0);
     }
     
-    ssize_t CClientSocket::isend(const void* s, size_t size) const
+    ssize_t CClientSocket::isend(const void* s, size_t size)
     {
         return ::send(sockfd, s, size, MSG_NOSIGNAL);
     }
     
-    ssize_t CClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver) const
+    ssize_t CClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver)
     {
         return server->receive(user_flag, this, s, size, receiver);
     }
     
-    ssize_t CClientSocket::async_send(int user_flag, const void* s, size_t size, async_sendlistener *send) const
+    ssize_t CClientSocket::async_send(int user_flag, const void* s, size_t size, async_sendlistener *send) 
     {
         return server->send(user_flag, this, s, size, send);
     }
@@ -265,6 +242,19 @@ namespace muscle {
         setOpts(opts);
         init();
         listen(opts.max_connections);
+    }
+    
+    ClientSocket *CServerSocket::accept(const socket_opts &opts)
+    {
+        struct sockaddr addr;
+        address.getSockAddr(addr);
+        socklen_t socklen = sizeof(struct sockaddr);
+        int childfd = ::accept(sockfd, &addr, &socklen);
+        
+        if (childfd < 0)
+            throw muscle_exception("Failed to accept socket: " + string(strerror(errno)));
+        
+        return new CClientSocket(*this, childfd, opts);
     }
     
     void CServerSocket::listen(int max_connections)

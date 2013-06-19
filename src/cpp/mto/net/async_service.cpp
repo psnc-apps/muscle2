@@ -22,7 +22,7 @@ namespace muscle
     async_service::async_service() : _current_code(1), is_done(false), is_shutdown(false)
     {}
     
-    size_t async_service::send(int user_flag, const ClientSocket *socket, const void *data, size_t size, async_sendlistener* send)
+    size_t async_service::send(int user_flag, ClientSocket *socket, const void *data, size_t size, async_sendlistener* send)
     {
         if (!socket || !data)
             throw muscle_exception("Socket and data must not be empty");
@@ -37,7 +37,7 @@ namespace muscle
         return code;
     }
     
-    size_t async_service::receive(int user_flag, const ClientSocket *socket, void *data, size_t size, async_recvlistener* recv)
+    size_t async_service::receive(int user_flag, ClientSocket *socket, void *data, size_t size, async_recvlistener* recv)
     {
         if (!socket || !data || !recv)
             throw muscle_exception("Socket, data and receiver must not be empty");
@@ -50,7 +50,7 @@ namespace muscle
         return code;
         
     }
-    size_t async_service::listen(int user_flag, const ServerSocket *socket, socket_opts *opts, async_acceptlistener* accept)
+    size_t async_service::listen(int user_flag, ServerSocket *socket, socket_opts *opts, async_acceptlistener* accept)
     {
         if (!socket || !accept)
             throw muscle_exception("Socket and accept listener must not be empty");
@@ -74,7 +74,7 @@ namespace muscle
         return code;
     }
     
-    void async_service::erase(const muscle::ClientSocket *socket)
+    void async_service::erase(ClientSocket *socket)
     {
         csocks_t::iterator it = sendSockets.find(socket);
         if (it != sendSockets.end())
@@ -140,7 +140,7 @@ namespace muscle
         }
     }
     
-    void async_service::erase(const muscle::ServerSocket *socket)
+    void async_service::erase(ServerSocket *socket)
     {
         ssockdesc_t::iterator it = listenSockets.find(socket);
         if (it != listenSockets.end())
@@ -202,49 +202,59 @@ namespace muscle
     {
         while (!is_done)
         {
-            size_t t = next_alarm();
-            timer_t *timer = t ? &timers[t] : NULL;
-            if (t && timer->first.is_past())
-                run_timer(t);
-            else
-            {
-                duration timeout = duration(10,0);
-                if (t)
-                {
-                    duration untilNextEvent = timer->first.duration_until();
-                    if (untilNextEvent < timeout)
-                        timeout = untilNextEvent;
-                }
-
-                const ClientSocket *sender = NULL, *receiver = NULL, *connect = NULL;
-                const ServerSocket *listener = NULL;
-                
-                try {
-                    int res = select(&sender, &receiver, &listener, &connect, timeout);
-                
-                    if (connect != NULL) run_connect(connect, res&8);
-                    else if (listener != NULL) run_accept(listener, res&4);
-                    else if (sender != NULL) run_send(sender, res&1);
-                    else if (receiver != NULL) run_recv(receiver, res&2);
-                } catch (const muscle::muscle_exception& ex) {
-                    // Interruption doesn't matter, we can continue to the next part of the loop.
-                    if (ex.error_code == EINTR)
-                        continue;
-                    else
-                        throw ex;
-                }
-            }
-            
-            if (recvSockets.empty() && sendSockets.empty() && listenSockets.empty() && connectSockets.empty())
-            {
-                size_t t = next_alarm();
-                if (t)
-                    timers[t].first.sleep();
-                else
-                    break;
-            }
+            ssize_t ret = run_once();
+            if (ret > 0)
+                timers[ret].first.sleep();
+            else if (ret < 0)
+                break;
         }
         is_shutdown = true;
+    }
+    
+    ssize_t async_service::run_once()
+    {
+        size_t t = next_alarm();
+        timer_t *timer = t ? &timers[t] : NULL;
+        if (t && timer->first.is_past())
+            run_timer(t);
+        else
+        {
+            duration timeout = duration(10,0);
+            if (t)
+            {
+                duration untilNextEvent = timer->first.duration_until();
+                if (untilNextEvent < timeout)
+                    timeout = untilNextEvent;
+            }
+            
+            ClientSocket *sender = NULL, *receiver = NULL, *connect = NULL;
+            ServerSocket *listener = NULL;
+            
+            try {
+                int res = select(&sender, &receiver, &listener, &connect, timeout);
+                
+                if (connect != NULL) run_connect(connect, res&8);
+                else if (listener != NULL) run_accept(listener, res&4);
+                else if (sender != NULL) run_send(sender, res&1);
+                else if (receiver != NULL) run_recv(receiver, res&2);
+            } catch (const muscle::muscle_exception& ex) {
+                // Interruption doesn't matter, we can continue to the next part of the loop.
+                if (ex.error_code == EINTR)
+                    return 1;
+                else
+                    throw ex;
+            }
+        }
+        
+        if (recvSockets.empty() && sendSockets.empty() && listenSockets.empty() && connectSockets.empty())
+        {
+            size_t t = next_alarm();
+            if (t)
+                return t;
+            else
+                return -1;
+        }
+        return 0;
     }
     
     void async_service::run_timer(size_t timer)
@@ -262,7 +272,7 @@ namespace muscle
             desc.listener->async_report_error(timer, desc.user_flag, ex);
         }
     }
-    void async_service::run_send(const ClientSocket *sock, bool hasErr)
+    void async_service::run_send(ClientSocket *sock, bool hasErr)
     {
         async_description& d = sendQueues[sock].front();
         d.in_progress = 1;
@@ -342,7 +352,7 @@ namespace muscle
         }
     }
 
-    void async_service::run_recv(const ClientSocket *sock, bool hasErr)
+    void async_service::run_recv(ClientSocket *sock, bool hasErr)
     {
         bool is_final = true;
 
@@ -516,4 +526,77 @@ namespace muscle
         num = done_timers.size();
         Logger::info(msgTypes, "    Number of inactive timers: %zu", num);
     }
+    
+    void async_service::erase_connect(size_t code)
+    {
+        for (map<ClientSocket *, async_description>::iterator it = connectSockets.begin(); it != connectSockets.end(); it++)
+        {
+            if (it->second.code == code) {
+                async_description& desc = it->second;
+                desc.listener->async_done(desc.code, desc.user_flag);
+                ClientSocket *sock = it->first;
+                connectSockets.erase(it);
+                delete sock;
+                break;
+            }
+        }
+    }
+    
+    void async_service::run_accept(ServerSocket *sock, bool hasErr)
+    {
+        async_description desc = listenSockets[sock];
+        
+        if (hasErr)
+        {
+            muscle_exception ex("ServerSocket had error");
+            desc.listener->async_report_error(desc.code, desc.user_flag, ex);
+            return;
+        }
+        
+        ClientSocket *ccsock = NULL;
+        try
+        {
+            socket_opts *opts = desc.data ? (socket_opts *)desc.data : new socket_opts;
+            
+            opts->blocking_connect = false;
+            
+            ccsock = sock->accept(*opts);
+            
+            if (!desc.data)
+                delete opts;
+        }
+        catch (exception& ex)
+        {
+            desc.listener->async_report_error(desc.code, desc.user_flag, ex);
+        }
+        
+        if (ccsock)
+        {
+            async_acceptlistener* accept = static_cast<async_acceptlistener*>(desc.listener);
+            accept->async_accept(desc.code, desc.user_flag, ccsock);
+        }
+        else
+        {
+            muscle_exception ex("Could accept socket: " + string(strerror(errno)));
+            desc.listener->async_report_error(desc.code, desc.user_flag, ex);
+        }
+    }
+    
+    void async_service::run_connect(ClientSocket *sock, bool hasErr)
+    {
+        async_description desc = connectSockets[sock];
+        connectSockets.erase(sock);
+        
+        int err = 0;
+        if (hasErr || (err = sock->hasError())) {
+            muscle_exception ex("Could not connect to " + sock->getAddress().str(), err);
+            desc.listener->async_report_error(desc.code, desc.user_flag, ex);
+            delete sock;
+        } else {
+            async_acceptlistener* accept = static_cast<async_acceptlistener*>(desc.listener);
+            accept->async_accept(desc.code, desc.user_flag, sock);
+        }
+        desc.listener->async_done(desc.code, desc.user_flag);
+    }
+
 }

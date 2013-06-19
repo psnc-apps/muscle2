@@ -32,7 +32,7 @@ void StubbornConnecter::async_execute(size_t code, int flag, void *user_data)
     service->update_timer(timer, t, (void *)0);
 }
 
-void StubbornConnecter::async_accept(size_t code, int flag, const muscle::ClientSocket *sock_)
+void StubbornConnecter::async_accept(size_t code, int flag, muscle::ClientSocket *sock_)
 {
     service->erase_timer(timer);
     

@@ -30,7 +30,7 @@ void Acceptor::async_report_error(size_t code, int flag, const muscle::muscle_ex
     exit(1);
 }
 
-void ExternalAcceptor::async_accept(size_t code, int flag, const muscle::ClientSocket *sock)
+void ExternalAcceptor::async_accept(size_t code, int flag, muscle::ClientSocket *sock)
 {
     Logger::trace(Logger::MsgType_PeerConn, "Accepted peer connection %s, starting hello exchange",
                   sock->str().c_str());
@@ -39,14 +39,14 @@ void ExternalAcceptor::async_accept(size_t code, int flag, const muscle::ClientS
 }
 
 
-void InternalAcceptor::async_accept(size_t code, int flag, const muscle::ClientSocket *sock)
+void InternalAcceptor::async_accept(size_t code, int flag, muscle::ClientSocket *sock)
 {
     InitConnection *initConn = new InitConnection(sock, mto);
 //
 //    Connection *conn = new Connection(sock, mto);
 }
 
-InitConnection::InitConnection(const muscle::ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)
+InitConnection::InitConnection(muscle::ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)
 {
     reqBuf = new char[Request::getSize()];
     sock->async_recv(MAIN_INTERNAL_ACCEPT, reqBuf, Request::getSize(), this);
@@ -144,7 +144,7 @@ void InitConnection::registerAddress(const Request &request)
                       request.src.str().c_str(), sock->getAddress().str().c_str());
 }
 
-InitPeerConnection::InitPeerConnection(const muscle::ClientSocket *_sock, LocalMto *mto)
+InitPeerConnection::InitPeerConnection(muscle::ClientSocket *_sock, LocalMto *mto)
 : sock(_sock), mto(mto)
 {
     new HelloReader(sock, this, hellos);

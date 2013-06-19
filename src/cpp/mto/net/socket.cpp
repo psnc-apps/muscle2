@@ -55,7 +55,7 @@ namespace muscle {
         return service->connect(user_flag, ep, &opts, accept);
     }
 
-    void ClientSocket::async_cancel() const
+    void ClientSocket::async_cancel()
     {
         if (server)
             server->erase(this);
@@ -71,7 +71,7 @@ namespace muscle {
     void ServerSocket::listen(int max_connections)
     {}
     
-    void ServerSocket::async_cancel() const
+    void ServerSocket::async_cancel()
     {
         if (server)
             server->erase(this);
