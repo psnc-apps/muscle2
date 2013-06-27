@@ -20,7 +20,7 @@ void *_run_cmuscle_util_thread(void *t)
 }
 
 
-thread::thread() : stop_condition(false), done(false), result(0), mutex()
+thread::thread() : stop_condition(false), done(false), result(0), m()
 {
     int ret;
     if ((ret = ::pthread_create(&t, NULL, &_run_cmuscle_util_thread, this)) != 0)
@@ -37,25 +37,25 @@ thread::~thread()
 
 bool thread::isDone()
 {
-    mutex_lock lock = mutex.acquire();
+    mutex_lock lock = m.acquire();
     return done;
 }
 
 void thread::setDone()
 {
-    mutex_lock lock = mutex.acquire();
+    mutex_lock lock = m.acquire();
     done = true;
 }
 
 void thread::stop()
 {
-    mutex_lock lock = mutex.acquire();
+    mutex_lock lock = m.acquire();
     stop_condition = true;
 }
 
 bool thread::hasStopSignal()
 {
-    mutex_lock lock = mutex.acquire();
+    mutex_lock lock = m.acquire();
     return stop_condition;
 }
 

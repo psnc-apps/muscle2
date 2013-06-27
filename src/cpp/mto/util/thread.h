@@ -36,7 +36,7 @@ private:
     pthread_t t;
     bool done;
     bool stop_condition;
-    mutex mutex;
+    mutex m;
     void *result;
 };
 
