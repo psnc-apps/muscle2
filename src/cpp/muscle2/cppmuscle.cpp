@@ -149,10 +149,11 @@ int env::detect_mpi_rank() {
 			"MPISPAWN_ID",
 			"MP_CHILD",
 			"PMI_RANK",
-			"SLURM_PROCID",
 			"X10_PLACE",
 			"OMPI_MCA_orte_ess_vpid",
-			"OMPI_MCA_ns_nds_vpid"};
+			"OMPI_MCA_ns_nds_vpid",
+			"SLURM_PROCID" };
+
 	int irank = 0;
 	const size_t len = sizeof(possible_mpi_rank_vars)/sizeof(const char *);
 	for (size_t i = 0; i < len; i++) {
