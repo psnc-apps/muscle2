@@ -44,10 +44,14 @@ char *f2cstr(const char *str, int len)
 	char *end = cstr + sz - 1;
 	
 	if (!term) {
-		logger::warning("Fortran string ''%s'' was not null-terminated, trimming spaces", cstr);
 		while(end > cstr && isspace(*end)) end--;
 	}
 	*(end+1) = '\0';
+
+	if (!term && end != cstr + sz - 1) {
+		logger::warning("Fortran string ''%s'' was not null-terminated, trimmed spaces", cstr);
+	}
+
 	return cstr;
 }
 
