@@ -31,11 +31,10 @@ using namespace muscle;
 
 char *f2cstr(const char *str, int len)
 {
-	size_t sz;
+	size_t sz = len;
 	bool term;
 	if (memchr(str, '\0', sz) == NULL) {
 		term = false;
-		sz = len;
 	} else {
 		term = true;
 		sz = strlen(str);
