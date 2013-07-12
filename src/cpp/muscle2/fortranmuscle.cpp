@@ -31,10 +31,11 @@ using namespace muscle;
 
 char *f2cstr(const char *str, int len)
 {
-	size_t sz = len;
+	size_t sz;
 	bool term;
 	if (memchr(str, '\0', sz) == NULL) {
 		term = false;
+		sz = len;
 	} else {
 		term = true;
 		sz = strlen(str);
@@ -45,12 +46,11 @@ char *f2cstr(const char *str, int len)
 	
 	if (!term) {
 		while(end > cstr && isspace(*end)) end--;
+
+		if (end != cstr + sz - 1)
+			logger::warning("Fortran string ''%s'' was not null-terminated, trimmed spaces", cstr);
 	}
 	*(end+1) = '\0';
-
-	if (!term && end != cstr + sz - 1) {
-		logger::warning("Fortran string ''%s'' was not null-terminated, trimmed spaces", cstr);
-	}
 
 	return cstr;
 }
