@@ -34,12 +34,23 @@ class muscle_exception : public std::runtime_error {
 public:
     const int error_code;
 
+    muscle_exception(const std::exception& ex) : std::runtime_error(ex.what()), error_code(errno)    { log(); }
+	muscle_exception (std::string msg) throw() : std::runtime_error(msg), error_code(errno)          { log(); }
+	muscle_exception (std::string msg, int code) throw() : std::runtime_error(msg), error_code(code) { log(); }
+
+	// Already logged in given muscle_exception
     muscle_exception(const muscle_exception& ex) : std::runtime_error(ex.what()), error_code(ex.error_code) {}
-    muscle_exception(const std::exception& ex) : std::runtime_error(ex.what()), error_code(errno) {}
-	muscle_exception (std::string msg) throw() : std::runtime_error(msg), error_code(errno) {}
-	muscle_exception (std::string msg, int code) throw() : std::runtime_error(msg), error_code(code)
-    {
-		logger::severe(msg.c_str());
+
+	void log()
+	{
+		const char *w = what();
+		if (error_code)
+		{
+			const char *err = strerror(error_code);
+			logger::severe("%s: %s", w, err);
+		}
+		else
+			logger::severe(w);
 	}
 };
 
