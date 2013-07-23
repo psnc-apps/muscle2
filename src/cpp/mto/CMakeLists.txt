@@ -43,7 +43,7 @@ find_package(Threads)
     target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
     # Tester for the MTO 
-    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp net/endpoint.cpp net/async_service.cpp util/thread.cpp util/mutex.cpp net/mpsocket.cpp util/thread.cpp util/rwmutex.cpp ../muscle2/logger.cpp
+    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp net/endpoint.cpp net/async_service.cpp util/mutex.cpp net/mpsocket.cpp util/thread.cpp util/rwmutex.cpp ../muscle2/logger.cpp
             mpwide/MPWide.cpp mpwide/Socket.cpp)
 #    target_link_libraries(${TESTER} ${Boost_LIBRARIES} )
     target_link_libraries(${TESTER} ${CMAKE_THREAD_LIBS_INIT} )
