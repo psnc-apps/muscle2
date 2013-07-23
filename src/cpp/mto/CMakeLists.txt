@@ -35,14 +35,15 @@ find_package(Threads)
             main.cpp
             initiators/connectors.cpp initiators/helloreader.cpp initiators/acceptors.cpp
             manager/peerconnectionhandler.cpp manager/connection.cpp manager/options.cpp manager/localmto.cpp manager/peercollection.cpp manager/connectioncollection.cpp
-            net/messages.cpp net/endpoint.cpp net/socket.cpp net/csocket.cpp net/async_service.cpp net/async_cservice.cpp net/mpsocket.cpp net/async_mpservice.cpp
-            util/logger.cpp util/option_parser.cpp util/time.cpp util/mutex.cpp util/thread.cpp
-            mpwide/MPWide.cpp mpwide/Socket.cpp)
+            net/messages.cpp net/endpoint.cpp net/socket.cpp net/csocket.cpp net/async_service.cpp net/mpsocket.cpp
+            util/option_parser.cpp util/time.cpp util/mutex.cpp util/rwmutex.cpp util/thread.cpp
+            mpwide/MPWide.cpp mpwide/Socket.cpp
+            ../muscle2/logger.cpp) 
 #target_link_libraries(${MTO} ${Boost_LIBRARIES} )
     target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
     # Tester for the MTO 
-    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp util/logger.cpp net/endpoint.cpp net/async_service.cpp net/async_cservice.cpp util/thread.cpp util/mutex.cpp net/mpsocket.cpp net/async_mpservice.cpp
+    add_executable(${TESTER} test/test_suite.cpp util/option_parser.cpp net/csocket.cpp net/socket.cpp util/time.cpp net/endpoint.cpp net/async_service.cpp util/thread.cpp util/mutex.cpp net/mpsocket.cpp util/thread.cpp util/rwmutex.cpp ../muscle2/logger.cpp
             mpwide/MPWide.cpp mpwide/Socket.cpp)
 #    target_link_libraries(${TESTER} ${Boost_LIBRARIES} )
     target_link_libraries(${TESTER} ${CMAKE_THREAD_LIBS_INIT} )

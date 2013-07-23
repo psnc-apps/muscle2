@@ -24,26 +24,21 @@
 
 #include <string>
 #include <cstring>
-#include <stdlib.h>
+#include <cstdlib>
 #include <ctype.h>
 
 using namespace muscle;
 
-char *f2cstr(const char *str, int len)
+char *f2cstr(const char *str, const int len)
 {
-	size_t sz = len;
-	bool term;
-	if (memchr(str, '\0', sz) == NULL) {
-		term = false;
-	} else {
-		term = true;
-		sz = strlen(str);
-	}
+	const char * const term = (char *)memchr(str, '\0', len);
+	const size_t sz = (term == NULL) ? len : term - str;
+
 	char *cstr = (char *)malloc(sz+1);
 	memcpy(cstr, str, sz);
 	char *end = cstr + sz - 1;
 	
-	if (!term) {
+	if (term == NULL) {
 		while(end > cstr && isspace(*end)) end--;
 
 		if (end != cstr + sz - 1)
@@ -54,7 +49,7 @@ char *f2cstr(const char *str, int len)
 	return cstr;
 }
 
-void c2fstr(const char *cstr, char *fstr, int reslen)
+void c2fstr(const char *cstr, char *fstr, const int reslen)
 {
 	size_t len = strlen(cstr);
 	if (len > reslen) {
@@ -64,7 +59,7 @@ void c2fstr(const char *cstr, char *fstr, int reslen)
 	memcpy(fstr, cstr, len);
 	char *end = fstr + reslen;
 	fstr += len;
-	while (fstr != end) *(fstr++) = ' ';
+	while (fstr < end) *(fstr++) = ' ';
 }
 
 void muscle_init_(int *argc, char *argv, int len)

@@ -7,7 +7,7 @@
 //
 
 #include "time.h"
-#include "exception.hpp"
+#include "../../muscle2/exception.hpp"
 
 #include <stdint.h>
 #include <errno.h>
@@ -29,7 +29,7 @@ namespace muscle {
     {
         struct timeval now;
         if (gettimeofday(&now, NULL) == -1)
-            throw muscle_exception("Could not get time for timer: " + std::string(strerror(errno)));
+            throw muscle_exception("Could not get time for timer", errno);
         
         return time(now);
     }

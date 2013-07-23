@@ -19,8 +19,6 @@
  * along with MPWide.  If not, see <http://www.gnu.org/licenses/>.
  * **************************************************************/
 
-#define REPORT_BUFFERSIZES 0
-
 #include "Socket.h"
 #include "string.h"
 #include <string.h>
@@ -30,49 +28,53 @@
 #include <cstdlib>
 #include <stdio.h>
 
-#define min(X,Y)   ((X) < (Y) ? (X) : (Y))
+#include "mpwide-macros.h"
+
 using namespace std;
 
 Socket::Socket() :
   m_sock ( -1 )
 {
-  memset ( &m_addr,
-	   0,
-	   sizeof ( m_addr ) );
-//  set_non_blocking(true);
+  memset(&m_addr, 0, sizeof( m_addr ));
+  set_non_blocking(false);
+  refs = new int(1);
+}
+
+Socket::Socket(const Socket& other) : m_sock(other.m_sock), m_addr(other.m_addr), refs(other.refs)
+{
+  ++(*refs);
 }
 
 Socket::~Socket()
 {
-  if ( is_valid() )
-    ::close ( m_sock );
+  if (--(*refs) == 0) {
+    if ( is_valid() )
+      ::close ( m_sock );
+    delete refs;
+  }
 }
 
 bool Socket::create()
 {
   m_sock = socket ( AF_INET, SOCK_STREAM, 0);
-  s_sock = m_sock;
 
   if ( ! is_valid() ) {
-    cout << "Failed to create socket." << endl;
+    LOG_ERR("Failed to create socket.");
     return false;
   }
 
   int on = 1;
   if ( setsockopt ( m_sock, SOL_SOCKET, SO_REUSEADDR, ( const char* ) &on, sizeof ( on ) ) == -1 ) {
-    cout << "Failed to set socket option." << endl;
+    LOG_ERR("Failed to set socket option.");
     return false;
   }
 
-  /* Setting a window size. */
-  if(WINSIZE > 0) {
-    setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (char *) &WINSIZE, sizeof(WINSIZE));
-    setsockopt(m_sock, SOL_SOCKET, SO_RCVBUF, (char *) &WINSIZE, sizeof(WINSIZE));
-  }
-
+  setWin(WINSIZE);
+  
   return true;
 }
 
+/* Setting a window size. */
 void Socket::setWin(int size)
 {
   if(size > 0) {
@@ -87,16 +89,11 @@ void Socket::close()
   ::close(m_sock);
 }
 
-void Socket::closeServer()
-{
-  ::close(s_sock);
-}
-
 bool Socket::bind ( const int port )
 {
   if ( ! is_valid() )
     {
-      cout << "bind: Invalide socket. " << endl;
+      LOG_ERR("bind: Invalid socket. ");
       return false;
     }
   m_addr.sin_family = AF_INET;
@@ -105,7 +102,7 @@ bool Socket::bind ( const int port )
   int bind_return = ::bind(m_sock, (struct sockaddr *) &m_addr, sizeof (m_addr));
   if ( bind_return == -1 )
     {
-      cout << "bind: Failed to bind." << endl;
+      LOG_ERR("bind: Failed to bind.");
       return false;
     }
   return true;
@@ -116,15 +113,15 @@ bool Socket::listen() const
 {
   if ( ! is_valid() )
     {
-      cout << "listen: Invalid socket." << endl;
+      LOG_ERR("listen: Invalid socket.");
       return false;
     }
   int listen_return = ::listen ( m_sock, MAXCONNECTIONS );
   if ( listen_return == -1 )
-    {
-      cout << "listen: Failed to listen." << endl;
-      return false;
-    }
+  {
+    LOG_ERR("listen failed: " << string(strerror(errno)) << "/" << errno);
+    return false;
+  }
 
   #if REPORT_BUFFERSIZES > 0
   int tcp_sbuf = 0;
@@ -138,18 +135,20 @@ bool Socket::listen() const
   return true;
 }
 
-bool Socket::accept ( Socket& new_socket ) const
+bool Socket::accept()
 {
-  new_socket.s_sock = s_sock;
-  int addr_length = sizeof ( m_addr );
-  new_socket.m_sock = ::accept ( s_sock, ( sockaddr * ) &m_addr, ( socklen_t * ) &addr_length );
+  socklen_t addr_length = (socklen_t) sizeof ( m_addr );
+  int new_m_sock = ::accept ( m_sock, ( sockaddr * ) &m_addr, &addr_length );
 
-  if ( new_socket.m_sock <= 0 ) {
-    cout << "accept: Failed to accept. Returns " << new_socket.m_sock << endl;
-    cout << "errno = " << errno << ". Message is: " << strerror(errno) << endl;
+  ::close(m_sock);
+  m_sock = new_m_sock;
+  
+  if ( m_sock <= 0 ) {
+    LOG_ERR("accept failed: " << string(strerror(errno)) << "/" << errno);
     return false;
   }
   else {
+    set_non_blocking(true);
     return true;
   }
 }
@@ -157,180 +156,156 @@ bool Socket::accept ( Socket& new_socket ) const
 
 bool Socket::send ( const char* s, long long int size ) const
 {
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
-
   /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
   int ok = 0;
 
-  fd_set sock;
-  FD_ZERO(&sock);
-  FD_SET(m_sock,&sock);
-  ok = select(m_sock+1, (fd_set *) 0, &sock, (fd_set *) 0, &timeout);
   int count = 0;
-  while(ok<1) {
+  size_t bytes_sent = 0;
+  size_t sendsize = (size_t)size;
 
-    struct timeval timeout;
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-
-    FD_ZERO(&sock);
-    FD_SET(m_sock,&sock);
-//BUG: ??? Test later!
-    ok = select(m_sock+1, &sock, (fd_set *) 0, (fd_set *) 0, &timeout);
-    if(ok<1) {
+  while(bytes_sent < size) {
+    ok = Socket_select(0, m_sock, MPWIDE_SOCKET_RDMASK, 10, 0);
+;
+    if (ok == MPWIDE_SOCKET_WRMASK) {
+      count = 0;
+      ssize_t status = ::send(m_sock, s+bytes_sent, sendsize-bytes_sent, tcp_send_flag);
+      if ( status == -1 ) {
+        LOG_ERR("Socket.send error. Details: " << errno << "/" << strerror(errno));
+        return false;
+      }
+      bytes_sent += status;
+    }
+    else {
       usleep(50000);
+      #if REPORT_BUFFERSIZES > 0
       cout << "s";
-      count++;
+      #endif
       if(ok<0) {
-        fprintf(stderr,"Socket error: %d, %s\n",ok, strerror(errno));
-        fflush(stderr);
-        exit(-9);
+        LOG_ERR("Socket error: " << ok << ", " << strerror(errno));
+        #if EXIT_ON_SENDRECV_ERROR == 1
+        exit(1);
+        #else
+        return false;
+        #endif
         }
       }
-    else { count = 0; }
-    if(count>5) {
-      cerr << "Send timeout: " << errno << " / " << strerror(errno) << endl;
-      count = 0;
-      break;
-    }
+      if(++count > 5) {
+        cerr << "Send timeout: " << errno << " / " << strerror(errno) << endl;
+        count = 0;
+        break;
+      }
   }
 
-  int bytes_sent = 0;
-  while(bytes_sent < size) {
-    int status = ::send ( m_sock, s+bytes_sent, size-bytes_sent, tcp_send_flag );
-    if ( status == -1 ) {
-      cerr << "Socket.send error. Details: " << errno << "/"<< strerror(errno) << endl;
-      return false;
-    }
-    bytes_sent += status;
-  }
   return true;
 }
 
 
 int Socket::recv ( char* s, long long int size ) const
 {
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
-
-  fd_set sock;
-  FD_ZERO(&sock);
-  FD_SET(m_sock,&sock);
-
   int ok = 0;
+  
   int count = 0;
+  size_t bytes_recv = 0;
+  size_t recvsize = (size_t)size;
+  
+  while(bytes_recv < size) {
+    ok = Socket_select(m_sock, 0, MPWIDE_SOCKET_WRMASK, 10, 0);
+    if (ok == MPWIDE_SOCKET_RDMASK) {
+      ssize_t status = ::recv( m_sock, s + bytes_recv, recvsize - bytes_recv, 0 );
+      bytes_recv -= status;
+      
+      if ( status <= 0 ) {
+        cout << "status == " << status << " errno == " << errno << "  in Socket::recv\n";
+        cout << strerror(errno) << endl;
+        return -1;
+      }
 
-  while(ok<1) {
-    struct timeval timeout;
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-    FD_ZERO(&sock);
-    FD_SET(m_sock,&sock);
-
-    ok = select(m_sock+1, &sock, (fd_set *) 0, (fd_set *) 0, &timeout);
-    if(ok<1) {
-      usleep(50000);
-      cout << "r";
-      count=1;
-      if(ok<0) {
-        fprintf(stderr,"Socket error: %d, %s\n",ok, strerror(errno));
-        fflush(stderr);
-        exit(-9);
+      count = 0;
+    }
+    else {
+      if(ok < 0) {
+        LOG_ERR("Socket error: " << ok << ", " << strerror(errno));
+        #if EXIT_ON_SENDRECV_ERROR == 1
+          exit(1);
+        #else
+          return -1;
+        #endif
+      } else {
+        usleep(50000);
+        cout << "r";
+        if(++count == 1) {
+          LOG_ERR("Recv timeout: " << errno << " / " << strerror(errno));
+          LOG_ERR("We will keep trying to receive for a while...");
+        }
+        else if (count == 100) { /* Too many problems to get a socket. Let's just consider this receive to have failed. */
+          return -1;
+        }
       }
     }
-    else { count = 0; }
-    if(count == 1) {
-      cerr << "Recv timeout: " << errno << " / " << strerror(errno) << endl;
-      cerr << "We will keep trying to receive for a while..." << endl;
-      count++;
-    }
-    if(count == 100) { /* Too many problems to get a socket. Let's just consider this receive to have failed. */
-      return 0;
-    }
   }
 
-  int status = ::recv ( m_sock, s, size, 0 );
-
-  if ( status < 0 ) {
-    cout << "status == " << status << " errno == " << errno << "  in Socket::recv\n";
-    cout << strerror(errno) << endl;
-    return status;
-  }
-  else if ( status == 0 ) {
-    return 0;
-  }
-  else {
-    //memcpy(s,buf,size);
-    return status;
-  }
+  return size;
 }
 
 int Socket::irecv ( char* s, long long int size ) const
 {
   int status = ::recv ( m_sock, s, size, 0 );
-  if ( status < 0 ) {
-    cout << "irecv: status = " << status << " errno = " << errno << "/" << strerror(errno) << endl;
-    return 0;
-    exit(-1);
-  }
+  #if LOG_LVL >= LVL_ERR || EXIT_ON_SENDRECV_ERROR == 1
+    if ( status <= 0 ) {
+      #if LOG_LVL >= LVL_ERR
+        if (status == 0) {
+          cout << "irecv: connection reset by peer.status = " << status << " errno = " << errno << "/" << strerror(errno) << endl;
+        } else {
+          cout << "irecv: status = " << status << " errno = " << errno << "/" << strerror(errno) << endl;
+        }
+      #endif
+      #if EXIT_ON_SENDRECV_ERROR == 1
+        exit(1);
+      #endif
+    }
+  #endif
   return status;
 }
 
 int Socket::isend ( const char* s, long long int size ) const
 {
   int status = ::send ( m_sock, s, size, tcp_send_flag );
-  if ( status < 0 ) {
-    cerr << "isend: status = " << status << " errno = " << errno << "/"<< strerror(errno) << endl;
-    exit(-1);
-    return 0;
-  }
+  #if LOG_LVL >= LVL_ERR || EXIT_ON_SENDRECV_ERROR == 1
+    if ( status < 0 ) {
+      LOG_ERR("isend: status = " << status << " errno = " << errno << "/"<< strerror(errno));
+      #if EXIT_ON_SENDRECV_ERROR == 1
+        exit(1);
+      #endif
+    }
+  #endif
   return status;
 }
 
-int Socket::select_me (int mask, int timeout_val) const
 /*
  Returns:
+ -1 on error
  0 if no access.
- 1 if read.
- 2 if write.
- 3 if both.
+ MPWIDE_SOCKET_RDMASK if read.
+ MPWIDE_SOCKET_WRMASK if write.
+ MPWIDE_SOCKET_RDMASK|MPWIDE_SOCKET_WRMASK if both.
  int mask is...
  0 if we check for read & write.
- 1 if we check for write only.
- 2 if we check for read only.
-*/
+ MPWIDE_SOCKET_RDMASK if we check for write only.
+ MPWIDE_SOCKET_WRMASK if we check for read only.
+ */
+int Socket::select_me (int mask) const
 {
-  /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
-  int ok = 0;
-  int access = 0;
+  return select_me (mask, 10, 0);
+}
 
-  fd_set rsock, wsock;
-  FD_ZERO(&rsock);
-  FD_ZERO(&wsock);
-  if(mask%2 == 0) { FD_SET(m_sock,&rsock); }
-  if(mask/2 == 0) { FD_SET(m_sock,&wsock); }
+int Socket::select_me (int mask, int timeout_val) const
+{
+    return select_me(mask, timeout_val, 0);
+}
 
-  struct timeval timeout;
-  timeout.tv_sec  = timeout_val;
-  timeout.tv_usec = 0;
-
-  //  cout << "select(): mask = " << mask << endl;
-  ok = select(m_sock+1, &rsock, &wsock, (fd_set *) 0, &timeout);
-  if(ok) {
-    if(mask%2 == 0) {
-      if(FD_ISSET(m_sock,&rsock)) { access++;    }
-    }
-    if(mask/2 == 0) {
-      if(FD_ISSET(m_sock,&wsock)) { access += 2; }
-    }
-  }
-  else if (ok<0){
-    cout << "select_me error: " << errno << " Msg: " << strerror(errno) << endl;
-  }
-  return access;
+int Socket::select_me (int mask, int timeout_s, int timeout_u) const
+{
+  return Socket_select(m_sock, m_sock, mask, timeout_s, timeout_u);
 }
 
 bool Socket::connect ( const string host, const int port )
@@ -341,19 +316,22 @@ bool Socket::connect ( const string host, const int port )
   m_addr.sin_port = htons ( port );
   int status = inet_pton ( AF_INET, host.c_str(), &m_addr.sin_addr );
 
-  if ( errno == EAFNOSUPPORT ) return false;
-//  status = ::connect ( m_sock, ( sockaddr * ) &m_addr, sizeof ( m_addr ) );
+  if ( status < 1 ) {
+    #if REPORT_ERRORS > 0
+      cerr << "Could not convert address'" << host << "': " << string(strerror(errno)) << "/" << errno << endl;
+    #endif
+    return false;
+  }
+
+  socklen_t sz = sizeof(m_addr);
+  status = ::connect(m_sock, (struct sockaddr *) &m_addr, sz);
+  if(status == -1) {
+      LOG_ERR("Could not connect to port: " << string(strerror(errno)) << "/" << errno);
+      return false;
+  }
 
   set_non_blocking(true);
-  status = ::connect(m_sock, ( sockaddr *) &m_addr, sizeof(m_addr));
-  if(status == false)
-  {   
-    return false;
-  }   
-
-//  set_non_blocking(false);
-  int write = select_me(1,1);
-  set_non_blocking(false);
+  int write = select_me(MPWIDE_SOCKET_RDMASK,10);
 
   #if REPORT_BUFFERSIZES > 0
   int tcp_sbuf = 0;
@@ -369,22 +347,13 @@ bool Socket::connect ( const string host, const int port )
   getsockopt(m_sock, SOL_SOCKET, SO_ERROR, (char*) &error_buf, &err_len);
 
   if(write>0 && error_buf<1) {
-    #if REPORT_BUFFERSIZES > 0
-    cout << "socket is connected! " << error_buf << endl;
-    #endif
+    LOG_ERR("socket is connected! " << error_buf);
     return true;
   }
   else {
-    #if REPORT_BUFFERSIZES > 0
-    cout << "socket is NOT connected! " << error_buf << endl;
-    #endif
-    return false; 
+    LOG_ERR("socket is NOT connected! " << error_buf);
+    return false;
   }
-}
-
-int Socket::select_me (int mask) const
-{
-  return select_me (mask, 10);
 }
 
 void Socket::set_non_blocking ( const bool b )
@@ -399,4 +368,50 @@ void Socket::set_non_blocking ( const bool b )
     opts = ( opts & ~O_NONBLOCK );
   }
   fcntl(m_sock, F_SETFL, opts);
+}
+
+/**
+ Returns:
+ -1 on error
+ 0 if no access.
+ MPWIDE_SOCKET_RDMASK if read.
+ MPWIDE_SOCKET_WRMASK if write.
+ MPWIDE_SOCKET_RDMASK|MPWIDE_SOCKET_WRMASK if both.
+ int mask is...
+ 0 if we check for read & write.
+ MPWIDE_SOCKET_RDMASK if we check for write only.
+ MPWIDE_SOCKET_WRMASK if we check for read only.
+ */
+int Socket_select(int rs, int ws, int mask, int timeout_s, int timeout_u)
+{
+    struct timeval timeout;
+    timeout.tv_sec  = timeout_s;
+    timeout.tv_usec = timeout_u;
+	
+  	fd_set *rsock = 0, *wsock = 0;
+	fd_set rfd, wfd;
+	
+	if ((mask&MPWIDE_SOCKET_RDMASK) != MPWIDE_SOCKET_RDMASK) {
+		rsock = (fd_set *)&rfd;
+		FD_ZERO(rsock);
+		FD_SET(rs,rsock);
+	}
+	if ((mask&MPWIDE_SOCKET_WRMASK) != MPWIDE_SOCKET_WRMASK) {
+		wsock = (fd_set *)&wfd;
+		FD_ZERO(wsock);
+		FD_SET(ws,wsock);
+	}
+	
+	/* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
+	const int ok = select(max(rs, ws)+1, rsock, wsock, (fd_set *)0, &timeout);
+	
+	if(ok > 0) {
+		return (rsock && FD_ISSET(rs,rsock) ? MPWIDE_SOCKET_RDMASK : 0)
+		| (wsock && FD_ISSET(ws,wsock) ? MPWIDE_SOCKET_WRMASK : 0);
+	} else if (ok == 0 || errno == EINTR) { // Interruptions don't matter
+		return 0;
+	} else {
+    LOG_ERR("select_me: " << strerror(errno) << "/" << errno);
+		return -1;
+	}
 }

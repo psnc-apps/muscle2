@@ -12,8 +12,7 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
 : socket(_socket), pendingOperatons(0), closing(false), service(_socket->getServer()), mto(mto)
 {
     dataBufffer = new char[Header::getSize()];
-    Logger::info(Logger::MsgType_PeerConn,
-                 "Established a connection with peer (receiver is %s)",
+    logger::info("Established a connection with peer (receiver is %s)",
                  str().c_str());
     
     // Start normal operation
@@ -80,7 +79,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
         }
         case PCH_RECV_DATA:
         {
-            Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got data of length %u on %s from %s",
+            logger::finest("Got data of length %u on %s from %s",
                           latestHeader.length, latestHeader.str().c_str(), str().c_str());
             
             
@@ -95,7 +94,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
                 if(fwdMap.find(id) != fwdMap.end())
                     fwdMap[id]->forward(latestHeader, latestHeader.length, data);
                 else
-                    Logger::error(Logger::MsgType_PeerConn, "Received data for nonexistent destination");
+                    logger::severe("Received data for nonexistent destination");
                 
                 delete [] (char *)data;
             }
@@ -115,8 +114,7 @@ void PeerConnectionHandler::handleConnect(Header h)
     
     if(fwdTarget)
     {
-        Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn,
-                      "Forwarding connection %s from %s to %s",
+        logger::finest("Forwarding connection %s from %s to %s",
                       h.str().c_str(), str().c_str(), fwdTarget->str().c_str());
         
         
@@ -129,8 +127,7 @@ void PeerConnectionHandler::handleConnect(Header h)
     {
         if (mto->conns.isAvailable(h.dst))
         {
-            Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn,
-                          "Trying to establish connection %s (Peer MTO = %s)",
+            logger::finest("Trying to establish connection %s (Peer MTO = %s)",
                           h.str().c_str(), str().c_str());
             
             HandleConnected *hc = new HandleConnected(h, this);
@@ -142,7 +139,7 @@ void PeerConnectionHandler::handleConnect(Header h)
 
 void PeerConnectionHandler::handleConnectFailed(Header h)
 {
-    Logger::debug(Logger::MsgType_ClientConn, "Rejected connection requested from peer (%s)", h.str().c_str());
+    logger::fine("Rejected connection requested from peer (%s)", h.str().c_str());
     
     h.type = Header::ConnectResponse;
     send(h, 1);
@@ -152,7 +149,8 @@ PeerConnectionHandler::HandleConnected::HandleConnected(Header& header, PeerConn
 {
     h.type = Header::ConnectResponse;
     t->incrementPending();
-    ClientSocket::async_connect(t->service, PCH_MAKE_CONNECT, h.dst, this);
+    socket_opts *opts = new socket_opts;
+    t->mto->intSockFactory->async_connect(PCH_MAKE_CONNECT, h.dst, opts, this);
 }
 
 void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket)
@@ -183,8 +181,7 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
 {
     readHeader();
     
-    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn,
-                  "Got info about establish connection %s by %s",
+    logger::finest("Got info about establish connection %s by %s",
                   h.str().c_str(), str().c_str());
     
     
@@ -203,16 +200,14 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
                 fwdMap.erase(id);
         }
         else
-            Logger::info(Logger::MsgType_PeerConn,
-                         "Got response for invalid connection");
+            logger::info("Got response for invalid connection");
     }
     
 }
 
 void PeerConnectionHandler::handleData(Header h)
 {
-    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn,
-                  "Starting data transfer of length %u on %s from %s",
+    logger::finest("Starting data transfer of length %u on %s from %s",
                   h.length, h.str().c_str(), str().c_str());
     
     latestHeader = h;
@@ -226,7 +221,7 @@ void PeerConnectionHandler::handleClose(Header h)
 {
     readHeader();
     
-    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got connection close request for %s from %s",
+    logger::finest("Got connection close request for %s from %s",
                   h.str().c_str(), str().c_str());
     
     Connection *conn = mto->conns.get(h);
@@ -243,15 +238,14 @@ void PeerConnectionHandler::handleClose(Header h)
             fwdMap.erase(id);
         }
         else
-            Logger::error(Logger::MsgType_PeerConn,
-                          "Closing not established connection");
+            logger::severe("Closing not established connection");
     }
 }
 
 /** 'data' is NOT deleted in this function */
 void PeerConnectionHandler::forward(Header & h, size_t dataLen, void *data)
 {
-    Logger::trace(Logger::MsgType_PeerConn, "Forwarding '%s' to %s",
+    logger::finest("Forwarding '%s' to %s",
                   h.type_str().c_str(), str().c_str());
     
     send(h, data, dataLen);
@@ -277,7 +271,7 @@ void PeerConnectionHandler::handleHello(Header h)
 {
     readHeader();
     
-    Logger::trace(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Got hello from %s for %d-%d",
+    logger::finest("Got hello from %s for %d-%d",
                   str().c_str(),h.src.port,h.dst.port);
     
     mto->peers.update(this, h);
@@ -308,9 +302,9 @@ void PeerConnectionHandler::errorOccurred(std::string message)
     if (!closing)
     {
         if(message=="PeerClose")
-            Logger::info(Logger::MsgType_PeerConn, "Peer %s closed it's idle connection", str().c_str());
+            logger::severe("Peer %s closed it's idle connection", str().c_str());
         else
-            Logger::error(Logger::MsgType_PeerConn, "Peer connection error: '%s'. Closing peer connection to %s", message.c_str(), str().c_str());
+            logger::severe("Peer connection error: '%s'. Closing peer connection to %s", message.c_str(), str().c_str());
     }
 
     done();
@@ -333,7 +327,7 @@ bool PeerConnectionHandler::tryClean()
 
 void PeerConnectionHandler::send(Header& h, size_t value, muscle::async_sendlistener *_sender)
 {
-    Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s",
+    logger::finest("Writing '%s' to %s",
                   h.type_str().c_str(), str().c_str());
 
     char *packet;
@@ -343,16 +337,18 @@ void PeerConnectionHandler::send(Header& h, size_t value, muscle::async_sendlist
 
 void PeerConnectionHandler::send(Header& h, void *data, size_t len, muscle::async_sendlistener *_sender)
 {
-    Logger::trace(Logger::MsgType_PeerConn, "Writing '%s' to %s",
+    logger::finest("Writing '%s' to %s",
                   h.type_str().c_str(), str().c_str());
     char *packet;
-    size_t sz = h.makePacket(&packet, data, len);
+    size_t sz = h.makePacket(&packet, len);
     send(packet, sz, _sender);
+	if (data)
+		send(data, len, _sender);
 }
 
 void PeerConnectionHandler::send(void *data, size_t len, muscle::async_sendlistener *_sender)
 {
-    Logger::trace(Logger::MsgType_PeerConn, "Sending directly %u bytes on %s", len, str().c_str());
+    logger::finest("Sending directly %u bytes on %s", len, str().c_str());
     
     Sender *s = new Sender(_sender, this, data, len);
 }

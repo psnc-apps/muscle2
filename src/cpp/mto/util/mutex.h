@@ -16,20 +16,22 @@ namespace muscle {
 class mutex_lock
 {
 private:
-    pthread_mutex_t *mutex;
+    pthread_mutex_t *mut;
     pthread_cond_t *cond;
     // full delete only if *refs == 0
     int *refs;
 public:
     // create (refs = 1)
-    mutex_lock(pthread_mutex_t *, pthread_cond_t *);
+    mutex_lock(pthread_mutex_t *, pthread_cond_t *, bool onlyTry);
     // copy (refs++)
     mutex_lock(const mutex_lock& lock);
     // delete (refs--)
-    virtual ~mutex_lock();
+    ~mutex_lock();
     
-    virtual void wait();
-    virtual void notify();
+    bool isValid() const;
+    
+    void wait() const;
+    void notify() const;
 };
 
 class mutex
@@ -47,7 +49,8 @@ public:
     // delete (refs--)
     virtual ~mutex();
     
-    virtual mutex_lock acquire();
+    virtual mutex_lock acquire() const;
+    virtual mutex_lock *tryLock() const;
 };
 
 }

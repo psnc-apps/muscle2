@@ -7,11 +7,10 @@
 //
 
 #include "../net/csocket.h"
-#include "../net/async_cservice.h"
+#include "../net/async_service.h"
 #include "../util/option_parser.hpp"
 #include "../util/thread.h"
-//#include "../net/mpsocket.h"
-//#include "../net/async_mpservice.h"
+#include "../net/mpsocket.h"
 
 #include <iostream>
 #include <cstring>
@@ -187,18 +186,15 @@ void testTime()
     assertEquals<unsigned>(dnine.useconds(), 9000001, "microseconds match given");
 }
 
-void testAsyncConnectServerSocket()
-{    
-    cout << endl << "async_connect/accept" << endl << endl;
-    muscle::endpoint ep("localhost", 40104);
-    muscle::socket_opts opts(10);
-    muscle::async_cservice service;
+void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& factory, muscle::endpoint& ep, muscle::socket_opts& opts)
+{
     try
     {
-        muscle::CServerSocket ssock(ep, &service, opts);
-        async_ss ass(&service, &ssock);
-        ssock.async_accept(1, &ass);
-        muscle::ClientSocket::async_connect(&service, 1, ep, &ass);
+        muscle::ServerSocket *ssock = factory.listen(ep, opts);
+        usleep(1000000);
+        async_ss ass(&service, ssock);
+        ssock->async_accept(1, &ass);
+        factory.async_connect(1, ep, &opts, &ass);
         
         service.run();
     } catch (const muscle::muscle_exception& ex) {
@@ -206,11 +202,21 @@ void testAsyncConnectServerSocket()
     }
 }
 
+void testAsyncConnectServerSocket()
+{    
+    cout << endl << "async_connect/accept csocket" << endl << endl;
+    muscle::endpoint ep("localhost", 40104);
+    muscle::socket_opts opts(10);
+    muscle::async_service service;
+    muscle::CSocketFactory factory(&service);
+    testAsyncConnect(service, factory, ep, opts);
+}
+
 void testAsyncTimer()
 {    
     cout << endl << "async_cservice timer" << endl << endl;
 
-    muscle::async_cservice service;
+    muscle::async_service service;
     muscle::time t = muscle::duration(0l, 100).time_after();
     const char *str = "test string";
     
@@ -330,7 +336,7 @@ class test_thread : public muscle::thread
     int *data;
     muscle::duration timeout;
 public:
-    test_thread(int *data, muscle::duration timeout) : data(data), timeout(timeout) { }
+    test_thread(int *data, muscle::duration timeout) : data(data), timeout(timeout) { start(); }
     virtual void *run()
     {
         timeout.sleep();
@@ -354,17 +360,14 @@ void testThread()
     assertEquals(data, 1, "Result is expected");
 }
 
-
-void testMPSocket()
+void testAsyncMPConnectServerSocket()
 {
-    cout << endl << "MPWide socket" << endl << endl;
-    muscle::endpoint epServ("localhost", 5001);
-    
-    try {
-        
-    } catch (const exception& ex) {
-        assert(false, "Connection to existing host (" + string(ex.what()) + ")");
-    }
+    cout << endl << "async_connect/accept mpsocket" << endl << endl;
+    muscle::endpoint ep("127.0.0.1", 40108);
+    muscle::socket_opts opts(16);
+    muscle::async_service service;
+    muscle::MPSocketFactory factory(&service);
+    testAsyncConnect(service, factory, ep, opts);
 }
 
 void testParsing()
@@ -466,6 +469,7 @@ int main(int argc, char * argv[])
         testOptions();
         testAsyncTimer();
         testAsyncConnectServerSocket();
+        testAsyncMPConnectServerSocket();
         cout << endl;
         assertTrue("run tests without uncaught exceptions");
     } catch (const muscle::muscle_exception& ex) {

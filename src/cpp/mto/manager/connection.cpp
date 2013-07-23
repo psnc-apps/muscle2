@@ -12,15 +12,16 @@
 #define CONN_SEND_DATA 4 // don't free
 #define CONN_TIMEOUT_CLOSE 5 // don't free
 
+using namespace muscle;
+
 /* from remote */
-Connection::Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
+Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
 : sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), referenceCount(0), secondMto(t), mto(mto), closing_timer(0)
 {
     assert(secondMto != NULL);
     if (hasRemotePeer)
     {
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Established client connection (%s), initiated by peer %s",
+        logger::fine("Established client connection (%s), initiated by peer %s",
                       h.str().c_str(), secondMto->str().c_str());
         header.type=Header::Data;
         
@@ -30,8 +31,7 @@ Connection::Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler*
     {
         secondMto->send(header);
         
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Requesting connection to host %s from peer %s",
+        logger::fine("Requesting connection to host %s from peer %s",
                       header.dst.str().c_str(), secondMto->str().c_str());
     }
 }
@@ -43,7 +43,7 @@ void Connection::close()
 
     referenceCount++;
     closing = true;
-    Logger::trace(Logger::MsgType_ClientConn, "Closing connection %s",
+    logger::finest("Closing connection %s",
                   header.str().c_str());
     
     if(hasRemotePeer)
@@ -55,7 +55,7 @@ void Connection::close()
     }
     
     mto->conns.erase(header);
-    muscle::time timer = muscle::duration(10l, 0).time_after();
+    muscle::time timer = duration(10l, 0).time_after();
     closing_timer = sock->getServer()->timer(CONN_TIMEOUT_CLOSE, timer, this, (void *)0);
     referenceCount--;
     tryClose();
@@ -68,8 +68,7 @@ void Connection::tryClose()
         if (closing_timer)
             sock->getServer()->erase_timer(closing_timer);
 
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Connection %s closed",
+        logger::fine("Connection %s closed",
                       header.str().c_str());
         delete this;
     }
@@ -82,8 +81,7 @@ Connection::~Connection()
 
 void Connection::async_execute(size_t code, int flag, void *user_data)
 {
-    Logger::info(Logger::MsgType_ClientConn,
-                  "Connection %s did not close after timeout (%d connections running); forcing",
+    logger::info("Connection %s did not close after timeout (%d connections running); forcing",
                   header.str().c_str(), referenceCount);
     sock->getServer()->printDiagnostics();
     sock->async_cancel();
@@ -103,9 +101,12 @@ bool Connection::async_received(size_t code, int user_flag, void *data, size_t c
 {
     // Error occurred
     if(is_final == -1 || closing) return false;
-    
-    // Don't delete class-local data array receiveBuffer
-    secondMto->send(header, data, count, new muscle::async_sendlistener_nodelete);
+    if (count == 0) return true;
+	
+	// Create new buffer: don't delete class-local data array receiveBuffer
+    void *buffer = new char[count];
+	memcpy(buffer, data, count);
+	secondMto->send(header, buffer, count, new async_sendlistener_delete(2));
     
     receive();
     // Don't try to receive more information, we sent what we received
@@ -117,7 +118,7 @@ void Connection::send(void *data, size_t length)
     if (closing)
         return;
     
-    Logger::trace(Logger::MsgType_PeerConn, "[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
+    logger::finest("[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
     
     referenceCount++;
     sock->async_send(CONN_REMOTE_TO_LOCAL, data, length, this);
@@ -131,13 +132,12 @@ void Connection::async_sent(size_t, int, void *data, size_t, int is_final)
         delete [] (char *)data;
 }
 
-void Connection::async_report_error(size_t code, int user_flag, const muscle::muscle_exception &ex)
+void Connection::async_report_error(size_t code, int user_flag, const muscle_exception &ex)
 {
     if(closing)
-        return
+        return;
 
-    Logger::error(Logger::MsgType_ClientConn,
-                  "Error occurred in connection between %s (%s)",
+    logger::severe("Error occurred in connection between %s (%s)",
                   header.str().c_str(), ex.what());
     
     close();
@@ -164,15 +164,13 @@ void Connection::remoteConnected(Header h)
     
     if(response)
     { // Fail
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Got negative response for connection request (%s)",
+        logger::fine("Got negative response for connection request (%s)",
                       header.str().c_str());
         close();
     }
     else
     { // Success
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Remote connection succeeded (%s)",
+        logger::fine("Remote connection succeeded (%s)",
                       header.str().c_str());
         header.type=Header::Data;
         hasRemotePeer = true;

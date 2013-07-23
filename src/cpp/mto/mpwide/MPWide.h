@@ -37,23 +37,24 @@ void MPW_Print();
 int MPW_NumChannels();
 
 // Return path id or negative error value. 
+int MPW_CreatePathWithoutConnect(string host, int server_side_base_port, int streams_in_path); 
+int MPW_ConnectPath(int path_id, bool server_wait);
 int MPW_CreatePath(string host, int server_side_base_port, int num_streams); 
 // Return 0 on success (negative on failure).
 int MPW_DestroyPath(int path);
 
-void MPW_Send(char* sendbuf, long long int sendsize, int path);
-void MPW_Recv(char* recvbuf, long long int recvsize, int path);
-void MPW_SendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int path);
+int MPW_Send(char* sendbuf, long long int sendsize, int path);
+int MPW_Recv(char* recvbuf, long long int recvsize, int path);
+int MPW_SendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int path);
 // returns the size of the newly received data. 
 int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int maxrecvsize, int path);
 
 
 /* Initialize MPWide. */
-void MPW_Init(string* url, int* server_side_ports, int* client_side_ports, int num_channels);
-void MPW_Init(string* url, int* server_side_ports, int num_channels); //this call omits client-side port binding.
-void MPW_Init(string url, int port);
-void MPW_Init(string url);
-void MPW_Init();
+int MPW_Init(string* url, int* server_side_ports, int* client_side_ports, int num_channels);
+int MPW_Init(string* url, int* server_side_ports, int num_channels); //this call omits client-side port binding.
+int MPW_Init(string url, int port);
+int MPW_Init();
 
 /* Set tcp window size. */
 void MPW_setWin(int channel, int size);
@@ -68,8 +69,8 @@ void MPW_ReOpenChannels(int* channels, int num_channels);
 int MPW_Finalize();
 
 /* Perform this using multiple channels. */
-void MPW_PSendRecv(char** sendbuf, long long int* sendsize, char** recvbuf, long long int* recvsize, int* channel, int num_channels);
-void MPW_SendRecv ( char* sendbuf, long long int  sendsize, char*  recvbuf, long long int  recvsize, int* channel, int num_channels);
+int MPW_PSendRecv(char** sendbuf, long long int* sendsize, char** recvbuf, long long int* recvsize, int* channel, int num_channels);
+int MPW_SendRecv ( char* sendbuf, long long int  sendsize, char*  recvbuf, long long int  recvsize, int* channel, int num_channels);
 
 /* Dynamically-sized message exchanges. */
 long long int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long long int maxrecvsize, int* channel, int num_channels);
@@ -112,8 +113,8 @@ void   MPW_setPacingRate(double rate);
 #endif
 
 extern "C" {
-  void MPW_Init_c (char** url, int* ports, int numsockets); 
-  void MPW_Init1_c (char* url, int port);
+  int MPW_Init_c (char** url, int* ports, int numsockets); 
+  int MPW_Init1_c (char* url, int port);
   void MPW_SendRecv1_c (char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int base_channel);
   void MPW_SendRecv_c (char* sendbuf, long long int sendsize, char* recvbuf, long long int recvsize, int* base_channel, int num_channels);
   void MPW_PSendRecv_c(char** sendbuf, long long int* sendsize, char** recvbuf, long long int* recvsize, int* channel, int num_channels);

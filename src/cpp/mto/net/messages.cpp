@@ -1,49 +1,70 @@
 
 #include "messages.hpp"
-#include "../util/exception.hpp"
+#include "../../muscle2/exception.hpp"
 
 #include <cstdio>
 #include <sstream>
 #include <cstring>
+#include <cassert>
 
-// Helpers so that endianess will not affect serialisation
-
-/** false if 256 is 0x00 0x01, true if 256 is 0x01 0x00 */
-static bool isLittleEndian(){
-    static union {unsigned short t; char c[2]; } x;
-    x.t = 0xff00;
-    return x.c[0];
+template <typename T> void writeToBuffer(char *&buffer, const T value)
+{
+    unsigned char *buffer_ptr = (unsigned char *)buffer;
+    switch (sizeof(T)) {
+        case 8:
+            *buffer_ptr++ = (value >> 56) & 0xff;
+            *buffer_ptr++ = (value >> 48) & 0xff;
+            *buffer_ptr++ = (value >> 40) & 0xff;
+            *buffer_ptr++ = (value >> 32) & 0xff;
+            // no break
+        case 4:
+            *buffer_ptr++ = (value >> 24) & 0xff;
+            *buffer_ptr++ = (value >> 16) & 0xff;
+            // no break
+        case 2:
+            *buffer_ptr++ = (value >>  8) & 0xff;
+            // no break
+        case 1:
+            *buffer_ptr++ =  value        & 0xff;
+            // no break
+            break;
+        default:
+            assert(false);
+    }
+    
+    buffer = (char *)buffer_ptr;
 }
 
-static bool littleEndian = isLittleEndian();
-
-template <typename T> char *& writeToBuffer( char*& buffer,T value)
+template <typename T> T readFromBuffer(char *&buffer, /*out*/ T * valuePtr = 0)
 {
-    unsigned char * ptr = (unsigned char*) &value;
+    unsigned char *buffer_ptr = (unsigned char *)buffer;
+    T value = 0;
     
-    if (littleEndian)
-        for(int i = sizeof(value) - 1; i >= 0; --i)
-            *(buffer++) = *(ptr+i);
-    else
-        for(int i = 0; i < sizeof(value); ++i)
-            *(buffer++) = *(ptr++);
+    switch (sizeof(T)) {
+        case 8:
+            value |= *buffer_ptr++ << 56;
+            value |= *buffer_ptr++ << 48;
+            value |= *buffer_ptr++ << 40;
+            value |= *buffer_ptr++ << 32;
+            // no break
+        case 4:
+            value |= *buffer_ptr++ << 24;
+            value |= *buffer_ptr++ << 16;
+            // no break
+        case 2:
+            value |= *buffer_ptr++ <<  8;
+            // no break
+        case 1:
+            value |= *buffer_ptr++;
+            // no break
+            break;
+        default:
+            assert(false);
+    }
     
-    return buffer;
-}
-
-template <typename T> T readFromBuffer( char*& buffer, /*out*/ T * valuePtr = 0)
-{
-    T value;
-    unsigned char * ptr = (unsigned char*) &value;
-    
-    if (littleEndian)
-        for(int i = sizeof(value) - 1; i >= 0; --i)
-            *(ptr+i) = *(buffer++);
-    else
-        for(int i = 0; i < sizeof(value); ++i)
-            *(ptr++) = *(buffer++);
-    
+    buffer = (char *)buffer_ptr;
     if(valuePtr) *valuePtr = value;
+
     return value;
 }
 
@@ -68,7 +89,7 @@ std::string Request::type_str() const
         default:
         {
             std::stringstream ss;
-            ss << "Type " << type << " is not well-specified";
+            ss << "Type " << (int)type << " is not well-specified";
             throw muscle::muscle_exception(ss.str());
         }
     }
@@ -79,7 +100,7 @@ size_t Request::getSize()
     return sizeof(/*type*/ char)+2*muscle::endpoint::getSize()+sizeof(/*sessionId*/ int);
 }
 
-Request::Request(char * buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint::getSize())
+Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint::getSize())
 {
     buf += 1+2*muscle::endpoint::getSize();
     readFromBuffer(buf, &sessionId);
@@ -99,7 +120,7 @@ size_t Header::getSize()
     return Request::getSize()+sizeof(/*length*/ size_t);
 }
 
-Header::Header(char * buf) : Request(buf)
+Header::Header(char *buf) : Request(buf)
 {
     buf += Request::getSize();
     readFromBuffer(buf, &length);
@@ -112,19 +133,6 @@ char *Header::serialize(char* buf) const
     return buf;
 }
 
-size_t Header::makePacket(char **packet, const void *data, size_t len)
-{
-    length = len;
-    size_t sz = len + getSize();
-    *packet = new char[sz];
-    serialize(*packet);
-    
-    if (len > 0)
-        memcpy(*packet+getSize(), data, len);
-    
-    return sz;
-}
-
 size_t Header::makePacket(char **packet, size_t value)
 {
     length = value;
@@ -134,46 +142,27 @@ size_t Header::makePacket(char **packet, size_t value)
     return sz;
 }
 
-#define USE_TEXT_FOR_HELLO true
-
 size_t MtoHello::getSize()
 {
-#ifdef USE_TEXT_FOR_HELLO
-    return 21;
-#else
     return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
     + sizeof(/* distance */ unsigned short)
     + sizeof( /* isLastMtoHello as char */ char );
-#endif
 }
 
 MtoHello::MtoHello(char * buf)
 {
-#ifdef USE_TEXT_FOR_HELLO
-    int iLastMtoHello;
-    sscanf(buf,"%6hu%6hu%6hu %d", &portLow, &portHigh, &distance, &iLastMtoHello);
-    isLastMtoHello = (bool)iLastMtoHello;
-#else
-    char cLastMtoHello;
     readFromBuffer(buf, &portLow);
     readFromBuffer(buf, &portHigh);
     readFromBuffer(buf, &distance);
-    readFromBuffer(buf, &cLastMtoHello);
-    isLastMtoHello = (bool)cLastMtoHello;
-#endif
+    isLastMtoHello = (bool)readFromBuffer<char>(buf);
 }
 
 void MtoHello::serialize(char * buf) const
 {
-#ifdef USE_TEXT_FOR_HELLO
-    int iLastMtoHello = (int)isLastMtoHello;
-    sprintf(buf,"%6hu%6hu%6hu %d", portLow, portHigh, distance, iLastMtoHello);
-#else
     writeToBuffer(buf, portLow);
     writeToBuffer(buf, portHigh);
     writeToBuffer(buf, distance);
     writeToBuffer(buf, (char)isLastMtoHello);
-#endif
 }
 
 bool MtoHello::operator==(const MtoHello& o) const

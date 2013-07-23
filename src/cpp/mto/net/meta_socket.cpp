@@ -44,7 +44,7 @@ void meta_socket::enableAutoClose(bool on)
 {
     assert( reconnect );
     
-    Logger::trace(Logger::MsgType_PeerConn, "PeerConnHandler to %s set to auto close mode", socketEndpt.str().c_str());
+    logger::finest("PeerConnHandler to %s set to auto close mode", socketEndpt.str().c_str());
     
     autoClose = on;
     updateLastOperationTimer();
@@ -66,14 +66,14 @@ void meta_socket::async_execute(size_t code, int user_flag, void *user_data)
         {
             muscle::time timeout = lastOperation + Options::getInstance().getSockAutoCloseTimeout();
             
-            Logger::trace(Logger::MsgType_PeerConn, "Checking if connection to %s is iddle, last access at %s",
+            logger::finest("Checking if connection to %s is iddle, last access at %s",
                           socketEndpt.str().c_str(),
                           lastOperation.str().c_str()
                           );
             
             if(timeout.is_past())
             {
-                Logger::info(Logger::MsgType_PeerConn, "Connection to %s is iddle, closing socket",
+                logger::info("Connection to %s is idle, closing socket",
                              socketEndpt.str().c_str()
                              );
                 
@@ -102,7 +102,7 @@ void meta_socket::iddleSocketClose()
     delete socket;
     socket = 0;
     
-    Logger::trace(Logger::MsgType_PeerConn, "Connection to %s closed",
+    logger::finest("Connection to %s closed",
                   socketEndpt.str().c_str()
                   );
 }
@@ -116,7 +116,7 @@ void meta_socket::recreateSocket(muscle::async_function *func)
     if(socket)
         return;
     
-    Logger::info(Logger::MsgType_PeerConn, "Recreating socket to %s",
+    logger::severe("Recreating socket to %s",
                  socketEndpt.str().c_str());
     
     ClientSocket::async_connect(asyncService, PCH_RECREATE, socketEndpt, this, this);
@@ -129,10 +129,10 @@ void meta_socket::recreateSocketFired()
     asyncService->erase_timer(recreateSocketTimer);
     
     //        // be unhappy and kill peerconnectionhandler
-    //        Logger::error(Logger::MsgType_PeerConn, "Failed to recreating socket to %s - connection refused",
+    //        logger::severe("Failed to recreating socket to %s - connection refused",
     //                      socketEndpt.str().c_str());
     
-    Logger::info(Logger::MsgType_PeerConn, "Connection successfuly recreated to %s",
+    logger::info("Connection successfuly recreated to %s",
                  socketEndpt.str().c_str()
                  );
     
@@ -191,7 +191,7 @@ void meta_socket::recreateSocketTimedOut(size_t timer, int user_flag, void *user
     }
     (*retryCount)++;
     
-    Logger::trace(Logger::MsgType_PeerConn, "Recreating socket to %s timed out, retrying...",
+    logger::finest("Recreating socket to %s timed out, retrying...",
                   socketEndpt.str().c_str());
     
     delete socket;

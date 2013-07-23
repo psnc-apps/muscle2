@@ -7,17 +7,23 @@
 //
 
 #include "mutex.h"
-#include "exception.hpp"
+#include "../../muscle2/exception.hpp"
 
 using namespace muscle;
 
-mutex_lock::mutex_lock(pthread_mutex_t *m, pthread_cond_t *c) : mutex(m), cond(c)
+mutex_lock::mutex_lock(pthread_mutex_t *m, pthread_cond_t *c, bool onlyTry) : mut(m), cond(c)
 {
-    pthread_mutex_lock(mutex);
     refs = new int(1);
+    if (onlyTry)
+    {
+	    if (pthread_mutex_trylock(mut) != 0)
+            mut = NULL;
+    }
+    else
+        pthread_mutex_lock(mut);
 }
 
-mutex_lock::mutex_lock(const mutex_lock &other) : mutex(other.mutex), cond(other.cond), refs(other.refs)
+mutex_lock::mutex_lock(const mutex_lock &other) : mut(other.mut), cond(other.cond), refs(other.refs)
 {
     ++(*refs);
 }
@@ -26,19 +32,24 @@ mutex_lock::~mutex_lock()
 {
     if (--(*refs) == 0)
     {
-        pthread_mutex_unlock(mutex);
+        pthread_mutex_unlock(mut);
         delete refs;
     }
 }
 
-void mutex_lock::wait()
+void mutex_lock::wait() const
 {
-    pthread_cond_wait(cond, mutex);
+    pthread_cond_wait(cond, mut);
 }
 
-void mutex_lock::notify()
+void mutex_lock::notify() const
 {
     pthread_cond_signal(cond);
+}
+
+bool mutex_lock::isValid() const
+{
+    return mut != NULL;
 }
 
 mutex::mutex()
@@ -80,7 +91,19 @@ mutex::~mutex()
     }
 }
 
-mutex_lock mutex::acquire()
+mutex_lock mutex::acquire() const
 {
-    return mutex_lock(mut, cond);
+    return mutex_lock(mut, cond, false);
+}
+
+mutex_lock *mutex::tryLock() const
+{
+    mutex_lock *lock = new mutex_lock(mut, cond, true);
+    if (lock->isValid())
+        return lock;
+    else
+    {
+        delete lock;
+        return NULL;
+    }
 }

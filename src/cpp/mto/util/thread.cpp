@@ -7,61 +7,60 @@
 //
 
 #include "thread.h"
-#include "exception.hpp"
+#include "../../muscle2/exception.hpp"
+
+#include <cassert>
+#include <signal.h>
 
 using namespace muscle;
 
-void *_run_cmuscle_util_thread(void *t)
-{
-    muscle::thread *thread = (muscle::thread *)t;
-    void *result = thread->run();
-    thread->setDone();
-    return result;
-}
+static void *_run_cmuscle_util_thread(void *);
 
-
-thread::thread() : stop_condition(false), done(false), result(0), m()
-{
-    int ret;
-    if ((ret = ::pthread_create(&t, NULL, &_run_cmuscle_util_thread, this)) != 0)
-        throw muscle::muscle_exception("Could not create thread.", ret);
-}
+thread::thread() : result(0)
+{}
 
 thread::~thread()
 {
-    if (!isDone())
-        stop();
-    
-    ::pthread_detach(t);
+    if (!cache.stop_condition)
+        cancel();
 }
 
-bool thread::isDone()
+void thread::start()
 {
-    mutex_lock lock = m.acquire();
-    return done;
+    cache.setThread(this);
+    int ret;
+    if ((ret = ::pthread_create(&t, NULL, &_run_cmuscle_util_thread, &cache)) != 0)
+        throw muscle::muscle_exception("Could not create thread.", ret);    
 }
 
-void thread::setDone()
+void *_shared_thread_cache::run()
 {
-    mutex_lock lock = m.acquire();
-    done = true;
+    return runner->run();
 }
 
-void thread::stop()
+void thread::cancel()
 {
-    mutex_lock lock = m.acquire();
-    stop_condition = true;
-}
-
-bool thread::hasStopSignal()
-{
-    mutex_lock lock = m.acquire();
-    return stop_condition;
+    cache.stop_condition = true;
+    ::pthread_join(t, NULL);
 }
 
 void *thread::getResult()
 {
-    if (!result)
+    if (!cache.stop_condition)
+    {
         ::pthread_join(t, &result);
+        // No need for a mutex: this will only be called from outside the thread
+        cache.stop_condition = true;
+    }
     return result;
+}
+
+void *_run_cmuscle_util_thread(void *t)
+{
+    muscle::_shared_thread_cache *thread_cache = (muscle::_shared_thread_cache *)t;
+    if (thread_cache->stop_condition)
+        return NULL;
+    void *result = thread_cache->run();
+    thread_cache->done = true;
+	return result;
 }

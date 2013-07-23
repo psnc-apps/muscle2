@@ -12,6 +12,7 @@
 #include <set>
 
 using namespace std;
+using namespace muscle;
 
 PeerConnectionHandler *PeerCollection::get(Header header) const
 {
@@ -36,7 +37,7 @@ PeerConnectionHandler *PeerCollection::get(PeerConnectionHandler *peer) const
     return peer;
 }
 
-PeerConnectionHandler *PeerCollection::create(muscle::ClientSocket *sock, std::vector<MtoHello> &hellos)
+PeerConnectionHandler *PeerCollection::create(ClientSocket *sock, std::vector<MtoHello> &hellos)
 {
     PeerConnectionHandler * handler = new PeerConnectionHandler(sock, mto);
     set<PeerConnectionHandler *> allPeers;
@@ -170,16 +171,14 @@ void PeerCollection::erase(PeerConnectionHandler *handler)
 
 bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hello)
 {
-    Logger::debug(Logger::MsgType_PeerConn|Logger::MsgType_ClientConn,
-                  "Parsing hello: %s", hello.str().c_str());
+    logger::fine("Parsing hello: %s", hello.str().c_str());
     
     if(peers.find(hello.portHigh)!=peers.end())
     { // already known
         MtoPeer & peer = peers[hello.portHigh];
         if(peer.min!=hello.portLow)
         {
-            Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                          "Port ranges %s and %s overlap. Ignoring second.",
+            logger::severe("Port ranges %s and %s overlap. Ignoring second.",
                           peer.bestHello.str().c_str(), hello.str().c_str()
                           );
             return false;
@@ -197,13 +196,6 @@ bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hel
         return false;
     }
 
-    // TODO: is this the right place?
-//    if(mto->willDaemonize)
-//    {
-//        Logger::info(-1, "Daemonizing...");
-//        daemon(0,1);
-//    }
-//    
     // rebounce of my hello?
     if(hello.matches(mto->hello))
         return false;
@@ -211,8 +203,7 @@ bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hel
     // overlapping with myself?
     if (hello.overlaps(mto->hello))
     {
-        Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                      "My port range and %s overlap. Ignoring second.",
+        logger::severe("My port range and %s overlap. Ignoring second.",
                       hello.str().c_str()
                       );
         return false;
@@ -222,8 +213,7 @@ bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hel
     peers_t::iterator itH = peers.lower_bound(hello.portHigh), itL = peers.lower_bound(hello.portLow);
     if((itH != peers.end() && itH->second.min < hello.portLow) || itL != itH)
     {
-        Logger::error(Logger::MsgType_PeerConn|Logger::MsgType_Config,
-                      "Port ranges %s and %s overlap. Ignoring second.",
+        logger::severe("Port ranges %s and %s overlap. Ignoring second.",
                       itH->second.bestHello.str().c_str(), hello.str().c_str()
                       );
         return false;
@@ -233,7 +223,7 @@ bool PeerCollection::insert(PeerConnectionHandler *handler, const MtoHello & hel
     return true;
 }
 
-void PeerCollection::introduce(muscle::ClientSocket *sock)
+void PeerCollection::introduce(ClientSocket *sock)
 {
     for (peers_t::iterator peer = peers.begin(); peer != peers.end(); peer++)
     {
@@ -244,7 +234,7 @@ void PeerCollection::introduce(muscle::ClientSocket *sock)
         char * data = new char[MtoHello::getSize()];
         hello.serialize(data);
         // TODO Add more sophisticated error listener
-        sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new muscle::async_sendlistener_delete);
+        sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new async_sendlistener_delete);
     }
     
     mto->hello.isLastMtoHello=true;
@@ -252,7 +242,7 @@ void PeerCollection::introduce(muscle::ClientSocket *sock)
     char * data = new char[MtoHello::getSize()];
     mto->hello.serialize(data);
     // TODO Add more sophisticated error listener
-    sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new muscle::async_sendlistener_delete);
+    sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new async_sendlistener_delete);
 }
 
 PeerCollection::~PeerCollection()

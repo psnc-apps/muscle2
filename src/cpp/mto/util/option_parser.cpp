@@ -1,5 +1,5 @@
 #include "option_parser.hpp"
-#include "logger.hpp"
+#include "../../muscle2/logger.hpp"
 
 #include <stdint.h>
 #include <cstring>
@@ -14,6 +14,7 @@
 #endif
 
 using namespace std;
+using namespace muscle;
 
 bool option_parser::load(int argc, char **argv)
 {
@@ -27,7 +28,7 @@ bool option_parser::load(int argc, char **argv)
         long_options[i].name = it->name.c_str();
         long_options[i].flag = 0;
         long_options[i].has_arg = it->hasArg;
-        long_options[i].val = *opt_ptr = i + 'a';
+        long_options[i].val = *opt_ptr = (char)(i + 'a');
         ++opt_ptr;
         if (it->hasArg)
         {
@@ -130,7 +131,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
     ifstream file(fname.c_str());
     if(!file)
     {
-        Logger::error(-1, "Opening topology file (%s) failed", fname.c_str());
+        logger::severe("Opening topology file (%s) failed", fname.c_str());
         return false;
     }
     
@@ -154,7 +155,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
         
         if(results.find(match[0])!=results.end())
         {
-            Logger::error(Logger::MsgType_Config, "Redefinition of machine  %s", match[0].c_str());
+            logger::severe("Redefinition of machine  %s", match[0].c_str());
             return false;
         }
         
@@ -164,7 +165,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
             long portl = strtol(match[2].c_str(), &endP, 10);
             if (endP == match[2].c_str() || portl > UINT16_MAX)
             {
-                Logger::error(Logger::MsgType_Config, "Syntax error in config file, in line: '%s'", line.c_str());
+                logger::severe("Syntax error in config file, in line: '%s'", line.c_str());
                 return false;
             }
             port = (uint16_t)portl;
@@ -180,7 +181,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
         else
             ss << ":" << match[2];
         
-        Logger::debug(Logger::MsgType_Config, ss.str().c_str());
+        logger::config(ss.str().c_str());
     }
     
     return true;

@@ -2,7 +2,7 @@
 #define __CMuscle_Topology_Hpp
 
 #include "../net/endpoint.h"
-#include "../util/exception.hpp"
+#include "../../muscle2/exception.hpp"
 
 #include <sstream>
 #include <map>

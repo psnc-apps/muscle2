@@ -37,7 +37,7 @@ int main(int argc, char** argv){
   int size = 1;
 
   if(argc==1) {
-    printf("usage: ./MPWTest <ip address of other endpoint> <channels> <buffer [kb]> <pacing [MB/s]> <tcpwin [bytes]>. \n All parameters after the first are optional.\n");
+    printf("usage: ./MPWTest <ip address of other endpoint> <channels (default: 1)> <buffer [kB] (default: 8 kB))> <act_as_server (default: 1)> \n All parameters after the first are optional.\n");
     exit(0);
   }
 
@@ -52,15 +52,20 @@ int main(int argc, char** argv){
     bufsize = atoi(argv[3]);
   }
 
-  if(argc>4) {
-    MPW_setAutoTuning(false);
-    MPW_setPacingRate((atoi(argv[4]))*1024*1024);
+
+//  if(argc>4) {
+//    MPW_setAutoTuning(false);
+//    MPW_setPacingRate((atoi(argv[4]))*1024*1024);
+//  }
+  int is_server = 1;
+  if (argc>4) {
+      is_server = atoi(argv[4]);
   }
 
   int winsize = 16*1024*1024;
-  if(argc>5) {
-    winsize = atoi(argv[5]);
-  }
+//  if(argc>5) {
+//    winsize = atoi(argv[5]);
+//  }
 
 //  string *hosts = new string[size];
 //  int sports[size];   
@@ -70,7 +75,17 @@ int main(int argc, char** argv){
 //    sports[i] = 16256+i;
 //  }
 
-  int path_id = MPW_CreatePath(host, 16256, size); ///path version
+  int path_id = MPW_CreatePathWithoutConnect(host, 16256, size); ///path version
+  if(is_server == 1) {
+    int status  = MPW_ConnectPath(path_id, true);
+  }
+  else {
+    int status  = MPW_ConnectPath(path_id, false);
+    if (status == -1) {
+        MPW_DestroyPath(path_id);
+        exit(1);
+    }
+  }
 //  MPW_Init(hosts, sports, size); ///non-path version.
 //  delete [] hosts;
   cerr << "\nSmall test completed, now commencing large test.\n" << endl;
@@ -88,14 +103,22 @@ int main(int argc, char** argv){
     MPW_setWin(i,winsize);
   }
 
-  int comm_mode = 1; //0 for regular sendrecv tests, 1 for non-blocking sendrecv tests.
+  int comm_mode = 0; //0 for regular sendrecv tests, 1 for non-blocking sendrecv tests.
 
   /* test loop */
   for(int i=0; i<20; i++) {
 
 //    MPW_SendRecv(msg,len,msg2,len,channels,size); ///non-path version.
     if(comm_mode==0) {
-      MPW_SendRecv(msg,len,msg2,len,path_id); ///path version
+      //MPW_SendRecv(msg,len,msg2,len,path_id); ///path version
+      if(is_server == 0) {
+        MPW_SendRecv((char *)0,0,msg,len,path_id);
+        MPW_SendRecv(msg,len,(char *)0,0,path_id);
+      }
+      else {
+        MPW_SendRecv(msg,len,(char *)0,0,path_id);
+        MPW_SendRecv((char *)0,0,msg,len,path_id);
+      }
     }
     else if(comm_mode == 1) {
       int id = MPW_ISendRecv(msg,len,msg2,len,path_id);

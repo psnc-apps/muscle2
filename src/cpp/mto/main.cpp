@@ -18,9 +18,13 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "../muscle2/logger.hpp"
+#include "../muscle2/exception.hpp"
+
 #include "constants.hpp"
 #include "manager/localmto.h"
-#include "net/async_cservice.h"
+#include "net/csocket.h"
+#include "net/mpsocket.h"
 
 #include <iostream>
 #include <map>
@@ -32,6 +36,7 @@
 #include <signal.h>
 
 using namespace std;
+using namespace muscle;
 
 // // // // //           Variables           // // // // //
 muscle::async_service *asyncService;
@@ -59,12 +64,12 @@ void signalReceived(int signum)
                 s = "unknown signal(?)";
                 break;
         }
-        Logger::info(-1, "Received %s, exiting...", s);
+        logger::warning("Received %s, exiting...", s);
 
         asyncService->done();
         delete localMto;
         
-        Logger::closeLogFile();
+        logger::finalize();
         
         exit(0);
     }
@@ -75,7 +80,7 @@ int main(int argc, char **argv)
     try {
         Options opts(argc, argv);
         
-        map<string, muscle::endpoint> mtoConfigs;
+        map<string, endpoint> mtoConfigs;
 
         if(!loadTopology(opts.getTopologyFilePath(), mtoConfigs))
             return 1;
@@ -84,36 +89,43 @@ int main(int argc, char **argv)
         
         if(opts.getDaemonize())
         {
-            Logger::info(-1, "Daemonizing...");
+            logger::info("Daemonizing...");
             daemon(0,1);
         }
         
         if(mtoConfigs.find(myName) == mtoConfigs.end()){
-            Logger::error(-1, "The name of this MTO (%s) could not be found in the topology file", myName.c_str());
+            logger::severe("The name of this MTO (%s) could not be found in the topology file", myName.c_str());
             return 1;
         }
 
-        muscle::endpoint& externalAddress = mtoConfigs[myName];
+        endpoint& externalAddress = mtoConfigs[myName];
 
         if (externalAddress.port)
         {
             try {
                 externalAddress.resolve();
             }
-            catch (muscle::muscle_exception& ex)
+            catch (muscle_exception& ex)
             {
-                Logger::error(-1, "Cannot resolve MTO external address (%s)!", externalAddress.str().c_str());
+                logger::severe("Cannot resolve MTO external address (%s)!", externalAddress.str().c_str());
                 return 1;
             }
         }
 
-        asyncService = new muscle::async_cservice;
-        localMto = new LocalMto(opts, asyncService, externalAddress);
+        asyncService = new async_service;
+        SocketFactory *intSockFactory = new CSocketFactory(asyncService);
+        SocketFactory *extSockFactory;
+        if (opts.useMPWide)
+            extSockFactory = new MPSocketFactory(asyncService);
+        else
+            extSockFactory = new CSocketFactory(asyncService);
+        
+        localMto = new LocalMto(opts, asyncService, intSockFactory, extSockFactory, externalAddress);
         
         if(externalAddress.port)
             localMto->startListeningForPeers();
         else
-            Logger::info(Logger::MsgType_Config|Logger::MsgType_PeerConn, "No external port provided, not starting external acceptor");
+            logger::info("No external port provided, not starting external acceptor");
 
         localMto->startConnectingToPeers(mtoConfigs);
         localMto->startListeningForClients();
@@ -124,7 +136,7 @@ int main(int argc, char **argv)
         
         asyncService->run();
         delete localMto;
-        
+
         return 0;
     }
     catch (const muscle::muscle_exception& ex)
@@ -137,4 +149,3 @@ int main(int argc, char **argv)
         return i;
     }
 }
-

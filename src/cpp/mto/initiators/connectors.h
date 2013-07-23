@@ -27,13 +27,14 @@ private:
     muscle::socket_opts opts;
     const muscle::duration timeout;
     muscle::ClientSocket *sock;
+    muscle::SocketFactory *sockFactory;
     size_t timer;
     size_t sockId;
     std::vector<MtoHello> hellos;
     LocalMto *mto;
     
 public:
-    StubbornConnecter(muscle::endpoint& ep, muscle::async_service *service, muscle::socket_opts& opts, const muscle::duration& timeout, LocalMto *mto);
+    StubbornConnecter(muscle::endpoint& ep, muscle::async_service *service, muscle::SocketFactory *sockFactory, muscle::socket_opts& opts, const muscle::duration& timeout, LocalMto *mto);
     virtual ~StubbornConnecter() { if (sock) delete sock; }
     
     /** Executed after no responce has been received (or at abort) */

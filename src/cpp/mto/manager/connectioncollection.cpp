@@ -9,21 +9,20 @@
 #include "connectioncollection.h"
 
 using namespace std;
+using namespace muscle;
 
 Connection *ConnectionCollection::get(Header h)
 {
     conns_t::iterator it = remoteConnections.find(Identifier(h));
     if (it == remoteConnections.end())
     {
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Requested connection %s does not exist",
+        logger::fine("Requested connection %s does not exist",
                       h.str().c_str());
         return NULL;
     }
     else
     {
-        Logger::debug(Logger::MsgType_ClientConn,
-                      "Request for existing connection %s",
+        logger::fine("Request for existing connection %s",
                       h.str().c_str());
         return it->second;
     }
@@ -31,8 +30,7 @@ Connection *ConnectionCollection::get(Header h)
 
 Connection *ConnectionCollection::create(muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected)
 {
-    Logger::debug(Logger::MsgType_ClientConn,
-                  "Creating connection %s", h.str().c_str());
+    logger::fine("Creating connection %s", h.str().c_str());
     Connection *conn = new Connection(h, sock, handler, mto, remoteHasConnected);
     remoteConnections[Identifier(h)] = conn;
     return conn;
@@ -40,8 +38,7 @@ Connection *ConnectionCollection::create(muscle::ClientSocket *sock, Header& h, 
 
 void ConnectionCollection::erase(Header h)
 {
-    Logger::debug(Logger::MsgType_ClientConn,
-                  "Removing connection %s", h.str().c_str());
+    logger::fine("Removing connection %s", h.str().c_str());
     remoteConnections.erase(Identifier(h));
 }
 

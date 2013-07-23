@@ -29,6 +29,8 @@ public:
     muscle::endpoint externalEp;
     const bool willDaemonize;
     muscle::async_service * const service;
+    muscle::SocketFactory * const intSockFactory;
+    muscle::SocketFactory * const extSockFactory;
     muscle::duration sockTimeout;
     PeerCollection peers;
     ConnectionCollection conns;
@@ -41,7 +43,7 @@ public:
     void peerDied(PeerConnectionHandler *handler);
     void printDiagnostics();
     
-    LocalMto(Options& opts, muscle::async_service *service, const muscle::endpoint& externalEp);
+    LocalMto(Options& opts, muscle::async_service *service, muscle::SocketFactory *intSockFactory, muscle::SocketFactory *extSockFactory, const muscle::endpoint& externalEp);
     ~LocalMto();
     
     void setSocketOptions(muscle::socket_opts& opts);

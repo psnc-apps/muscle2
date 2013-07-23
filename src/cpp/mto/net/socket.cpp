@@ -44,17 +44,6 @@ namespace muscle {
     }
 
     /** CLIENT SIDE **/
-
-    size_t ClientSocket::async_connect(async_service *service, int user_flag, muscle::endpoint& ep, async_acceptlistener* accept)
-    {
-        return service->connect(user_flag, ep, (socket_opts *)0, accept);
-    }
-
-    size_t ClientSocket::async_connect(async_service *service, int user_flag, muscle::endpoint& ep, socket_opts& opts, async_acceptlistener* accept)
-    {
-        return service->connect(user_flag, ep, &opts, accept);
-    }
-
     void ClientSocket::async_cancel()
     {
         if (server)
@@ -75,6 +64,11 @@ namespace muscle {
     {
         if (server)
             server->erase(this);
+    }
+    
+    size_t SocketFactory::async_connect(int user_flag, muscle::endpoint &ep, muscle::socket_opts *opts, muscle::async_acceptlistener *accept)
+    {
+        return service->connect(user_flag, this, ep, opts, accept);
     }
 }
 

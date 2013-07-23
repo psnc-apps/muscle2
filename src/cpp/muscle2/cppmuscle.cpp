@@ -23,6 +23,7 @@
 #include "exception.hpp"
 #include "communicator.hpp"
 #include "xdr_communicator.hpp"
+#include "../mto/net/endpoint.h"
 
 #include <stdlib.h>
 #include <rpc/types.h>
@@ -70,37 +71,30 @@ muscle_error_t env::init(int *argc, char ***argv)
 	}
 	
 	// Initialize host and port on which MUSCLE is listening
-	unsigned short port = 0;
-	char hostname[256];
-	hostname[0] = '\0';
 	muscle_pid = -1;
 	
-	env::muscle2_tcp_location(muscle_pid, hostname, &port);
+	endpoint ep = env::muscle2_tcp_location(muscle_pid);
 	
 	// Port is not initialized, initialize MUSCLE instead.
-	if (port == 0)
+	if (ep.port == 0)
 	{
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
 		muscle_pid = env::muscle2_spawn(argc, argv);
 		env::install_sighandler();		
-		env::muscle2_tcp_location(muscle_pid, hostname, &port);
-		if (port == 0)
+		ep = env::muscle2_tcp_location(muscle_pid);
+		if (ep.port == 0)
 		{
 			logger::severe("Could not contact MUSCLE: no TCP port given.");
 			exit(1);
 		}
 	}
-	if (hostname[0] == '\0')
-	{
-		strncpy(hostname, "localhost", 10);
-	}
 	
 	// Start communicating with MUSCLE instance
 	try
 	{
-		muscle_comm = new XdrCommunicator(hostname, port);
+		muscle_comm = new XdrCommunicator(ep);
 	} catch (muscle_exception& e) {
-		logger::severe("Could not connect to MUSCLE2 on address tcp://%s:%hu", hostname, port);
+		logger::severe("Could not connect to MUSCLE2 on address tcp://%s", ep.str().c_str());
 		exit(1);
 	}
 	
@@ -303,10 +297,8 @@ std::vector<double> env::receiveDoubleVector(std::string exit_name)
  * @param pid of the created MUSCLE instance
  * @return port number
  */
-void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
+endpoint env::muscle2_tcp_location(const pid_t pid)
 {
-	*port = 0;
-
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::muscle2_tcp_location()");
 #endif
@@ -314,17 +306,17 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
 	if (pid < 0)
 	{
 		char *port_str = getenv("MUSCLE_GATEWAY_PORT");
-		if (port_str != NULL) {
-			*port = (unsigned short)atoi(port_str);
-			char *host_str = getenv("MUSCLE_GATEWAY_HOST");
-			if (host_str != NULL) {
-				strncpy(host, host_str, 255);
-			}
-		}
+		unsigned short port = port_str ? (unsigned short)atoi(port_str) : 0;
+        
+		const char *host = getenv("MUSCLE_GATEWAY_HOST");
+        if (!host)
+            host = "localhost";
+
+        return endpoint(string(host), port);
 	}
 	else
 	{
-		char hostparts[272];
+		char host[272];
 
 		logger::fine("Reading Java MUSCLE contact info from FIFO %s", muscle_tmpfifo);
 		
@@ -332,10 +324,11 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
         bool succeeded = false;
         fd_set fd_read, fd_err;
         struct timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 200000; // 0.2 sec
         
         while (!succeeded) {
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 200000; // 0.2 sec
+
             FD_ZERO(&fd_read); FD_ZERO(&fd_err);
             FD_SET(fd, &fd_read); FD_SET(fd, &fd_err);
             int res = select(fd+1, &fd_read, (fd_set *)0, &fd_err, &timeout);
@@ -343,21 +336,21 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
                 logger::severe("Could not read temporary file %s.", muscle_tmpfifo);
                 break;
             }
-            if (FD_ISSET(fd, &fd_read)) {
+            if (res && FD_ISSET(fd, &fd_read)) {
                 FILE *fp = fdopen(fd, "r");
-                if(fp == 0 || ferror(fp))
+                if(fp == NULL || ferror(fp))
                 {
                     logger::severe("Could not open temporary file %s", muscle_tmpfifo);
                     break;
                 }
-                char *cs = fgets(hostparts, 272, fp);
+                char *cs = fgets(host, 272, fp);
                 if (cs == NULL) {
                     logger::severe("Could not read temporary file %s", muscle_tmpfifo);
                     fclose(fp);
                     fd = -1;
                     break;
                 } else if (fgetc(fp) != EOF) {
-                    logger::severe("Specified host name '%272s...' is too long", hostparts);
+                    logger::severe("Specified host name '%272s...' is too long", host);
                     fclose(fp);
                     fd = -1;
                     break;
@@ -383,25 +376,29 @@ void env::muscle2_tcp_location(pid_t pid, char *host, unsigned short *port)
         }
         if (fd != -1) close(fd);
 
-        if (!succeeded)
-            return;
+        if (succeeded)
+            return endpoint();
 		
-		char *indexColon = strrchr(hostparts, ':');
+		char *indexColon = strrchr(host, ':');
 		if (indexColon == NULL) {			
-			logger::severe("Host name should be specified as hostName:port, not like '%s'", hostparts);
-			return;
-		} else if (indexColon - hostparts >= 256) {
-			logger::severe("Specified host name '%255s...' is too long", hostparts);
-			return;
+			logger::severe("Host name should be specified as hostName:port, not like '%s'", host);
+			return endpoint();
+		} else if (indexColon - host >= 256) {
+			logger::severe("Specified host name '%255s...' is too long", host);
+			return endpoint();
 		}
-		*indexColon = '\0';
-		strcpy(host, hostparts);
-		if (sscanf(indexColon+1, "%hu", port) != 1) {
+		*indexColon++ = '\0';
+        unsigned short port;
+		if (sscanf(indexColon, "%hu", &port) != 1) {
 			logger::severe("Port is not correctly specified, it should be a number less than 65536, not like '%s'", indexColon);
-			return;
+			return endpoint();
 		}
+        
+        endpoint ep(string(host), port);
   
-		logger::config("Will communicate with Java MUSCLE on %s:%hu", host, *port);
+		logger::config("Will communicate with Java MUSCLE on %s:%hu", ep.str().c_str());
+        
+        return ep;
 	}
 }
 

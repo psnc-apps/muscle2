@@ -32,7 +32,9 @@ namespace muscle {
         inline void resolve() { resolve(true); }
         inline bool isResolved() const
         {
-            return addr.l[0] || addr.l[1];
+            for (int i = 0; i < sizeof(addr); i++)
+                if (addr[i]) return true;
+            return false;
         }
         bool isValid();
         bool isValid() const;
@@ -70,11 +72,11 @@ namespace muscle {
         // Presentation
         std::string host;
         
-        // In network order
-        union addr_t {
-            char c[16];
-            unsigned long l[2];
-        } addr;
+        // In network byte order
+        char addr[16];
+        
+        // Whether it represents an IPv6 address
+        bool is_ipv6;
         
         std::string getHostFromAddressImpl() const;
         void getSockAddrImpl(struct sockaddr &serv_addr) const;
@@ -82,7 +84,6 @@ namespace muscle {
         
         bool resolve(bool make_error);
         bool resolve(bool make_error) const;
-        bool is_ipv6;
     };
 }
 #endif /* defined(__CMuscle__endpoint__) */

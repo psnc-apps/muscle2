@@ -9,7 +9,8 @@
 #ifndef __CMuscle__async_description__
 #define __CMuscle__async_description__
 
-#include "../util/exception.hpp"
+#include "../../muscle2/exception.hpp"
+#include "../../muscle2/logger.hpp"
 
 namespace muscle {
     class ClientSocket;
@@ -34,7 +35,11 @@ namespace muscle {
     };
     class async_sendlistener_delete : public async_sendlistener
     {
+	private:
+		int refs;
     public:
+		async_sendlistener_delete() : refs(1) {}
+		async_sendlistener_delete(int refs) : refs(refs) {}
         virtual void async_sent(size_t code, int user_flag, void *data, size_t sz, int is_final)
         {
             // Delete both on error and on final send
@@ -43,9 +48,9 @@ namespace muscle {
         }
         virtual void async_report_error(size_t code, int user_flag, const muscle_exception& ex)
         {
-            Logger::error(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Uncaught error occurred: %s", ex.what());
+            logger::severe("Uncaught error occurred: %s", ex.what());
         }
-        virtual void async_done(size_t code, int user_flag) { delete this; }
+        virtual void async_done(size_t code, int user_flag) { if (--refs == 0) delete this; }
     };
     class async_sendlistener_nodelete : public async_sendlistener
     {
@@ -53,7 +58,7 @@ namespace muscle {
         virtual void async_sent(size_t code, int user_flag, void *data, size_t sz, int is_final) {} // Never delete
         virtual void async_report_error(size_t code, int user_flag, const muscle_exception& ex)
         {
-            Logger::error(Logger::MsgType_ClientConn|Logger::MsgType_PeerConn, "Uncaught error occurred: %s", ex.what());
+            logger::severe("Uncaught error occurred: %s", ex.what());
         }
         virtual void async_done(size_t code, int user_flag) { delete this; }
     };

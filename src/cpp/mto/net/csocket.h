@@ -29,7 +29,6 @@ namespace muscle {
         virtual int select(int mask) const;
         virtual int select(int mask, time timeout) const;
 
-        virtual int getSock() const { return sockfd; }
         virtual bool operator < (const csocket & s1) const { return sockfd < s1.sockfd; }
         virtual bool operator == (const csocket & s1) const { return sockfd == s1.sockfd; }
     protected:
@@ -41,7 +40,6 @@ namespace muscle {
         virtual void setOpts(const socket_opts& opts);
         virtual void setBlocking(const bool);
         
-        int sockfd;
         void setWin(int size);
     }; // end class socket
     
@@ -63,7 +61,7 @@ namespace muscle {
         // asynchronous, light-weight, non-blocking
         virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send);
         virtual ssize_t async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver);
-        virtual int hasError() const;
+        virtual int hasError();
     protected:
         virtual void connect(bool blocking);
     // Disallowed - is problematic for destructor
@@ -83,6 +81,13 @@ namespace muscle {
         virtual void listen(int max_connections);
     };
     
+    class CSocketFactory : public SocketFactory
+    {
+    public:
+        CSocketFactory(async_service *service) : SocketFactory(service) {}
+        virtual ClientSocket *connect(endpoint& ep, const socket_opts& opts);
+        virtual ServerSocket *listen(endpoint& ep, const socket_opts& opts);
+    };
 } // end namespace muscle
 
 #endif /* defined(__CMuscle__csocket__) */

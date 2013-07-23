@@ -50,21 +50,24 @@ public:
     virtual std::string str();
     const endpoint& getAddress() const;
     const bool hasAddress;
-    virtual int getSock() const = 0;
+    virtual int getWriteSock() const { return sockfd; }
+    virtual int getReadSock() const { return sockfd; }
     virtual bool operator < (const socket & s1) const
-    { return getSock() < s1.getSock(); }
+    { return getReadSock() < s1.getReadSock(); }
     virtual bool operator == (const socket & s1) const
-    { return getSock() == s1.getSock(); }
+    { return getReadSock() == s1.getReadSock(); }
     async_service *getServer() const;
     virtual void async_cancel() = 0;
-
-    virtual bool isBusy() { return false; }
+	
+    // To accomodate for pipes used in mpsocket
+	virtual bool selectWriteFdIsReadable() const { return false; }
 protected:
     socket(endpoint& ep, async_service *service);
     socket(async_service *service);
     socket(const socket& other);
     socket();
     
+    int sockfd;
     endpoint address;
     async_service *server;
 }; // end class socket
@@ -72,10 +75,7 @@ protected:
 class ClientSocket : virtual public socket
 {
 public:    
-    static size_t async_connect(async_service *service, int user_flag, muscle::endpoint& ep, async_acceptlistener* accept);
-    static size_t async_connect(async_service *service, int user_flag, muscle::endpoint& ep, socket_opts& opts, async_acceptlistener* accept);
-
-    virtual int hasError() const { return 0; }
+    virtual int hasError() { return 0; }
 
     // Data Transmission
     virtual ssize_t send (const void* s, size_t size) const = 0;
@@ -104,6 +104,18 @@ public:
 protected:
     ServerSocket(const socket_opts& opts);
     virtual void listen(int max_connections);
+};
+
+class SocketFactory
+{
+protected:
+    async_service *service;
+public:
+    SocketFactory(async_service *service) : service(service) {}
+    virtual ~SocketFactory() {}
+    size_t async_connect(int user_flag, muscle::endpoint &ep, muscle::socket_opts *opts, muscle::async_acceptlistener *accept);
+    virtual ClientSocket *connect(endpoint& ep, const socket_opts& opts) = 0;
+    virtual ServerSocket *listen(endpoint& ep, const socket_opts& opts) = 0;
 };
 
 } // end namespace muscle

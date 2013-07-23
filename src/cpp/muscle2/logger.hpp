@@ -21,15 +21,17 @@
 #ifndef MSUCLE_LOGGER_HPP
 #define MSUCLE_LOGGER_HPP
 
-#include <stdarg.h>
 #include "muscle_types.h"
+
+#include <stdarg.h>
+#include <cstdio>
 
 namespace muscle {
 	class logger
 	{
-	  public:
+	public:
 		static void log_message(muscle_loglevel_t level, const char *message, ...);
-
+		
 		static void severe(const char *message, ...);
 		static void warning(const char *message, ...);
 		static void info(const char *message, ...);
@@ -38,11 +40,18 @@ namespace muscle {
 		static void finer(const char *message, ...);
 		static void finest(const char *message, ...);
 		static void initialize(const char *_name, const char *_tmp_path, int level, bool will_log);
+		static void initialize(const char *_name, FILE *file, int level, int file_level, bool will_log);
 		static void finalize();
 	private:
 		static void format(const muscle_loglevel_t level, const char *message, va_list *args);
+        static const char *logger_name;
+        static FILE *logger_fd;
+        static int logger_level;
+        static int logger_file_level;
+        static int min_level;
+        static bool will_log;
 	};
-
+	
 } // EO namespace muscle
 #endif
 

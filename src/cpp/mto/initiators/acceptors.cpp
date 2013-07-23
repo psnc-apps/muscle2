@@ -12,41 +12,43 @@
 #include "../net/messages.hpp"
 #include "../manager/localmto.h"
 #include "../manager/connection.hpp"
-#include "../util/logger.hpp"
+#include "../../muscle2/logger.hpp"
 
 #define INIT_CONNECTION_REJECT 61
 
 #include <cstdlib>
 
-Acceptor::Acceptor(muscle::ServerSocket *sock, LocalMto *mto, int flag) : ss(sock), mto(mto)
+using namespace muscle;
+
+Acceptor::Acceptor(ServerSocket *sock, LocalMto *mto, int flag) : ss(sock), mto(mto)
 {
     sock->async_accept(flag, this);
 }
 
-void Acceptor::async_report_error(size_t code, int flag, const muscle::muscle_exception& ex)
+void Acceptor::async_report_error(size_t code, int flag, const muscle_exception& ex)
 {
-    Logger::error(Logger::MsgType_PeerConn, "Failed to listen on incoming connections on %s. Got error: %s. Aborting.",
+    logger::severe( "Failed to listen on incoming connections on %s. Got error: %s. Aborting.",
                   ss->str().c_str(), ex.what());
     exit(1);
 }
 
-void ExternalAcceptor::async_accept(size_t code, int flag, muscle::ClientSocket *sock)
+void ExternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
 {
-    Logger::trace(Logger::MsgType_PeerConn, "Accepted peer connection %s, starting hello exchange",
+    logger::finest( "Accepted peer connection %s, starting hello exchange",
                   sock->str().c_str());
     
     InitPeerConnection *init = new InitPeerConnection(sock, mto);
 }
 
 
-void InternalAcceptor::async_accept(size_t code, int flag, muscle::ClientSocket *sock)
+void InternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
 {
     InitConnection *initConn = new InitConnection(sock, mto);
 //
 //    Connection *conn = new Connection(sock, mto);
 }
 
-InitConnection::InitConnection(muscle::ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)
+InitConnection::InitConnection(ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)
 {
     reqBuf = new char[Request::getSize()];
     sock->async_recv(MAIN_INTERNAL_ACCEPT, reqBuf, Request::getSize(), this);
@@ -68,8 +70,7 @@ bool InitConnection::async_received(size_t code, int user_flag, void *data, size
             break;
         default:
         {
-            Logger::error(Logger::MsgType_ClientConn,
-                          "Client from %s sent unknown message (type %s)",
+            logger::severe("Client from %s sent unknown message (type %s)",
                           sock->getAddress().str().c_str(),
                           request.type_str().c_str());
         }
@@ -77,15 +78,13 @@ bool InitConnection::async_received(size_t code, int user_flag, void *data, size
     return true;
 }
 
-void InitConnection::async_report_error(size_t code, int flag, const muscle::muscle_exception& ex)
+void InitConnection::async_report_error(size_t code, int flag, const muscle_exception& ex)
 {
     if (flag == MAIN_INTERNAL_ACCEPT)
-        Logger::error(Logger::MsgType_ClientConn,
-                  "MUSCLE did not send (connection to %s): %s",
+        logger::severe("MUSCLE did not send (connection to %s): %s",
                   sock->getAddress().str().c_str(), ex.what());
     else
-        Logger::error(Logger::MsgType_ClientConn,
-                      "Could not send rejection to MUSCLE (connection to %s): %s",
+        logger::severe("Could not send rejection to MUSCLE (connection to %s): %s",
                       sock->getAddress().str().c_str(), ex.what());
 }
 
@@ -93,8 +92,7 @@ void InitConnection::connect(const Request &request)
 {
     if(mto->hello.matches(request.dst))
     { // local to local
-        Logger::error(Logger::MsgType_ClientConn,
-                      "Requested connection to local port range - to %s from %s",
+        logger::severe("Requested connection to local port range - to %s from %s",
                       request.dst.str().c_str(), sock->getAddress().str().c_str());
     }
     else
@@ -110,8 +108,7 @@ void InitConnection::connect(const Request &request)
         }
         else
         {
-            Logger::error(Logger::MsgType_ClientConn,
-                          "Requested connection to port out of range (%s) by %s",
+            logger::severe("Requested connection to port out of range (%s) by %s",
                           request.dst.str().c_str(), request.src.str().c_str());
             refs++;
             h.type = Header::ConnectResponse;
@@ -134,17 +131,15 @@ void InitConnection::registerAddress(const Request &request)
     {
         mto->conns.setAvailable(request.src);
         
-        Logger::info(Logger::MsgType_ClientConn,
-                     "Listening port registered: %s",
+        logger::info("Listening port registered: %s",
                      request.src.str().c_str());
     }
     else
-        Logger::error(Logger::MsgType_ClientConn,
-                      "Port %s out of range - registering port aborted (connection from %s)",
+        logger::severe("Port %s out of range - registering port aborted (connection from %s)",
                       request.src.str().c_str(), sock->getAddress().str().c_str());
 }
 
-InitPeerConnection::InitPeerConnection(muscle::ClientSocket *_sock, LocalMto *mto)
+InitPeerConnection::InitPeerConnection(ClientSocket *_sock, LocalMto *mto)
 : sock(_sock), mto(mto)
 {
     new HelloReader(sock, this, hellos);
@@ -156,10 +151,9 @@ void InitPeerConnection::allHellosRead()
     mto->peers.create(sock, hellos);
 }
 
-void InitPeerConnection::allHellosFailed(const muscle::muscle_exception& ex)
+void InitPeerConnection::allHellosFailed(const muscle_exception& ex)
 {
-    Logger::trace(Logger::MsgType_PeerConn,
-                  "Reading hellos from peer %s failed - occurred error: %s",
+    logger::finest("Reading hellos from peer %s failed - occurred error: %s",
                   sock->str().c_str(), ex.what());
     sock->async_cancel();
     delete sock;

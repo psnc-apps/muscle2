@@ -7,7 +7,7 @@
 //
 
 #include "endpoint.h"
-#include "../util/exception.hpp"
+#include "../../muscle2/exception.hpp"
 
 #include <netdb.h>
 #include <sstream>
@@ -29,16 +29,16 @@ namespace muscle {
     endpoint::endpoint(uint32_t host, const uint16_t _port) : is_ipv6(false), port(htons(_port)), host("")
     {
         uint32_t nhost = htonl(host);
-        memcpy(addr.c, &nhost, IPV4_SZ);
-        memset(addr.c+IPV4_SZ, 0, sizeof(addr.c) - IPV4_SZ);
+        memcpy(addr, &nhost, IPV4_SZ);
+        memset(addr+IPV4_SZ, 0, sizeof(addr) - IPV4_SZ);
     }
 
     endpoint::endpoint(const char *buffer_ptr) : host("")
     {
         is_ipv6 = *buffer_ptr++ == MUSCLE_ENDPOINT_IPV6;
-        memcpy(addr.c, buffer_ptr, sizeof(addr.c));
+        memcpy(addr, buffer_ptr, sizeof(addr));
         
-        buffer_ptr += sizeof(addr.c);
+        buffer_ptr += sizeof(addr);
         
         port = ntohs(*(const uint16_t *)buffer_ptr);
     }
@@ -48,13 +48,13 @@ namespace muscle {
         if (is_ipv6)
         {
             char hostname[INET6_ADDRSTRLEN];
-            inet_ntop(AF_INET6, addr.c, hostname, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, addr, hostname, INET6_ADDRSTRLEN);
             return std::string(hostname);
         }
         else
         {
             char hostname[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, addr.c, hostname, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, addr, hostname, INET_ADDRSTRLEN);
             return std::string(hostname);
         }
     }
@@ -93,14 +93,14 @@ namespace muscle {
         {
             struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&serv_addr;
             saddr->sin6_family = AF_INET6;
-            memcpy(saddr->sin6_addr.s6_addr, addr.c, IPV6_SZ);
+            memcpy(saddr->sin6_addr.s6_addr, addr, IPV6_SZ);
             saddr->sin6_port = htons(port);
         }
         else
         {
             struct sockaddr_in *saddr = (struct sockaddr_in *)&serv_addr;
             saddr->sin_family = AF_INET;
-            memcpy(&saddr->sin_addr.s_addr, addr.c, IPV4_SZ);
+            memcpy(&saddr->sin_addr.s_addr, addr, IPV4_SZ);
             saddr->sin_port = htons(port);
         }
     }
@@ -135,12 +135,12 @@ namespace muscle {
         
         if (is_ipv6)
         {
-            memcpy(addr.c, s->h_addr, IPV6_SZ);
+            memcpy(addr, s->h_addr, IPV6_SZ);
         }
         else
         {
-            memcpy(addr.c, s->h_addr, IPV4_SZ);
-            memset(addr.c+IPV4_SZ, 0, sizeof(addr.c)-IPV4_SZ);
+            memcpy(addr, s->h_addr, IPV4_SZ);
+            memset(addr+IPV4_SZ, 0, sizeof(addr)-IPV4_SZ);
         }
         return true;
     }
@@ -175,15 +175,15 @@ namespace muscle {
     
     size_t endpoint::getSize()
     {
-        return sizeof(char) +  sizeof(uint16_t) + sizeof(union addr_t);
+        return sizeof(char) +  sizeof(uint16_t) + 16*sizeof(char); // IPv4/v6 + Port + Address
     }
 
     char *endpoint::serializeImpl(char *buffer) const
     {
         *buffer++ = is_ipv6 ? MUSCLE_ENDPOINT_IPV6 : MUSCLE_ENDPOINT_IPV4;
 
-        memcpy(buffer, addr.c, sizeof(addr.c));
-        buffer += sizeof(addr.c);
+        memcpy(buffer, addr, sizeof(addr));
+        buffer += sizeof(addr);
         uint16_t *buffer_sptr = (uint16_t *)buffer;
         *buffer_sptr = htons(port);
         buffer += sizeof(port);

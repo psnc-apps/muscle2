@@ -31,7 +31,7 @@ namespace muscle {
         size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
         size_t listen(int user_flag, ServerSocket* socket, socket_opts *,async_acceptlistener* accept);
         size_t timer(int user_flag, time& t, async_function* func, void *user_data);
-        virtual size_t connect(int user_flag, endpoint& ep, socket_opts *opts, async_acceptlistener* accept) = 0;
+        virtual size_t connect(int user_flag, muscle::SocketFactory *factory, endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
 
         void erase(ClientSocket *socket);
         void erase(ServerSocket *socket);
@@ -39,7 +39,6 @@ namespace muscle {
         virtual void erase_connect(size_t);
         void *update_timer(size_t, time&, void *user_data);
         
-        virtual ssize_t run_once();
         virtual void run();
         virtual void done();
         virtual bool isDone() const;
@@ -52,7 +51,7 @@ namespace muscle {
         virtual void run_accept(ServerSocket *listener, bool hasErr);
         virtual void run_connect(ClientSocket *connect, bool hasErr);
         size_t getNextCode() { return _current_code++; }
-        virtual int select(ClientSocket **sender, ClientSocket **receiver, ServerSocket **listener, ClientSocket **connect, duration& utimeout) const = 0;
+        virtual int select(ClientSocket **sender, ClientSocket **receiver, ServerSocket **listener, ClientSocket **connect, duration& utimeout);
         csocks_t recvSockets;
         csocks_t sendSockets;
         ssockdesc_t listenSockets;

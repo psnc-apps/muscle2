@@ -7,10 +7,12 @@
 #include <string>
 
 /** Default name for the file with options */
-#define CONFIG_FILE_NAMEPATH "mto-config.cfg"
+#define OPTIONS_CONFIG_FILE_NAMEPATH "/etc/mto-config.cfg"
 
 /** Default name for the file with topology */
-#define TOPOLOGY_FILE_NAMEPATH "mto-topology.cfg"
+#define OPTIONS_TOPOLOGY_FILE_NAMEPATH "/etc/-topology.cfg"
+
+#define OPTIONS_DEFAULT_LOG_FILE "/var/log/muscle/mto.log"
 
 class Options
 {
@@ -19,7 +21,6 @@ private:
     muscle::endpoint internalEndpoint;             ///< Address and port for listening to clients
     std::string myName;                              ///< Name as in config file
     bool daemonize;                             ///< If the MTO should go to background
-    bool useMPWide;			      ///< use MPWide
     int tcpBufSize;			      ///< TCP Buff size
     muscle::duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
     
@@ -50,11 +51,10 @@ public:
     int getTCPBufSize() const {return tcpBufSize;}
     std::string getTopologyFilePath() const {return topologyFilePath;}
     const muscle::duration& getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
-    
+
+    bool useMPWide;			      ///< use MPWide
 private:
-    bool setLogFile(std::string path);
-    bool setLogLvL(std::string f);
-    bool setLogMsgType(std::string x);
+    bool setLog(const char *path, std::string level);
 };
 
 #endif // OPTIONS_H

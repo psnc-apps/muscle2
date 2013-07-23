@@ -83,8 +83,6 @@ struct Header : Request
     char *serialize(char* buf) const;
     
     /** Receiver must delete newly created chars. */
-    size_t makePacket(char **packet, const void *data = 0, size_t len = 0);
-
     size_t makePacket(char **packet, size_t value);
     
     Header(): length(0) {};

@@ -34,17 +34,21 @@ const int MAXHOSTNAME = 200;
 const int MAXCONNECTIONS = 5;
 const int WINSIZE = 1*1024*1024;
 
+#define MPWIDE_SOCKET_RDMASK 1
+#define MPWIDE_SOCKET_WRMASK 2
+
 class Socket
 {
  public:
   Socket();
+  Socket(const Socket& sock);
   virtual ~Socket();
 
   // Server initialization
   bool create();
   bool bind ( const int port );
   bool listen() const;
-  bool accept ( Socket& ) const;
+  bool accept();
 
   // Client initialization
   bool connect ( const std::string host, const int port );
@@ -60,6 +64,7 @@ class Socket
   // Check if the socket is readable / writable. Timeout is 2 minutes.
   int select_me (int mask) const;
   int select_me (int mask, int timeout_val) const;
+  int select_me (int mask, int timeout_s, int timeout_u) const;
 
   void set_non_blocking ( const bool );
   void setWin(int size);
@@ -67,13 +72,12 @@ class Socket
   bool is_valid() const { return m_sock != -1; }
 
   void close();
-  void closeServer();
 
   int getSock() const { return m_sock; }
 
  private:
   int m_sock;
-  int s_sock; //socket descriptor for server.
+  int *refs;
   sockaddr_in m_addr;
   #ifdef MSG_NOSIGNAL
     static const int tcp_send_flag = MSG_NOSIGNAL;
@@ -82,5 +86,7 @@ class Socket
   #endif
 
 };
+
+int Socket_select(int rsock, int wsock, int mask, int timeout_s, int timeout_u);
 
 #endif

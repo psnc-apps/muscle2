@@ -34,14 +34,14 @@ using namespace std;
 
 namespace muscle {
     csocket::csocket() : socket((async_service *)0) {}
-    csocket::csocket(int sockfd) : socket((async_service *)0), sockfd(sockfd) {}
+    csocket::csocket(int sockfd) : socket((async_service *)0) { this->sockfd = sockfd; }
     
     void csocket::setBlocking (const bool blocking)
     {
         int opts = fcntl(sockfd, F_GETFL);
         
         if (opts < 0)
-            throw muscle_exception("Can not set the blocking status: " + string(strerror(errno)), errno);
+            throw muscle_exception("Can not set the blocking status", errno);
         
         if (blocking == ((opts|O_NONBLOCK) == O_NONBLOCK))
         {
@@ -77,7 +77,7 @@ namespace muscle {
         int proto = address.isIPv6() ? PF_INET6 : PF_INET;
         
         sockfd = ::socket(proto, SOCK_STREAM, 0);
-        if (sockfd < 0) throw muscle_exception("can not create socket: " + string(strerror(errno)));
+        if (sockfd < 0) throw muscle_exception("can not create socket", errno);
         bool reuse = true;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(bool));
     }
@@ -112,7 +112,6 @@ namespace muscle {
         }
         
         struct timeval timeout = time.timeval();
-        //  cout << "select(): mask = " << mask << endl;
         
         int res = ::select(sockfd+1, prsock, pwsock, pesock, &timeout);
         
@@ -158,7 +157,7 @@ namespace muscle {
         address.getSockAddr(saddr);
         int res = ::connect(sockfd, &saddr, sizeof(struct sockaddr));
         if (res < 0 && (blocking || errno != EINPROGRESS))
-            throw muscle_exception("can not connect to " + address.str() + ": " + string(strerror(errno)));
+            throw muscle_exception("can not connect to " + address.str(), errno);
         
         if (blocking)
             setBlocking(false);
@@ -209,7 +208,9 @@ namespace muscle {
     
     ssize_t CClientSocket::irecv(void* s, size_t size)
     {
-        return ::recv(sockfd, s, size, 0);
+        ssize_t ret = ::recv(sockfd, s, size, 0);
+        // 0 can be considered an error code, meaning connection closed
+        return (ret == 0 ? -1 : ret);
     }
     
     ssize_t CClientSocket::isend(const void* s, size_t size)
@@ -227,7 +228,7 @@ namespace muscle {
         return server->send(user_flag, this, s, size, send);
     }
     
-    int CClientSocket::hasError() const
+    int CClientSocket::hasError()
     {
         int so_error;
         socklen_t slen = sizeof so_error;
@@ -252,7 +253,7 @@ namespace muscle {
         int childfd = ::accept(sockfd, &addr, &socklen);
         
         if (childfd < 0)
-            throw muscle_exception("Failed to accept socket: " + string(strerror(errno)));
+            throw muscle_exception("Failed to accept socket", errno);
         
         return new CClientSocket(*this, childfd, opts);
     }
@@ -268,7 +269,7 @@ namespace muscle {
         struct sockaddr saddr;
         address.getSockAddr(saddr);
         int res = ::bind(sockfd, &saddr, sizeof(struct sockaddr));
-        if (res < 0) throw muscle_exception("can not bind to " + address.str() + ": " + string(strerror(errno)));
+        if (res < 0) throw muscle_exception("can not bind to " + address.str(), errno);
     }
     
     size_t CServerSocket::async_accept(int user_flag, async_acceptlistener *accept)
@@ -276,5 +277,15 @@ namespace muscle {
         socket_opts *opts = new socket_opts;
         // TODO check if we need to pass options
         return server->listen(user_flag, this, opts, accept);
+    }
+    
+    ClientSocket *CSocketFactory::connect(muscle::endpoint &ep, const muscle::socket_opts &opts)
+    {
+        return new CClientSocket(ep, service, opts);
+    }
+
+    ServerSocket *CSocketFactory::listen(muscle::endpoint &ep, const muscle::socket_opts &opts)
+    {
+        return new CServerSocket(ep, service, opts);
     }
 }
