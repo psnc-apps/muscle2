@@ -23,10 +23,11 @@
 
 #include "logger.hpp"
 
-#include <exception>
-#include <stdexcept>
-#include <string>
-#include <errno.h>
+#include <exception> // std::exception
+#include <stdexcept> // std::runtime_error
+#include <string>  // std::string
+#include <errno.h> // errno
+#include <cstring> // strerror
 
 namespace muscle {
 
