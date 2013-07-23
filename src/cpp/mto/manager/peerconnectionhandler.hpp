@@ -116,6 +116,7 @@ protected:
     {
         Header h;
         PeerConnectionHandler *t;
+		muscle::socket_opts opts;
         HandleConnected(Header& header, PeerConnectionHandler *thiz);
         
         virtual void async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket);

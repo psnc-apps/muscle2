@@ -24,7 +24,7 @@ bool option_parser::load(int argc, char **argv)
     char *opt_ptr = optstr;
     vector<value>::const_iterator it = vals.begin();
     static struct option *long_options = new struct option[vals.size()+1];
-    for (int i = 0; i < vals.size(); ++it, ++i) {
+    for (size_t i = 0; i < vals.size(); ++it, ++i) {
         long_options[i].name = it->name.c_str();
         long_options[i].flag = 0;
         long_options[i].has_arg = it->hasArg;
@@ -63,6 +63,8 @@ bool option_parser::load(int argc, char **argv)
             results[vals[c].name] = string(""); // empty constructor
     }
     
+	delete [] optstr;
+	
     // Parsed all arguments
     return (optind == argc);
 }

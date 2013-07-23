@@ -79,9 +79,9 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
         }
         case PCH_RECV_DATA:
         {
-            logger::finest("Got data of length %u on %s from %s",
-                          latestHeader.length, latestHeader.str().c_str(), str().c_str());
-            
+			if (logger::isLoggable(MUSCLE_LOG_FINEST))
+				logger::finest("Got data of length %u on %s from %s",
+				               latestHeader.length, latestHeader.str().c_str(), str().c_str());
             
             Connection *conn = mto->conns.get(latestHeader);
             
@@ -114,7 +114,8 @@ void PeerConnectionHandler::handleConnect(Header h)
     
     if(fwdTarget)
     {
-        logger::finest("Forwarding connection %s from %s to %s",
+		if (logger::isLoggable(MUSCLE_LOG_FINEST))
+			logger::finest("Forwarding connection %s from %s to %s",
                       h.str().c_str(), str().c_str(), fwdTarget->str().c_str());
         
         
@@ -127,7 +128,8 @@ void PeerConnectionHandler::handleConnect(Header h)
     {
         if (mto->conns.isAvailable(h.dst))
         {
-            logger::finest("Trying to establish connection %s (Peer MTO = %s)",
+			if (logger::isLoggable(MUSCLE_LOG_FINEST))
+				logger::finest("Trying to establish connection %s (Peer MTO = %s)",
                           h.str().c_str(), str().c_str());
             
             HandleConnected *hc = new HandleConnected(h, this);
@@ -149,8 +151,7 @@ PeerConnectionHandler::HandleConnected::HandleConnected(Header& header, PeerConn
 {
     h.type = Header::ConnectResponse;
     t->incrementPending();
-    socket_opts *opts = new socket_opts;
-    t->mto->intSockFactory->async_connect(PCH_MAKE_CONNECT, h.dst, opts, this);
+    t->mto->intSockFactory->async_connect(PCH_MAKE_CONNECT, h.dst, &opts, this);
 }
 
 void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket)
@@ -181,7 +182,8 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
 {
     readHeader();
     
-    logger::finest("Got info about establish connection %s by %s",
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Got info about establish connection %s by %s",
                   h.str().c_str(), str().c_str());
     
     
@@ -207,7 +209,8 @@ void PeerConnectionHandler::handleConnectResponse(Header h)
 
 void PeerConnectionHandler::handleData(Header h)
 {
-    logger::finest("Starting data transfer of length %u on %s from %s",
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Starting data transfer of length %u on %s from %s",
                   h.length, h.str().c_str(), str().c_str());
     
     latestHeader = h;
@@ -245,7 +248,8 @@ void PeerConnectionHandler::handleClose(Header h)
 /** 'data' is NOT deleted in this function */
 void PeerConnectionHandler::forward(Header & h, size_t dataLen, void *data)
 {
-    logger::finest("Forwarding '%s' to %s",
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Forwarding '%s' to %s",
                   h.type_str().c_str(), str().c_str());
     
     send(h, data, dataLen);
@@ -327,7 +331,8 @@ bool PeerConnectionHandler::tryClean()
 
 void PeerConnectionHandler::send(Header& h, size_t value, muscle::async_sendlistener *_sender)
 {
-    logger::finest("Writing '%s' to %s",
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Writing '%s' to %s",
                   h.type_str().c_str(), str().c_str());
 
     char *packet;
@@ -337,7 +342,8 @@ void PeerConnectionHandler::send(Header& h, size_t value, muscle::async_sendlist
 
 void PeerConnectionHandler::send(Header& h, void *data, size_t len, muscle::async_sendlistener *_sender)
 {
-    logger::finest("Writing '%s' to %s",
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Writing '%s' to %s",
                   h.type_str().c_str(), str().c_str());
     char *packet;
     size_t sz = h.makePacket(&packet, len);
@@ -348,7 +354,8 @@ void PeerConnectionHandler::send(Header& h, void *data, size_t len, muscle::asyn
 
 void PeerConnectionHandler::send(void *data, size_t len, muscle::async_sendlistener *_sender)
 {
-    logger::finest("Sending directly %u bytes on %s", len, str().c_str());
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("Sending directly %u bytes on %s", len, str().c_str());
     
     Sender *s = new Sender(_sender, this, data, len);
 }

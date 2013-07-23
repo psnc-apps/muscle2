@@ -24,7 +24,7 @@ protected:
     LocalMto *mto;
     
 public:
-    Acceptor(muscle::ServerSocket *sock, LocalMto *mto, int flag);
+    Acceptor(muscle::ServerSocket *sock, LocalMto *mto);
     virtual ~Acceptor() { delete ss; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
@@ -36,7 +36,9 @@ public:
 class InternalAcceptor : public Acceptor
 {
 public:
-    InternalAcceptor(muscle::ServerSocket *ss, LocalMto *mto) : Acceptor(ss, mto, ACCEPT_INTERNAL) {}
+    InternalAcceptor(muscle::ServerSocket *_ss, LocalMto *mto, muscle::socket_opts *client_opts) : Acceptor(_ss, mto) {
+	    _ss->async_accept(ACCEPT_INTERNAL, this, client_opts);
+	}
     
     /** Triggered on accept; reads the header and constructs a connection */
     virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
@@ -45,7 +47,9 @@ public:
 struct ExternalAcceptor : public Acceptor
 {
 public:
-    ExternalAcceptor(muscle::ServerSocket * sock, LocalMto *mto) : Acceptor(sock, mto, ACCEPT_INTERNAL) {}
+    ExternalAcceptor(muscle::ServerSocket * _ss, LocalMto *mto, muscle::socket_opts *client_opts) : Acceptor(_ss, mto) {
+		_ss->async_accept(ACCEPT_EXTERNAL, this, client_opts);
+	}
     
     /** Triggered on accept; reads the header and constructs a connection */
     virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);

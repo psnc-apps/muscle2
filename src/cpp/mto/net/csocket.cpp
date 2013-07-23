@@ -272,10 +272,8 @@ namespace muscle {
         if (res < 0) throw muscle_exception("can not bind to " + address.str(), errno);
     }
     
-    size_t CServerSocket::async_accept(int user_flag, async_acceptlistener *accept)
+    size_t CServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)
     {
-        socket_opts *opts = new socket_opts;
-        // TODO check if we need to pass options
         return server->listen(user_flag, this, opts, accept);
     }
     

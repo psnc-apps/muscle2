@@ -403,10 +403,9 @@ namespace muscle {
     }
 
     /** SERVER SIDE **/
-    MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts)
+    MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts), server_opts(opts)
     {
-        max_connections = opts.max_connections;
-        listener = new mpsocket_connect_thread(endpoint("0", address.port), opts, this, true);
+        listener = new mpsocket_connect_thread(endpoint("0", address.port), server_opts, this, true);
     }
     
     ClientSocket *MPServerSocket::accept(const socket_opts &opts)
@@ -424,15 +423,12 @@ namespace muscle {
         
         delete res;
         delete listener;
-        listener = new mpsocket_connect_thread(endpoint("0", address.port), opts, this, true);
+        listener = new mpsocket_connect_thread(endpoint("0", address.port), server_opts, this, true);
         return sock;
     }
 
-    size_t MPServerSocket::async_accept(int user_flag, async_acceptlistener *accept)
+    size_t MPServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)
     {
-        // TODO: check if we need to pass more options
-        socket_opts *opts = new socket_opts(max_connections);
-
         return server->listen(user_flag, this, opts, accept);
     }
         

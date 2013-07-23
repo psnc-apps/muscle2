@@ -114,15 +114,27 @@ namespace muscle
                     send->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
                     send->async_done(desc.code, desc.user_flag);
                 }
-                descs->second.pop();
+                descs = sendQueues.find(socket);
+				if (descs == sendQueues.end())
+					break;
+				
+				descs->second.pop();
             }
             // Still a transfer in progress
-            if (progressing.code)
-                descs->second.push(progressing);
+            if (progressing.code) {
+				// The socket was already erased
+				if (sendSockets.find(socket) == sendSockets.end())
+				{
+					sendSockets.insert(socket);
+					sendQueues[socket].push(progressing);
+				}
+				else
+					descs->second.push(progressing);
+			}
             else
             {
-                sendSockets.erase(it);
-                sendQueues.erase(descs);
+                sendSockets.erase(socket);
+                sendQueues.erase(socket);
             }
         }
         it = recvSockets.find(socket);
@@ -131,9 +143,11 @@ namespace muscle
             async_description progressing;
 
             sockqueue_t::iterator descs = recvQueues.find(socket);
-            while (!descs->second.empty()) {
+			// descs exists
+            while (descs != recvQueues.end() && !descs->second.empty()) {
                 async_description& desc = descs->second.front();
-                if (desc.in_progress == 1)
+                
+				if (desc.in_progress == 1)
                 {
                     assert(progressing.code == 0);
                     progressing = desc;
@@ -141,19 +155,32 @@ namespace muscle
                 }
                 else
                 {
+					// this code might call erase
                     async_recvlistener* recv = static_cast<async_recvlistener*>(desc.listener);
                     recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
                     recv->async_done(desc.code, desc.user_flag);
                 }
+				descs = recvQueues.find(socket);
+				if (descs == recvQueues.end())
+					break;
+				
                 descs->second.pop();
             }
             // Still a transfer in progress
             if (progressing.code)
-                descs->second.push(progressing);
+			{
+				if (sendSockets.find(socket) == sendSockets.end())
+				{
+					recvSockets.insert(socket);
+					recvQueues[socket].push(progressing);
+				}
+				else
+					descs->second.push(progressing);
+			}
             else
             {
-                recvQueues.erase(descs);
-                recvSockets.erase(it);
+                recvQueues.erase(socket);
+                recvSockets.erase(socket);
             }
         }
     }
@@ -299,9 +326,8 @@ namespace muscle
         {
             try
             {
-				logger::fine("Sending %zu bytes", d.data_remain());
                 status = sock->isend(d.data_ptr, d.data_remain());
-				logger::fine("Sent %zd bytes", status);
+				logger::finest("Sent %zd/%zu bytes", status, d.data_remain());
             }
             catch (exception& ex)
             {
@@ -381,9 +407,8 @@ namespace muscle
         {
             try
             {
-				logger::fine("Receiving %zu bytes", desc.data_remain());
                 status = sock->irecv(d.data_ptr, d.data_remain());
-				logger::fine("Received %zd bytes", status);
+				logger::fine("Received %zd/%zu bytes", status, desc.data_remain());
             }
             catch (exception& ex)
             {
@@ -565,14 +590,11 @@ namespace muscle
         ClientSocket *ccsock = NULL;
         try
         {
-            socket_opts *opts = desc.data ? (socket_opts *)desc.data : new socket_opts;
+            socket_opts *opts = (socket_opts *)desc.data;
             
             opts->blocking_connect = false;
             
             ccsock = sock->accept(*opts);
-            
-            if (!desc.data)
-                delete opts;
         }
         catch (exception& ex)
         {

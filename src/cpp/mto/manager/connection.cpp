@@ -43,7 +43,7 @@ void Connection::close()
 
     referenceCount++;
     closing = true;
-    logger::finest("Closing connection %s",
+    logger::fine("Closing connection %s",
                   header.str().c_str());
     
     if(hasRemotePeer)
@@ -118,7 +118,8 @@ void Connection::send(void *data, size_t length)
     if (closing)
         return;
     
-    logger::finest("[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
+	if (logger::isLoggable(MUSCLE_LOG_FINEST))
+		logger::finest("[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
     
     referenceCount++;
     sock->async_send(CONN_REMOTE_TO_LOCAL, data, length, this);

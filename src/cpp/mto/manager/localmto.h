@@ -24,6 +24,7 @@ class LocalMto
 public:
     MtoHello hello;
     muscle::socket_opts sock_opts;
+    muscle::socket_opts client_opts;
     const std::string name;
     muscle::endpoint internalEp;
     muscle::endpoint externalEp;

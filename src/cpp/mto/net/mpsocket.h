@@ -133,10 +133,11 @@ namespace muscle {
         virtual ~MPServerSocket() { delete listener; }
         
         virtual ClientSocket *accept(const socket_opts& opts);
-        virtual size_t async_accept(int user_flag, async_acceptlistener *accept);
+        virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
     protected:
-        int max_connections;
         mpsocket_connect_thread *listener;
+	private:
+		socket_opts server_opts;
     };
 
     class MPSocketFactory : public SocketFactory

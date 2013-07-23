@@ -98,7 +98,7 @@ class ServerSocket : virtual public socket
 {
 public:
     virtual ClientSocket *accept(const socket_opts& opts) = 0;
-    virtual size_t async_accept(int user_flag, async_acceptlistener *accept) = 0;
+    virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts) = 0;
     virtual void async_cancel();
     virtual ~ServerSocket() { async_cancel(); }
 protected:

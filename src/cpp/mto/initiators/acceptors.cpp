@@ -20,10 +20,8 @@
 
 using namespace muscle;
 
-Acceptor::Acceptor(ServerSocket *sock, LocalMto *mto, int flag) : ss(sock), mto(mto)
-{
-    sock->async_accept(flag, this);
-}
+Acceptor::Acceptor(ServerSocket *sock, LocalMto *mto) : ss(sock), mto(mto)
+{}
 
 void Acceptor::async_report_error(size_t code, int flag, const muscle_exception& ex)
 {

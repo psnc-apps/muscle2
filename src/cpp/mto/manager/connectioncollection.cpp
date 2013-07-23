@@ -52,9 +52,11 @@ void ConnectionCollection::replacePeer(PeerConnectionHandler *oldh, PeerConnecti
 
 void ConnectionCollection::peerDied(PeerConnectionHandler *handler)
 {
-    for(conns_t::iterator it = remoteConnections.begin(); it != remoteConnections.end(); ++it)
+    for(conns_t::iterator it = remoteConnections.begin(); it != remoteConnections.end();)
     {
-        it->second->peerDied(handler);
+		// Ugly, but it allows for self delete of
+		// the connection if there is no alternative peer
+        (it++)->second->peerDied(handler);
     }
 }
 

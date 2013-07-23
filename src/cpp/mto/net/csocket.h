@@ -74,7 +74,7 @@ namespace muscle {
     public:
         CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts);
         
-        virtual size_t async_accept(int user_flag, async_acceptlistener *accept);
+        virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
         virtual ClientSocket *accept(const socket_opts& opts);
     protected:
         virtual void init();
