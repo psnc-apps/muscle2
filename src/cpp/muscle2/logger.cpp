@@ -38,7 +38,7 @@ namespace muscle {
 	
 	void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(level)) return;
 		
 		va_list args;
 		va_start(args, message);
@@ -48,7 +48,7 @@ namespace muscle {
 	
 	void logger::severe(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_SEVERE)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_SEVERE, message, &args);
@@ -57,7 +57,7 @@ namespace muscle {
 	
 	void logger::warning(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_WARNING)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_WARNING, message, &args);
@@ -66,7 +66,7 @@ namespace muscle {
 	
 	void logger::info(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_INFO)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_INFO, message, &args);
@@ -75,7 +75,7 @@ namespace muscle {
 	
 	void logger::config(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_CONFIG)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_CONFIG, message, &args);
@@ -84,7 +84,7 @@ namespace muscle {
 	
 	void logger::fine(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_FINE)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINE, message, &args);
@@ -93,7 +93,7 @@ namespace muscle {
 	
 	void logger::finer(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_FINER)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINER, message, &args);
@@ -102,7 +102,7 @@ namespace muscle {
 	
 	void logger::finest(const char *message, ...)
 	{
-		if (!will_log) return;
+		if (!will_log || !isLoggable(MUSCLE_LOG_FINEST)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINEST, message, &args);
@@ -111,8 +111,6 @@ namespace muscle {
 	
 	inline void logger::format(const muscle_loglevel_t level, const char *message, va_list *args)
 	{
-		if (level < min_level) return;
-		
 		const char *level_str;
 		switch (level)
 		{
@@ -219,6 +217,11 @@ namespace muscle {
 		if (logger_fd) {
 			fclose(logger_fd);
 		}
+	}
+	
+	bool logger::isLoggable(muscle_loglevel_t level)
+	{
+		return level >= min_level;
 	}
 	
 } // EO namespace muscle
