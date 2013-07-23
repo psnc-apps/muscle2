@@ -167,7 +167,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	
 	@Override
 	protected void handleThrowable(Throwable ex) {
-		this.connectionHandler.result(null);
+		this.connectionHandler.result(false);
 	}
 	
 	@Override

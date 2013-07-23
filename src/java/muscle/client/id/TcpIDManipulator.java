@@ -280,5 +280,10 @@ public class TcpIDManipulator implements IDManipulator {
 		public String getName() {
 			return "ManagerProtocol-" + action + "(" + id + ")";
 		}
+		
+		@Override
+		protected void handleThrowable(Throwable ex) {
+			// Do nothing!
+		}
 	}
 }

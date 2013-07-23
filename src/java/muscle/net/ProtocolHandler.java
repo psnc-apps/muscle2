@@ -25,6 +25,7 @@
 
 package muscle.net;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -115,6 +116,10 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 				logger.log(Level.SEVERE, "Communication aborted: the other side hung up.", ex);
 				handleThrowable(ex);
 				break;
+			} catch (EOFException ex) {
+				logger.log(Level.SEVERE, "Communication aborted: the other side hung up.", ex);
+				handleThrowable(ex);
+				break;
 			} catch (IOException ex) {
 				logger.log(Level.SEVERE, "Communication error; could not encode/decode from socket. Try " + i + "/" +tries+ ".", ex);
 				if (i == tries) {
@@ -186,6 +191,6 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	
 	public abstract String getName();
 	
-	protected void handleThrowable(Throwable ex) {}
+	protected abstract void handleThrowable(Throwable ex);
 	protected void handleResult(S s) {}
 }

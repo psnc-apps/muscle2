@@ -139,5 +139,10 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 	public String getName() {
 		return "ManagerProtocolHandler";
 	}
+
+	@Override
+	protected void handleThrowable(Throwable ex) {
+		listener.fatalException(ex);
+	}
 	
 }
