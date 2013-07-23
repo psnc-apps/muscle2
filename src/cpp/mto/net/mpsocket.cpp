@@ -319,16 +319,12 @@ namespace muscle {
     
     ssize_t MPClientSocket::irecv(void * const s, const size_t size)
     {
-		if (!isReadReady()) return 0;
-		
-        return runInThread(false, (void *)s, size, recvThread);
+		return runInThread(false, (void *)s, size, recvThread);
     }
     
     ssize_t MPClientSocket::isend(const void * const s, const size_t size)
     {
-		if (!isWriteReady()) return 0;
-		
-        return runInThread(true, (void *)s, size, sendThread);
+		return runInThread(true, (void *)s, size, sendThread);
     }
     
     ssize_t MPClientSocket::runInThread(const bool send, void * const s, const size_t sz, mpsocket_thread *&last_thread)
@@ -419,7 +415,15 @@ namespace muscle {
         if (*res == -1)
             sock = NULL;
         else
-            sock = new MPClientSocket(*this, *res, opts);
+		{
+			try {
+				sock = new MPClientSocket(*this, *res, opts);
+			} catch (const muscle_exception& ex) {
+				const char *reason = ex.what();
+				logger::severe("Could not create new client socket: %s", reason);
+				sock = NULL;
+			}
+		}
         
         delete res;
         delete listener;

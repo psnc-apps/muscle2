@@ -193,7 +193,7 @@ void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& fac
         muscle::ServerSocket *ssock = factory.listen(ep, opts);
         usleep(1000000);
         async_ss ass(&service, ssock);
-        ssock->async_accept(1, &ass);
+        ssock->async_accept(1, &ass, &opts);
         factory.async_connect(1, ep, &opts, &ass);
         
         service.run();

@@ -33,7 +33,7 @@ protected:
     Header header;
     
     /** Buffer for transporting data */
-    unsigned char receiveBuffer[CONNECTION_BUFFER_SIZE];
+    char *receiveBuffer;
     
     /** Indicates whether there is a peer on the other side */
     bool hasRemotePeer;
@@ -51,7 +51,10 @@ protected:
     
     size_t closing_timer;
 public:
-    Connection() : sock(0), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0), mto(0) {}    
+    Connection() : sock(0), closing(false), hasRemotePeer(false), referenceCount(0), secondMto(0), mto(0)
+	{
+		receiveBuffer = new char[CONNECTION_BUFFER_SIZE];
+	}
     /** Opening connection from REMOTE */
     Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler * toMto, LocalMto *mto, bool remotePeerConnected);
     

@@ -64,6 +64,7 @@ void StubbornConnecter::allHellosRead()
 {
     mto->peers.create(sock, hellos);
     sock = NULL; // don't delete
+	delete this;
 }
 
 void StubbornConnecter::allHellosFailed(const muscle_exception &ex)
@@ -71,4 +72,5 @@ void StubbornConnecter::allHellosFailed(const muscle_exception &ex)
     logger::finest("Reading hellos from peer %s failed - occurred error: %s",
                   sock->str().c_str(), ex.what());
     StubbornConnecter *sc = new StubbornConnecter(where, service, sockFactory, opts, timeout, mto);
+	delete this;
 }

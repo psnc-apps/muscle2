@@ -370,6 +370,8 @@ void PeerConnectionHandler::Sender::async_sent(size_t code, int user_flag, void 
 {
     if (listener)
         listener->async_sent(code, user_flag, data, len, is_final);
+	else
+		delete [] (char *)data;
     
     if (is_final == 0)
         return;

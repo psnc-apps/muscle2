@@ -18,6 +18,8 @@ using namespace muscle;
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
 : sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), referenceCount(0), secondMto(t), mto(mto), closing_timer(0)
 {
+	receiveBuffer = new char[CONNECTION_BUFFER_SIZE];
+	
     assert(secondMto != NULL);
     if (hasRemotePeer)
     {
@@ -76,16 +78,19 @@ void Connection::tryClose()
 
 Connection::~Connection()
 {
+	logger::finer("Deleting connection");
     delete sock;
+	delete receiveBuffer;
 }
 
 void Connection::async_execute(size_t code, int flag, void *user_data)
 {
     logger::info("Connection %s did not close after timeout (%d connections running); forcing",
                   header.str().c_str(), referenceCount);
-    sock->getServer()->printDiagnostics();
+	async_service *server = sock->getServer();
+    server->printDiagnostics();
     sock->async_cancel();
-    sock->getServer()->erase_timer(closing_timer);
+    server->erase_timer(closing_timer);
 }
 
 void Connection::receive()
@@ -103,10 +108,16 @@ bool Connection::async_received(size_t code, int user_flag, void *data, size_t c
     if(is_final == -1 || closing) return false;
     if (count == 0) return true;
 	
-	// Create new buffer: don't delete class-local data array receiveBuffer
-    void *buffer = new char[count];
-	memcpy(buffer, data, count);
-	secondMto->send(header, buffer, count, new async_sendlistener_delete(2));
+	// If the received size is very large, it's faster to just allocate some new memory
+	if (count >= CONNECTION_BUFFER_SIZE/4) {
+		// data stores the old receiveBuffer
+		receiveBuffer = new char[CONNECTION_BUFFER_SIZE];
+	} else {
+		// Create new buffer: don't delete class-local data array receiveBuffer
+		data = new char[count];
+		memcpy(data, receiveBuffer, count);
+	}
+	secondMto->send(header, data, count, new async_sendlistener_delete(2));
     
     receive();
     // Don't try to receive more information, we sent what we received
