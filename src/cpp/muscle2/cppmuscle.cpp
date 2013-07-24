@@ -322,13 +322,13 @@ endpoint env::muscle2_tcp_location(const pid_t pid)
 		
 		int fd = open(muscle_tmpfifo, O_RDONLY|O_NONBLOCK);
         bool succeeded = false;
-        fd_set fd_read, fd_err;
         struct timeval timeout;
         
         while (!succeeded) {
             timeout.tv_sec = 0;
             timeout.tv_usec = 200000; // 0.2 sec
 
+            fd_set fd_read, fd_err;
             FD_ZERO(&fd_read); FD_ZERO(&fd_err);
             FD_SET(fd, &fd_read); FD_SET(fd, &fd_err);
             int res = select(fd+1, &fd_read, (fd_set *)0, &fd_err, &timeout);
@@ -360,12 +360,9 @@ endpoint env::muscle2_tcp_location(const pid_t pid)
                 int status;
                 int pid = waitpid(muscle_pid, &status, WNOHANG);
                 if (pid == muscle_pid) {
-                    if (WIFEXITED(status))
-                    {
+                    if (WIFEXITED(status)) {
                         if (WEXITSTATUS(status)) logger::severe("MUSCLE execution failed with status %d.", WEXITSTATUS(status));
-                    }
-                    else if (WIFSIGNALED(status))
-                    {
+                    } else if (WIFSIGNALED(status)) {
                         logger::severe("MUSCLE execution terminated by signal %s.", strsignal(WTERMSIG(status)));
                     }
                     else logger::severe("MUSCLE failed");
@@ -376,7 +373,7 @@ endpoint env::muscle2_tcp_location(const pid_t pid)
         }
         if (fd != -1) close(fd);
 
-        if (succeeded)
+        if (!succeeded)
             return endpoint();
 		
 		char *indexColon = strrchr(host, ':');
