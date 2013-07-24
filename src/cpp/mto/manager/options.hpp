@@ -10,7 +10,7 @@
 #define OPTIONS_CONFIG_FILE_NAMEPATH "/etc/mto-config.cfg"
 
 /** Default name for the file with topology */
-#define OPTIONS_TOPOLOGY_FILE_NAMEPATH "/etc/-topology.cfg"
+#define OPTIONS_TOPOLOGY_FILE_NAMEPATH "/etc/mto-topology.cfg"
 
 #define OPTIONS_DEFAULT_LOG_FILE "/var/log/muscle/mto.log"
 
