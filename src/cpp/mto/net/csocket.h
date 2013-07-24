@@ -24,6 +24,8 @@ namespace muscle {
     public:
         virtual ~csocket() { shutdown(sockfd, SHUT_RDWR); close(sockfd); }
         
+		virtual void setBlocking(const bool);
+
         // Check if the socket is readable / writable. Timeout is MUSCLE_SOCKET_TIMEOUT seconds.
         // Override MUSCLE_SOCKET_TIMEOUT to choose a different number of seconds
         virtual int select(int mask) const;
@@ -38,7 +40,6 @@ namespace muscle {
         void create();
             
         virtual void setOpts(const socket_opts& opts);
-        virtual void setBlocking(const bool);
         
         void setWin(int size);
     }; // end class socket

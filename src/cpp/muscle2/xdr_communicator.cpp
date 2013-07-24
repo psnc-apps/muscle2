@@ -33,7 +33,7 @@
 
 namespace muscle {
 
-XdrCommunicator::XdrCommunicator(endpoint &ep) : Communicator(ep), sockfd(sock.getReadSock()) {
+XdrCommunicator::XdrCommunicator(endpoint &ep) : Communicator(ep), sockfd(sock->getReadSock()) {
 /*TODO: detect signature in CMake */
 #ifdef __APPLE__
 	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);

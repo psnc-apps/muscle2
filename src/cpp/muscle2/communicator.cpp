@@ -50,6 +50,21 @@ extern "C" size_t communicator_write_to_socket(void *socket_handle, void *buf, i
 
 namespace muscle {
 
+Communicator::Communicator(endpoint &ep)
+{
+	socket_opts opts;
+	opts.blocking_connect = true;
+	opts.keep_alive = true;
+
+	sock = new CClientSocket(ep, NULL, opts);
+	sock->setBlocking(true);
+}
+
+Communicator::~Communicator()
+{
+	delete sock;
+}
+
 std::string Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {
 	char *str = (char *)0;
 	size_t len = 65536;

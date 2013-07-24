@@ -43,7 +43,7 @@ namespace muscle {
         if (opts < 0)
             throw muscle_exception("Can not set the blocking status", errno);
         
-        if (blocking == ((opts|O_NONBLOCK) == O_NONBLOCK))
+        if (blocking == ((opts&O_NONBLOCK) == O_NONBLOCK))
         {
             if (blocking)
                 opts &= ~O_NONBLOCK;

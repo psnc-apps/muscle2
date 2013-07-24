@@ -54,8 +54,8 @@ namespace muscle {
 class Communicator
 {
 public:
-	Communicator(endpoint &ep) : sock(ep, NULL) { }
-	virtual ~Communicator() {}
+	Communicator(endpoint &ep);
+	virtual ~Communicator();
     
 	/** Execute a MUSCLE protocol. Identifier is an ID of the name for which to communicate, the msg is the message to MUSCLE and the result the result from MUSCLE. */
 	virtual int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len) { return 0; }
@@ -64,7 +64,7 @@ public:
 	/** Free data that MUSCLE allocated */
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
 protected:
-	CClientSocket sock;
+	CClientSocket *sock;
 };
 
 } // EO namespace muscle
