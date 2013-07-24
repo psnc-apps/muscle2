@@ -38,7 +38,7 @@ cxa.env["preparation_steps"]=cxa.env["steps"]*cxa.env["same_size_runs"]
 cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["preparation_steps"];
 cxa.env["default_dt"] = 1
 
-cxa.env["start_kiB_per_message"] = 0;
+cxa.env["start_kiB_per_message"] = 0
 
 # declare kernels
 cxa.add_kernel('Pong', 'examples.pingpong.Pong')
