@@ -63,10 +63,10 @@ protected:
         if (closing)
             throw muscle::muscle_exception("Can not start new operation on closing connection");
         
-        pendingOperatons++;
+        ++pendingOperatons;
     }
     void decrementPending() {
-        pendingOperatons--;
+        --pendingOperatons;
         tryClean();
     }
     

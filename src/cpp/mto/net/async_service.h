@@ -58,8 +58,8 @@ namespace muscle {
         csockdesc_t connectSockets;
     private:
         size_t _current_code;
-        bool is_done;
-        bool is_shutdown;
+        volatile bool is_done;
+        volatile bool is_shutdown;
         sockqueue_t recvQueues;
         sockqueue_t sendQueues;
         std::map<size_t,timer_t> timers;

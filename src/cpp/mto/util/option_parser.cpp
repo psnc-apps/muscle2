@@ -130,6 +130,9 @@ bool option_parser::load(string fname)
 
 bool loadTopology(string fname, map<string, muscle::endpoint> & results)
 {
+	if (fname.empty())
+		return false;
+	
     ifstream file(fname.c_str());
     if(!file)
     {

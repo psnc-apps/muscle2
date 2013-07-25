@@ -39,8 +39,9 @@ using namespace std;
 using namespace muscle;
 
 // // // // //           Variables           // // // // //
-muscle::async_service *asyncService;
+async_service asyncService;
 LocalMto *localMto;
+volatile bool receivedSignal = false;
 
 // Reaction on signal - currently QUIT, INT, and TERM
 void signalReceived(int signum)
@@ -48,7 +49,7 @@ void signalReceived(int signum)
     if (signum == SIGQUIT)
     {
         localMto->printDiagnostics();
-        asyncService->printDiagnostics();
+        asyncService.printDiagnostics();
     }
     else
     {
@@ -64,14 +65,17 @@ void signalReceived(int signum)
                 s = "unknown signal(?)";
                 break;
         }
-        logger::warning("Received %s, exiting...", s);
 
-        asyncService->done();
-        delete localMto;
-        
-        logger::finalize();
-        
-        exit(0);
+		if (!receivedSignal) {
+			receivedSignal = true;
+			logger::warning("Received %s, exiting...", s);
+			asyncService.done();
+		} else {
+			logger::severe("Received %s again, forcing exit.", s);
+			logger::finalize();
+			
+			exit(0);
+		}
     }
 }
 
@@ -112,15 +116,14 @@ int main(int argc, char **argv)
             }
         }
 
-        asyncService = new async_service;
-        SocketFactory *intSockFactory = new CSocketFactory(asyncService);
+        SocketFactory *intSockFactory = new CSocketFactory(&asyncService);
         SocketFactory *extSockFactory;
         if (opts.useMPWide)
-            extSockFactory = new MPSocketFactory(asyncService);
+            extSockFactory = new MPSocketFactory(&asyncService);
         else
-            extSockFactory = new CSocketFactory(asyncService);
+            extSockFactory = new CSocketFactory(&asyncService);
         
-        localMto = new LocalMto(opts, asyncService, intSockFactory, extSockFactory, externalAddress);
+        localMto = new LocalMto(opts, &asyncService, intSockFactory, extSockFactory, externalAddress);
         
         if(externalAddress.port)
             localMto->startListeningForPeers();
@@ -134,9 +137,9 @@ int main(int argc, char **argv)
         signal(SIGTERM, signalReceived);
         signal(SIGQUIT, signalReceived);
         
-        asyncService->run();
+        asyncService.run();
         delete localMto;
-
+		
         return 0;
     }
     catch (const muscle::muscle_exception& ex)

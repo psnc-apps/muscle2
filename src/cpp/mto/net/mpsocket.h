@@ -80,7 +80,7 @@ namespace muscle {
 		virtual int getWriteSock() const;
 		
         static rwmutex path_mutex;
-        static mutex create_path_mutex;
+        static mutex accept_destroy_mutex;
 		
 		virtual bool selectWriteFdIsReadable() const { return true; }
     protected:

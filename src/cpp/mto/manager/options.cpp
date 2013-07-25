@@ -105,8 +105,10 @@ bool Options::load(int argc, char **argv)
     // Complement with options with config file
     if (opts.load(configFilePath))
         logger::config("Config file '%s'", configFilePath.c_str());
-    else
+    else {
         logger::severe("Could not open config file '%s'", configFilePath.c_str());
+		return false;
+	}
 
     // Daemon
     if(opts.has("debug"))

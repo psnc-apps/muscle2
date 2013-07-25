@@ -81,6 +81,7 @@ LocalMto::~LocalMto()
 {
     if (extAcceptor) delete extAcceptor;
     if (intAcceptor) delete intAcceptor;
+	peers.clear();
 }
 
 void LocalMto::printDiagnostics() {} 

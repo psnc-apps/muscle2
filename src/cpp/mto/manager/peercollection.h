@@ -59,7 +59,7 @@ private:
 public:
     PeerCollection(LocalMto *mto) : mto(mto) {}
     
-    ~PeerCollection();
+    ~PeerCollection() {}
 
     /** Get the PeerConnectionHandler that matches the destination of the given header */
     PeerConnectionHandler *get(Header h) const;
@@ -80,6 +80,8 @@ public:
      it is completely sent. The errorlistener should clean up the socket, since it will
      not be able to make a full introduction. */
     void introduce(muscle::ClientSocket *sock);
+	
+	void clear();
 };
 
 #endif /* defined(__CMuscle__PeerCollection__) */

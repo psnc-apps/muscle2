@@ -11,7 +11,7 @@
 using namespace std;
 using namespace muscle;
 
-Connection *ConnectionCollection::get(Header h)
+Connection *ConnectionCollection::get(const Header& h)
 {
     conns_t::iterator it = remoteConnections.find(Identifier(h));
     if (it == remoteConnections.end())
@@ -36,7 +36,7 @@ Connection *ConnectionCollection::create(muscle::ClientSocket *sock, Header& h, 
     return conn;
 }
 
-void ConnectionCollection::erase(Header h)
+void ConnectionCollection::erase(const Header& h)
 {
     logger::fine("Removing connection %s", h.str().c_str());
     remoteConnections.erase(Identifier(h));
@@ -52,11 +52,14 @@ void ConnectionCollection::replacePeer(PeerConnectionHandler *oldh, PeerConnecti
 
 void ConnectionCollection::peerDied(PeerConnectionHandler *handler)
 {
+	conns_t::iterator itTmp;
     for(conns_t::iterator it = remoteConnections.begin(); it != remoteConnections.end();)
     {
 		// Ugly, but it allows for self delete of
 		// the connection if there is no alternative peer
-        (it++)->second->peerDied(handler);
+		itTmp = it;
+		++it;
+        itTmp->second->peerDied(handler);
     }
 }
 

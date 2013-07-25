@@ -283,8 +283,7 @@ void PeerConnectionHandler::handleHello(Header h)
 
 void PeerConnectionHandler::done()
 {
-    if (closing)
-    {
+    if (closing) {
         tryClean();
         return;
     }
@@ -320,6 +319,7 @@ bool PeerConnectionHandler::tryClean()
     {
         if (pendingOperatons == 0)
         {
+			--pendingOperatons; // Go into a negative regime; do not erase again.
             mto->peers.erase(this);
             return true;
         }

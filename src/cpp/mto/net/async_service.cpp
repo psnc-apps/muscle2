@@ -247,6 +247,7 @@ namespace muscle
     {
         while (!is_done)
         {
+			printf("Starting new loop...\n");
             size_t t = next_alarm();
             timer_t *timer = t ? &timers[t] : NULL;
             if (t && timer->first.is_past())

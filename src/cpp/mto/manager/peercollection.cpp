@@ -245,7 +245,7 @@ void PeerCollection::introduce(ClientSocket *sock)
     sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new async_sendlistener_delete);
 }
 
-PeerCollection::~PeerCollection()
+void PeerCollection::clear()
 {
     for (map<uint16_t,PeerConnectionHandler *>::iterator peer = connectionsIncomming.begin(); peer != connectionsIncomming.end(); peer++)
     {

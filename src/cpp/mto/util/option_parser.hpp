@@ -71,7 +71,7 @@ T option_parser::forceGet(std::string name)
 {
     std::map<std::string,std::string>::iterator it = results.find(name);
     if (it == results.end())
-        throw muscle::muscle_exception("Required option '" + name + "' is not set");
+        throw muscle::muscle_exception("Required option '" + name + "' is not set", 0, true);
     
     return getImpl<T>(it);
 }
