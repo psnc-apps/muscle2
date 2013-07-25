@@ -41,7 +41,7 @@ void Options::setOptions(option_parser& opts)
     
     opts.add("debug", "Causes the program NOT to go to background and sets logLevel to TRACE", false);
     opts.add("MPWide", "Use the MPWide library in the MTO backbone", false);
-    opts.add("logLevel", "Level for logging (TRACE,DEBUG,INFO,ERROR, default INFO)");
+    opts.add("logLevel", "Level for logging (TRACE,DEBUG,CONFIG,INFO,WARNIGN,ERROR, default CONFIG)");
     opts.add("logFile", "Path to the log file (default behavior - logging to standard error)");
     
     opts.add("sockAutoCloseTimeout", "Time in seconds after which idle connection is closed");
@@ -70,15 +70,17 @@ bool Options::setLog(const char * const path, const string strlevel){
             return false;
     }
     
-    FILE * file;
     if (path) {
-        file = fopen(path, "a");
+        FILE *file = fopen(path, "a");
         if(!file)
-            throw muscle_exception("Failed to open log file <" + string(path) + ">", 0, true);
+            throw muscle_exception("Failed to open log file '" + string(path) + "'", 0, true);
+
+		logger::config("Using log file '%s'", path);
+        logger::info("Will daemonize.");
+		logger::initialize(NULL, file, MUSCLE_LOG_OFF, (muscle_loglevel_t)level, true);
     } else {
-        file = NULL;
+		logger::initialize(NULL, NULL, (muscle_loglevel_t)level, MUSCLE_LOG_OFF, true);
     }
-    logger::initialize(NULL, file, (muscle_loglevel_t)level, (muscle_loglevel_t)level, true);
     logger::config("Log level %s", up.c_str());
 
     return true;
