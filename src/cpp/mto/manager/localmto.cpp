@@ -22,7 +22,7 @@ LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSock
     ssize_t bufsize = opts.getTCPBufSize();
     if (bufsize != 0)
     {
-        client_opts.send_buffer_size = sock_opts.recv_buffer_size = bufsize;
+        client_opts.send_buffer_size = client_opts.recv_buffer_size = bufsize;
         // Bufsize is doubled by the system, and we divide to get kB
         ssize_t buf_kB = bufsize/512;
         logger::info("Setting custom TCP buffer sizes: %ldkB", buf_kB);
@@ -39,7 +39,7 @@ void LocalMto::startConnectingToPeers(map<string, endpoint>& mtoConfigs)
             {
                 endpoint& ep = it->second;
                 ep.resolve();
-                StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, sock_opts, sockTimeout, this);
+                StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
             }
             catch (const muscle_exception& ex)
             {
@@ -57,7 +57,7 @@ void LocalMto::peerDied(PeerConnectionHandler *handler)
     endpoint ep = handler->remoteEndpoint();
     if (ep != externalEp)
     {
-        StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, sock_opts, sockTimeout, this);
+        StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
     }
 }
 
