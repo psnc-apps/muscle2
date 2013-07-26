@@ -25,6 +25,7 @@ Options::Options(int argc, char **argv)
 
 void Options::setOptions(option_parser& opts)
 {
+    opts.add("help", "Print this dialog");
     opts.add("config", "Location of the MTO local configuration file (default: $MUSCLE_HOME/etc/mto-config.cfg)");
     opts.add("topology", "Location of the MTO global topology configuration file (default: $MUSCLE_HOME/etc/mto-topology.cfg)");
     
@@ -41,7 +42,7 @@ void Options::setOptions(option_parser& opts)
     
     opts.add("debug", "Causes the program NOT to go to background and sets logLevel to TRACE", false);
     opts.add("MPWide", "Use the MPWide library in the MTO backbone", false);
-    opts.add("logLevel", "Level for logging (TRACE,DEBUG,CONFIG,INFO,WARNIGN,ERROR, default CONFIG)");
+    opts.add("logLevel", "Level for logging (TRACE,DEBUG,CONFIG,INFO,WARNING,ERROR, default CONFIG)");
     opts.add("logFile", "Path to the log file (default behavior - logging to standard error)");
     
     opts.add("sockAutoCloseTimeout", "Time in seconds after which idle connection is closed");
@@ -76,7 +77,7 @@ bool Options::setLog(const char * const path, const string strlevel){
             throw muscle_exception("Failed to open log file '" + string(path) + "'", 0, true);
 
 		logger::config("Using log file '%s'", path);
-        logger::info("Will daemonize.");
+		logger::info("Will daemonize.");
 		logger::initialize(NULL, file, MUSCLE_LOG_OFF, (muscle_loglevel_t)level, true);
     } else {
 		logger::initialize(NULL, NULL, (muscle_loglevel_t)level, MUSCLE_LOG_OFF, true);
@@ -94,6 +95,12 @@ void Options::print()
 bool Options::load(int argc, char **argv)
 {
     opts.load(argc, argv);
+	
+	if (opts.has("help")) {
+		opts.print();
+		exit(EXIT_SUCCESS);
+	}
+	
     const char * const c_muscle_home = getenv("MUSCLE_HOME");
     if (c_muscle_home == NULL) {
         logger::severe("Environment variable MUSCLE_HOME not set. Can not load configuration.");
