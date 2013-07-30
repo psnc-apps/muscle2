@@ -110,7 +110,7 @@ public:
             cout << "connected socket" << endl;
             char *s = strdup("my string");
             cs = sock;
-            cs->async_send(3, s, strlen(s)+1, this);
+            cs->async_send(3, s, strlen(s)+1, this, 0);
         } else {
             char *s = new char[20];
             cout << "accepted socket" << endl;
@@ -240,7 +240,7 @@ void testAsyncTimer()
     try {
         service.update_timer(1, t2, (void *)str);
         service.run();
-        assert(false, "can not update erased timer");
+        assertFalse("can not update erased timer");
     } catch (...) {
         assertTrue("can not update erased timer");
     }
@@ -252,23 +252,25 @@ void testSocket()
     muscle::endpoint ep("napoli.science.uva.nl", 50022);
     
     try {
-        muscle::CClientSocket sock(ep, NULL);
+		muscle::socket_opts opts;
+        muscle::CClientSocket sock(ep, NULL, opts);
         assert(true, "Connection to existing host");
         char s[] = "some string";
+		assertEquals<int>(sock.select(MUSCLE_SOCKET_W), MUSCLE_SOCKET_W, "Select sending");
         assert(sock.send(s, sizeof(s)) > 0, "Sending");
-        assert(sock.isend(s, sizeof(s)) >= 0, "Sending (async)");
         ssize_t len;
+		assertEquals<int>(sock.select(MUSCLE_SOCKET_R), MUSCLE_SOCKET_R, "Select receiving");
         assert((len = sock.recv(s, sizeof(s)-1)) > 0, "Receiving");
         s[len] = '\0';
         cout << "\t\t(received: " << string(s) << ")" << endl;
-        assert(sock.irecv(s, sizeof(s)) > 0, "Receiving (async)");
     } catch (const exception& ex) {
         assertFalse("Connection to existing host (" + string(ex.what()) + ")");
     }
     
     muscle::endpoint nep("XXXnapoli.science.uva.nl", 50022);
     try {
-        muscle::CClientSocket sock(nep, NULL);
+		muscle::socket_opts opts;
+        muscle::CClientSocket sock(nep, NULL, opts);
         assertFalse("Do not connect to non-existing host");
     } catch (const exception& ex) {
         assertTrue("Do not connect to non-existing host (" + string(ex.what()) + ")");
@@ -425,7 +427,7 @@ void testEndpoint()
     assertEquals<uint16_t>(ep.port, 50022, "host order port number matches");
     unsigned char *buf = new unsigned char[ep.getSize()];
     ep.serialize((char *)buf);
-    assertEquals<int>(buf[0], MUSCLE_ENDPOINT_IPV4, "serialized protocol is IPv4");
+    assertEquals<int>(buf[0], muscle::endpoint::IPV4_FLAG, "serialized protocol is IPv4");
     assertEquals<int>(buf[1], 146, "first IPv4 segment matches 146");
     assertEquals<int>(buf[2], 50, "second IPv4 segment matches 50");
     assertEquals<int>(buf[3], 56, "third IPv4 segment matches 56");
@@ -469,7 +471,7 @@ int main(int argc, char * argv[])
         testOptions();
         testAsyncTimer();
         testAsyncConnectServerSocket();
-        testAsyncMPConnectServerSocket();
+//        testAsyncMPConnectServerSocket();
         cout << endl;
         assertTrue("run tests without uncaught exceptions");
     } catch (const muscle::muscle_exception& ex) {

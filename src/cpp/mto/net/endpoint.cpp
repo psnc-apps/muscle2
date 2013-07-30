@@ -33,7 +33,7 @@ endpoint::endpoint(uint32_t host, const uint16_t _port) : is_ipv6(false), port(h
 
 endpoint::endpoint(const char *buffer_ptr) : host("")
 {
-	is_ipv6 = *buffer_ptr++ == MUSCLE_ENDPOINT_IPV6;
+	is_ipv6 = *buffer_ptr++ == IPV6_FLAG;
 	memcpy(addr, buffer_ptr, sizeof(addr));
 	
 	buffer_ptr += sizeof(addr);
@@ -165,7 +165,7 @@ size_t endpoint::getSize()
 
 char *endpoint::serializeImpl(char *buffer) const
 {
-	*buffer++ = is_ipv6 ? MUSCLE_ENDPOINT_IPV6 : MUSCLE_ENDPOINT_IPV4;
+	*buffer++ = is_ipv6 ? IPV6_FLAG : IPV4_FLAG;
 
 	memcpy(buffer, addr, sizeof(addr));
 	buffer += sizeof(addr);

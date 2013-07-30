@@ -63,6 +63,9 @@ namespace muscle {
 
         std::string getHostFromAddress() { resolve(true); return getHostFromAddressImpl(); }
         std::string getHostFromAddress() const { resolve(true); return getHostFromAddressImpl(); }
+
+		const static char IPV4_FLAG = 1;
+		const static char IPV6_FLAG = 2;
     private:
         // Presentation
         std::string host;
@@ -83,9 +86,6 @@ namespace muscle {
 		const static int IPV4_SZ = 4;
 		const static int IPV6_SZ = 16;
 			
-		const static char MUSCLE_ENDPOINT_IPV4 = 1;
-		const static char MUSCLE_ENDPOINT_IPV6 = 2;
-            
 		friend std::ostream& operator<<(std::ostream &os, const endpoint& r)
 		{ return os << r.getHost() << ":" << r.port; }
     };
