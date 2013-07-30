@@ -20,9 +20,9 @@ namespace muscle {
     {
         typedef std::pair<time,async_description> timer_t;
         typedef std::pair<ClientSocket *,std::queue<async_description> > csockqueuepair_t;
-        typedef std::map<int, csockqueuepair_t> sockqueue_t;
-        typedef std::map<int, std::pair<ServerSocket *, async_description> > ssockdesc_t;
-        typedef std::map<int, std::pair<ClientSocket *, async_description> > csockdesc_t;
+        typedef std::vector<csockqueuepair_t *> sockqueue_t;
+        typedef std::vector<std::pair<ServerSocket *, async_description> *> ssockdesc_t;
+        typedef std::vector<std::pair<ClientSocket *, async_description> *> csockdesc_t;
     public:
         async_service();
         
@@ -45,10 +45,10 @@ namespace muscle {
         void printDiagnostics();
     private:
         void run_timer(size_t timer);
-        void run_send(sockqueue_t::iterator &it, bool hasErr);
-        void run_recv(sockqueue_t::iterator &it, bool hasErr);
-        void run_accept(ssockdesc_t::iterator &it, bool hasErr);
-        void run_connect(csockdesc_t::iterator &it, bool hasErr);
+        void run_send(int fd, bool hasErr);
+        void run_recv(int fd, bool hasErr);
+        void run_accept(int fd, bool hasErr);
+        void run_connect(int fd, bool hasErr);
         size_t getNextCode() { return _current_code++; }
         int select(int *writeFd, int *readableWriteFd, int *readFd, duration& utimeout);
 

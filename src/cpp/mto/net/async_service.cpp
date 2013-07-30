@@ -33,21 +33,24 @@ namespace muscle
         const size_t code = getNextCode();
 		const int fd = socket->getWriteSock();
 
-		async_description desc(code, user_flag, (void *)data, size, send);
-		desc.opts = options;
-		csockqueuepair_t& p = sendQueues[fd];
-		p.first = socket;
-		p.second.push(desc);
+		if (sendQueues.size() <= fd)
+			sendQueues.resize(fd + 1);
+		
+		if (!sendQueues[fd]) {
+			sendQueues[fd] = new csockqueuepair_t(socket, queue<async_description>());
 
-		// p was empty, so the fd was not yet in the fd set
-		if (p.second.size() == 1)
-		{
+			// send queue did not exist, so the fd was not yet in the fd set
 			if (socket->selectWriteFdIsReadable())
 				readableWriteFds.push_back(fd);
 			else
 				writeFds.push_back(fd);
 		}
 		
+		async_description desc(code, user_flag, (void *)data, size, send);
+		desc.opts = options;
+		
+		sendQueues[fd]->second.push(desc);
+
         return code;
     }
     
@@ -59,13 +62,16 @@ namespace muscle
         const size_t code = getNextCode();
 		const int fd = socket->getReadSock();
 
-		csockqueuepair_t& p = recvQueues[fd];
-		p.first = socket;
-		p.second.push(async_description(code, user_flag, data, size, recv));
+		if (recvQueues.size() <= fd)
+			recvQueues.resize(fd + 1);
 		
-		// p was empty, so the fd was not yet in the fd set
-		if (p.second.size() == 1)
+		if (!recvQueues[fd]) {
+			recvQueues[fd] = new csockqueuepair_t(socket, queue<async_description>());
+			// recvQueue was empty, so the fd was not yet in the fd set
 			readFds.push_back(fd);
+		}
+		
+		recvQueues[fd]->second.push(async_description(code, user_flag, data, size, recv));
 		
         return code;
     }
@@ -78,7 +84,12 @@ namespace muscle
         async_description desc(code, user_flag, (void *)opts, 0, accept);
         
 		const int fd = socket->getReadSock();
-        listenSockets[fd] = pair<ServerSocket *, async_description>(socket, desc);
+		if (listenSockets.size() <= fd)
+			listenSockets.resize(fd + 1);
+		
+		assert(listenSockets[fd] == NULL);
+		
+        listenSockets[fd] = new pair<ServerSocket *, async_description>(socket, desc);
 
 		if (find(readFds.begin(), readFds.end(), fd)==readFds.end())
 			readFds.push_back(fd);
@@ -110,7 +121,12 @@ namespace muscle
 		const size_t code = getNextCode();
 
         async_description desc(code, user_flag, (void *)opts, 0, accept);
-		connectSockets[fd] = pair<ClientSocket *, async_description>(sock, desc);
+		if (connectSockets.size() <= fd)
+			connectSockets.resize(fd + 1);
+		
+		assert(connectSockets[fd] == NULL);
+
+		connectSockets[fd] = new pair<ClientSocket *, async_description>(sock, desc);
 
 		if (sock->selectWriteFdIsReadable())
 			readableWriteFds.push_back(fd);
@@ -146,10 +162,10 @@ namespace muscle
 			{
 				readFds.erase(it);
 
-				sockqueue_t::iterator descs = recvQueues.find(fd);
-				if (descs != recvQueues.end())
+				csockqueuepair_t *sockQueue = recvQueues[fd];
+				if (sockQueue)
 				{
-					queue<async_description> &q = descs->second.second;
+					queue<async_description> &q = sockQueue->second;
 					while (!q.empty()) {
 						async_description& desc = q.front();
 						async_recvlistener* recv = static_cast<async_recvlistener*>(desc.listener);
@@ -158,7 +174,8 @@ namespace muscle
 						q.pop();
 					}
 
-					recvQueues.erase(descs);
+					delete sockQueue;
+					recvQueues[fd] = NULL;
 				}
 			}
 		}
@@ -175,10 +192,10 @@ namespace muscle
 			{
 				sendFds.erase(it);
 
-				sockqueue_t::iterator descs = sendQueues.find(fd);
-				if (descs != sendQueues.end())
+				csockqueuepair_t *sockQueue = sendQueues[fd];
+				if (sockQueue)
 				{
-					queue<async_description> &q = descs->second.second;
+					queue<async_description> &q = sockQueue->second;
 					// descs exists
 					while (!q.empty()) {
 						async_description& desc = q.front();
@@ -188,7 +205,8 @@ namespace muscle
 						q.pop();
 					}
 					// Still a transfer in progress
-					sendQueues.erase(descs);
+					delete sockQueue;
+					sendQueues[fd] = NULL;
 				}
 			}
 		}
@@ -197,12 +215,13 @@ namespace muscle
     void async_service::erase(ServerSocket *socket)
     {
 		const int rfd = socket->getReadSock();
-        ssockdesc_t::iterator it = listenSockets.find(rfd);
-        if (it != listenSockets.end())
+        pair<ServerSocket *, async_description> *ssockDesc = listenSockets[rfd];
+        if (ssockDesc)
         {
-            async_description& desc = it->second.second;
+            async_description& desc = ssockDesc->second;
             desc.listener->async_done(desc.code, desc.user_flag);
-            listenSockets.erase(it);
+			delete ssockDesc;
+            listenSockets[rfd] = NULL;
 			readFds.erase(find(readFds.begin(), readFds.end(), rfd));
         }
     }
@@ -278,22 +297,22 @@ namespace muscle
                     const bool hasErr = (select(&wfd, &rwfd, &rfd, timeout) == -1);
                     
 					if (wfd) {
-						csockdesc_t::iterator cit = connectSockets.find(wfd);
-						if (cit != connectSockets.end()) run_connect(cit, hasErr);
-						sockqueue_t::iterator qit = sendQueues.find(wfd);
-						if (qit != sendQueues.end()) run_send(qit, hasErr);
+						if (connectSockets.size() > wfd && connectSockets[wfd])
+							run_connect(wfd, hasErr);
+						if (sendQueues.size() > wfd && sendQueues[wfd])
+							run_send(wfd, hasErr);
 					}
 					if (rwfd) {
-						csockdesc_t::iterator cit = connectSockets.find(rwfd);
-						if (cit != connectSockets.end()) run_connect(cit, hasErr);
-						sockqueue_t::iterator qit = sendQueues.find(rwfd);
-						if (qit != sendQueues.end()) run_send(qit, hasErr);
+						if (connectSockets.size() > rwfd && connectSockets[rwfd])
+							run_connect(rwfd, hasErr);
+						if (sendQueues.size() > rwfd && sendQueues[rwfd])
+							run_send(rwfd, hasErr);
 					}
 					if (rfd) {
-						ssockdesc_t::iterator sit = listenSockets.find(rfd);
-						if (sit != listenSockets.end()) run_accept(sit, hasErr);
-						sockqueue_t::iterator qit = recvQueues.find(rfd);
-						if (qit != recvQueues.end()) run_recv(qit, hasErr);
+						if (listenSockets.size() > rfd && listenSockets[rfd])
+							run_accept(rfd, hasErr);
+						if (recvQueues.size() > rfd && recvQueues[rfd])
+							run_recv(rfd, hasErr);
 					}
                 } catch (const muscle::muscle_exception& ex) {
                     // Interruption doesn't matter, we can continue to the next part of the loop.
@@ -329,12 +348,12 @@ namespace muscle
             desc.listener->async_report_error(timer, desc.user_flag, ex);
         }
     }
-    void async_service::run_send(sockqueue_t::iterator &it, bool hasErr)
+    void async_service::run_send(int fd, bool hasErr)
     {
 		is_communicating = true;
 
-		ClientSocket *sock = it->second.first;
-		queue<async_description>& q = it->second.second;
+		ClientSocket *sock = sendQueues[fd]->first;
+		queue<async_description>& q = sendQueues[fd]->second;
         async_description& desc = q.front();
 
         ssize_t status = -1;
@@ -350,17 +369,17 @@ namespace muscle
         else
         {
             try {
-				if (desc.opts & PLUG_CORK) {
-					sock->setDelay(true);
-					sock->setCork(true);
-				}
-				if (desc.opts & UNPLUG_CORK) {
-					sock->setDelay(false);
-				}
+//				if (desc.opts & PLUG_CORK) {
+//					sock->setDelay(true);
+//					sock->setCork(true);
+//				}
+//				if (desc.opts & UNPLUG_CORK) {
+//					sock->setDelay(false);
+//				}
                 status = sock->send(desc.data_ptr, desc.data_remain());
-				if (desc.opts & UNPLUG_CORK) {
-					sock->setCork(false);
-				}
+//				if (desc.opts & UNPLUG_CORK) {
+//					sock->setCork(false);
+//				}
 				logger::finest("Sent %zd/%zu bytes", status, desc.data_remain());
             } catch (exception& ex) {
                sender->async_report_error(desc.code, desc.user_flag, ex);
@@ -388,7 +407,7 @@ namespace muscle
 			const bool lastSend = (q.size() == 1);
 			if (lastSend) {
 				vector<int>& sendFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
-				sendFds.erase(find(sendFds.begin(), sendFds.end(), sock->getWriteSock()));
+				sendFds.erase(find(sendFds.begin(), sendFds.end(), fd));
 			}
 			
             if (status == -1)
@@ -397,7 +416,8 @@ namespace muscle
             sender->async_done(desc.code, desc.user_flag);
 
             if (lastSend) {
-                sendQueues.erase(it);
+				delete sendQueues[fd];
+                sendQueues[fd] = NULL;
             } else {
                 q.pop();
 			}
@@ -408,12 +428,12 @@ namespace muscle
 		do_erase_commsocket();
     }
 
-    void async_service::run_recv(sockqueue_t::iterator &it, bool hasErr)
+    void async_service::run_recv(int fd, bool hasErr)
     {
 		is_communicating = true;
 
-		ClientSocket *sock = it->second.first;
-		queue<async_description>& q = it->second.second;
+		ClientSocket *sock = recvQueues[fd]->first;
+		queue<async_description>& q = recvQueues[fd]->second;
         async_description& desc = q.front();
         
         ssize_t status = -1;
@@ -464,7 +484,8 @@ namespace muscle
             recv->async_done(desc.code, desc.user_flag);
 
             if (lastRecv) {
-                recvQueues.erase(it);
+                delete recvQueues[fd];
+				recvQueues[fd] = NULL;
             } else {
                 q.pop();
 			}
@@ -512,7 +533,10 @@ namespace muscle
         totalsz = 0;
         for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it)
         {
-			queue<async_description> &q = it->second.second;
+			if (*it == NULL)
+				continue;
+			
+			queue<async_description> &q = (*it)->second;
 			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
             {
@@ -524,13 +548,18 @@ namespace muscle
         }
         num = sendQueues.size();
         logger::info("    Number of sending sockets: %zu; total size of reserved buffers: %zu, sending to:", num, totalsz);
-        for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it)
-            logger::info("        %s", it->second.first->str().c_str());
+        for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it) {
+            if (*it != NULL)
+				logger::info("        %s", (*it)->first->str().c_str());
+		}
 
         totalsz = 0;
         for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it)
         {
-			queue<async_description> &q = it->second.second;
+			if (*it == NULL)
+				continue;
+			
+			queue<async_description> &q = (*it)->second;
 			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
             {
@@ -542,18 +571,24 @@ namespace muscle
         }
         num = recvQueues.size();
         logger::info("    Number of receiving sockets: %zu; total size of reserved buffers: %zu; receiving from:", num, totalsz);
-        for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it)
-            logger::info("        %s", it->second.first->str().c_str());
+        for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it) {
+			if (*it != NULL)
+				logger::info("        %s", (*it)->first->str().c_str());
+		}
 
         num = listenSockets.size();
         logger::info("    Number of listening sockets: %zu; listening at:", num);
-        for (ssockdesc_t::iterator it = listenSockets.begin(); it != listenSockets.end(); ++it)
-            logger::info("        %s", it->second.first->str().c_str());
+        for (ssockdesc_t::iterator it = listenSockets.begin(); it != listenSockets.end(); ++it) {
+			if (*it != NULL)
+				logger::info("        %s", (*it)->first->str().c_str());
+		}
         
         num = connectSockets.size();
         logger::info("    Number of connecting sockets: %zu; connecting to:", num);
-        for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); ++it)
-            logger::info("        %s", it->second.first->str().c_str());
+        for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); ++it) {
+			if (*it != NULL)
+				logger::info("        %s", (*it)->first->str().c_str());
+		}
         
         num = timers.size();
         logger::info("    Number of active timers: %zu; at times:", num);
@@ -572,26 +607,32 @@ namespace muscle
     
     void async_service::erase_connect(size_t code)
     {
-        for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); it++)
+        for (int fd = 1; fd < connectSockets.size(); ++fd)
         {
-			async_description& desc = it->second.second;
+			if (connectSockets[fd] == NULL) continue;
+			
+			async_description& desc = connectSockets[fd]->second;
             if (desc.code == code) {
                 desc.listener->async_done(desc.code, desc.user_flag);
-                ClientSocket *sock = it->second.first;
-                connectSockets.erase(it);
-				vector<int>& connectFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
-				connectFds.erase(find(connectFds.begin(), connectFds.end(), sock->getWriteSock()));
+                const ClientSocket * const sock = connectSockets[fd]->first;
+
+				vector<int>& connectFds = (sock->selectWriteFdIsReadable()
+										   ? readableWriteFds
+										   : writeFds);
+				connectFds.erase(find(connectFds.begin(), connectFds.end(), fd));
 				
                 delete sock;
+				delete connectSockets[fd];
+				connectSockets[fd] = NULL;
                 break;
             }
         }
     }
     
-    void async_service::run_accept(ssockdesc_t::iterator &it, bool hasErr)
+    void async_service::run_accept(int fd, bool hasErr)
     {
-        async_description& desc = it->second.second;
-		ServerSocket *sock = it->second.first;
+		ServerSocket *sock = listenSockets[fd]->first;
+        async_description& desc = listenSockets[fd]->second;
         
         if (hasErr) {
             muscle_exception ex("ServerSocket had error");
@@ -620,11 +661,13 @@ namespace muscle
         }
     }
     
-    void async_service::run_connect(csockdesc_t::iterator &it, bool hasErr)
+    void async_service::run_connect(int fd, bool hasErr)
     {
-		ClientSocket *sock = it->second.first;
-        async_description desc = it->second.second; // copy, so that on erase it can still be used
-        connectSockets.erase(it);
+		ClientSocket *sock = connectSockets[fd]->first;
+        async_description desc = connectSockets[fd]->second; // copy, so that on erase it can still be used
+		delete connectSockets[fd];
+		connectSockets[fd] = NULL;
+
 		vector<int>& connectFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
 		connectFds.erase(find(connectFds.begin(), connectFds.end(), sock->getWriteSock()));
         
