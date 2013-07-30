@@ -112,7 +112,7 @@ void InitConnection::connect(const Request &request)
             h.type = Header::ConnectResponse;
             char *packet;
             size_t len = h.makePacket(&packet, 1); // 1 is failed
-            sock->async_send(INIT_CONNECTION_REJECT, packet, len, this);
+            sock->async_send(INIT_CONNECTION_REJECT, packet, len, this, 0);
         }
     }
 }

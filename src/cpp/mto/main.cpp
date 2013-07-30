@@ -111,7 +111,7 @@ int main(int argc, char **argv)
             }
             catch (muscle_exception& ex)
             {
-                logger::severe("Cannot resolve MTO external address (%s)!", externalAddress.str().c_str());
+                logger::severe("Cannot resolve MTO external address (%s)", externalAddress.str().c_str());
                 return 1;
             }
         }
