@@ -10,11 +10,10 @@
 #define __CMuscle__endpoint__
 
 #include <string>
+#include <ostream>
+#include <sstream>
 #include <sys/socket.h>
 #include <stdint.h>
-
-#define MUSCLE_ENDPOINT_IPV4 1
-#define MUSCLE_ENDPOINT_IPV6 2
 
 namespace muscle {
     
@@ -50,8 +49,7 @@ namespace muscle {
         static size_t getSize();
         
         inline const char * c_host() const { return host.c_str(); }
-        std::string str() const;
-        std::string str();
+        inline std::string str() const { std::stringstream ss; ss << *this; return ss.str(); }
         
         std::string getHost() const;
         std::string getHost();        
@@ -63,9 +61,6 @@ namespace muscle {
         bool operator!=(endpoint& other);
         bool operator!=(const endpoint& other) const;
 
-        friend std::ostream & operator<< (std::ostream &os, muscle::endpoint const &ep)
-        { os << ep.str(); return os; }
-        
         std::string getHostFromAddress() { resolve(true); return getHostFromAddressImpl(); }
         std::string getHostFromAddress() const { resolve(true); return getHostFromAddressImpl(); }
     private:
@@ -84,6 +79,16 @@ namespace muscle {
         
         bool resolve(bool make_error);
         bool resolve(bool make_error) const;
+		
+		const static int IPV4_SZ = 4;
+		const static int IPV6_SZ = 16;
+			
+		const static char MUSCLE_ENDPOINT_IPV4 = 1;
+		const static char MUSCLE_ENDPOINT_IPV6 = 2;
+            
+		friend std::ostream& operator<<(std::ostream &os, const endpoint& r)
+		{ return os << r.getHost() << ":" << r.port; }
     };
 }
+
 #endif /* defined(__CMuscle__endpoint__) */

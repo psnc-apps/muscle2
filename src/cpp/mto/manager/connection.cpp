@@ -133,7 +133,7 @@ void Connection::send(void *data, size_t length)
 		logger::finest("[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
     
     referenceCount++;
-    sock->async_send(CONN_REMOTE_TO_LOCAL, data, length, this);
+    sock->async_send(CONN_REMOTE_TO_LOCAL, data, length, this, 0);
 }
 
 void Connection::async_sent(size_t, int, void *data, size_t, int is_final)
@@ -172,7 +172,7 @@ void Connection::remoteConnected(Header h)
     char *packet;
     size_t len = h.makePacket(&packet, response);
     referenceCount++;
-    sock->async_send(CONN_CONN_REMOTE, packet, len, this);
+    sock->async_send(CONN_CONN_REMOTE, packet, len, this, 0);
     
     if(response)
     { // Fail

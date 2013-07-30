@@ -81,7 +81,7 @@ namespace muscle {
         void *data;
         char *data_ptr;
         size_t size;
-        int in_progress;
+		int opts;
         async_listener *listener;
         
         bool operator <(const async_description& s1) const { return code < s1.code; }
@@ -91,9 +91,9 @@ namespace muscle {
             inline char *data_ptr_advance(size_t sz) const { return data_ptr + sz;}
             inline size_t data_remain() const { return data_end() - data_ptr; }
             
-            async_description(size_t code, int user_flag, void *data, size_t size, async_listener *listener) : code(code), user_flag(user_flag), data(data), data_ptr((char *)data), size(size), listener(listener), in_progress(false)
+            async_description(size_t code, int user_flag, void *data, size_t size, async_listener *listener) : code(code), user_flag(user_flag), data(data), data_ptr((char *)data), size(size), listener(listener), opts(-1)
             {}
-            async_description() : code(0), user_flag(0), data((void *)0), size(0), listener((async_listener *)0), in_progress(false)
+            async_description() : code(0), user_flag(0), data((void *)0), size(0), listener((async_listener *)0), opts(-1)
             {}
     };
 }

@@ -307,33 +307,12 @@ namespace muscle {
             MPSocketFactory::destroyer->destroyPath(pathid);
     }
     
-    ssize_t MPClientSocket::send(const void * const s, const size_t size) const
-    {
-        // Wait until the previous result is sent or received
-        if (sendThread)
-            sendThread->getResult();
-
-        return _mpsocket_do_send((char *)s, size, pathid);
-    }
-    
-    
-    ssize_t MPClientSocket::recv(void * const s, const size_t size) const
-    {
-        // Wait until the previous result is sent or received
-        if (recvThread)
-            recvThread->getResult();
-
-        return _mpsocket_do_recv((char *)s, size, pathid);
-        
-        return size;
-    }
-    
-    ssize_t MPClientSocket::irecv(void * const s, const size_t size)
+    ssize_t MPClientSocket::recv(void * const s, const size_t size)
     {
 		return runInThread(false, (void *)s, size, recvThread);
     }
     
-    ssize_t MPClientSocket::isend(const void * const s, const size_t size)
+    ssize_t MPClientSocket::send(const void * const s, const size_t size)
     {
 		return runInThread(true, (void *)s, size, sendThread);
     }
@@ -369,17 +348,7 @@ namespace muscle {
 			return 0;
 		}
     }
-    
-    ssize_t MPClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver)
-    {
-        return server->receive(user_flag, this, s, size, receiver);
-    }
-    
-    ssize_t MPClientSocket::async_send(int user_flag, const void* s, size_t size, async_sendlistener *send)
-    {
-        return server->send(user_flag, this, s, size, send);
-    }
-    
+        
     int MPClientSocket::hasError()
     {
         if (!isConnecting() && pathid < 0)

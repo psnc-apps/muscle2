@@ -98,20 +98,9 @@ namespace muscle {
         virtual ~MPClientSocket();
         
         // Data Transmission
-        virtual ssize_t send (const void* s, size_t size) const;
-        virtual ssize_t recv (void* s, size_t size) const;
+        virtual ssize_t send (const void* s, size_t size);
+        virtual ssize_t recv (void* s, size_t size);
         
-        // Light-weight, non-blocking
-        virtual ssize_t isend (const void* s, size_t size);
-        virtual ssize_t irecv (void* s, size_t size);
-                
-        // asynchronous, light-weight, non-blocking
-        virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send);
-        virtual ssize_t async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver);
-        
-        virtual bool operator < (const MPClientSocket & s1) const { return pathid < s1.pathid; }
-        virtual bool operator == (const MPClientSocket & s1) const { return pathid == s1.pathid; }
-
         virtual int hasError();
         void setWin(ssize_t size);
 	private:

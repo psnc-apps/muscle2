@@ -14,185 +14,196 @@
 #include <string>
 #include <cstring>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 
 namespace muscle
 {
-    async_service::async_service() : _current_code(1), is_done(false), is_shutdown(false)
+    async_service::async_service() : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false)
     {}
     
-    size_t async_service::send(int user_flag, ClientSocket *socket, const void *data, size_t size, async_sendlistener* send)
+    size_t async_service::send(int user_flag, ClientSocket *socket, const void *data, size_t size, async_sendlistener* send, int options)
     {
         if (!socket || !data)
             throw muscle_exception("Socket and data must not be empty");
         if (!send)
             send = new async_sendlistener_delete();
         
-        size_t code = getNextCode();
-        async_description desc(code, user_flag, (void *)data, size, send);
-        
-        sendSockets.insert(socket);
-        sendQueues[socket].push(desc);
+        const size_t code = getNextCode();
+		const int fd = socket->getWriteSock();
+
+		async_description desc(code, user_flag, (void *)data, size, send);
+		desc.opts = options;
+		csockqueuepair_t& p = sendQueues[fd];
+		p.first = socket;
+		p.second.push(desc);
+
+		// p was empty, so the fd was not yet in the fd set
+		if (p.second.size() == 1)
+		{
+			if (socket->selectWriteFdIsReadable())
+				readableWriteFds.push_back(fd);
+			else
+				writeFds.push_back(fd);
+		}
+		
         return code;
     }
     
-    size_t async_service::receive(int user_flag, ClientSocket *socket, void *data, size_t size, async_recvlistener* recv)
+    size_t async_service::receive(const int user_flag, ClientSocket *socket, void *data, size_t size, async_recvlistener* recv)
     {
         if (!socket || !data || !recv)
             throw muscle_exception("Socket, data and receiver must not be empty");
         
-        size_t code = getNextCode();
-        async_description desc(code, user_flag, data, size, recv);
-        
-        recvSockets.insert(socket);
-        recvQueues[socket].push(desc);
+        const size_t code = getNextCode();
+		const int fd = socket->getReadSock();
+
+		csockqueuepair_t& p = recvQueues[fd];
+		p.first = socket;
+		p.second.push(async_description(code, user_flag, data, size, recv));
+		
+		// p was empty, so the fd was not yet in the fd set
+		if (p.second.size() == 1)
+			readFds.push_back(fd);
+		
         return code;
-        
     }
-    size_t async_service::listen(int user_flag, ServerSocket *socket, socket_opts *opts, async_acceptlistener* accept)
+    size_t async_service::listen(const int user_flag, ServerSocket *socket, socket_opts *opts, async_acceptlistener* accept)
     {
         if (!socket || !accept)
             throw muscle_exception("Socket and accept listener must not be empty");
         
-        size_t code = getNextCode();
+        const size_t code = getNextCode();
         async_description desc(code, user_flag, (void *)opts, 0, accept);
         
-        listenSockets[socket] = desc;
+		const int fd = socket->getReadSock();
+        listenSockets[fd] = pair<ServerSocket *, async_description>(socket, desc);
+
+		if (find(readFds.begin(), readFds.end(), fd)==readFds.end())
+			readFds.push_back(fd);
+		
         return code;
         
     }
-    size_t async_service::timer(int user_flag, time& t, async_function* func, void *user_data)
+    size_t async_service::timer(const int user_flag, time& t, async_function* func, void *user_data)
     {
         if (!func)
             throw muscle_exception("Function for timer must not be empty");
         
-        size_t code = getNextCode();
+        const size_t code = getNextCode();
         async_description desc(code, user_flag, user_data, 0, func);
         
         timers[code] = timer_t(t, desc);
         return code;
     }
     
-    size_t async_service::connect(int user_flag, muscle::SocketFactory *factory, muscle::endpoint& ep, socket_opts *opts, async_acceptlistener* accept)
+    size_t async_service::connect(const int user_flag, muscle::SocketFactory *factory, muscle::endpoint& ep, socket_opts *opts, async_acceptlistener* accept)
     {
-        if (!accept)
-            throw muscle_exception("Accept listener must not be empty");
-        
-        size_t code = getNextCode();
-        async_description desc(code, user_flag, (void *)opts, 0, accept);
-        
-        assert(opts != NULL);
+        if (!accept || !opts)
+            throw muscle_exception("Accept listener or options must not be empty");
         
         opts->blocking_connect = false;
-        
         ClientSocket *sock = factory->connect(ep, *opts);
         
-        connectSockets[sock] = desc;
+		const int fd = sock->getWriteSock();
+		const size_t code = getNextCode();
+
+        async_description desc(code, user_flag, (void *)opts, 0, accept);
+		connectSockets[fd] = pair<ClientSocket *, async_description>(sock, desc);
+
+		if (sock->selectWriteFdIsReadable())
+			readableWriteFds.push_back(fd);
+		else
+			writeFds.push_back(fd);
+
         return code;
     }
     
     void async_service::erase(ClientSocket *socket)
     {
-        csocks_t::iterator it = sendSockets.find(socket);
-        if (it != sendSockets.end())
-        {
-            async_description progressing;
-
-            sockqueue_t::iterator descs = sendQueues.find(socket);
-            while (!descs->second.empty()) {
-                async_description& desc = descs->second.front();
-                if (desc.in_progress == 1)
-                {
-                    assert(progressing.code == 0);
-                    progressing = desc;
-                    progressing.in_progress = -1;
-                }
-                else
-                {
-                    async_sendlistener* send = static_cast<async_sendlistener*>(desc.listener);
-                    send->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
-                    send->async_done(desc.code, desc.user_flag);
-                }
-                descs = sendQueues.find(socket);
-				if (descs == sendQueues.end())
-					break;
-				
-				descs->second.pop();
-            }
-            // Still a transfer in progress
-            if (progressing.code) {
-				// The socket was already erased
-				if (sendSockets.find(socket) == sendSockets.end())
-				{
-					sendSockets.insert(socket);
-					sendQueues[socket].push(progressing);
-				}
-				else
-					descs->second.push(progressing);
-			}
-            else
-            {
-                sendSockets.erase(socket);
-                sendQueues.erase(socket);
-            }
-        }
-        it = recvSockets.find(socket);
-        if (it != recvSockets.end())
-        {
-            async_description progressing;
-
-            sockqueue_t::iterator descs = recvQueues.find(socket);
-			// descs exists
-            while (descs != recvQueues.end() && !descs->second.empty()) {
-                async_description& desc = descs->second.front();
-                
-				if (desc.in_progress == 1)
-                {
-                    assert(progressing.code == 0);
-                    progressing = desc;
-                    progressing.in_progress = -1;
-                }
-                else
-                {
-					// this code might call erase
-                    async_recvlistener* recv = static_cast<async_recvlistener*>(desc.listener);
-                    recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
-                    recv->async_done(desc.code, desc.user_flag);
-                }
-				descs = recvQueues.find(socket);
-				if (descs == recvQueues.end())
-					break;
-				
-                descs->second.pop();
-            }
-            // Still a transfer in progress
-            if (progressing.code)
+		readFdsToErase.push(socket->getReadSock());
+		if (socket->selectWriteFdIsReadable())
+			readableWriteFdsToErase.push(socket->getWriteSock());
+		else
+			writeFdsToErase.push(socket->getWriteSock());
+		
+		if (!is_communicating) {
+			is_communicating = true;
+			do_erase_commsocket();
+			is_communicating = false;
+		}
+	}
+	void async_service::do_erase_commsocket()
+	{
+		while (!readFdsToErase.empty())
+		{
+			const int fd = readFdsToErase.front();
+			readFdsToErase.pop();
+			
+			vector<int>::iterator it = find(readFds.begin(), readFds.end(), fd);
+			if (it != readFds.end())
 			{
-				if (sendSockets.find(socket) == sendSockets.end())
+				readFds.erase(it);
+
+				sockqueue_t::iterator descs = recvQueues.find(fd);
+				if (descs != recvQueues.end())
 				{
-					recvSockets.insert(socket);
-					recvQueues[socket].push(progressing);
+					queue<async_description> &q = descs->second.second;
+					while (!q.empty()) {
+						async_description& desc = q.front();
+						async_recvlistener* recv = static_cast<async_recvlistener*>(desc.listener);
+						recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
+						recv->async_done(desc.code, desc.user_flag);
+						q.pop();
+					}
+
+					recvQueues.erase(descs);
 				}
-				else
-					descs->second.push(progressing);
 			}
-            else
-            {
-                recvQueues.erase(socket);
-                recvSockets.erase(socket);
-            }
-        }
+		}
+		
+		while (!writeFdsToErase.empty() || !readableWriteFdsToErase.empty()) {
+			queue<int>& sendQueue = writeFdsToErase.empty() ? readableWriteFdsToErase : writeFdsToErase;
+			vector<int>& sendFds = writeFdsToErase.empty() ? readableWriteFds : writeFds;
+			const int fd = sendQueue.front();
+			sendQueue.pop();
+			
+			vector<int>::iterator it = find(sendFds.begin(), sendFds.end(), fd);
+
+			if (it != sendFds.end())
+			{
+				sendFds.erase(it);
+
+				sockqueue_t::iterator descs = sendQueues.find(fd);
+				if (descs != sendQueues.end())
+				{
+					queue<async_description> &q = descs->second.second;
+					// descs exists
+					while (!q.empty()) {
+						async_description& desc = q.front();
+						async_sendlistener* send = static_cast<async_sendlistener*>(desc.listener);
+						send->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
+						send->async_done(desc.code, desc.user_flag);
+						q.pop();
+					}
+					// Still a transfer in progress
+					sendQueues.erase(descs);
+				}
+			}
+		}
     }
     
     void async_service::erase(ServerSocket *socket)
     {
-        ssockdesc_t::iterator it = listenSockets.find(socket);
+		const int rfd = socket->getReadSock();
+        ssockdesc_t::iterator it = listenSockets.find(rfd);
         if (it != listenSockets.end())
         {
-            async_description& desc = it->second;
+            async_description& desc = it->second.second;
             desc.listener->async_done(desc.code, desc.user_flag);
             listenSockets.erase(it);
+			readFds.erase(find(readFds.begin(), readFds.end(), rfd));
         }
     }
     
@@ -261,16 +272,29 @@ namespace muscle
                         timeout = untilNextEvent;
                 }
                 
-                ClientSocket *sender = NULL, *receiver = NULL, *connect = NULL;
-                ServerSocket *listener = NULL;
-                
                 try {
-                    int res = select(&sender, &receiver, &listener, &connect, timeout);
+					int rfd = 0, rwfd = 0, wfd = 0;
+
+                    const bool hasErr = (select(&wfd, &rwfd, &rfd, timeout) == -1);
                     
-                    if (connect != NULL) run_connect(connect, res&8);
-                    if (listener != NULL) run_accept(listener, res&4);
-                    if (sender != NULL) run_send(sender, res&1);
-                    if (receiver != NULL) run_recv(receiver, res&2);
+					if (wfd) {
+						csockdesc_t::iterator cit = connectSockets.find(wfd);
+						if (cit != connectSockets.end()) run_connect(cit, hasErr);
+						sockqueue_t::iterator qit = sendQueues.find(wfd);
+						if (qit != sendQueues.end()) run_send(qit, hasErr);
+					}
+					if (rwfd) {
+						csockdesc_t::iterator cit = connectSockets.find(rwfd);
+						if (cit != connectSockets.end()) run_connect(cit, hasErr);
+						sockqueue_t::iterator qit = sendQueues.find(rwfd);
+						if (qit != sendQueues.end()) run_send(qit, hasErr);
+					}
+					if (rfd) {
+						ssockdesc_t::iterator sit = listenSockets.find(rfd);
+						if (sit != listenSockets.end()) run_accept(sit, hasErr);
+						sockqueue_t::iterator qit = recvQueues.find(rfd);
+						if (qit != recvQueues.end()) run_recv(qit, hasErr);
+					}
                 } catch (const muscle::muscle_exception& ex) {
                     // Interruption doesn't matter, we can continue to the next part of the loop.
                     if (ex.error_code != EINTR)
@@ -278,7 +302,7 @@ namespace muscle
                 }
             }
             
-            if (recvSockets.empty() && sendSockets.empty() && listenSockets.empty() && connectSockets.empty())
+            if (readFds.empty() && writeFds.empty())
             {
                 size_t t = next_alarm();
                 if (t)
@@ -305,13 +329,14 @@ namespace muscle
             desc.listener->async_report_error(timer, desc.user_flag, ex);
         }
     }
-    void async_service::run_send(ClientSocket *sock, bool hasErr)
+    void async_service::run_send(sockqueue_t::iterator &it, bool hasErr)
     {
-        async_description& d = sendQueues[sock].front();
-        d.in_progress = 1;
+		is_communicating = true;
 
-        // Copy to avoid problems due to deletion, due to call to erase
-        async_description desc = d;
+		ClientSocket *sock = it->second.first;
+		queue<async_description>& q = it->second.second;
+        async_description& desc = q.front();
+
         ssize_t status = -1;
         int is_final = true;
         
@@ -320,114 +345,105 @@ namespace muscle
         if (hasErr)
         {
             muscle_exception ex("Socket had error");
-            sender->async_report_error(d.code, d.user_flag, ex);
+            sender->async_report_error(desc.code, desc.user_flag, ex);
         }
         else
         {
-            try
-            {
-                status = sock->isend(d.data_ptr, d.data_remain());
-				logger::finest("Sent %zd/%zu bytes", status, d.data_remain());
-            }
-            catch (exception& ex)
-            {
-               sender->async_report_error(d.code, d.user_flag, ex);
+            try {
+				if (desc.opts & PLUG_CORK) {
+					sock->setDelay(true);
+					sock->setCork(true);
+				}
+				if (desc.opts & UNPLUG_CORK) {
+					sock->setDelay(false);
+				}
+                status = sock->send(desc.data_ptr, desc.data_remain());
+				if (desc.opts & UNPLUG_CORK) {
+					sock->setCork(false);
+				}
+				logger::finest("Sent %zd/%zu bytes", status, desc.data_remain());
+            } catch (exception& ex) {
+               sender->async_report_error(desc.code, desc.user_flag, ex);
             }
 
             if (status > 0)
             {
-                char *new_data_ptr = d.data_ptr_advance(status);
-                is_final = (new_data_ptr == d.data_end());
-                if (is_final)
-                {
-                    sender->async_sent(d.code, d.user_flag, d.data, d.size, 1);
+                char *new_data_ptr = desc.data_ptr_advance(status);
+                is_final = (new_data_ptr == desc.data_end());
+                if (is_final) {
+                    sender->async_sent(desc.code, desc.user_flag, desc.data, desc.size, 1);
+                } else {
+                    sender->async_sent(desc.code, desc.user_flag, desc.data_ptr, status, 0);
+                    desc.data_ptr = new_data_ptr;
                 }
-                else
-                {
-                    sender->async_sent(d.code, d.user_flag, d.data_ptr, status, 0);
-                    d.data_ptr = new_data_ptr;
-                }
-            }
-            else if (status == 0) is_final = false;
-            else
-            {
+            } else if (status == 0) {
+				is_final = false;
+			} else {
                 muscle_exception ex("Could not send all data", errno);
-                d.listener->async_report_error(d.code, d.user_flag, ex);
+                desc.listener->async_report_error(desc.code, desc.user_flag, ex);
             }
         }
         
         if (is_final) {
+			const bool lastSend = (q.size() == 1);
+			if (lastSend) {
+				vector<int>& sendFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
+				sendFds.erase(find(sendFds.begin(), sendFds.end(), sock->getWriteSock()));
+			}
+			
             if (status == -1)
                 sender->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
             
             sender->async_done(desc.code, desc.user_flag);
 
-            if (sendQueues[sock].size() == 1)
-            {
-                sendQueues.erase(sock);
-                sendSockets.erase(sock);
-            }
-            else
-                sendQueues[sock].pop();
+            if (lastSend) {
+                sendQueues.erase(it);
+            } else {
+                q.pop();
+			}
         }
-        else
-        {
-            async_description& front = sendQueues[sock].front();
-            if (front.in_progress == -1)
-            {
-                sender->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
-                sender->async_done(desc.code, desc.user_flag);
-                
-                sendQueues.erase(sock);
-                sendSockets.erase(sock);
-            }
-            else
-                front.in_progress = 0;
-        }
+		
+		is_communicating = false;
+		// erasing any postponed erases
+		do_erase_commsocket();
     }
 
-    void async_service::run_recv(ClientSocket *sock, bool hasErr)
+    void async_service::run_recv(sockqueue_t::iterator &it, bool hasErr)
     {
-        bool is_final = true;
+		is_communicating = true;
 
+		ClientSocket *sock = it->second.first;
+		queue<async_description>& q = it->second.second;
+        async_description& desc = q.front();
+        
         ssize_t status = -1;
-        async_description& d = recvQueues[sock].front();
-        d.in_progress = true;
+		bool is_final = true;
+
+        async_recvlistener *recv = static_cast<async_recvlistener*>(desc.listener);
         
-        // Copy to avoid problems due to deletion, due to call to erase
-        async_description desc = d;
-        async_recvlistener *recv = static_cast<async_recvlistener*>(d.listener);
-        
-        if (hasErr)
-        {
+        if (hasErr) {
             muscle_exception ex("Socket had error");
-            recv->async_report_error(d.code, d.user_flag, ex);
+            recv->async_report_error(desc.code, desc.user_flag, ex);
         }
         else
         {
-            try
-            {
-                status = sock->irecv(d.data_ptr, d.data_remain());
+            try {
+                status = sock->recv(desc.data_ptr, desc.data_remain());
 				logger::fine("Received %zd/%zu bytes", status, desc.data_remain());
+            } catch (exception& ex) {
+                recv->async_report_error(desc.code, desc.user_flag, ex);
             }
-            catch (exception& ex)
-            {
-                recv->async_report_error(d.code, d.user_flag, ex);
-            }
+			
             if (status >= 0)
             {
-                char *new_data_ptr = d.data_ptr_advance(status);
-                is_final = (new_data_ptr == d.data_end());
+                char *new_data_ptr = desc.data_ptr_advance(status);
+                is_final = (new_data_ptr == desc.data_end());
                 
-                if (is_final)
-                {
-                    recv->async_received(d.code, d.user_flag, d.data, d.size, 1);
-                }
-                else
-                {
-                    is_final = !recv->async_received(d.code, d.user_flag, desc.data_ptr, status, 0);
-                    d.data_ptr = new_data_ptr;
-                    
+                if (is_final) {
+                    recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, 1);
+                } else {
+                    is_final = !recv->async_received(desc.code, desc.user_flag, desc.data_ptr, status, 0);
+                    desc.data_ptr = new_data_ptr;
                 }
             }
             else
@@ -438,33 +454,25 @@ namespace muscle
             }
         }
         if (is_final) {
+			bool lastRecv = (q.size() == 1);
+			if (lastRecv) {
+				readFds.erase(find(readFds.begin(), readFds.end(), sock->getReadSock()));
+			}
             if (status < 0)
                 recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
             
             recv->async_done(desc.code, desc.user_flag);
 
-            if (recvQueues[sock].size() == 1)
-            {
-                recvQueues.erase(sock);
-                recvSockets.erase(sock);
-            }
-            else
-                recvQueues[sock].pop();
+            if (lastRecv) {
+                recvQueues.erase(it);
+            } else {
+                q.pop();
+			}
         }
-        else
-        {
-            async_description& front = recvQueues[sock].front();
-            if (front.in_progress == -1)
-            {
-                recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
-                recv->async_done(desc.code, desc.user_flag);
-                
-                recvQueues.erase(sock);
-                recvSockets.erase(sock);
-            }
-            else
-                front.in_progress = 0;
-        }
+		
+		is_communicating = false;
+		// erasing any postponed erases
+		do_erase_commsocket();
     }
     
     bool async_service::isDone() const
@@ -489,8 +497,7 @@ namespace muscle
         
         for (map<size_t,timer_t>::iterator t = timers.begin(); t != timers.end(); t++)
         {
-            if (t->second.first < min)
-            {
+            if (t->second.first < min) {
                 min = t->second.first;
                 timer = t->first;
             }
@@ -505,46 +512,48 @@ namespace muscle
         totalsz = 0;
         for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it)
         {
-            size_t szQ = it->second.size();
+			queue<async_description> &q = it->second.second;
+			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
             {
-                async_description &desc = it->second.front();
+                async_description &desc = q.front();
                 totalsz += desc.size;
-                it->second.push(desc);
-                it->second.pop();
+                q.push(desc);
+                q.pop();
             }
         }
         num = sendQueues.size();
         logger::info("    Number of sending sockets: %zu; total size of reserved buffers: %zu, sending to:", num, totalsz);
-        for (csocks_t::iterator it = sendSockets.begin(); it != sendSockets.end(); ++it)
-            logger::info("        %s", (*it)->str().c_str());
+        for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it)
+            logger::info("        %s", it->second.first->str().c_str());
 
         totalsz = 0;
         for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it)
         {
-            size_t szQ = it->second.size();
+			queue<async_description> &q = it->second.second;
+			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
             {
-                async_description &desc = it->second.front();
+                async_description &desc = q.front();
                 totalsz += desc.size;
-                it->second.push(desc);
-                it->second.pop();
+                q.push(desc);
+                q.pop();
             }
         }
         num = recvQueues.size();
         logger::info("    Number of receiving sockets: %zu; total size of reserved buffers: %zu; receiving from:", num, totalsz);
-        for (csocks_t::iterator it = recvSockets.begin(); it != recvSockets.end(); ++it)
-            logger::info("        %s", (*it)->str().c_str());
+        for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it)
+            logger::info("        %s", it->second.first->str().c_str());
 
         num = listenSockets.size();
         logger::info("    Number of listening sockets: %zu; listening at:", num);
         for (ssockdesc_t::iterator it = listenSockets.begin(); it != listenSockets.end(); ++it)
-            logger::info("        %s", it->first->str().c_str());
+            logger::info("        %s", it->second.first->str().c_str());
         
         num = connectSockets.size();
         logger::info("    Number of connecting sockets: %zu; connecting to:", num);
         for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); ++it)
-            logger::info("        %s", it->first->str().c_str());
+            logger::info("        %s", it->second.first->str().c_str());
         
         num = timers.size();
         logger::info("    Number of active timers: %zu; at times:", num);
@@ -563,60 +572,61 @@ namespace muscle
     
     void async_service::erase_connect(size_t code)
     {
-        for (map<ClientSocket *, async_description>::iterator it = connectSockets.begin(); it != connectSockets.end(); it++)
+        for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); it++)
         {
-            if (it->second.code == code) {
-                async_description& desc = it->second;
+			async_description& desc = it->second.second;
+            if (desc.code == code) {
                 desc.listener->async_done(desc.code, desc.user_flag);
-                ClientSocket *sock = it->first;
+                ClientSocket *sock = it->second.first;
                 connectSockets.erase(it);
+				vector<int>& connectFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
+				connectFds.erase(find(connectFds.begin(), connectFds.end(), sock->getWriteSock()));
+				
                 delete sock;
                 break;
             }
         }
     }
     
-    void async_service::run_accept(ServerSocket *sock, bool hasErr)
+    void async_service::run_accept(ssockdesc_t::iterator &it, bool hasErr)
     {
-        async_description desc = listenSockets[sock];
+        async_description& desc = it->second.second;
+		ServerSocket *sock = it->second.first;
         
-        if (hasErr)
-        {
+        if (hasErr) {
             muscle_exception ex("ServerSocket had error");
             desc.listener->async_report_error(desc.code, desc.user_flag, ex);
             return;
         }
         
-        ClientSocket *ccsock = NULL;
-        try
-        {
-            socket_opts *opts = (socket_opts *)desc.data;
-            
-            opts->blocking_connect = false;
-            
+        socket_opts *opts = static_cast<socket_opts*>(desc.data);
+		opts->blocking_connect = false;
+
+		ClientSocket *ccsock = NULL;
+
+        try {
             ccsock = sock->accept(*opts);
-        }
-        catch (exception& ex)
-        {
+        } catch (const exception& ex) {
             desc.listener->async_report_error(desc.code, desc.user_flag, ex);
+			return;
         }
         
-        if (ccsock)
-        {
+        if (ccsock) {
             async_acceptlistener* accept = static_cast<async_acceptlistener*>(desc.listener);
             accept->async_accept(desc.code, desc.user_flag, ccsock);
-        }
-        else
-        {
+        } else {
             muscle_exception ex("Could accept socket", errno);
             desc.listener->async_report_error(desc.code, desc.user_flag, ex);
         }
     }
     
-    void async_service::run_connect(ClientSocket *sock, bool hasErr)
+    void async_service::run_connect(csockdesc_t::iterator &it, bool hasErr)
     {
-        async_description desc = connectSockets[sock];
-        connectSockets.erase(sock);
+		ClientSocket *sock = it->second.first;
+        async_description desc = it->second.second; // copy, so that on erase it can still be used
+        connectSockets.erase(it);
+		vector<int>& connectFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
+		connectFds.erase(find(connectFds.begin(), connectFds.end(), sock->getWriteSock()));
         
         int err = 0;
         if (hasErr || (err = sock->hasError())) {
@@ -630,46 +640,30 @@ namespace muscle
         desc.listener->async_done(desc.code, desc.user_flag);
     }
     
-    int async_service::select(ClientSocket **sender, ClientSocket **receiver, ServerSocket **listener, ClientSocket **connect, duration& timeout)
+    int async_service::select(int *writeFd, int *readableWriteFd, int *readFd, duration& timeout)
     {
-        if (sendSockets.empty() && recvSockets.empty() && listenSockets.empty()) return 0;
+        if (readFds.empty() && writeFds.empty()) return 0;
         
         /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
         fd_set rsock, wsock, esock;
         FD_ZERO(&rsock);
         FD_ZERO(&wsock);
         FD_ZERO(&esock);
-        int maxfd = 0, sockfd;
-        for (set<ClientSocket *>::const_iterator s = sendSockets.begin(); s != sendSockets.end(); s++) {
-            sockfd = (*s)->getWriteSock();
-			if ((*s)->selectWriteFdIsReadable())
-	            FD_SET(sockfd,&rsock); // To accomodate for pipes used in mpsocket
-			else
-				FD_SET(sockfd,&wsock);
-            FD_SET(sockfd,&esock);
-            if (sockfd > maxfd) maxfd = sockfd;
+        int maxfd = 0;
+        for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
+            FD_SET(*it,&rsock); // To accomodate for pipes used in mpsocket
+            FD_SET(*it,&esock);
+            if (*it > maxfd) maxfd = *it;
         }
-        for (set<ClientSocket *>::const_iterator s = recvSockets.begin(); s != recvSockets.end(); s++) {
-            sockfd = (*s)->getReadSock();
-            FD_SET(sockfd,&rsock);
-            FD_SET(sockfd,&esock);
-            if (sockfd > maxfd) maxfd = sockfd;
+        for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
+            FD_SET(*it,&rsock); // To accomodate for pipes used in mpsocket
+            FD_SET(*it,&esock);
+            if (*it > maxfd) maxfd = *it;
         }
-        for (map<ServerSocket *,async_description>::const_iterator s = listenSockets.begin(); s != listenSockets.end(); s++) {
-            sockfd = s->first->getReadSock();
-            FD_SET(sockfd,&rsock);
-            FD_SET(sockfd,&esock);
-            if (sockfd > maxfd) maxfd = sockfd;
-        }
-        
-        for (map<ClientSocket *,async_description>::const_iterator s = connectSockets.begin(); s != connectSockets.end(); s++) {
-            sockfd = s->first->getWriteSock();
-            if (s->first->selectWriteFdIsReadable())
-                FD_SET(sockfd,&rsock);
-            else
-                FD_SET(sockfd,&wsock);
-            FD_SET(sockfd,&esock);
-            if (sockfd > maxfd) maxfd = sockfd;
+        for (vector<int>::iterator it = writeFds.begin(); it != writeFds.end(); it++) {
+            FD_SET(*it,&wsock); // To accomodate for pipes used in mpsocket
+            FD_SET(*it,&esock);
+            if (*it > maxfd) maxfd = *it;
         }
         
         struct timeval tval = timeout.timeval();
@@ -679,58 +673,41 @@ namespace muscle
         if (res == 0) return 0;
         if (res < 0) throw muscle_exception("Could not select socket");
         
-        int flags = 0;
-        
-        int hasErr;
-        bool isSet;
-        for (set<ClientSocket *>::const_iterator s = sendSockets.begin(); s != sendSockets.end(); s++) {
-            sockfd = (*s)->getWriteSock();
-            hasErr = FD_ISSET(sockfd,&esock);
-            isSet = (*s)->selectWriteFdIsReadable()
-                             ? FD_ISSET(sockfd, &rsock)
-                             : FD_ISSET(sockfd, &wsock);
-            if (isSet || hasErr)
-            {
-                *sender = *s;
-                if (hasErr) flags |= 1;
-                break;
-            }
+		for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
+			if (FD_ISSET(*it, &esock)) {
+				*readFd = *it;
+				return -1;
+			}
+			if (FD_ISSET(*it, &rsock)) {
+				*readFd = *it;
+				break;
+			}
         }
-        for (set<ClientSocket *>::const_iterator s = recvSockets.begin(); s != recvSockets.end(); s++) {
-            sockfd = (*s)->getReadSock();
-            hasErr = FD_ISSET(sockfd,&esock);
-            if (FD_ISSET(sockfd, &rsock) || hasErr)
-            {
-                *receiver = *s;
-                if (hasErr) flags |= 2;
-                break;
-            }
+        for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
+			if (FD_ISSET(*it, &esock)) {
+				*readFd = 0;
+				*readableWriteFd = *it;
+				return -1;
+			}
+			if (FD_ISSET(*it, &rsock)) {
+				*readableWriteFd = *it;
+				break;
+			}
         }
-        for (map<ServerSocket *,async_description>::const_iterator s = listenSockets.begin(); s != listenSockets.end(); s++) {
-            sockfd = s->first->getReadSock();
-            hasErr = FD_ISSET(sockfd,&esock);
-            if (FD_ISSET(sockfd, &rsock) || hasErr)
-            {
-                *listener = s->first;
-                if (hasErr) flags |= 4;
-                break;
-            }
-        }
-        for (map<ClientSocket *,async_description>::const_iterator s = connectSockets.begin(); s != connectSockets.end(); s++) {
-            sockfd = s->first->getWriteSock();
-            hasErr = FD_ISSET(sockfd,&esock);
-            isSet = s->first->selectWriteFdIsReadable()
-                             ? FD_ISSET(sockfd, &rsock)
-                             : FD_ISSET(sockfd, &wsock);
-            if (isSet || hasErr)
-            {
-                *connect = s->first;
-                if (hasErr) flags |= 8;
-                break;
-            }
+        for (vector<int>::iterator it = writeFds.begin(); it != writeFds.end(); it++) {
+			if (FD_ISSET(*it, &esock)) {
+				*readFd = 0;
+				*readableWriteFd = 0;
+				*writeFd = *it;
+				return -1;
+			}
+			if (FD_ISSET(*it, &wsock)) {
+				*writeFd = *it;
+				break;
+			}
         }
         
-        return flags;
+        return 0;
     }
 
 }

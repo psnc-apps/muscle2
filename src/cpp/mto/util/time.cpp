@@ -7,53 +7,16 @@
 //
 
 #include "time.h"
-#include "../../muscle2/exception.hpp"
 
-#include <stdint.h>
-#include <errno.h>
-#include <climits>
 #include <unistd.h>
 #include <cstring>
 
-#ifndef UINT32_MAX
-#define UINT32_MAX 4294967295U
-#endif
-
 namespace muscle {
-    time time::far_future()
-    {
-         return time(LONG_MAX, 0);
-    }
-    
-    time time::now()
-    {
-        struct timeval now;
-        if (gettimeofday(&now, NULL) == -1)
-            throw muscle_exception("Could not get time for timer", errno);
-        
-        return time(now);
-    }
-    
     void time::sleep() const
     {
         duration_until().sleep();
     }
 
-    uint32_t duration::useconds() const
-    {
-        if (t.tv_sec > UINT32_MAX)
-            return UINT32_MAX;
-        
-        long usec = t.tv_sec * USEC_IN_SEC;
-        if (usec > UINT32_MAX)
-            return UINT32_MAX;
-        
-        usec += t.tv_usec;
-        if (usec > UINT32_MAX)
-            return UINT32_MAX;
-        return uint32_t(usec);
-    }
-    
     void duration::sleep() const
     {
         if (t.tv_sec > 0 || t.tv_usec > 0)

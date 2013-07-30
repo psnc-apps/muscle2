@@ -9,16 +9,13 @@
 #ifndef __CMuscle__time__
 #define __CMuscle__time__
 
+#include "../../muscle2/exception.hpp"
+
 #include <sys/time.h>
 #include <stdint.h>
+#include <climits>
 #include <string>
-
-#define TIME_STR_MAX_LEN 35
-#define SEC_IN_DAY 86400l
-#define SEC_IN_HOUR 3600l
-#define SEC_IN_MIN 60l
-#define USEC_IN_SEC 1000000l
-#define USEC_IN_MSEC 1000
+#include <errno.h>
 
 namespace muscle {
 
@@ -36,14 +33,14 @@ protected:
     // With tv_usec > 0
     struct timeval t;
 
-    abstract_time()
+    inline abstract_time()
     {
         t.tv_sec = 0;
         t.tv_usec = 0;
     }
-    abstract_time(struct timeval& tval) : t(tval)
-    { standardize(); }
-    abstract_time(long sec, int usec)
+    inline abstract_time(const struct timeval& tval) : t(tval)
+    {}
+    inline abstract_time(const long sec, const int usec)
     {
         t.tv_sec = sec;
         t.tv_usec = usec;
@@ -53,19 +50,33 @@ protected:
     inline static struct timeval plus(const struct timeval &t1, const struct timeval &t2)
     {
         struct timeval newt = {t1.tv_sec + t2.tv_sec, t1.tv_usec + t2.tv_usec};
+		if (newt.tv_usec >= USEC_IN_SEC){
+			newt.tv_sec  += 1;
+			newt.tv_usec -= USEC_IN_SEC;
+		}
         return newt;
     }
     inline static struct timeval minus(const struct timeval &t1, const struct timeval &t2)
     {
         struct timeval newt = {t1.tv_sec - t2.tv_sec, t1.tv_usec - t2.tv_usec};
+		if (newt.tv_usec < 0){
+			newt.tv_sec  -= 1;
+			newt.tv_usec += USEC_IN_SEC;
+		}
         return newt;
     }
+	static const size_t TIME_STR_MAX_LEN = 35;
+	static const time_t SEC_IN_DAY = 86400;
+	static const time_t SEC_IN_HOUR = 3600;
+	static const time_t SEC_IN_MIN = 60;
+	static const suseconds_t USEC_IN_SEC = 1000000;
+	static const suseconds_t USEC_IN_MSEC = 1000;	
 private:
     inline void standardize()
     {
         if (t.tv_usec < 0)
         {
-            int sec = 1 - t.tv_usec / USEC_IN_SEC;
+            const int sec = 1 - t.tv_usec / USEC_IN_SEC;
             t.tv_sec -= sec;
             t.tv_usec += sec * USEC_IN_SEC;
         }
@@ -81,14 +92,23 @@ class time : public abstract_time
 {
 public:
     time() : abstract_time() {}
-    time(long sec, int usec) : abstract_time(sec, usec) {}
-    time(struct timeval tval) : abstract_time(tval) {}
+    time(const long sec, const int usec) : abstract_time(sec, usec) {}
+	time(const struct timeval& tval) : abstract_time(tval) {}
 
     virtual void sleep() const;
     duration duration_until() const;
     duration duration_since() const;
-    static time far_future();
-    static time now();
+    inline static time far_future()
+	{ return time(LONG_MAX, 0); }
+	
+    inline static time now()
+	{
+		struct timeval now;
+        if (gettimeofday(&now, NULL) == -1)
+            throw muscle_exception("Could not get time for timer", errno, true);
+        
+        return time(now);
+	}
     bool is_past() const { return !(*this > now()); }
     
     time operator+(const duration& other) const;
@@ -115,7 +135,7 @@ class duration : public abstract_time
 {
 public:
     duration() : abstract_time() {}
-    duration(long sec, int usec) : abstract_time(sec, usec)
+    duration(const long sec, const int usec) : abstract_time(sec, usec)
     {
         if (t.tv_sec < 0)
         {
@@ -123,7 +143,7 @@ public:
             t.tv_usec = 0;
         }
     }
-    duration(struct timeval tval) : abstract_time(tval)
+    duration(const struct timeval& tval) : abstract_time(tval)
     {
         if (t.tv_sec < 0)
         {
@@ -133,7 +153,11 @@ public:
     }
     
     virtual void sleep() const;
-    uint32_t useconds() const;
+    inline int useconds() const
+	{
+		const long usec = t.tv_sec * USEC_IN_SEC + t.tv_usec;
+		return (usec > INT_MAX ? INT_MAX : (int)usec);
+	}
 
     inline time time_after() const
     { return *this + time::now(); }
@@ -146,6 +170,9 @@ public:
 
     inline duration operator-(const duration& other) const
     { return duration(minus(t, other.timeval())); }
+
+    inline duration operator/(int div) const
+    { return duration(t.tv_sec/div,((t.tv_sec%div)*USEC_IN_SEC+t.tv_usec)/div); }
 
     inline bool operator<(const duration& other) const
     {

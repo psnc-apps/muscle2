@@ -14,15 +14,14 @@ using namespace muscle;
 Connection *ConnectionCollection::get(const Header& h)
 {
     conns_t::iterator it = remoteConnections.find(Identifier(h));
-    if (it == remoteConnections.end())
-    {
-        logger::fine("Requested connection %s does not exist",
+    if (it == remoteConnections.end()) {
+        if (logger::isLoggable(MUSCLE_LOG_FINER))
+	        logger::finer("Requested connection %s does not exist",
                       h.str().c_str());
         return NULL;
-    }
-    else
-    {
-        logger::fine("Request for existing connection %s",
+    } else {
+        if (logger::isLoggable(MUSCLE_LOG_FINER))
+	        logger::finer("Request for existing connection %s",
                       h.str().c_str());
         return it->second;
     }

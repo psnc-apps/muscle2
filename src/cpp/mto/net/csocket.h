@@ -47,27 +47,23 @@ namespace muscle {
     class CClientSocket : public ClientSocket, public csocket
     {
     public:
-//        CClientSocket(const ServerSocket& parent);
         CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts);
-        CClientSocket(endpoint& ep, async_service *service);
         CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts);
         
+		virtual void setCork(bool);
+		virtual void setDelay(bool);
+		
         // Data Transmission
-        virtual ssize_t send (const void* s, size_t size) const;
-        virtual ssize_t recv (void* s, size_t size) const;
-        
-        // Light-weight, non-blocking
-        virtual ssize_t isend (const void* s, size_t size);
-        virtual ssize_t irecv (void* s, size_t size);
-        // asynchronous, light-weight, non-blocking
-        virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send);
-        virtual ssize_t async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver);
+        virtual ssize_t send (const void* s, size_t size);
+        virtual ssize_t recv (void* s, size_t size);
+		
         virtual int hasError();
     protected:
         virtual void connect(bool blocking);
     // Disallowed - is problematic for destructor
     private:
         CClientSocket(const CClientSocket& other) {}
+		bool has_delay;
     };
     
     class CServerSocket : public ServerSocket, public csocket

@@ -178,15 +178,22 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
         
         muscle::endpoint& ep = results[match[0]] = muscle::endpoint(match[1], port);
 
-        stringstream ss;
-        ss << "Adding machine " << match[0] << " as " << ep.getHost();
+        try {
+			ep.resolve();
 
-        if(port == 0)
-            ss << " without open port";
-        else
-            ss << ":" << match[2];
-        
-        logger::config(ss.str().c_str());
+			stringstream ss;
+			ss << "Adding machine " << match[0] << " as " << ep.getHost();
+			
+			if(port == 0)
+				ss << " without open port";
+			else
+				ss << ":" << match[2];
+			
+			logger::config(ss.str().c_str());
+		} catch (const muscle_exception& ex) {
+			logger::warning("Could not resolve host %s with address %s, ignoring it.", match[0].c_str(), match[1].c_str());
+			results.erase(match[0]);
+		}
     }
     
     return true;

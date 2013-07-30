@@ -46,7 +46,7 @@ public:
     
     void send(Header& h, void *data = 0, size_t len = 0, muscle::async_sendlistener *listener = 0);
     void send(Header& h, size_t value, muscle::async_sendlistener *listener = 0);
-    void send(void *data, size_t len, muscle::async_sendlistener *listener = 0);
+    void send(void *data, size_t len, muscle::async_sendlistener *listener, int opts);
     
     /** Once a peer becomes unavailable, this is called. If the peer is on fwd list, fwd list is updated */
     void peerDied(PeerConnectionHandler * handler);
@@ -104,7 +104,7 @@ protected:
         muscle::async_sendlistener *listener;
         PeerConnectionHandler *t;
 
-        Sender(muscle::async_sendlistener *listener, PeerConnectionHandler *t, void *data, size_t len);
+        Sender(muscle::async_sendlistener *listener, PeerConnectionHandler *t, void *data, size_t len, int opts);
         
         virtual void async_sent(size_t code, int user_flag, void *data, size_t len, int is_final);
         virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);

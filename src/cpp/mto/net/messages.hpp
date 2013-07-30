@@ -4,8 +4,9 @@
 #include "endpoint.h"
 
 /** Message from client to MTO */
-struct Request
+class Request
 {
+public:
     /** Type of message or header */
     enum Type {
         Register = 1,         ///< Client informs that it listens on the given srcAddress:srcPort
@@ -32,27 +33,35 @@ struct Request
     muscle::endpoint src, ///< Source address for the connection
                      dst; ///< Destination address for the connection
     
-    /** Some unused int field */
-    int sessionId;
-    
     /** Serializes the Request to an existing char* of size at least of getSize */
     virtual char *serialize(char* buf) const;
     
-    virtual std::string str() const { return src.str() + " - " + dst.str(); }
+    virtual std::string str() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
+    }
     
     /** Size, in bytes, of the serialized request */
     static size_t getSize();
-public:
+
     Request() : type(0), sessionId(0) {}
     Request(char type, const muscle::endpoint &src, const muscle::endpoint &dst) : type(type), src(src), dst(dst), sessionId(0) {}
     Request(char *buf);
+protected:
+    /** Some unused int field */
+    int sessionId;
+private:
+    friend std::ostream& operator<<(std::ostream &os, const Request& r)
+	{ return os << r.src << " - " << r.dst; }
 };
 
 /**
  * All that's needed to identify a connection. Implements all mandatory methods for (tree and hash) map keys.
  */
-struct Identifier
+class Identifier
 {
+public:
     Identifier() {}
     Identifier(const Request & r) : src(r.src),dst(r.dst) {}
     
@@ -61,7 +70,6 @@ struct Identifier
     bool operator<(const Identifier & other) const
     { return src < other.src || (src == other.src && dst < other.dst); }
     
-public:
     muscle::endpoint src, dst;
 };
 
@@ -71,11 +79,9 @@ std::size_t hash_value(const Identifier & b);
 /**
  * Header exchnaged between MTO's and resonse to client for connect
  */
-struct Header : Request
+class Header : public Request
 {
-    /** Length is the length of data */
-    size_t length;
-    
+public:
     /** Size, in bytes, of the serialized header */
     static size_t getSize();
     
@@ -92,6 +98,9 @@ struct Header : Request
     Header(char type, const Identifier &id) : Request(type, id.src, id.dst), length(0) {}
     Header(char type, const muscle::endpoint& src, const muscle::endpoint& dst, size_t length) : Request(type, src, dst), length(length) {}
     Header(char *buf);
+
+    /** Length is the length of data */
+    size_t length;
 };
 
 struct MtoHello

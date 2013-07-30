@@ -14,6 +14,7 @@
 #include <set>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -21,6 +22,7 @@
 #include <signal.h>
 #include <sys/select.h>
 #include <string>
+#include <netinet/tcp.h>
 
 #ifndef MSG_NOSIGNAL
 #ifdef SO_NOSIGPIPE
@@ -62,14 +64,14 @@ namespace muscle {
             setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &opts.send_buffer_size, sizeof(opts.send_buffer_size));
         
         bool keep_alive = opts.keep_alive == -1 ? 1 : opts.keep_alive;
-        setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(bool));
+        setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive));
     }
     
     void csocket::setWin(int size)
     {
         assert(size > 0);
-        setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(int));
-        setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(int));
+        setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(size));
+        setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(size));
     }
     
     void csocket::create()
@@ -78,8 +80,9 @@ namespace muscle {
         
         sockfd = ::socket(proto, SOCK_STREAM, 0);
         if (sockfd < 0) throw muscle_exception("can not create socket", errno);
-        bool reuse = true;
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(bool));
+        int set = 1;
+        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
+		setsockopt(sockfd, SOL_SOCKET, MSG_NOSIGNAL, &set, sizeof(set));
     }
     
     int csocket::select(int mask) const
@@ -129,20 +132,12 @@ namespace muscle {
     }
     
     /** CLIENT SIDE **/
-    
-    CClientSocket::CClientSocket(endpoint& ep, async_service *service) : socket(ep, service)
-    {
-        create();
-        socket_opts opts;
-        connect(true);
-    }
-
-    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd)
+    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true)
     {
         setOpts(opts);
     }
         
-    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service)
+    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true)
     {
         create();
         setOpts(opts);
@@ -161,78 +156,51 @@ namespace muscle {
         
         if (blocking)
             setBlocking(false);
+		
+		setDelay(false);
     }
     
-    
-    ssize_t CClientSocket::send(const void * const s, const size_t size) const
+	void CClientSocket::setDelay(const bool delay)
+	{
+#ifdef TCP_NODELAY
+		if (delay != has_delay) {
+			int nodelay = delay ? 0 : 1;
+		
+			setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+
+			has_delay = delay;
+		}
+#endif
+	}
+	
+	void CClientSocket::setCork(const bool plug)
+	{
+#ifdef TCP_CORK
+		setsockopt(sockfd, IPPROTO_TCP, TCP_CORK, &plug, sizeof(plug));
+#endif
+	}
+	
+    ssize_t CClientSocket::recv(void* s, size_t size)
     {
-        const unsigned char *s_ptr = (const unsigned char *)s;
-        const unsigned char * const end_ptr = s_ptr + size;
-        
-        while (s_ptr != end_ptr) {
-            const int mask = select(MUSCLE_SOCKET_W|MUSCLE_SOCKET_ERR);
-
-            if ((mask&MUSCLE_SOCKET_ERR) == MUSCLE_SOCKET_ERR) return -1;
-            if ((mask&MUSCLE_SOCKET_W)   != MUSCLE_SOCKET_W)   break;
-
-            const ssize_t status = ::send(sockfd, s_ptr, end_ptr - s_ptr, MSG_NOSIGNAL);
-            if (status == -1) return -1;
-
-            s_ptr += status;
-        }
-        
-        return s_ptr - (const unsigned char *)s;
-    }
-    
-    
-    ssize_t CClientSocket::recv (void * const s, const size_t size) const
-    {
-        unsigned char *s_ptr = (unsigned char *)s;
-        const unsigned char * const end_ptr = s_ptr + size;
-        
-        for (int count = 0; s_ptr != end_ptr && count < 100; count++)
-        {
-            const int mask = select(MUSCLE_SOCKET_R|MUSCLE_SOCKET_ERR);
-
-            if ((mask&MUSCLE_SOCKET_ERR) == MUSCLE_SOCKET_ERR) return -1;
-            if ((mask&MUSCLE_SOCKET_R)   != MUSCLE_SOCKET_R)   break;
-
-            const ssize_t status = ::recv(sockfd, s_ptr, end_ptr - s_ptr, 0);
-            if (status == -1) return -1;
-
-            s_ptr += status;
-        }
-        
-        return s_ptr - (unsigned char *)s;
-    }
-    
-    ssize_t CClientSocket::irecv(void* s, size_t size)
-    {
-        ssize_t ret = ::recv(sockfd, s, size, 0);
+        const ssize_t ret = ::recv(sockfd, s, size, 0);
         // 0 can be considered an error code, meaning connection closed
         return (ret == 0 ? -1 : ret);
     }
     
-    ssize_t CClientSocket::isend(const void* s, size_t size)
+    ssize_t CClientSocket::send(const void* s, size_t size)
     {
         return ::send(sockfd, s, size, MSG_NOSIGNAL);
     }
-    
-    ssize_t CClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver)
-    {
-        return server->receive(user_flag, this, s, size, receiver);
-    }
-    
-    ssize_t CClientSocket::async_send(int user_flag, const void* s, size_t size, async_sendlistener *send) 
-    {
-        return server->send(user_flag, this, s, size, send);
-    }
-    
+        
     int CClientSocket::hasError()
     {
         int so_error;
         socklen_t slen = sizeof so_error;
         getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &slen);
+		
+		if (!so_error && has_delay)
+			setDelay(false);
+		
         return so_error;
     }
     

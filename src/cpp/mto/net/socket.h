@@ -19,6 +19,9 @@
 #define MUSCLE_SOCKET_RW 3
 #define MUSCLE_SOCKET_ERR 4
 
+#define PLUG_CORK 1
+#define UNPLUG_CORK 2
+
 #include "endpoint.h"
 #include "async_description.h"
 #include "../util/time.h"
@@ -77,17 +80,16 @@ class ClientSocket : virtual public socket
 public:    
     virtual int hasError() { return 0; }
 
-    // Data Transmission
-    virtual ssize_t send (const void* s, size_t size) const = 0;
-    virtual ssize_t recv (void* s, size_t size) const = 0;
-
+	virtual void setCork(bool) {};
+	virtual void setDelay(bool) {};
+	
     // Light-weight, non-blocking
-    virtual ssize_t isend (const void* s, size_t size) = 0;
-    virtual ssize_t irecv (void* s, size_t size) = 0;
+    virtual ssize_t send (const void* s, size_t size) = 0;
+    virtual ssize_t recv (void* s, size_t size) = 0;
 
     // asynchronous, light-weight, non-blocking
-    virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send) = 0;
-    virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv) = 0;
+    virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send, int opts);
+    virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv);
 
     virtual void async_cancel();
     

@@ -41,7 +41,7 @@ void *_shared_thread_cache::run()
 void thread::cancel()
 {
     cache.stop_condition = true;
-    ::pthread_join(t, NULL);
+    ::pthread_join(t, &result);
 }
 
 void *thread::getResult()

@@ -337,7 +337,7 @@ void PeerConnectionHandler::send(Header& h, size_t value, muscle::async_sendlist
 
     char *packet;
     size_t sz = h.makePacket(&packet, value);
-    send(packet, sz, _sender);
+    send(packet, sz, _sender, 0);
 }
 
 void PeerConnectionHandler::send(Header& h, void *data, size_t len, muscle::async_sendlistener *_sender)
@@ -347,23 +347,23 @@ void PeerConnectionHandler::send(Header& h, void *data, size_t len, muscle::asyn
                   h.type_str().c_str(), str().c_str());
     char *packet;
     size_t sz = h.makePacket(&packet, len);
-    send(packet, sz, _sender);
+    send(packet, sz, _sender, PLUG_CORK);
 	if (data)
-		send(data, len, _sender);
+		send(data, len, _sender, UNPLUG_CORK);
 }
 
-void PeerConnectionHandler::send(void *data, size_t len, muscle::async_sendlistener *_sender)
+void PeerConnectionHandler::send(void *data, size_t len, muscle::async_sendlistener *_sender, int opts)
 {
 	if (logger::isLoggable(MUSCLE_LOG_FINEST))
 		logger::finest("Sending directly %u bytes on %s", len, str().c_str());
     
-    Sender *s = new Sender(_sender, this, data, len);
+    Sender *s = new Sender(_sender, this, data, len, opts);
 }
 
-PeerConnectionHandler::Sender::Sender(muscle::async_sendlistener *listener, PeerConnectionHandler *t, void *data, size_t len) : listener(listener), t(t)
+PeerConnectionHandler::Sender::Sender(muscle::async_sendlistener *listener, PeerConnectionHandler *t, void *data, size_t len, int opts) : listener(listener), t(t)
 {
     t->incrementPending();
-    t->socket->async_send(PCH_SEND_DATA, data, len, this);
+    t->socket->async_send(PCH_SEND_DATA, data, len, this, opts);
 }
 
 void PeerConnectionHandler::Sender::async_sent(size_t code, int user_flag, void *data, size_t len, int is_final)
