@@ -34,11 +34,9 @@ namespace muscle {
 	int logger::logger_file_level = MUSCLE_LOG_OFF;
 	int logger::min_level = MUSCLE_LOG_ALL;
 	
-	bool logger::will_log = true;
-	
 	void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 	{
-		if (!will_log || !isLoggable(level)) return;
+		if (!isLoggable(level)) return;
 		
 		va_list args;
 		va_start(args, message);
@@ -48,7 +46,7 @@ namespace muscle {
 	
 	void logger::severe(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_SEVERE)) return;
+		if (!isLoggable(MUSCLE_LOG_SEVERE)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_SEVERE, message, &args);
@@ -57,7 +55,7 @@ namespace muscle {
 	
 	void logger::warning(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_WARNING)) return;
+		if (!isLoggable(MUSCLE_LOG_WARNING)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_WARNING, message, &args);
@@ -66,7 +64,7 @@ namespace muscle {
 	
 	void logger::info(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_INFO)) return;
+		if (!isLoggable(MUSCLE_LOG_INFO)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_INFO, message, &args);
@@ -75,7 +73,7 @@ namespace muscle {
 	
 	void logger::config(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_CONFIG)) return;
+		if (!isLoggable(MUSCLE_LOG_CONFIG)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_CONFIG, message, &args);
@@ -84,7 +82,7 @@ namespace muscle {
 	
 	void logger::fine(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_FINE)) return;
+		if (!isLoggable(MUSCLE_LOG_FINE)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINE, message, &args);
@@ -93,7 +91,7 @@ namespace muscle {
 	
 	void logger::finer(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_FINER)) return;
+		if (!isLoggable(MUSCLE_LOG_FINER)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINER, message, &args);
@@ -102,7 +100,7 @@ namespace muscle {
 	
 	void logger::finest(const char *message, ...)
 	{
-		if (!will_log || !isLoggable(MUSCLE_LOG_FINEST)) return;
+		if (!isLoggable(MUSCLE_LOG_FINEST)) return;
 		va_list args;
 		va_start(args, message);
 		logger::format(MUSCLE_LOG_FINEST, message, &args);
@@ -182,7 +180,7 @@ namespace muscle {
 		}
 	}
 	
-	void logger::initialize(const char *_name, const char *_tmp_path, int _level, bool _will_log)
+	void logger::initialize(const char *_name, const char *_tmp_path, int _level, bool will_log)
 	{
 		if (_name == NULL)
 			_name = "muscle";
@@ -194,10 +192,10 @@ namespace muscle {
 		char filename[512];
 		sprintf(filename, "%s/%s.native.log", _tmp_path, _name);
 		FILE *f = fopen(filename,"a");
-		initialize(_name, f, _level, MUSCLE_LOG_ALL, _will_log);
+		initialize(_name, f, _level, MUSCLE_LOG_ALL, will_log);
 	}
     
-	void logger::initialize(const char *_name, FILE *file, int _level, int _file_level, bool _will_log)
+	void logger::initialize(const char *_name, FILE *file, int _level, int _file_level, bool will_log)
 	{
 		if (_name != NULL)
 			logger_name = strdup(_name);
@@ -207,21 +205,15 @@ namespace muscle {
 		if (logger_fd)
 			logger_file_level = _file_level;
 		
-		min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
-		
-		will_log = _will_log;
+        if (will_log)
+			min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
+        else
+            min_level = MUSCLE_LOG_OFF; // No logging
 	}
     
 	void logger::finalize()
 	{
-		if (logger_fd) {
+		if (logger_fd)
 			fclose(logger_fd);
-		}
 	}
-	
-	bool logger::isLoggable(muscle_loglevel_t level)
-	{
-		return level >= min_level;
-	}
-	
 } // EO namespace muscle
