@@ -301,14 +301,12 @@ namespace muscle
 							run_connect(wfd, hasErr);
 						if (sendQueues.size() > wfd && sendQueues[wfd])
 							run_send(wfd, hasErr);
-					}
-					if (rwfd) {
+					} else if (rwfd) {
 						if (connectSockets.size() > rwfd && connectSockets[rwfd])
 							run_connect(rwfd, hasErr);
 						if (sendQueues.size() > rwfd && sendQueues[rwfd])
 							run_send(rwfd, hasErr);
-					}
-					if (rfd) {
+					} else if (rfd) {
 						if (listenSockets.size() > rfd && listenSockets[rfd])
 							run_accept(rfd, hasErr);
 						if (recvQueues.size() > rfd && recvQueues[rfd])
@@ -716,6 +714,26 @@ namespace muscle
         if (res == 0) return 0;
         if (res < 0) throw muscle_exception("Could not select socket");
         
+        for (vector<int>::iterator it = writeFds.begin(); it != writeFds.end(); it++) {
+			if (FD_ISSET(*it, &esock)) {
+				*writeFd = *it;
+				return -1;
+			}
+			if (FD_ISSET(*it, &wsock)) {
+				*writeFd = *it;
+				return 0;
+			}
+        }
+        for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
+			if (FD_ISSET(*it, &esock)) {
+				*readableWriteFd = *it;
+				return -1;
+			}
+			if (FD_ISSET(*it, &rsock)) {
+				*readableWriteFd = *it;
+				return 0;
+			}
+        }
 		for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 			if (FD_ISSET(*it, &esock)) {
 				*readFd = *it;
@@ -723,30 +741,7 @@ namespace muscle
 			}
 			if (FD_ISSET(*it, &rsock)) {
 				*readFd = *it;
-				break;
-			}
-        }
-        for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
-			if (FD_ISSET(*it, &esock)) {
-				*readFd = 0;
-				*readableWriteFd = *it;
-				return -1;
-			}
-			if (FD_ISSET(*it, &rsock)) {
-				*readableWriteFd = *it;
-				break;
-			}
-        }
-        for (vector<int>::iterator it = writeFds.begin(); it != writeFds.end(); it++) {
-			if (FD_ISSET(*it, &esock)) {
-				*readFd = 0;
-				*readableWriteFd = 0;
-				*writeFd = *it;
-				return -1;
-			}
-			if (FD_ISSET(*it, &wsock)) {
-				*writeFd = *it;
-				break;
+				return 0;
 			}
         }
         

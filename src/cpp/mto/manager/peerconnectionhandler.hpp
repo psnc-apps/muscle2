@@ -83,7 +83,7 @@ protected:
     muscle::ClientSocket *socket;
     
     LocalMto *mto;
-    char *dataBufffer;
+    char *headerBuffer;
     
     /* ====== Connect ====== */
     

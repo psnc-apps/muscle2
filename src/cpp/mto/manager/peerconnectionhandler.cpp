@@ -11,7 +11,7 @@ using namespace muscle;
 PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *mto)
 : socket(_socket), pendingOperatons(0), closing(false), service(_socket->getServer()), mto(mto)
 {
-    dataBufffer = new char[Header::getSize()];
+    headerBuffer = new char[Header::getSize()];
     logger::info("Established a connection with peer (receiver is %s)",
                  str().c_str());
     
@@ -21,7 +21,7 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
 
 PeerConnectionHandler::~PeerConnectionHandler()
 {
-    delete [] dataBufffer;
+    delete [] headerBuffer;
     delete socket;
 }
 
@@ -33,7 +33,7 @@ const endpoint& PeerConnectionHandler::remoteEndpoint() const
 void PeerConnectionHandler::readHeader()
 {
     incrementPending();
-    socket->async_recv(PCH_HEADER, dataBufffer, Header::getSize(), this);
+    socket->async_recv(PCH_HEADER, headerBuffer, Header::getSize(), this);
 }
 
 
@@ -41,7 +41,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
 {
     if (closing || is_final == -1)
     {
-        if (data && data != dataBufffer)
+        if (data && data != headerBuffer)
             delete [] (char *)data;
         return false;
     }
@@ -50,7 +50,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
     switch(user_flag) {
         case PCH_HEADER:
         {
-            Header h(dataBufffer);
+            Header h(headerBuffer);
             switch(h.type)
             {
                 case Header::Connect:
@@ -95,8 +95,6 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
                     fwdMap[id]->forward(latestHeader, latestHeader.length, data);
                 else
                     logger::severe("Received data for nonexistent destination");
-                
-                delete [] (char *)data;
             }
             
             readHeader();
@@ -245,7 +243,7 @@ void PeerConnectionHandler::handleClose(Header h)
     }
 }
 
-/** 'data' is NOT deleted in this function */
+/** 'data' is deleted in this function */
 void PeerConnectionHandler::forward(Header & h, size_t dataLen, void *data)
 {
 	if (logger::isLoggable(MUSCLE_LOG_FINEST))
