@@ -64,8 +64,8 @@ namespace muscle {
         std::string getHostFromAddress() { resolve(true); return getHostFromAddressImpl(); }
         std::string getHostFromAddress() const { resolve(true); return getHostFromAddressImpl(); }
 
-		const static char IPV4_FLAG = 1;
-		const static char IPV6_FLAG = 2;
+	static const char IPV4_FLAG;
+	static const char IPV6_FLAG;
     private:
         // Presentation
         std::string host;

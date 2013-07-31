@@ -18,6 +18,9 @@
 
 using namespace muscle;
 
+const char endpoint::IPV4_FLAG = 1;
+const char endpoint::IPV6_FLAG = 2;
+
 endpoint::endpoint(std::string _host, const uint16_t _port) : is_ipv6(false), addr(), host(_host), port(_port)
 {}
 

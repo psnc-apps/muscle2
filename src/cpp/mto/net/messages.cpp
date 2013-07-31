@@ -11,55 +11,24 @@ template <typename T>
 inline static void writeToBuffer(char *&buffer, const T value)
 {
     unsigned char *buffer_ptr = (unsigned char *)buffer;
-	if (sizeof(T) == 8) {
-		*buffer_ptr++ = (value >> 56) & 0xff;
-		*buffer_ptr++ = (value >> 48) & 0xff;
-		*buffer_ptr++ = (value >> 40) & 0xff;
-		*buffer_ptr++ = (value >> 32) & 0xff;
-	}
-	if (sizeof(T) >= 4) {
-		*buffer_ptr++ = (value >> 24) & 0xff;
-		*buffer_ptr++ = (value >> 16) & 0xff;
-	}
-	if (sizeof(T) >= 2) {
-		*buffer_ptr++ = (value >>  8) & 0xff;
-	}
-    *buffer_ptr++ = value & 0xff;
+
+    for (size_t i = 0; i < sizeof(T); ++i)
+	*buffer_ptr++ = (value >> 8*(sizeof(T)-i-1)) & 0xff;
     
     buffer = (char *)buffer_ptr;
 }
 
 template <typename T>
-inline static T readFromBuffer(char *&buffer, /*out*/ T * valuePtr = 0)
+inline static T readFromBuffer(char *&buffer)
 {
-    unsigned char *buffer_ptr = (unsigned char *)buffer;
-    T value;
 
-	if (sizeof(T) == 8) {
-		value = T(  (T(*buffer_ptr++) << 56)
-				  | (T(*buffer_ptr++) << 48)
-				  | (T(*buffer_ptr++) << 40)
-				  | (T(*buffer_ptr++) << 32)
-				  | (T(*buffer_ptr++) << 24)
-				  | (T(*buffer_ptr++) << 16)
-				  | (T(*buffer_ptr++) <<  8)
-				  | (T(*buffer_ptr++)      ));
-	} else if (sizeof(T) == 4) {
-		value = T(  (T(*buffer_ptr++) << 24)
-				  | (T(*buffer_ptr++) << 16)
-				  | (T(*buffer_ptr++) <<  8)
-				  | (T(*buffer_ptr++)      ));
-	} else if (sizeof(T) == 2) {
-		value = T((T(*buffer_ptr++) <<  8) | T(*buffer_ptr++));
-	} else if (sizeof(T) == 1) {
-		value = T(*buffer_ptr++);
-	} else {
-		assert(false);
-	}
+    unsigned char *buffer_ptr = (unsigned char *)buffer;
+    T value = 0;
+
+    for (size_t i = 0; i < sizeof(T); ++i)
+        value |= T(*buffer_ptr++) << 8*(sizeof(T)-i-1);
     
     buffer = (char *)buffer_ptr;
-    if(valuePtr) *valuePtr = value;
-
     return value;
 }
 
@@ -92,13 +61,13 @@ std::string Request::type_str() const
 
 size_t Request::getSize()
 {
-    return sizeof(/*type*/ char)+2*muscle::endpoint::getSize()+sizeof(/*sessionId*/ int);
+    return sizeof(/*type*/ char)+2*muscle::endpoint::getSize()+sizeof(/*sessionId*/ int32_t);
 }
 
 Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint::getSize())
 {
     buf += 1+2*muscle::endpoint::getSize();
-    readFromBuffer(buf, &sessionId);
+    sessionId = readFromBuffer<int32_t>(buf);
 }
 
 char *Request::serialize(char* buf) const
@@ -106,25 +75,25 @@ char *Request::serialize(char* buf) const
     writeToBuffer(buf, type);
     buf = src.serialize(buf);
     buf = dst.serialize(buf);
-    writeToBuffer(buf, sessionId);
+    writeToBuffer<int32_t>(buf, sessionId);
     return buf;
 }
 
 size_t Header::getSize()
 {
-    return Request::getSize()+sizeof(/*length*/ size_t);
+    return Request::getSize()+sizeof(/*length*/ int64_t);
 }
 
 Header::Header(char *buf) : Request(buf)
 {
     buf += Request::getSize();
-    readFromBuffer(buf, &length);
+    length = readFromBuffer<int64_t>(buf);
 }
 
 char *Header::serialize(char* buf) const
 {
     buf = Request::serialize(buf);
-    writeToBuffer(buf, length);
+    writeToBuffer<int64_t>(buf, length);
     return buf;
 }
 
@@ -139,16 +108,15 @@ size_t Header::makePacket(char **packet, size_t value)
 
 size_t MtoHello::getSize()
 {
-    return sizeof(/* portLow */ unsigned short) + sizeof(/* portHigh */ unsigned short)
-    + sizeof(/* distance */ unsigned short)
-    + sizeof( /* isLastMtoHello as char */ char );
+    return 3*sizeof(/* portLow, portHigh, distance */ uint16_t)
+           + sizeof( /* isLastMtoHello as char */ char );
 }
 
 MtoHello::MtoHello(char * buf)
 {
-    readFromBuffer(buf, &portLow);
-    readFromBuffer(buf, &portHigh);
-    readFromBuffer(buf, &distance);
+    portLow =  readFromBuffer<uint16_t>(buf);
+    portHigh = readFromBuffer<uint16_t>(buf);
+    distance = readFromBuffer<uint16_t>(buf);
     isLastMtoHello = (bool)readFromBuffer<char>(buf);
 }
 
