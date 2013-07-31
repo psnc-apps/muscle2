@@ -17,7 +17,7 @@ HelloReader::HelloReader(muscle::ClientSocket* _sock, Initiator *init, vector< M
     sock->async_recv(0, buf, MtoHello::getSize(), this);
 }
 
-bool HelloReader::async_received(size_t code, int flag, void *data, size_t len, int final)
+bool HelloReader::async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final)
 {
     if (final != 1) return true;
     

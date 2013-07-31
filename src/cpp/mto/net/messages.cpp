@@ -7,60 +7,55 @@
 #include <cstring>
 #include <cassert>
 
-template <typename T> void writeToBuffer(char *&buffer, const T value)
+template <typename T>
+inline static void writeToBuffer(char *&buffer, const T value)
 {
     unsigned char *buffer_ptr = (unsigned char *)buffer;
-    switch (sizeof(T)) {
-        case 8:
-            *buffer_ptr++ = (value >> 56) & 0xff;
-            *buffer_ptr++ = (value >> 48) & 0xff;
-            *buffer_ptr++ = (value >> 40) & 0xff;
-            *buffer_ptr++ = (value >> 32) & 0xff;
-            // no break
-        case 4:
-            *buffer_ptr++ = (value >> 24) & 0xff;
-            *buffer_ptr++ = (value >> 16) & 0xff;
-            // no break
-        case 2:
-            *buffer_ptr++ = (value >>  8) & 0xff;
-            // no break
-        case 1:
-            *buffer_ptr++ =  value        & 0xff;
-            // no break
-            break;
-        default:
-            assert(false);
-    }
+	if (sizeof(T) == 8) {
+		*buffer_ptr++ = (value >> 56) & 0xff;
+		*buffer_ptr++ = (value >> 48) & 0xff;
+		*buffer_ptr++ = (value >> 40) & 0xff;
+		*buffer_ptr++ = (value >> 32) & 0xff;
+	}
+	if (sizeof(T) >= 4) {
+		*buffer_ptr++ = (value >> 24) & 0xff;
+		*buffer_ptr++ = (value >> 16) & 0xff;
+	}
+	if (sizeof(T) >= 2) {
+		*buffer_ptr++ = (value >>  8) & 0xff;
+	}
+    *buffer_ptr++ = value & 0xff;
     
     buffer = (char *)buffer_ptr;
 }
 
-template <typename T> T readFromBuffer(char *&buffer, /*out*/ T * valuePtr = 0)
+template <typename T>
+inline static T readFromBuffer(char *&buffer, /*out*/ T * valuePtr = 0)
 {
     unsigned char *buffer_ptr = (unsigned char *)buffer;
-    T value = 0;
-    
-    switch (sizeof(T)) {
-        case 8:
-            value |= *buffer_ptr++ << 56;
-            value |= *buffer_ptr++ << 48;
-            value |= *buffer_ptr++ << 40;
-            value |= *buffer_ptr++ << 32;
-            // no break
-        case 4:
-            value |= *buffer_ptr++ << 24;
-            value |= *buffer_ptr++ << 16;
-            // no break
-        case 2:
-            value |= *buffer_ptr++ <<  8;
-            // no break
-        case 1:
-            value |= *buffer_ptr++;
-            // no break
-            break;
-        default:
-            assert(false);
-    }
+    T value;
+
+	if (sizeof(T) == 8) {
+		value = T(  (T(*buffer_ptr++) << 56)
+				  | (T(*buffer_ptr++) << 48)
+				  | (T(*buffer_ptr++) << 40)
+				  | (T(*buffer_ptr++) << 32)
+				  | (T(*buffer_ptr++) << 24)
+				  | (T(*buffer_ptr++) << 16)
+				  | (T(*buffer_ptr++) <<  8)
+				  | (T(*buffer_ptr++)      ));
+	} else if (sizeof(T) == 4) {
+		value = T(  (T(*buffer_ptr++) << 24)
+				  | (T(*buffer_ptr++) << 16)
+				  | (T(*buffer_ptr++) <<  8)
+				  | (T(*buffer_ptr++)      ));
+	} else if (sizeof(T) == 2) {
+		value = T((T(*buffer_ptr++) <<  8) | T(*buffer_ptr++));
+	} else if (sizeof(T) == 1) {
+		value = T(*buffer_ptr++);
+	} else {
+		assert(false);
+	}
     
     buffer = (char *)buffer_ptr;
     if(valuePtr) *valuePtr = value;

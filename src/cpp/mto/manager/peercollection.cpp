@@ -75,7 +75,7 @@ PeerConnectionHandler *PeerCollection::create(ClientSocket *sock, std::vector<Mt
 
 void PeerCollection::update(PeerConnectionHandler *receiver, const Header &h)
 {
-    MtoHello hello(h.src.port, h.dst.port, h.length);
+    MtoHello hello(h.src.port, h.dst.port, (uint16_t)h.length);
     if(!insert(receiver, hello))
         // if hello is invalid or already known
         return;

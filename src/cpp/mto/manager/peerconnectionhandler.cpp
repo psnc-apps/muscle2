@@ -37,7 +37,7 @@ void PeerConnectionHandler::readHeader()
 }
 
 
-bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *data, size_t len, int is_final)
+bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t len, int is_final)
 {
     if (closing || is_final == -1)
     {
@@ -45,11 +45,12 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
             delete [] (char *)data;
         return false;
     }
-    else if (is_final == 0) return true;
+	if (is_final == 0) return true;
     
     switch(user_flag) {
         case PCH_HEADER:
         {
+			
             Header h(headerBuffer);
             switch(h.type)
             {

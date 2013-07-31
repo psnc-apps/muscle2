@@ -102,7 +102,7 @@ void Connection::receive()
     sock->async_recv(CONN_LOCAL_TO_REMOTE_R, receiveBuffer, CONNECTION_BUFFER_SIZE, this);
 }
 
-bool Connection::async_received(size_t code, int user_flag, void *data, size_t count, int is_final)
+bool Connection::async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t count, int is_final)
 {
     // Error occurred
     if(is_final == -1 || closing) return false;

@@ -52,7 +52,7 @@ InitConnection::InitConnection(ClientSocket *sock, LocalMto *mto) : sock(sock), 
     sock->async_recv(MAIN_INTERNAL_ACCEPT, reqBuf, Request::getSize(), this);
 }
 
-bool InitConnection::async_received(size_t code, int user_flag, void *data, size_t count, int is_final)
+bool InitConnection::async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t count, int is_final)
 {
     // errors are handled in async_report_error
     if (is_final != 1) return true;

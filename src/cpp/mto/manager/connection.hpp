@@ -64,7 +64,7 @@ public:
     void close();
     
     virtual void async_execute(size_t code, int flag, void *user_data);
-    virtual bool async_received(size_t code, int user_flag, void *data, size_t count, int is_final);
+    virtual bool async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t count, int is_final);
 
     /* ====== Local to remote or Remote to local  ===== */
     void send(void *data, size_t length );

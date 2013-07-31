@@ -26,7 +26,7 @@ namespace muscle {
     class async_recvlistener : public async_listener
     {
     public:
-        virtual bool async_received(size_t code, int user_flag, void *data, size_t size, int is_final) = 0;
+        virtual bool async_received(size_t code, int user_flag, void *data, void *data_ptr, size_t size, int is_final) = 0;
     };
     class async_sendlistener : public async_listener
     {

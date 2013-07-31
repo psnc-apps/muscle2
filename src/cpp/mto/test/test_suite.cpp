@@ -121,7 +121,7 @@ public:
     }
     
     virtual void async_report_error(size_t,int,const muscle::muscle_exception&) {}
-    virtual bool async_received(size_t code, int flag, void *data, size_t len, int final)
+    virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final)
     {
         if (final == -1)
             assertFalse("Error during receiving data");

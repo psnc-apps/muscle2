@@ -37,7 +37,7 @@ public:
     
     /** Hook for uniform error handling */
     virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
-    virtual bool async_received(size_t code, int user_flag, void *data, size_t len, int is_final);
+    virtual bool async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t len, int is_final);
 
     virtual void async_done(size_t code, int user_flag) { decrementPending(); }
     

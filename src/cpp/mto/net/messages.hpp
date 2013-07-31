@@ -106,16 +106,16 @@ public:
 struct MtoHello
 {
     /** Port range */
-    unsigned short portLow, portHigh;
+    uint16_t portLow, portHigh;
     
     /** Hop count */
-    unsigned short distance;
+    uint16_t distance;
     
     /** Indicates if other hellos follow */
     bool isLastMtoHello;
     
     MtoHello() : portLow(0), portHigh(0), distance(0), isLastMtoHello(false) {};
-    MtoHello(unsigned short portLow, unsigned short portHigh, unsigned short distance, bool isLastMtoHello = false) : portLow(portLow), portHigh(portHigh), distance(distance), isLastMtoHello(isLastMtoHello) {};
+    MtoHello(uint16_t portLow, uint16_t portHigh, uint16_t distance, bool isLastMtoHello = false) : portLow(portLow), portHigh(portHigh), distance(distance), isLastMtoHello(isLastMtoHello) {};
     /** Deserializes the MtoHello from the given buffer */
     MtoHello(char *buf);
     

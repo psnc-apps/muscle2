@@ -87,7 +87,7 @@ public:
     virtual ~InitConnection() { if (sock) delete sock; delete [] reqBuf; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
-    virtual bool async_received(size_t code, int flag, void *data, size_t len, int final);
+    virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final);
     virtual void async_sent(size_t code, int flag, void *data, size_t len, int final);
     virtual void async_done(size_t code, int flag) { if (--refs == 0) delete this; }
 };

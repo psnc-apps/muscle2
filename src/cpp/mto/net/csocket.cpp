@@ -198,7 +198,7 @@ namespace muscle {
         socklen_t slen = sizeof so_error;
         getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &slen);
 		
-		if (!so_error && has_delay)
+		if (!so_error)
 			setDelay(false);
 		
         return so_error;

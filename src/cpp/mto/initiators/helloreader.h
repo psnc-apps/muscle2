@@ -42,7 +42,7 @@ public:
     
     virtual ~HelloReader();
     /** Triggered on accept; reads the header and constructs a connection */
-    virtual bool async_received(size_t code, int flag, void *data, size_t len, int final);
+    virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final);
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
     
     virtual void async_done(size_t code, int flag) { if (--refs == 0) delete this; }

@@ -169,7 +169,7 @@ namespace muscle
 					while (!q.empty()) {
 						async_description& desc = q.front();
 						async_recvlistener* recv = static_cast<async_recvlistener*>(desc.listener);
-						recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
+						recv->async_received(desc.code, desc.user_flag, desc.data, desc.data_ptr, desc.size, -1);
 						recv->async_done(desc.code, desc.user_flag);
 						q.pop();
 					}
@@ -458,9 +458,9 @@ namespace muscle
                 is_final = (new_data_ptr == desc.data_end());
                 
                 if (is_final) {
-                    recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, 1);
+                    recv->async_received(desc.code, desc.user_flag, desc.data, desc.data_ptr, desc.size, 1);
                 } else {
-                    is_final = !recv->async_received(desc.code, desc.user_flag, desc.data_ptr, status, 0);
+                    is_final = !recv->async_received(desc.code, desc.user_flag, desc.data, desc.data_ptr, status, 0);
                     desc.data_ptr = new_data_ptr;
                 }
             }
@@ -477,7 +477,7 @@ namespace muscle
 				readFds.erase(find(readFds.begin(), readFds.end(), sock->getReadSock()));
 			}
             if (status < 0)
-                recv->async_received(desc.code, desc.user_flag, desc.data, desc.size, -1);
+                recv->async_received(desc.code, desc.user_flag, desc.data, desc.data_ptr, desc.size, -1);
             
             recv->async_done(desc.code, desc.user_flag);
 
