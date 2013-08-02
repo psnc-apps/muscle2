@@ -26,6 +26,7 @@
 package muscle.net;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -37,7 +38,14 @@ import java.net.Socket;
 public class LocalSocketFactory extends SocketFactory {
 	@Override
 	public Socket createSocket() {
-		return new Socket();
+        Socket s = new Socket();
+        try {
+            s.setTcpNoDelay(true);
+            s.setKeepAlive(true);
+        } catch (SocketException ex) {
+            // Not that important
+        }
+		return s;
 	}
 
 	@Override

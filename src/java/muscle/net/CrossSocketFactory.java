@@ -609,6 +609,8 @@ public class CrossSocketFactory extends SocketFactory {
 		
 		MtoRequest r = new MtoRequest(MtoRequest.TYPE_REGISTER, isa, null);
 		Socket s = new Socket();
+        s.setTcpNoDelay(true);
+        s.setKeepAlive(true);
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
 		try {
 			s.getOutputStream().write(r.write().array());
