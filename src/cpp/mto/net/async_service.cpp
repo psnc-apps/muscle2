@@ -328,6 +328,22 @@ namespace muscle
                     break;
             }
         }
+		
+		while (!readFds.empty()) {
+			if (recvQueues[readFds[0]]) erase(recvQueues[readFds[0]]->first);
+			else if (listenSockets[readFds[0]]) erase(listenSockets[readFds[0]]->first);
+		}
+		
+		while (!writeFds.empty()) {
+			if (sendQueues[writeFds[0]]) erase(sendQueues[writeFds[0]]->first);
+			else if (connectSockets[writeFds[0]]) erase_connect(connectSockets[writeFds[0]]->second.code);
+		}
+		
+		while (!readableWriteFds.empty()) {
+			if (sendQueues[readableWriteFds[0]]) erase(sendQueues[readableWriteFds[0]]->first);
+			else if (connectSockets[readableWriteFds[0]]) erase_connect(connectSockets[readableWriteFds[0]]->second.code);
+		}
+		
         is_shutdown = true;
     }
         
