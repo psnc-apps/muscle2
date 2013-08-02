@@ -24,6 +24,12 @@ namespace muscle {
         typedef std::vector<std::pair<ServerSocket *, async_description> *> ssockdesc_t;
         typedef std::vector<std::pair<ClientSocket *, async_description> *> csockdesc_t;
     public:
+		enum SendOptions {
+			NONE = 0,
+			PLUG_CORK = 1,
+			UNPLUG_CORK = 2
+		};
+		
         async_service();
         
         size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);

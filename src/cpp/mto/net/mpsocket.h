@@ -51,20 +51,7 @@ namespace muscle {
         mpsocket_connect_thread(endpoint ep, const socket_opts& opts, const mpsocket *sock, bool asServer) : ep(ep), opts(opts), sock(sock), asServer(asServer) { start(); }
         virtual void *run();
     };
-    
-    class mpsocket_destroy_thread : public thread
-    {
-        mutex mut;
-        std::stack<int> paths;
-    public:
-        mpsocket_destroy_thread() { start(); }
-        virtual ~mpsocket_destroy_thread() {}
         
-        void destroyPath(int pathid);
-        virtual void *run();
-        virtual void cancel();
-    };
-    
     ///// Actual socket implementation ////
     
     class mpsocket : virtual public socket
@@ -79,8 +66,7 @@ namespace muscle {
 		virtual bool isWriteReady() const;
 		virtual int getWriteSock() const;
 		
-        static rwmutex path_mutex;
-        static mutex accept_destroy_mutex;
+        static mutex path_mutex;
 		
 		virtual bool selectWriteFdIsReadable() const { return true; }
     protected:
@@ -138,8 +124,6 @@ namespace muscle {
         virtual ~MPSocketFactory();
         virtual ClientSocket *connect(endpoint& ep, const socket_opts& opts);
         virtual ServerSocket *listen(endpoint& ep, const socket_opts& opts);
-
-        static mpsocket_destroy_thread *destroyer;
     };
 } // end namespace muscle
 

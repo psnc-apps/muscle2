@@ -15,26 +15,24 @@
 using namespace muscle;
 
 /* from remote */
-Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* t, LocalMto *mto, bool remotePeerConnected)
-: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), referenceCount(0), secondMto(t), mto(mto), closing_timer(0)
+Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
+: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), pendingOperations(0), remoteMto(remoteMto), mto(mto), closing_timer(0)
 {
-	receiveBuffer = new char[CONNECTION_BUFFER_SIZE];
-	
-    assert(secondMto != NULL);
+    assert(remoteMto != NULL);
     if (hasRemotePeer)
     {
         logger::fine("Established client connection (%s), initiated by peer %s",
-                      h.str().c_str(), secondMto->str().c_str());
-        header.type=Header::Data;
+                      h.str().c_str(), remoteMto->str().c_str());
+        header.type = Header::Data;
         
         receive();
     }
     else
     {
-        secondMto->send(header);
+        remoteMto->sendHeader(header);
         
         logger::fine("Requesting connection to host %s from peer %s",
-                      header.dst.str().c_str(), secondMto->str().c_str());
+                      header.dst.str().c_str(), remoteMto->str().c_str());
     }
 }
 
@@ -43,29 +41,32 @@ void Connection::close()
     if(closing)
         return;
 
-    referenceCount++;
+    // Will start a timer after this, and protects from untimely deletion
+	pendingOperations++;
+
     closing = true;
     logger::fine("Closing connection %s",
                   header.str().c_str());
     
-    if(hasRemotePeer)
-    {
-        hasRemotePeer=false;
+    if(hasRemotePeer && remoteMto) {
         header.type=Header::Close;
-        if(secondMto)
-            secondMto->send(header);
+		remoteMto->sendHeader(header);
     }
     
     mto->conns.erase(header);
-    muscle::time timer = duration(10l, 0).time_after();
-    closing_timer = sock->getServer()->timer(CONN_TIMEOUT_CLOSE, timer, this, (void *)0);
-    referenceCount--;
+	
+	if (pendingOperations > 1) {	// We have more than the timer running
+		muscle::time timer = duration(10l, 0).time_after();
+		closing_timer = sock->getServer()->timer(CONN_TIMEOUT_CLOSE, timer, this, (void *)0);
+	} else {
+		pendingOperations--;
+	}
     tryClose();
 }
 
 void Connection::tryClose()
 {
-    if (closing && referenceCount == 0)
+    if (closing && pendingOperations == 0)
     {
         if (closing_timer)
             sock->getServer()->erase_timer(closing_timer);
@@ -76,72 +77,99 @@ void Connection::tryClose()
     }
 }
 
+
+void Connection::async_done(size_t code, int flag)
+{
+    pendingOperations--;
+    tryClose();
+}
+
 Connection::~Connection()
 {
 	logger::finer("Deleting connection");
     delete sock;
-	delete receiveBuffer;
 }
 
 void Connection::async_execute(size_t code, int flag, void *user_data)
 {
-    logger::info("Connection %s did not close after timeout (%d connections running); forcing",
-                  header.str().c_str(), referenceCount);
+	// If the reference count is more than one, we will cancel this timer
+	// but also the socket that is still active
 	async_service *server = sock->getServer();
-    server->printDiagnostics();
-    sock->async_cancel();
-    server->erase_timer(closing_timer);
+	if (pendingOperations > 1) {
+		logger::info("Connection %s did not close after timeout (%d connections running); forcing",
+					  header.str().c_str(), pendingOperations);
+		server->printDiagnostics();
+		sock->async_cancel();
+	}
+	// Prevent double delete
+	const size_t tmpTimer = closing_timer;
+	closing_timer = 0;
+	// Will call async_done and delete the connection
+	server->erase_timer(tmpTimer);
 }
 
-void Connection::receive()
+void Connection::receive(void *buffer, size_t sz)
 {
-    if(closing)
-        return;
-
-    referenceCount++;
-    sock->async_recv(CONN_LOCAL_TO_REMOTE_R, receiveBuffer, CONNECTION_BUFFER_SIZE, this);
+	if (closing) {
+		delete [] (char *)buffer;
+		return;
+	}
+	
+	pendingOperations++;
+	sock->async_recv(CONN_LOCAL_TO_REMOTE_R, buffer, sz, this);
 }
 
-bool Connection::async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t count, int is_final)
+bool Connection::async_received(size_t code, int user_flag, void *buffer, void *last_data_ptr, size_t count, int is_final)
 {
     // Error occurred
     if(is_final == -1 || closing) return false;
     if (count == 0) return true;
-	
-	// If the received size is very large, it's faster to just allocate some new memory
-	if (count >= CONNECTION_BUFFER_SIZE/4) {
-		// data stores the old receiveBuffer
-		receiveBuffer = new char[CONNECTION_BUFFER_SIZE];
+		
+	// If the received size is not too small, it's faster to just allocate some new memory
+	// Copying is almost always slower
+	if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
+		remoteMto->send(header, buffer, count);
+
+		receive();
+	} else if (count > 1) {
+		// Create new buffer to send, reuse the current buffer
+		char *sendData = new char[count];
+		memcpy(sendData, buffer, count);
+		remoteMto->send(header, sendData, count);
+		
+		receive(buffer, MTO_CONNECTION_BUFFER_SIZE);
 	} else {
-		// Create new buffer: don't delete class-local data array receiveBuffer
-		data = new char[count];
-		memcpy(data, receiveBuffer, count);
+		// Just send the one received byte in the header
+		header.type = Header::DataInLength;
+		remoteMto->sendHeader(header, *(unsigned char *)buffer);
+		header.type = Header::Data;
+		receive(buffer, MTO_CONNECTION_BUFFER_SIZE);
 	}
-	secondMto->send(header, data, count, new async_sendlistener_delete(2));
     
-    receive();
-    // Don't try to receive more information, we sent what we received
+	// Don't try to receive more information, we sent what we received
     return false;
 }
 
-void Connection::send(void *data, size_t length)
+void Connection::send(void *data, size_t length, int user_flag)
 {
-    if (closing)
+    if (closing) {
+		logger::info("Closing connection %s, will not send %zu bytes of data.", header.str().c_str(), length);
+		delete [] (char *)data;
         return;
+	}
     
 	if (logger::isLoggable(MUSCLE_LOG_FINEST))
-		logger::finest("[__W] Sending directly %u bytes on %s", length, sock->getAddress().str().c_str());
+		logger::finest("[__W] Sending directly %zu bytes on %s", length, sock->getAddress().str().c_str());
     
-    referenceCount++;
-    sock->async_send(CONN_REMOTE_TO_LOCAL, data, length, this, 0);
+    pendingOperations++;
+    sock->async_send(user_flag, data, length, this, 0);
 }
 
 void Connection::async_sent(size_t, int, void *data, size_t, int is_final)
 {
     if (!is_final) return;
     
-    if (data != receiveBuffer)
-        delete [] (char *)data;
+	delete [] (char *)data;
 }
 
 void Connection::async_report_error(size_t code, int user_flag, const muscle_exception &ex)
@@ -151,40 +179,30 @@ void Connection::async_report_error(size_t code, int user_flag, const muscle_exc
 
     logger::severe("Error occurred in connection between %s (%s)",
                   header.str().c_str(), ex.what());
-    
     close();
 }
 
-void Connection::async_done(size_t code, int flag)
-{
-    referenceCount--;
-    tryClose();
-}
 
 void Connection::remoteConnected(Header h)
 {
     if (closing)
         return;
 
-    size_t response = h.length;
+    const size_t response = h.length;
 
     h.type = Header::ConnectResponse;
     char *packet;
-    size_t len = h.makePacket(&packet, response);
-    referenceCount++;
-    sock->async_send(CONN_CONN_REMOTE, packet, len, this, 0);
+    const size_t len = h.makePacket(&packet, response);
+	send(packet, len, CONNECT);
     
-    if(response)
-    { // Fail
+    if (response) { // Fail
         logger::fine("Got negative response for connection request (%s)",
                       header.str().c_str());
         close();
-    }
-    else
-    { // Success
+    } else { // Success
         logger::fine("Remote connection succeeded (%s)",
                       header.str().c_str());
-        header.type=Header::Data;
+        header.type = Header::Data;
         hasRemotePeer = true;
         receive();
     }
@@ -198,17 +216,16 @@ void Connection::remoteClosed()
 
 void Connection::peerDied(PeerConnectionHandler* handler)
 {
-    if(secondMto == handler)
-    {
-        secondMto = mto->peers.get(header);
+    if(remoteMto == handler) {
+        remoteMto = mto->peers.get(header);
         
-        if(secondMto == NULL)
+        if(remoteMto == NULL)
             close();
     }
 }
 
 void Connection::replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to)
 {
-    if(secondMto == from)
-        secondMto = to;
+    if(remoteMto == from)
+        remoteMto = to;
 }

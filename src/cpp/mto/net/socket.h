@@ -19,9 +19,6 @@
 #define MUSCLE_SOCKET_RW 3
 #define MUSCLE_SOCKET_ERR 4
 
-#define PLUG_CORK 1
-#define UNPLUG_CORK 2
-
 #include "endpoint.h"
 #include "async_description.h"
 #include "../util/time.h"

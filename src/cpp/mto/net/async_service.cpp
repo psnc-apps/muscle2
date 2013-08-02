@@ -367,17 +367,13 @@ namespace muscle
         else
         {
             try {
-//				if (desc.opts & PLUG_CORK) {
-//					sock->setDelay(true);
-//					sock->setCork(true);
-//				}
-//				if (desc.opts & UNPLUG_CORK) {
-//					sock->setDelay(false);
-//				}
+				if (desc.opts & PLUG_CORK) {
+					sock->setCork(true);
+				}
                 status = sock->send(desc.data_ptr, desc.data_remain());
-//				if (desc.opts & UNPLUG_CORK) {
-//					sock->setCork(false);
-//				}
+				if (desc.opts & UNPLUG_CORK) {
+					sock->setCork(false);
+				}
 				logger::finest("Sent %zd/%zu bytes", status, desc.data_remain());
             } catch (exception& ex) {
                sender->async_report_error(desc.code, desc.user_flag, ex);
@@ -528,12 +524,14 @@ namespace muscle
     {
         size_t num, totalsz;
         logger::info("Asynchronous service diagnostics:");
-        totalsz = 0;
+		
+		num = 0; totalsz = 0;
         for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it)
         {
 			if (*it == NULL)
 				continue;
 			
+			num++;
 			queue<async_description> &q = (*it)->second;
 			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
@@ -544,19 +542,19 @@ namespace muscle
                 q.pop();
             }
         }
-        num = sendQueues.size();
         logger::info("    Number of sending sockets: %zu; total size of reserved buffers: %zu, sending to:", num, totalsz);
         for (sockqueue_t::iterator it = sendQueues.begin(); it != sendQueues.end(); ++it) {
             if (*it != NULL)
 				logger::info("        %s", (*it)->first->str().c_str());
 		}
 
-        totalsz = 0;
+		num = 0; totalsz = 0;
         for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it)
         {
 			if (*it == NULL)
 				continue;
 			
+			num++;
 			queue<async_description> &q = (*it)->second;
 			const size_t szQ = q.size();
             for (int i = 0; i < szQ; ++i)
@@ -574,14 +572,22 @@ namespace muscle
 				logger::info("        %s", (*it)->first->str().c_str());
 		}
 
-        num = listenSockets.size();
+		num = 0;
+        for (ssockdesc_t::iterator it = listenSockets.begin(); it != listenSockets.end(); ++it) {
+			if (*it != NULL)
+				num++;
+		}
         logger::info("    Number of listening sockets: %zu; listening at:", num);
         for (ssockdesc_t::iterator it = listenSockets.begin(); it != listenSockets.end(); ++it) {
 			if (*it != NULL)
 				logger::info("        %s", (*it)->first->str().c_str());
 		}
         
-        num = connectSockets.size();
+        num = 0;
+        for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); ++it) {
+			if (*it != NULL)
+				num++;
+		}
         logger::info("    Number of connecting sockets: %zu; connecting to:", num);
         for (csockdesc_t::iterator it = connectSockets.begin(); it != connectSockets.end(); ++it) {
 			if (*it != NULL)

@@ -36,9 +36,8 @@
 using namespace std;
 
 namespace muscle {
-    rwmutex mpsocket::path_mutex;
-    mutex mpsocket::accept_destroy_mutex;
-  
+    mutex mpsocket::path_mutex;
+    
     /////// Internal MPWide wrappers ///////
     // They do locking on a shared mutex, so take
     // care to not lock any mutexes before calling
@@ -47,49 +46,32 @@ namespace muscle {
     // Returns path_id if succeeded and -1 if failed.
     static int _mpsocket_do_connect(const endpoint& ep, const socket_opts& opts, bool asServer)
     {
-        int pathid;
-        {
+        int path_id;
+		const string host = asServer ? "0" : ep.getHost();
+		
+		{
 			// Need to modify stream list
 			// All creations are mutually exclusive. We assume that a path
-			// creation modifies existing static MPWide structures so that it
-			// rules out reading/writing operations.
-			rwmutex_lock wrlock = mpsocket::path_mutex.acquireWrite();
-			pathid = MPW_CreatePathWithoutConnect(ep.getHost(), ep.port, opts.max_connections);
+			// creation does not structurally modify existing static MPWide data
+			// so that it does not rule out reading/writing operations.
+			mutex_lock lock = mpsocket::path_mutex.acquire();
+			path_id = MPW_CreatePathWithoutConnect(host, ep.port, opts.max_connections);
+
 		}
 
-		bool is_valid;
-		if (pathid < 0) {
-			is_valid = false;
-		} else if (asServer) {
-			// Usually, we won't mind if MPWide's datastructures change due to
-			// a new CreatePath during an accept. In some cases this
-			// WILL cause corruption, further changes to MPWide are
-			// necessary to prevent this. The reason we can't have a
-			// read lock here is that accepts typically take very long
-			// and in the mean time no connect may take place. That would
-			// be bad (deadlocks).
-			mutex_lock lock = mpsocket::accept_destroy_mutex.acquire();
-			is_valid = (MPW_ConnectPath(pathid, true) == 0);
-		} else {
-			// Need to connect, this is blocking but we only need
-			// read permissions of the stream list since we won't
-			// modify MPWide's internal structures.
-			rwmutex_lock rdlock = mpsocket::path_mutex.acquireRead();
-			is_valid = (MPW_ConnectPath(pathid, false) == 0);
-		}
-		
-        if (!is_valid) {
+        if (path_id >= 0 && MPW_ConnectPath(path_id, asServer) == -1) {
             // Clean up
-			MPSocketFactory::destroyer->destroyPath(pathid);
-            pathid = -1;
+			mutex_lock lock = mpsocket::path_mutex.acquire();
+			logger::fine("Destroying path %d", path_id);
+			MPW_DestroyPath(path_id);
+			
+            path_id = -1;
         }
-        return pathid;
+        return path_id;
     }
     
     static ssize_t _mpsocket_do_send(char *data, size_t sz, int pathid)
     {
-        // Read from streams list
-        rwmutex_lock rdlock = mpsocket::path_mutex.acquireRead();
         ssize_t ret = MPW_SendRecv(data, sz, (char *)0, 0, pathid);
 		if (ret >= 0)
 			return sz;
@@ -100,7 +82,6 @@ namespace muscle {
     static ssize_t _mpsocket_do_recv(char *data, size_t sz, int pathid)
     {
         // Read from streams list
-        rwmutex_lock rdlock = mpsocket::path_mutex.acquireRead();
         ssize_t ret = MPW_SendRecv((char *)0, 0, data, sz, pathid);
 		if (ret >= 0)
 			return sz;
@@ -142,7 +123,8 @@ namespace muscle {
         // if the stop signal was sent but the socket was valid
         // destroy it anyway.
 		if (cache.stop_condition && *res != -1) {
-			MPSocketFactory::destroyer->destroyPath(*res);
+			mutex_lock lock = mpsocket::path_mutex.acquire();
+			MPW_DestroyPath(*res);
 			*res = -1;
 		}
 
@@ -154,58 +136,6 @@ namespace muscle {
         return res;
     }
     
-	void mpsocket_destroy_thread::destroyPath(const int pathid)
-	{
-		mutex_lock lock = mut.acquire();
-		paths.push(pathid);
-		lock.notify();
-	}
-
-	void *mpsocket_destroy_thread::run()
-	{
-		while (true)
-		{
-			int path_id;
-			{
-				mutex_lock lock = mut.acquire();
-				while (paths.empty() && !cache.stop_condition) {
-					logger::finer("Waiting paths to be destroyed");
-					lock.wait();
-				}
-				path_id = paths.top();
-				paths.pop();
-				if (cache.stop_condition) break;
-			}
-			
-			{
-				// First we wait for any accepts to finish. This may take a long time.
-				mutex_lock accept_lock = mpsocket::accept_destroy_mutex.acquire();
-				
-				// Once accept is done, we can try to get a lock for other operations
-				// We can't get a full lock, since we might cause a deadlock for
-				// dependant send/receive calls.
-				logger::finer("Waiting for lock to destroy paths");
-				rwmutex_lock *wrlock;
-				while ((wrlock = mpsocket::path_mutex.tryWrite()) == NULL)
-					usleep(100000); // 0.1 second, rather arbitrary
-				
-				logger::fine("Destroying path %d", path_id);
-				MPW_DestroyPath(path_id);
-				delete wrlock;
-			}
-		}
-		
-		return NULL;
-    }
-    
-    void mpsocket_destroy_thread::cancel()
-    {
-		pthread_cancel(t);
-        mutex_lock lock = mut.acquire();
-        cache.stop_condition = true;
-        lock.notify();
-    }
-
     //////// mpsocket /////////////////
     
     mpsocket::mpsocket() : socket((async_service *)0)
@@ -301,10 +231,21 @@ namespace muscle {
         if (recvThread) delete recvThread;
 		if (sendThread) delete recvThread;
 
-        if (connectThread)
+        if (connectThread) {
+			connectThread->cancel();
+			int *res = (int *)connectThread->getResult();
+			if (res) {
+				if (*res != -1)
+					pathid = *res;
+				delete res;
+			}
 			delete connectThread;
-        else if (pathid >= 0)
-            MPSocketFactory::destroyer->destroyPath(pathid);
+		}
+		
+		if (pathid >= 0) {
+			mutex_lock lock = path_mutex.acquire();
+			MPW_DestroyPath(pathid);
+		}
     }
     
     ssize_t MPClientSocket::recv(void * const s, const size_t size)
@@ -374,14 +315,13 @@ namespace muscle {
     void MPClientSocket::setWin(const ssize_t size)
     {
         assert(size > 0);
-        rwmutex_lock rdlock = path_mutex.acquireRead();
         MPW_setPathWin(pathid, (int)size);
     }
 
     /** SERVER SIDE **/
     MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts), server_opts(opts)
     {
-        listener = new mpsocket_connect_thread(endpoint("0", address.port), server_opts, this, true);
+        listener = new mpsocket_connect_thread(address, server_opts, this, true);
     }
     
     ClientSocket *MPServerSocket::accept(const socket_opts &opts)
@@ -427,23 +367,16 @@ namespace muscle {
     }
     
     int MPSocketFactory::num_mpsocket_factories = 0;
-    mpsocket_destroy_thread *MPSocketFactory::destroyer = (mpsocket_destroy_thread *)0;
     
     MPSocketFactory::MPSocketFactory(async_service *service) : SocketFactory(service)
     {
-        if (num_mpsocket_factories++ == 0) {
-			destroyer = new mpsocket_destroy_thread;
-		}
+        ++num_mpsocket_factories;
     }
     
     MPSocketFactory::~MPSocketFactory()
     {
-        if (--num_mpsocket_factories == 0)
-        {
-			delete destroyer;
-			destroyer = NULL;
-			
-            rwmutex_lock wrlock = mpsocket::path_mutex.acquireWrite();
+        if (--num_mpsocket_factories == 0) {
+			mutex_lock lock = mpsocket::path_mutex.acquire();
             MPW_Finalize();
         }
     }

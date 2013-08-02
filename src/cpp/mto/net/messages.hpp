@@ -15,7 +15,7 @@ public:
         Data = 4,             ///< One proxy sends client data to the other proxy
         Close = 5,            ///< A client closed the connection on one end
         PortRangeInfo = 6,    ///< Proxy tells what ports it owns
-        PeerClose = 7         ///< Idle connection gets closed, don't print an error, just close.
+		DataInLength = 7
     };
     
     /** Converts the Type value ot it's textual representation */

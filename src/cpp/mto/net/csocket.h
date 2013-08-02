@@ -63,7 +63,7 @@ namespace muscle {
     // Disallowed - is problematic for destructor
     private:
         CClientSocket(const CClientSocket& other) {}
-		bool has_delay;
+		bool has_delay, has_cork;
     };
     
     class CServerSocket : public ServerSocket, public csocket

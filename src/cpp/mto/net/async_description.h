@@ -35,11 +35,8 @@ namespace muscle {
     };
     class async_sendlistener_delete : public async_sendlistener
     {
-	private:
-		int refs;
     public:
-		async_sendlistener_delete() : refs(1) {}
-		async_sendlistener_delete(int refs) : refs(refs) {}
+		async_sendlistener_delete() {}
         virtual void async_sent(size_t code, int user_flag, void *data, size_t sz, int is_final)
         {
             // Delete both on error and on final send
@@ -50,7 +47,7 @@ namespace muscle {
         {
             logger::severe("Uncaught error occurred: %s", ex.what());
         }
-        virtual void async_done(size_t code, int user_flag) { if (--refs == 0) delete this; }
+        virtual void async_done(size_t code, int user_flag) { delete this; }
     };
     class async_sendlistener_nodelete : public async_sendlistener
     {

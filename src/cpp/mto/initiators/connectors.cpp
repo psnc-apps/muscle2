@@ -15,7 +15,7 @@
 using namespace std;
 using namespace muscle;
 
-StubbornConnecter::StubbornConnecter(endpoint& where_, async_service *service, SocketFactory *sockFactory, socket_opts& newOpts, const duration& timeout, LocalMto *mto)
+StubbornConnecter::StubbornConnecter(const endpoint& where_, async_service *service, SocketFactory *sockFactory, socket_opts& newOpts, const duration& timeout, LocalMto *mto)
 : where(where_), service(service), opts(newOpts), timeout(timeout), mto(mto), sock(NULL), sockFactory(sockFactory)
 {
     muscle::time t = timeout.time_after();

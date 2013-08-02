@@ -7,7 +7,6 @@
 //
 
 #include "endpoint.h"
-#include "../../muscle2/exception.hpp"
 
 #include <netdb.h>
 #include <sstream>
@@ -44,8 +43,9 @@ endpoint::endpoint(const char *buffer_ptr) : host("")
 	port = ntohs(*(const uint16_t *)buffer_ptr);
 }
 
-std::string endpoint::getHostFromAddressImpl() const
+std::string endpoint::getHostFromAddress() const
 {
+	assertValid();
 	if (is_ipv6)
 	{
 		char hostname[INET6_ADDRSTRLEN];
@@ -62,33 +62,18 @@ std::string endpoint::getHostFromAddressImpl() const
 
 std::string endpoint::getHost() const
 {
-	if (host.empty())
-		return getHostFromAddress();
-
+	assertValid();
 	return host;
-}
-
-std::string endpoint::getHost()
-{
-	if (host.empty())
-		host = getHostFromAddress();
-	
-	return host;
-}
-
-bool endpoint::isValid()
-{
-	return resolve(false);
 }
 
 bool endpoint::isValid() const
 {
-	return resolve(false);
+	return isResolved() != host.empty();
 }
 
-void endpoint::getSockAddrImpl(struct sockaddr& serv_addr) const
+void endpoint::getSockAddr(struct sockaddr& serv_addr) const
 {
-	resolve(true);
+	assertValid();
 	memset(&serv_addr, 0, sizeof(struct sockaddr));
 	if (is_ipv6)
 	{
@@ -106,54 +91,37 @@ void endpoint::getSockAddrImpl(struct sockaddr& serv_addr) const
 	}
 }
 	
-bool endpoint::resolve(bool make_error)
+void endpoint::resolve()
 {
-	if (isResolved()) return true;
-	if (host.empty())
-	{
-		if (make_error) throw muscle_exception("Unspecified endpoint can not be resolved.");
-		else return false;
+	if (isResolved()) {
+		if (host.empty())
+			host = getHostFromAddress();
+		return;
 	}
+	// No use resolving empty host
+	if (host.empty()) return;
 	
 	struct hostent *s;
 	s = gethostbyname2(c_host(), AF_INET);
 
-	if (s == NULL)
-	{
+	if (s == NULL) {
 		s = gethostbyname2(c_host(), AF_INET6);
 
 		if (s == NULL)
-		{
-			if (make_error) throw muscle_exception("host not found: " + host);
-			else return false;
-		}
+			throw muscle_exception("host " + host + " not found");
 		else
 			is_ipv6 = true;
 		
-	}
-	else
+	} else {
 		is_ipv6 = false;
-	
-	if (is_ipv6)
-	{
-		memcpy(addr, s->h_addr, IPV6_SZ);
 	}
-	else
-	{
+	
+	if (is_ipv6) {
+		memcpy(addr, s->h_addr, IPV6_SZ);
+	} else {
 		memcpy(addr, s->h_addr, IPV4_SZ);
 		memset(addr+IPV4_SZ, 0, sizeof(addr)-IPV4_SZ);
 	}
-	return true;
-}
-
-bool endpoint::resolve(bool make_error) const
-{
-	if (isResolved() || host == "")
-		return true;
-	else if (make_error)
-		throw muscle_exception("Endpoint '" + host + "' must be resolved to get properties.");
-	else
-		return false;
 }
 
 int16_t endpoint::getNetworkPort() const
@@ -166,8 +134,9 @@ size_t endpoint::getSize()
 	return sizeof(char) +  sizeof(uint16_t) + 16*sizeof(char); // IPv4/v6 + Port + Address
 }
 
-char *endpoint::serializeImpl(char *buffer) const
+char *endpoint::serialize(char *buffer) const
 {
+	assertValid();
 	*buffer++ = is_ipv6 ? IPV6_FLAG : IPV4_FLAG;
 
 	memcpy(buffer, addr, sizeof(addr));
@@ -178,35 +147,22 @@ char *endpoint::serializeImpl(char *buffer) const
 	return buffer;
 }
    
-bool endpoint::operator==(const endpoint& other) const
-{
-	return isIPv6() == other.isIPv6() && memcmp(&addr, &other.addr, sizeof(addr)) == 0 && port == other.port;
-}
 bool endpoint::operator<(const endpoint& other) const
 {
-	if (isIPv6() != other.isIPv6()) return isIPv6() < other.isIPv6();
-	int cmp = memcmp(&addr, &other.addr, sizeof(addr));
-	if (cmp == -1) return true;
-	if (cmp == 1) return false;
-	return port < other.port;
+	assertValid(); other.assertValid();
+
+	if (is_ipv6 != other.is_ipv6) return is_ipv6 < other.is_ipv6;
+	if (port    != other.port   ) return port    < other.port;
+	
+	return memcmp(&addr, &other.addr, sizeof(addr)) == -1;
 }
-bool endpoint::operator==(endpoint& other)
+bool endpoint::operator==(const endpoint& other) const
 {
-	return isIPv6() == other.isIPv6() && memcmp(&addr, &other.addr, sizeof(addr)) == 0 && port == other.port;
-}
-bool endpoint::operator!=(endpoint& other)
-{
-	return isIPv6() != other.isIPv6() || memcmp(&addr, &other.addr, sizeof(addr)) != 0 || port != other.port;
+	assertValid(); other.assertValid();
+	return is_ipv6 == other.is_ipv6 && port == other.port && memcmp(&addr, &other.addr, sizeof(addr)) == 0;
 }
 bool endpoint::operator!=(const endpoint& other) const
 {
-	return isIPv6() != other.isIPv6() || memcmp(&addr, &other.addr, sizeof(addr)) != 0 || port != other.port;
-}
-bool endpoint::operator<(endpoint& other)
-{
-	if (isIPv6() != other.isIPv6()) return isIPv6() < other.isIPv6();
-	int cmp = memcmp(&addr, &other.addr, sizeof(addr));
-	if (cmp == -1) return true;
-	if (cmp == 1) return false;
-	return port < other.port;
+	assertValid(); other.assertValid();
+	return is_ipv6 != other.is_ipv6 || port != other.port || memcmp(&addr, &other.addr, sizeof(addr)) != 0;
 }

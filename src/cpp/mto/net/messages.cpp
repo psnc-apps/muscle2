@@ -13,7 +13,7 @@ inline static void writeToBuffer(char *&buffer, const T value)
     unsigned char *buffer_ptr = (unsigned char *)buffer;
 
     for (size_t i = 0; i < sizeof(T); ++i)
-	*buffer_ptr++ = (value >> 8*(sizeof(T)-i-1)) & 0xff;
+	    *buffer_ptr++ = (value >> 8*(sizeof(T)-i-1)) & 0xff;
     
     buffer = (char *)buffer_ptr;
 }
@@ -48,8 +48,8 @@ std::string Request::type_str() const
             return "Close";
         case PortRangeInfo:
             return "PortRangeInfo";
-        case PeerClose:
-            return "PeerClose";
+		case DataInLength:
+			return "DataInLength";
         default:
         {
             std::stringstream ss;
@@ -68,6 +68,8 @@ Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint
 {
     buf += 1+2*muscle::endpoint::getSize();
     sessionId = readFromBuffer<int32_t>(buf);
+	src.resolve();
+	dst.resolve();
 }
 
 char *Request::serialize(char* buf) const

@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <cassert>
 
 class StubbornConnecter;
 class LocalMto;
@@ -15,19 +16,11 @@ class LocalMto;
 /**
  * The part responsible for interconnection between two MTOs.
  */
-class PeerConnectionHandler : public muscle::async_recvlistener
+class PeerConnectionHandler : public muscle::async_recvlistener, public muscle::async_sendlistener
 {
-    /** Starts reading new header from peer */
-    void readHeader();
-    
 public:
     PeerConnectionHandler(muscle::ClientSocket * _socket, LocalMto *mto);
     virtual ~PeerConnectionHandler();
-    
-    inline std::string str() { return socket->getAddress().str(); }
-
-    /** Fires on accept / connect */
-    muscle::async_service *service;
     
     /** Informs peer about MTO reachable via me */
     void propagateHello(const MtoHello & hello);
@@ -38,15 +31,15 @@ public:
     /** Hook for uniform error handling */
     virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
     virtual bool async_received(size_t code, int user_flag, void *data, void *last_data_ptr, size_t len, int is_final);
+	virtual void async_sent(size_t code, int user_flag, void *data, size_t len, int is_final);
 
     virtual void async_done(size_t code, int user_flag) { decrementPending(); }
     
     /** Returns the remote endpoint for this connection*/
-    const muscle::endpoint & remoteEndpoint() const;
+    const muscle::endpoint & address() const;
     
-    void send(Header& h, void *data = 0, size_t len = 0, muscle::async_sendlistener *listener = 0);
-    void send(Header& h, size_t value, muscle::async_sendlistener *listener = 0);
-    void send(void *data, size_t len, muscle::async_sendlistener *listener, int opts);
+    void send(Header& h, void *data, size_t len);
+    void sendHeader(Header& h, size_t value = 0);
     
     /** Once a peer becomes unavailable, this is called. If the peer is on fwd list, fwd list is updated */
     void peerDied(PeerConnectionHandler * handler);
@@ -55,62 +48,47 @@ public:
     void replacePeer(PeerConnectionHandler* from, PeerConnectionHandler* to);
     
     void done();
-protected:
-    int pendingOperatons;
+	
+	inline std::string str() { return socket->getAddress().str(); }
+
+private:
     bool closing;
-    
-    void incrementPending() {
-        if (closing)
-            throw muscle::muscle_exception("Can not start new operation on closing connection");
-        
-        ++pendingOperatons;
-    }
-    void decrementPending() {
-        --pendingOperatons;
-        tryClean();
-    }
-    
-    bool tryClean();
-    
+	muscle::async_service *service;
     Header latestHeader;
-    
-    void errorOccurred(std::string msg);
-    
-    /** Keeps information about connections forwarded by this MTO */
-    std::map<Identifier, PeerConnectionHandler*> fwdMap;
-    
-    /** Ptr to this inter-proxy socket */
     muscle::ClientSocket *socket;
-    
     LocalMto *mto;
     char *headerBuffer;
+    int pendingOperations;
+
+	enum {
+		RECV_HEADER = 1,
+		RECV_DATA = 2,
+		LOCAL_CONNECT = 3,
+		SEND_DATA = 4,
+		SEND_HEADER = 5
+	};
+	
+	/** Keeps information about connections forwarded by this MTO */
+    std::map<Identifier, PeerConnectionHandler*> fwdMap;
+
+	/** Starts reading new header from peer */
+    void readHeader();
     
-    /* ====== Connect ====== */
+	/** forward data to closest peer */
+	bool forwardToPeer(Header &h, bool erase, void *data = 0, size_t dataLen = 0);
     
     /** On connect, check if we have registered ip:port and try to connect */
-    void handleConnect(Header h);
-    
+    void handleConnect(Header &h);
     /** Answer for connection request */
-    void handleConnectFailed(Header h);
-    
-    /** Other PeerConnectionHandler asks to forward data through this connection */
-    void forward(Header & h, size_t dataLen = 0, void *data = 0);
-    
+    void handleConnectFailed(Header &h);
     /** Propagate a MTO hello to main.h */
-    void handleHello(Header h);
-    
-    struct Sender : public muscle::async_sendlistener
-    {
-        muscle::async_sendlistener *listener;
-        PeerConnectionHandler *t;
+    void handleHello(Header &h);
+    /** Informs proper Connection that it's remote end is or is not available */
+    void handleConnectResponse(Header &h);
+    void handleData(const Header &h);
+    void handleDataInLength(const Header &h, size_t code);
+    void handleClose(Header &h);
 
-        Sender(muscle::async_sendlistener *listener, PeerConnectionHandler *t, void *data, size_t len, int opts);
-        
-        virtual void async_sent(size_t code, int user_flag, void *data, size_t len, int is_final);
-        virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
-        virtual void async_done(size_t code, int user_flag);
-    };
-    
     /** Once connection requested by peer has been established or failed, this is called */
     struct HandleConnected : public muscle::async_acceptlistener
     {
@@ -123,19 +101,20 @@ protected:
         virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
         virtual void async_done(size_t code, int user_flag);
     };
+
+	/* Closing */
+	void tryClose();
+    void errorOccurred(std::string msg);
     
-    /* ====== ConnectResponse ====== */
-    
-    /** Informs proper Connection that it's remote end is / is not available */
-    void handleConnectResponse(Header h);
-    
-    /* ====== Data ====== */
-    
-    void handleData(Header h);
-    
-    /* ====== Close ====== */
-    
-    void handleClose(Header h);
+	inline void incrementPending() {
+        assert(!closing);
+		
+        ++pendingOperations;
+    }
+    inline void decrementPending() {
+        --pendingOperations;
+        tryClose();
+	}
 };
 
 #endif // PEERCONNECTIONHANDLER_H

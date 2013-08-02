@@ -132,12 +132,12 @@ namespace muscle {
     }
     
     /** CLIENT SIDE **/
-    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true)
+    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true), has_cork(false)
     {
         setOpts(opts);
     }
         
-    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true)
+    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true), has_cork(false)
     {
         create();
         setOpts(opts);
@@ -176,7 +176,10 @@ namespace muscle {
 	void CClientSocket::setCork(const bool plug)
 	{
 #ifdef TCP_CORK
-		setsockopt(sockfd, IPPROTO_TCP, TCP_CORK, &plug, sizeof(plug));
+		if (has_cork != plug) {
+			setsockopt(sockfd, IPPROTO_TCP, TCP_CORK, &plug, sizeof(plug));
+			has_cork = plug;
+		}
 #endif
 	}
 	

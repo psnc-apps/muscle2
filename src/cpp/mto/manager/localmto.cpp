@@ -50,7 +50,7 @@ void LocalMto::startConnectingToPeers(map<string, endpoint>& mtoConfigs)
 void LocalMto::peerDied(PeerConnectionHandler *handler)
 {
     conns.peerDied(handler);
-    endpoint ep = handler->remoteEndpoint();
+    const endpoint& ep = handler->address();
     if (ep != externalEp) {
         StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
     }
