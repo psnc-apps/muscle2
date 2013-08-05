@@ -128,16 +128,14 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 	// If the received size is not too small, it's faster to just allocate some new memory
 	// Copying is almost always slower
 	if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
-		// Only definitely send if it was the final packet
-		if (remoteMto->send(header, buffer, count, is_final))
-			receive();
-		else
-			return true;
+		remoteMto->send(header, buffer, count);
+
+		receive();
 	} else if (count > 1) {
 		// Create new buffer to send, reuse the current buffer
 		char *sendData = new char[count];
 		memcpy(sendData, buffer, count);
-		remoteMto->send(header, sendData, count, true);
+		remoteMto->send(header, sendData, count);
 		
 		receive(buffer, MTO_CONNECTION_BUFFER_SIZE);
 	} else {
