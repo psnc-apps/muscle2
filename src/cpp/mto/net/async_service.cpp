@@ -200,6 +200,7 @@ namespace muscle
 					// descs exists
 					while (!q.empty()) {
 						async_description& desc = q.front();
+						szSendBuffers -= desc.size;
 						async_sendlistener* send = static_cast<async_sendlistener*>(desc.listener);
 						send->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
 						send->async_done(desc.code, desc.user_flag);
@@ -424,9 +425,8 @@ namespace muscle
             if (status == -1)
                 sender->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
             
-            sender->async_done(desc.code, desc.user_flag);
-
 			szSendBuffers -= desc.size;
+            sender->async_done(desc.code, desc.user_flag);
 			
             if (lastSend) {
 				delete sendQueues[fd];
