@@ -11,12 +11,15 @@
 #define CONN_LOCAL_TO_REMOTE_R 3 // don't free
 #define CONN_SEND_DATA 4 // don't free
 #define CONN_TIMEOUT_CLOSE 5 // don't free
+#define CONN_RESTART_RECEIVE 6 // don't free
 
 using namespace muscle;
 
+const muscle::duration Connection::recvTimeout(0l, 1000);
+
 /* from remote */
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
-: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), pendingOperations(0), remoteMto(remoteMto), mto(mto), closing_timer(0)
+: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), pendingOperations(0), remoteMto(remoteMto), mto(mto), closing_timer(0), receiving_timer(0)
 {
     assert(remoteMto != NULL);
     if (hasRemotePeer)
@@ -43,10 +46,13 @@ void Connection::close()
 
     // Will start a timer after this, and protects from untimely deletion
 	pendingOperations++;
-
+	
     closing = true;
     logger::fine("Closing connection %s",
                   header.str().c_str());
+	
+	if (receiving_timer)
+		sock->getServer()->erase_timer(receiving_timer);
     
     if(hasRemotePeer && remoteMto) {
         header.type=Header::Close;
@@ -94,18 +100,26 @@ void Connection::async_execute(size_t code, int flag, void *user_data)
 {
 	// If the reference count is more than one, we will cancel this timer
 	// but also the socket that is still active
-	async_service *server = sock->getServer();
-	if (pendingOperations > 1) {
-		logger::info("Connection %s did not close after timeout (%d connections running); forcing",
-					  header.str().c_str(), pendingOperations);
-		server->printDiagnostics();
-		sock->async_cancel();
+	async_service * const server = sock->getServer();
+
+	if (flag == CONN_RESTART_RECEIVE) {
+		receive();
+		server->erase_timer(receiving_timer);
+		receiving_timer = 0;
 	}
-	// Prevent double delete
-	const size_t tmpTimer = closing_timer;
-	closing_timer = 0;
-	// Will call async_done and delete the connection
-	server->erase_timer(tmpTimer);
+	else {
+		if (pendingOperations > 1) {
+			logger::info("Connection %s did not close after timeout (%d connections running); forcing",
+						  header.str().c_str(), pendingOperations);
+			server->printDiagnostics();
+			sock->async_cancel();
+		}
+		// Prevent double delete
+		const size_t tmpTimer = closing_timer;
+		closing_timer = 0;
+		// Will call async_done and delete the connection
+		server->erase_timer(tmpTimer);
+	}
 }
 
 void Connection::receive(void *buffer, size_t sz)
@@ -130,7 +144,9 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 	if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
 		remoteMto->send(header, buffer, count);
 
-		receive();
+		// On large messages, use a pacing rate
+		muscle::time t = recvTimeout.time_after();
+		receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
 	} else if (count > 1) {
 		// Create new buffer to send, reuse the current buffer
 		char *sendData = new char[count];

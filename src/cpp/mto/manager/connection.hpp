@@ -24,6 +24,8 @@ class LocalMto;
 class Connection : public muscle::async_recvlistener, public muscle::async_sendlistener, public muscle::async_function
 {
 private:
+	static const muscle::duration recvTimeout;
+	
     /** Local side of the connection */
     muscle::ClientSocket *sock;
     
@@ -53,6 +55,7 @@ private:
     void tryClose();
     
     size_t closing_timer;
+	size_t receiving_timer;
 	
 	enum {
 		CONNECT = 1,
