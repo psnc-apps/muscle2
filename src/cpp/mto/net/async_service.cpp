@@ -20,10 +20,10 @@ using namespace std;
 
 namespace muscle
 {
-    async_service::async_service() : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false)
+    async_service::async_service(const size_t limitSendSize) : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false), limitReadAtSendBufferSize(limitSendSize)
     {}
     
-    size_t async_service::send(int user_flag, ClientSocket *socket, const void *data, size_t size, async_sendlistener* send, int options)
+    size_t async_service::send(const int user_flag, ClientSocket * const socket, const void * const data, const size_t size, async_sendlistener* send, const int options)
     {
         if (!socket || !data)
             throw muscle_exception("Socket and data must not be empty");
@@ -48,8 +48,9 @@ namespace muscle
 		
 		async_description desc(code, user_flag, (void *)data, size, send);
 		desc.opts = options;
-		
+
 		sendQueues[fd]->second.push(desc);
+		szSendBuffers += size;
 
         return code;
     }
@@ -425,6 +426,8 @@ namespace muscle
             
             sender->async_done(desc.code, desc.user_flag);
 
+			szSendBuffers -= desc.size;
+			
             if (lastSend) {
 				delete sendQueues[fd];
                 sendQueues[fd] = NULL;
@@ -713,18 +716,20 @@ namespace muscle
         FD_ZERO(&wsock);
         FD_ZERO(&esock);
         int maxfd = 0;
-        for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
-            FD_SET(*it,&rsock); // To accomodate for pipes used in mpsocket
-            FD_SET(*it,&esock);
-            if (*it > maxfd) maxfd = *it;
-        }
+		if (szSendBuffers < limitReadAtSendBufferSize) {
+			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
+				FD_SET(*it,&rsock);
+				FD_SET(*it,&esock);
+				if (*it > maxfd) maxfd = *it;
+			}
+		}
         for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
             FD_SET(*it,&rsock); // To accomodate for pipes used in mpsocket
             FD_SET(*it,&esock);
             if (*it > maxfd) maxfd = *it;
         }
         for (vector<int>::iterator it = writeFds.begin(); it != writeFds.end(); it++) {
-            FD_SET(*it,&wsock); // To accomodate for pipes used in mpsocket
+            FD_SET(*it,&wsock);
             FD_SET(*it,&esock);
             if (*it > maxfd) maxfd = *it;
         }
@@ -756,16 +761,18 @@ namespace muscle
 				return 0;
 			}
         }
-		for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
-			if (FD_ISSET(*it, &esock)) {
-				*readFd = *it;
-				return -1;
+		if (szSendBuffers < limitReadAtSendBufferSize) {
+			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
+				if (FD_ISSET(*it, &esock)) {
+					*readFd = *it;
+					return -1;
+				}
+				if (FD_ISSET(*it, &rsock)) {
+					*readFd = *it;
+					return 0;
+				}
 			}
-			if (FD_ISSET(*it, &rsock)) {
-				*readFd = *it;
-				return 0;
-			}
-        }
+		}
         
         return 0;
     }

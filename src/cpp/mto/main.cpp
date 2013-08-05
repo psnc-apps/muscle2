@@ -39,7 +39,7 @@ using namespace std;
 using namespace muscle;
 
 // // // // //           Variables           // // // // //
-async_service asyncService;
+async_service *asyncService;
 LocalMto *localMto;
 volatile bool receivedSignal = false;
 
@@ -49,7 +49,7 @@ void signalReceived(int signum)
     if (signum == SIGQUIT)
     {
         localMto->printDiagnostics();
-        asyncService.printDiagnostics();
+        asyncService->printDiagnostics();
     }
     else
     {
@@ -69,7 +69,7 @@ void signalReceived(int signum)
 		if (!receivedSignal) {
 			receivedSignal = true;
 			logger::warning("Received %s, exiting...", s);
-			asyncService.done();
+			asyncService->done();
 		} else {
 			logger::severe("Received %s again, forcing exit.", s);
 			logger::finalize();
@@ -116,14 +116,15 @@ int main(int argc, char **argv)
             }
         }
 
-        SocketFactory *intSockFactory = new CSocketFactory(&asyncService);
+		asyncService = new async_service(6*1024*1024*(mtoConfigs.size() - 1));
+        SocketFactory *intSockFactory = new CSocketFactory(asyncService);
         SocketFactory *extSockFactory;
         if (opts.useMPWide)
-            extSockFactory = new MPSocketFactory(&asyncService);
+            extSockFactory = new MPSocketFactory(asyncService);
         else
-            extSockFactory = new CSocketFactory(&asyncService);
+            extSockFactory = new CSocketFactory(asyncService);
         
-        localMto = new LocalMto(opts, &asyncService, intSockFactory, extSockFactory, externalAddress);
+        localMto = new LocalMto(opts, asyncService, intSockFactory, extSockFactory, externalAddress);
         
         if(externalAddress.port)
             localMto->startListeningForPeers();
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
         signal(SIGTERM, signalReceived);
         signal(SIGQUIT, signalReceived);
         
-        asyncService.run();
+        asyncService->run();
         delete localMto;
 		
         return 0;

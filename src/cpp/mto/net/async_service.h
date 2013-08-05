@@ -30,7 +30,7 @@ namespace muscle {
 			UNPLUG_CORK = 2
 		};
 		
-        async_service();
+        async_service(size_t limitSendSize = 6*1024*1024);
         
         size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);
         size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
@@ -77,6 +77,9 @@ namespace muscle {
 		
         volatile bool is_done;
         volatile bool is_shutdown;
+		
+		size_t szSendBuffers;
+		const size_t limitReadAtSendBufferSize;
 
 		std::queue<int> readFdsToErase;
 		std::queue<int> writeFdsToErase;
