@@ -20,7 +20,7 @@ using namespace std;
 
 namespace muscle
 {
-    async_service::async_service(const size_t limitSendSize) : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false), limitReadAtSendBufferSize(limitSendSize)
+    async_service::async_service(const size_t limitSendSize) : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false), limitReadAtSendBufferSize(limitSendSize), szSendBuffers(0)
     {}
     
     size_t async_service::send(const int user_flag, ClientSocket * const socket, const void * const data, const size_t size, async_sendlistener* send, const int options)
@@ -716,7 +716,7 @@ namespace muscle
         FD_ZERO(&wsock);
         FD_ZERO(&esock);
         int maxfd = 0;
-		if (szSendBuffers < limitReadAtSendBufferSize) {
+		if (szSendBuffers > limitReadAtSendBufferSize) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				FD_SET(*it,&rsock);
 				FD_SET(*it,&esock);
@@ -761,7 +761,7 @@ namespace muscle
 				return 0;
 			}
         }
-		if (szSendBuffers < limitReadAtSendBufferSize) {
+		if (szSendBuffers > limitReadAtSendBufferSize) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				if (FD_ISSET(*it, &esock)) {
 					*readFd = *it;
