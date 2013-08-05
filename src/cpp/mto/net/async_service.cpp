@@ -716,7 +716,7 @@ namespace muscle
         FD_ZERO(&wsock);
         FD_ZERO(&esock);
         int maxfd = 0;
-		if (szSendBuffers > limitReadAtSendBufferSize) {
+		if (szSendBuffers < limitReadAtSendBufferSize) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				FD_SET(*it,&rsock);
 				FD_SET(*it,&esock);
@@ -761,7 +761,7 @@ namespace muscle
 				return 0;
 			}
         }
-		if (szSendBuffers > limitReadAtSendBufferSize) {
+		if (szSendBuffers < limitReadAtSendBufferSize) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				if (FD_ISSET(*it, &esock)) {
 					*readFd = *it;
