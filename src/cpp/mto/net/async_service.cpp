@@ -708,7 +708,7 @@ namespace muscle
     
     int async_service::select(int *writeFd, int *readableWriteFd, int *readFd, duration& timeout)
     {
-        if (readFds.empty() && writeFds.empty()) return 0;
+        if (readFds.empty() && readableWriteFds.empty() && writeFds.empty()) return 0;
         
         /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
         fd_set rsock, wsock, esock;
