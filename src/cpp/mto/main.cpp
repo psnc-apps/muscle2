@@ -140,6 +140,7 @@ int main(int argc, char **argv)
         
         asyncService->run();
         delete localMto;
+		delete asyncService;
 		
         return 0;
     }
