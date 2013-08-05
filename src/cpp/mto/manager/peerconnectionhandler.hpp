@@ -38,7 +38,7 @@ public:
     /** Returns the remote endpoint for this connection*/
     const muscle::endpoint & address() const;
     
-    void send(Header& h, void *data, size_t len);
+    bool send(Header& h, void *data, size_t len, bool urgent);
     void sendHeader(Header& h, size_t value = 0);
     
     /** Once a peer becomes unavailable, this is called. If the peer is on fwd list, fwd list is updated */

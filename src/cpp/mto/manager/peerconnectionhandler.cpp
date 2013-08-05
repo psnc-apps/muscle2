@@ -235,7 +235,7 @@ bool PeerConnectionHandler::forwardToPeer(Header &h, bool erase, void *data, siz
 		logger::finest("Forwarding '%s' to %s",
 					   h.type_str().c_str(), it->second->str().c_str());
 
-	it->second->send(h, data, dataLen);
+	it->second->send(h, data, dataLen, true);
 	if (erase) {
 		it->second->fwdMap.erase(id);
 		fwdMap.erase(it);
@@ -316,7 +316,7 @@ void PeerConnectionHandler::sendHeader(Header& h, size_t value)
     socket->async_send(SEND_HEADER, packet, sz, this, 0);
 }
 
-void PeerConnectionHandler::send(Header& h, void *data, const size_t len)
+bool PeerConnectionHandler::send(Header& h, void *data, const size_t len, bool urgent)
 {
 	// If the data fits into the length variable, do it,
 	// it might well save a round trip.
@@ -324,9 +324,12 @@ void PeerConnectionHandler::send(Header& h, void *data, const size_t len)
 		h.type = Header::DataInLength;
 		sendHeader(h, *(unsigned char *)data);
 		delete [] (char *)data;
-		return;
+		return true;
 	}
 
+	if (!urgent && pendingOperations > 5)
+		return false;
+	
 	if (logger::isLoggable(MUSCLE_LOG_FINEST))
 		logger::finest("Writing '%s' to %s",
                   h.type_str().c_str(), str().c_str());
