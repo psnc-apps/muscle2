@@ -12,7 +12,7 @@
 
 /** Size of a receive data buffer for each connection
  With MTU=1380, this is 512 packets */
-#define MTO_CONNECTION_BUFFER_SIZE 706560
+#define MTO_CONNECTION_BUFFER_SIZE 2826240
 
 class PeerCollection;
 class PeerConnectionHandler;
