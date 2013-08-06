@@ -48,12 +48,11 @@
 
 #if LOG_LVL > LVL_NONE
 #include <pthread.h>
-static pthread_mutex_t log_mutex__ = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t __log_mutex__ = PTHREAD_MUTEX_INITIALIZER;
+#define DO_LOG_(MSG) { pthread_mutex_lock(&__log_mutex__); cout << MSG << endl; pthread_mutex_unlock(&__log_mutex__); }
 #endif
 
 #if LOG_LVL >= LVL_ERR
-
-#define DO_LOG_(MSG) { pthread_mutex_lock(&log_mutex__); cout << MSG << endl; pthread_mutex_unlock(&log_mutex__); }
 #define LOG_ERR(MSG) DO_LOG_(MSG)
 #else
 #define LOG_ERR(MSG)

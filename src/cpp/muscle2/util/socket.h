@@ -44,7 +44,7 @@ class ServerSocket;
 class socket
 {
 public:
-    virtual ~socket() {}
+	virtual ~socket() {}
 
     virtual std::string str() const;
     virtual std::string str();
@@ -66,7 +66,7 @@ protected:
     socket(async_service *service);
     socket(const socket& other);
     socket();
-    
+	
     int sockfd;
     endpoint address;
     async_service *server;
@@ -87,10 +87,6 @@ public:
     // asynchronous, light-weight, non-blocking
     virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send, int opts);
     virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv);
-
-    virtual void async_cancel();
-    
-    virtual ~ClientSocket() { async_cancel(); }
 };
 
 class ServerSocket : virtual public socket
@@ -98,8 +94,6 @@ class ServerSocket : virtual public socket
 public:
     virtual ClientSocket *accept(const socket_opts& opts) = 0;
     virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts) = 0;
-    virtual void async_cancel();
-    virtual ~ServerSocket() { async_cancel(); }
 protected:
     ServerSocket(const socket_opts& opts);
     virtual void listen(int max_connections);

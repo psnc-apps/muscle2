@@ -299,7 +299,7 @@ void PeerConnectionHandler::tryClose()
 		mto->peers.erase(this);
 		delete this;
 	} else {
-		service->erase(socket);
+		socket->async_cancel();
 	}
 }
 

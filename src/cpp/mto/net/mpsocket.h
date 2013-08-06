@@ -57,7 +57,6 @@ namespace muscle {
     class mpsocket : virtual public socket
     {
     public:
-        virtual ~mpsocket();
         virtual void setReadReady() const;
         virtual void unsetReadReady() const;
         virtual bool isReadReady() const;
@@ -71,6 +70,7 @@ namespace muscle {
 		virtual bool selectWriteFdIsReadable() const { return true; }
     protected:
         mpsocket();
+        virtual ~mpsocket();
         int writableReadFd, readableWriteFd, writableWriteFd;
     }; // end class socket
 
@@ -89,6 +89,7 @@ namespace muscle {
         
         virtual int hasError();
         void setWin(ssize_t size);
+		virtual void async_cancel();
 	private:
         // Disallowed - is problematic for destructor
         MPClientSocket(const MPClientSocket& other) {}
@@ -105,13 +106,13 @@ namespace muscle {
     {
     public:
         MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts);
-        virtual ~MPServerSocket() { delete listener; }
-        
+        virtual ~MPServerSocket() { async_cancel(); delete listener; }
+		
         virtual ClientSocket *accept(const socket_opts& opts);
         virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
-    protected:
-        mpsocket_connect_thread *listener;
+		virtual void async_cancel();
 	private:
+        mpsocket_connect_thread *listener;
 		socket_opts server_opts;
     };
 

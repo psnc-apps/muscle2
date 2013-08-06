@@ -14,7 +14,7 @@ add_executable(${MTO}
             util/mutex.cpp util/rwmutex.cpp util/thread.cpp)
 
 target_link_libraries(${MTO} ${MPWIDE_LIB} )
-target_link_libraries(${MTO} ${MUSCLE2UTIL_LIB} )
+target_link_libraries(${MTO} ${MUSCLE2_LIB} )
 target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
 install(TARGETS ${MTO} DESTINATION bin)

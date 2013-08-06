@@ -24,7 +24,7 @@ class LocalMto;
 class Connection : public muscle::async_recvlistener, public muscle::async_sendlistener, public muscle::async_function
 {
 private:
-//	static const muscle::duration recvTimeout;
+	static const muscle::duration recvTimeout;
 	
     /** Local side of the connection */
     muscle::ClientSocket *sock;

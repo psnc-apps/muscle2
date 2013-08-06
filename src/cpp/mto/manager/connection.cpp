@@ -15,7 +15,7 @@
 
 using namespace muscle;
 
-//const muscle::duration Connection::recvTimeout(0l, 1000);
+const muscle::duration Connection::recvTimeout(0l, 2000);
 
 /* from remote */
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
@@ -144,10 +144,10 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 	if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
 		remoteMto->send(header, buffer, count);
 
-        receive();
+//        receive();
 		// On large messages, use a pacing rate
-		//muscle::time t = recvTimeout.time_after();
-		//receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
+		muscle::time t = recvTimeout.time_after();
+		receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
 	} else if (count > 1) {
 		// Create new buffer to send, reuse the current buffer
 		char *sendData = new char[count];

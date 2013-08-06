@@ -153,6 +153,5 @@ void InitPeerConnection::allHellosFailed(const muscle_exception& ex)
 {
     logger::finest("Reading hellos from peer %s failed - occurred error: %s",
                   sock->str().c_str(), ex.what());
-    sock->async_cancel();
     delete sock;
 }

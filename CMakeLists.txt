@@ -39,6 +39,10 @@ if (BUILD_MPI_EXAMPLES AND NOT BUILD_EXAMPLES)
     message( SEND_ERROR "BUILD_MPI_EXAMPLES requires BUILD_EXAMPLES. Enabling the disabled BUILD_EXAMPLES." )
     set(BUILD_EXAMPLES ON)
 endif()
+if (BUILD_MTO AND NOT BUILD_CPP)
+    message( SEND_ERROR "BUILD_MTO requires BUILD_CPP. Enabling the disabled BUILD_CPP." )
+    set(BUILD_CPP ON)
+endif()
 # end check if the dependencies are correctly set
 
 option(BUILD_CPACK_SCRIPTS "Build scripts for packaging" OFF)
@@ -57,7 +61,6 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(MUSCLE2_LIB muscle2_cpp)
-set(MUSCLE2UTIL_LIB muscle2util_cpp)
 set(MUSCLE2_PYTHON muscle2_python)
 set(MUSCLE_JAVA muscle_java)
 set(MPWIDE_LIB mpwide)
@@ -66,12 +69,11 @@ if (BUILD_JAVA)
 	add_subdirectory(src/java)
 endif (BUILD_JAVA)
 
-if (BUILD_CPP OR BUILD_MTO)
-	add_subdirectory(src/cpp/muscle2/util)
-	add_subdirectory(test/cpp)
-endif()
-
 if (BUILD_CPP)
+    if (BUILD_TEST)
+	    add_subdirectory(test/cpp)
+    endif (BUILD_TEST)
+
 	# muscle2 CPP core 
 	add_subdirectory(src/cpp/muscle2)
 	add_subdirectory(src/cpp/mpimuscle)

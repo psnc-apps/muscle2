@@ -208,6 +208,12 @@ namespace muscle {
 		
         return so_error;
     }
+	
+	void CClientSocket::async_cancel()
+	{
+		if (server != NULL)
+			server->erase_socket(sockfd, sockfd, -1);
+	}
     
     /** SERVER SIDE **/
     CServerSocket::CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts)
@@ -249,6 +255,12 @@ namespace muscle {
     {
         return server->listen(user_flag, this, opts, accept);
     }
+	
+	void CServerSocket::async_cancel()
+	{
+		if (server != NULL)
+			server->erase_listen(sockfd);
+	}
     
     ClientSocket *CSocketFactory::connect(muscle::endpoint &ep, const muscle::socket_opts &opts)
     {

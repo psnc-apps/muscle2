@@ -30,7 +30,7 @@ namespace muscle {
 			UNPLUG_CORK = 2
 		};
 		
-        async_service(size_t limitSendSize = 6*1024*1024);
+        async_service(size_t limitSendSize = 6*1024*1024, int limitBufferNum = 10);
         
         size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);
         size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
@@ -38,8 +38,8 @@ namespace muscle {
         size_t timer(int user_flag, time& t, async_function* func, void *user_data);
         virtual size_t connect(int user_flag, muscle::SocketFactory *factory, endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
 
-        void erase(ClientSocket *socket);
-        void erase(ServerSocket *socket);
+        void erase_socket(int rfd, int wfd, int wrfd);
+        void erase_listen(int fd);
         void erase_timer(size_t);
         void erase_connect(size_t);
         void *update_timer(size_t, time&, void *user_data);
@@ -79,11 +79,13 @@ namespace muscle {
         volatile bool is_shutdown;
 		
 		size_t szSendBuffers;
+		int numSendBuffers;
 		const size_t limitReadAtSendBufferSize;
+		const int limitReadAtSendBufferNum;
 
-		std::queue<int> readFdsToErase;
-		std::queue<int> writeFdsToErase;
-		std::queue<int> readableWriteFdsToErase;
+		std::vector<int> readFdsToErase;
+		std::vector<int> writeFdsToErase;
+		std::vector<int> readableWriteFdsToErase;
     };
 }
 #endif /* defined(__CMuscle__async_service__) */

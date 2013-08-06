@@ -20,7 +20,7 @@ using namespace std;
 
 namespace muscle
 {
-    async_service::async_service(const size_t limitSendSize) : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false), limitReadAtSendBufferSize(limitSendSize), szSendBuffers(0)
+    async_service::async_service(const size_t limitSendSize, const int limitBufferNum) : _current_code(1), is_done(false), is_shutdown(false), is_communicating(false), limitReadAtSendBufferSize(limitSendSize), szSendBuffers(0), limitReadAtSendBufferNum(limitBufferNum), numSendBuffers(0)
     {}
     
     size_t async_service::send(const int user_flag, ClientSocket * const socket, const void * const data, const size_t size, async_sendlistener* send, const int options)
@@ -51,6 +51,7 @@ namespace muscle
 
 		sendQueues[fd]->second.push(desc);
 		szSendBuffers += size;
+		numSendBuffers++;
 
         return code;
     }
@@ -137,13 +138,14 @@ namespace muscle
         return code;
     }
     
-    void async_service::erase(ClientSocket *socket)
+    void async_service::erase_socket(const int rfd, const int wfd, const int rwfd)
     {
-		readFdsToErase.push(socket->getReadSock());
-		if (socket->selectWriteFdIsReadable())
-			readableWriteFdsToErase.push(socket->getWriteSock());
-		else
-			writeFdsToErase.push(socket->getWriteSock());
+		if (rfd >= 0)
+			readFdsToErase.push_back(rfd);
+		if (wfd >= 0)
+			writeFdsToErase.push_back(wfd);
+		if (rwfd >= 0)
+			readableWriteFdsToErase.push_back(rwfd);
 		
 		if (!is_communicating) {
 			is_communicating = true;
@@ -155,8 +157,8 @@ namespace muscle
 	{
 		while (!readFdsToErase.empty())
 		{
-			const int fd = readFdsToErase.front();
-			readFdsToErase.pop();
+			const int fd = readFdsToErase.back();
+			readFdsToErase.pop_back();
 			
 			vector<int>::iterator it = find(readFds.begin(), readFds.end(), fd);
 			if (it != readFds.end())
@@ -182,10 +184,10 @@ namespace muscle
 		}
 		
 		while (!writeFdsToErase.empty() || !readableWriteFdsToErase.empty()) {
-			queue<int>& sendQueue = writeFdsToErase.empty() ? readableWriteFdsToErase : writeFdsToErase;
+			vector<int>& sendQueue = writeFdsToErase.empty() ? readableWriteFdsToErase : writeFdsToErase;
 			vector<int>& sendFds = writeFdsToErase.empty() ? readableWriteFds : writeFds;
-			const int fd = sendQueue.front();
-			sendQueue.pop();
+			const int fd = sendQueue.back();
+			sendQueue.pop_back();
 			
 			vector<int>::iterator it = find(sendFds.begin(), sendFds.end(), fd);
 
@@ -201,6 +203,7 @@ namespace muscle
 					while (!q.empty()) {
 						async_description& desc = q.front();
 						szSendBuffers -= desc.size;
+						numSendBuffers--;
 						async_sendlistener* send = static_cast<async_sendlistener*>(desc.listener);
 						send->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
 						send->async_done(desc.code, desc.user_flag);
@@ -214,9 +217,8 @@ namespace muscle
 		}
     }
     
-    void async_service::erase(ServerSocket *socket)
+    void async_service::erase_listen(const int rfd)
     {
-		const int rfd = socket->getReadSock();
 		if (rfd >= listenSockets.size()) return;
 		
         pair<ServerSocket *, async_description> *ssockDesc = listenSockets[rfd];
@@ -323,7 +325,7 @@ namespace muscle
                 }
             }
             
-            if (readFds.empty() && writeFds.empty())
+            if (readFds.empty() && writeFds.empty() && readableWriteFds.empty())
             {
                 size_t t = next_alarm();
                 if (t)
@@ -334,24 +336,27 @@ namespace muscle
         }
 		
 		while (!readFds.empty()) {
-			if (recvQueues.size() > readFds[0] && recvQueues[readFds[0]])
-				erase(recvQueues[readFds[0]]->first);
-			else if (listenSockets.size() > readFds[0] && listenSockets[readFds[0]])
-				erase(listenSockets[readFds[0]]->first);
+			const int fd = readFds[0];
+			if (recvQueues.size() > fd && recvQueues[fd])
+				erase_socket(fd, -1, -1);
+			else if (listenSockets.size() > fd && listenSockets[fd])
+				erase_listen(fd);
 		}
 		
 		while (!writeFds.empty()) {
-			if (sendQueues.size() > writeFds[0] && sendQueues[writeFds[0]])
-				erase(sendQueues[writeFds[0]]->first);
-			else if (connectSockets.size() > writeFds[0] && connectSockets[writeFds[0]])
-				erase_connect(connectSockets[writeFds[0]]->second.code);
+			const int fd = writeFds[0];
+			if (sendQueues.size() > fd && sendQueues[fd])
+				erase_socket(-1, fd, -1);
+			else if (connectSockets.size() > fd && connectSockets[fd])
+				erase_connect(connectSockets[fd]->second.code);
 		}
 		
 		while (!readableWriteFds.empty()) {
-			if (sendQueues.size() > readableWriteFds[0] && sendQueues[readableWriteFds[0]])
-				erase(sendQueues[readableWriteFds[0]]->first);
-			else if (connectSockets.size() > readableWriteFds[0] && connectSockets[readableWriteFds[0]])
-				erase_connect(connectSockets[readableWriteFds[0]]->second.code);
+			const int fd = readableWriteFds[0];
+			if (sendQueues.size() > fd && sendQueues[fd])
+				erase_socket(-1, -1, fd);
+			else if (connectSockets.size() > fd && connectSockets[fd])
+				erase_connect(connectSockets[fd]->second.code);
 		}
 		
         is_shutdown = true;
@@ -379,6 +384,7 @@ namespace muscle
 		ClientSocket *sock = sendQueues[fd]->first;
 		queue<async_description>& q = sendQueues[fd]->second;
         async_description& desc = q.front();
+		const bool isReadable = sock->selectWriteFdIsReadable();
 
         ssize_t status = -1;
         int is_final = true;
@@ -424,24 +430,21 @@ namespace muscle
         }
         
         if (is_final) {
-			const bool lastSend = (q.size() == 1);
-			if (lastSend) {
-				vector<int>& sendFds = (sock->selectWriteFdIsReadable() ? readableWriteFds : writeFds);
-				sendFds.erase(find(sendFds.begin(), sendFds.end(), fd));
-			}
-			
             if (status == -1)
                 sender->async_sent(desc.code, desc.user_flag, desc.data, desc.size, -1);
             
 			szSendBuffers -= desc.size;
+
+			q.pop();
+			numSendBuffers--;
             sender->async_done(desc.code, desc.user_flag);
 			
-            if (lastSend) {
-				delete sendQueues[fd];
-                sendQueues[fd] = NULL;
-            } else {
-                q.pop();
-			}
+            if (q.empty()) {
+				if (isReadable)
+					readableWriteFdsToErase.push_back(fd);
+				else
+					writeFdsToErase.push_back(fd);
+            }
         }
 		
 		is_communicating = false;
@@ -495,21 +498,15 @@ namespace muscle
             }
         }
         if (is_final) {
-			bool lastRecv = (q.size() == 1);
-			if (lastRecv) {
-				readFds.erase(find(readFds.begin(), readFds.end(), sock->getReadSock()));
-			}
             if (status < 0)
                 recv->async_received(desc.code, desc.user_flag, desc.data, desc.data_ptr, desc.size, -1);
             
             recv->async_done(desc.code, desc.user_flag);
 
-            if (lastRecv) {
-                delete recvQueues[fd];
-				recvQueues[fd] = NULL;
-            } else {
-                q.pop();
-			}
+			q.pop();
+
+            if (q.empty())
+				readFdsToErase.push_back(fd);
         }
 		
 		is_communicating = false;
@@ -644,14 +641,14 @@ namespace muscle
 			async_description& desc = connectSockets[fd]->second;
             if (desc.code == code) {
                 desc.listener->async_done(desc.code, desc.user_flag);
-                const ClientSocket * const sock = connectSockets[fd]->first;
+                ClientSocket * const sock = connectSockets[fd]->first;
 
 				vector<int>& connectFds = (sock->selectWriteFdIsReadable()
 										   ? readableWriteFds
 										   : writeFds);
 				connectFds.erase(find(connectFds.begin(), connectFds.end(), fd));
 				
-                delete sock;
+				delete sock;
 				delete connectSockets[fd];
 				connectSockets[fd] = NULL;
                 break;
@@ -723,13 +720,18 @@ namespace muscle
         FD_ZERO(&wsock);
         FD_ZERO(&esock);
         int maxfd = 0;
-		if (szSendBuffers < limitReadAtSendBufferSize) {
+		if (szSendBuffers <= limitReadAtSendBufferSize && numSendBuffers <= limitReadAtSendBufferNum) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				FD_SET(*it,&rsock);
 				FD_SET(*it,&esock);
 				if (*it > maxfd) maxfd = *it;
 			}
 		}
+		else
+			logger::finer("Limiting receives: buffers %zu/%zu and #buffers %d/%d",
+						  szSendBuffers, limitReadAtSendBufferSize,
+						  numSendBuffers, limitReadAtSendBufferNum);
+		
         for (vector<int>::iterator it = readableWriteFds.begin(); it != readableWriteFds.end(); it++) {
             FD_SET(*it,&rsock); // To accomodate for pipes used in mpsocket
             FD_SET(*it,&esock);
@@ -768,7 +770,7 @@ namespace muscle
 				return 0;
 			}
         }
-		if (szSendBuffers < limitReadAtSendBufferSize) {
+		if (szSendBuffers <= limitReadAtSendBufferSize && numSendBuffers <= limitReadAtSendBufferNum) {
 			for (vector<int>::iterator it = readFds.begin(); it != readFds.end(); it++) {
 				if (FD_ISSET(*it, &esock)) {
 					*readFd = *it;

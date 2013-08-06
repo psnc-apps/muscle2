@@ -20,8 +20,8 @@ class Acceptor : public muscle::async_acceptlistener
 {
 protected:
     /** Ptr to new socket */
-    const muscle::ServerSocket *ss;
-    LocalMto *mto;
+    muscle::ServerSocket * const ss;
+    LocalMto * const mto;
     
 public:
     Acceptor(muscle::ServerSocket *sock, LocalMto *mto);
@@ -84,7 +84,7 @@ private:
     void connect(const Request &request);
 public:
     InitConnection(muscle::ClientSocket *sock, LocalMto *mto);
-    virtual ~InitConnection() { if (sock) delete sock; delete [] reqBuf; }
+    virtual ~InitConnection() { if (sock) delete sock; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
     virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final);

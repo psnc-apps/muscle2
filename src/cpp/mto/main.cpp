@@ -116,7 +116,8 @@ int main(int argc, char **argv)
             }
         }
 
-		asyncService = new async_service(6*1024*1024*(mtoConfigs.size() > 1 ? mtoConfigs.size() - 1 : 1));
+		const int numPeers = int(mtoConfigs.size() > 1 ? mtoConfigs.size() - 1 : 1);
+		asyncService = new async_service(size_t(6*1024*1024)*numPeers, numPeers*6);
         SocketFactory *intSockFactory = new CSocketFactory(asyncService);
         SocketFactory *extSockFactory;
         if (opts.useMPWide)

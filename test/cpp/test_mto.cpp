@@ -38,7 +38,7 @@ public:
             cout << "accepted socket" << endl;
             as = sock;
             as->async_recv(4, s, 20, this);
-            service->erase(ss);
+            ss->async_cancel();
         }
     }
     

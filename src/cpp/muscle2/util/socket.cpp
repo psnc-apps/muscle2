@@ -48,12 +48,6 @@ string socket::str()
 }
 
 /** CLIENT SIDE **/
-void ClientSocket::async_cancel()
-{
-    if (server != NULL)
-        server->erase(this);
-}
-
 ssize_t ClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver)
 {
     return server->receive(user_flag, this, s, size, receiver);
@@ -73,12 +67,6 @@ ServerSocket::ServerSocket(const socket_opts& opts)
 
 void ServerSocket::listen(int max_connections)
 {}
-
-void ServerSocket::async_cancel()
-{
-    if (server != NULL)
-        server->erase(this);
-}
 
 size_t SocketFactory::async_connect(int user_flag, muscle::endpoint &ep, muscle::socket_opts *opts, muscle::async_acceptlistener *accept)
 {

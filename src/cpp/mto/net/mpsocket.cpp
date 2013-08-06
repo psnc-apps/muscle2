@@ -152,10 +152,10 @@ namespace muscle {
     
     mpsocket::~mpsocket()
     {
-        close(sockfd);
-        close(writableReadFd);
-        close(readableWriteFd);
-        close(writableWriteFd);
+        ::close(sockfd);
+        ::close(writableReadFd);
+        ::close(readableWriteFd);
+        ::close(writableWriteFd);
     }
     
 	int mpsocket::getWriteSock() const
@@ -228,6 +228,8 @@ namespace muscle {
     
     MPClientSocket::~MPClientSocket()
     {
+		async_cancel();
+		
         if (recvThread) delete recvThread;
 		if (sendThread) delete recvThread;
 
@@ -317,6 +319,12 @@ namespace muscle {
         assert(size > 0);
         MPW_setPathWin(pathid, (int)size);
     }
+	
+	void MPClientSocket::async_cancel()
+	{
+		if (server != NULL)
+			server->erase_socket(sockfd, -1, readableWriteFd);
+	}
 
     /** SERVER SIDE **/
     MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts), server_opts(opts)
@@ -355,7 +363,13 @@ namespace muscle {
     {
         return server->listen(user_flag, this, opts, accept);
     }
-        
+	
+	void MPServerSocket::async_cancel()
+	{
+		if (server != NULL)
+			server->erase_listen(sockfd);
+	}
+	
     ClientSocket *MPSocketFactory::connect(muscle::endpoint &ep, const muscle::socket_opts &opts)
     {
         return new MPClientSocket(ep, service, opts);

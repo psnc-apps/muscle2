@@ -22,8 +22,6 @@ namespace muscle {
     class csocket : virtual public socket
     {
     public:
-        virtual ~csocket() { shutdown(sockfd, SHUT_RDWR); close(sockfd); }
-        
 		virtual void setBlocking(const bool);
 
         // Check if the socket is readable / writable. Timeout is MUSCLE_SOCKET_TIMEOUT seconds.
@@ -37,6 +35,8 @@ namespace muscle {
         csocket();
         csocket(int sockfd);
         
+		virtual ~csocket() { ::shutdown(sockfd, SHUT_RDWR); ::close(sockfd); }
+			
         void create();
             
         virtual void setOpts(const socket_opts& opts);
@@ -49,7 +49,7 @@ namespace muscle {
     public:
         CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts);
         CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts);
-        
+		virtual ~CClientSocket() { async_cancel(); }
 		virtual void setCork(bool);
 		virtual void setDelay(bool);
 		
@@ -58,9 +58,10 @@ namespace muscle {
         virtual ssize_t recv (void* s, size_t size);
 		
         virtual int hasError();
+		virtual void async_cancel();
     protected:
         virtual void connect(bool blocking);
-    // Disallowed - is problematic for destructor
+		
     private:
         CClientSocket(const CClientSocket& other) {}
 		bool has_delay, has_cork;
@@ -70,12 +71,14 @@ namespace muscle {
     {
     public:
         CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts);
-        
         virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
         virtual ClientSocket *accept(const socket_opts& opts);
+
+		virtual ~CServerSocket() { async_cancel(); }
     protected:
         virtual void init();
         virtual void listen(int max_connections);
+		virtual void async_cancel();
     };
     
     class CSocketFactory : public SocketFactory
