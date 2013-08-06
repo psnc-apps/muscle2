@@ -9,7 +9,7 @@
 #include "connectors.h"
 
 #include "../constants.hpp"
-#include "../net/async_service.h"
+#include "muscle2/util/async_service.h"
 #include "../manager/localmto.h"
 
 using namespace std;

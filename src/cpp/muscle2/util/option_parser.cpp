@@ -1,5 +1,5 @@
 #include "option_parser.hpp"
-#include "../../muscle2/logger.hpp"
+#include "logger.hpp"
 
 #include <stdint.h>
 #include <cstring>

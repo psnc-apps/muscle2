@@ -3,7 +3,8 @@ PROJECT(muscle2-cpp CXX C)
 set(MUSCLE2CPP_VERSION "1.0")
 
 FILE (GLOB THIS_HEADERS *.h *.hpp)
-add_library(${MUSCLE2_LIB} SHARED cmuscle.cpp fortranmuscle.cpp cppmuscle.cpp complex_data.cpp communicator.cpp logger.cpp xdr_communicator.cpp ../mto/net/socket.cpp ../mto/net/csocket.cpp ../mto/net/async_service.cpp ../mto/util/time.cpp ../mto/net/endpoint.cpp)
+add_library(${MUSCLE2_LIB} SHARED cmuscle.cpp fortranmuscle.cpp cppmuscle.cpp complex_data.cpp communicator.cpp xdr_communicator.cpp)
+target_link_libraries(${MUSCLE2_LIB} ${MUSCLE2UTIL_LIB} )
 set_target_properties(${MUSCLE2_LIB} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
 set_target_properties(${MUSCLE2_LIB} PROPERTIES OUTPUT_NAME muscle2)
 

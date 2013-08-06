@@ -20,7 +20,6 @@
 */
 #include "fortranmuscle.h"
 #include "cppmuscle.hpp"
-#include "logger.hpp"
 
 #include <string>
 #include <cstring>

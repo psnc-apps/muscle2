@@ -18,12 +18,12 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../muscle2/logger.hpp"
-#include "../muscle2/exception.hpp"
+#include "muscle2/util/logger.hpp"
+#include "muscle2/util/exception.hpp"
 
 #include "constants.hpp"
 #include "manager/localmto.h"
-#include "net/csocket.h"
+#include "muscle2/util/csocket.h"
 #include "net/mpsocket.h"
 
 #include <iostream>

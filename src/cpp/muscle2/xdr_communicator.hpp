@@ -21,10 +21,11 @@
 #ifndef MUSCLE_XDR_COMMUNICATOR_HPP
 #define MUSCLE_XDR_COMMUNICATOR_HPP
 
-#include "logger.hpp"
 #include "communicator.hpp"
 #include "complex_data.hpp"
-#include "../mto/net/endpoint.h"
+#include "util/logger.hpp"
+#include "util/endpoint.h"
+
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 

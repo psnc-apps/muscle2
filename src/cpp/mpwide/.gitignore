@@ -1,0 +1,13 @@
+.svn/
+/MPWide.xcodeproj/xcuserdata/
+/MPWide.xcodeproj/project.xcworkspace/xcuserdata/
+*.o
+/MPWTest
+/MPWDataGather
+/MPWFileCopy
+/MPWForwarder
+/MPWTest
+/MPWTestRestart
+/MPWTestConcurrent
+/libMPW.*
+bandwidth_monitor.txt

@@ -14,7 +14,7 @@
 #include <sstream>
 #include <sys/socket.h>
 #include <stdint.h>
-#include "../../muscle2/exception.hpp"
+#include "exception.hpp"
 
 namespace muscle {
     

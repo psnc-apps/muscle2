@@ -20,6 +20,7 @@ option(BUILD_MATLAB "Build MATLAB part of MUSCLE (depends on C++)" ON)
 option(BUILD_EXAMPLES "Build example models" ON)
 option(BUILD_MPI_EXAMPLES "Build MPI examples (depends on C++)" ON)
 option(BUILD_MTO "Build Muscle Transport Overlay service" ON)
+option(BUILD_TEST "Build tests" OFF)
 
 # Check if the dependencies are correctly set
 if(BUILD_FORTRAN AND NOT BUILD_CPP)
@@ -56,12 +57,19 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(MUSCLE2_LIB muscle2_cpp)
+set(MUSCLE2UTIL_LIB muscle2util_cpp)
 set(MUSCLE2_PYTHON muscle2_python)
 set(MUSCLE_JAVA muscle_java)
+set(MPWIDE_LIB mpwide)
 
 if (BUILD_JAVA)
 	add_subdirectory(src/java)
 endif (BUILD_JAVA)
+
+if (BUILD_CPP OR BUILD_MTO)
+	add_subdirectory(src/cpp/muscle2/util)
+	add_subdirectory(test/cpp)
+endif()
 
 if (BUILD_CPP)
 	# muscle2 CPP core 
@@ -75,6 +83,11 @@ if (BUILD_CPP)
     	add_subdirectory(src/cpp/examples/transmutable2)
     endif (BUILD_EXAMPLES)
 endif (BUILD_CPP)
+
+if (BUILD_MTO)
+	add_subdirectory(src/cpp/mpwide)
+	add_subdirectory(src/cpp/mto)
+endif (BUILD_MTO)
 
 if (BUILD_FORTRAN AND BUILD_EXAMPLES)
 	add_subdirectory(src/fortran/examples/simplefortran)
@@ -135,10 +148,6 @@ if (BUILD_MATLAB)
     endif (BUILD_EXAMPLES)
 endif (BUILD_MATLAB)
     
-if (BUILD_MTO)
-	add_subdirectory(src/cpp/mto)
-endif (BUILD_MTO)
-
 # Examples CXA
 if (BUILD_EXAMPLES)
     add_subdirectory(src/cxa)

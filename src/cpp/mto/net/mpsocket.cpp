@@ -7,9 +7,9 @@
 //
 
 #include "mpsocket.h"
-#include "async_service.h"
-#include "../mpwide/MPWide.h"
-#include "../mpwide/Socket.h"
+#include "muscle2/util/async_service.h"
+#include "mpwide/MPWide.h"
+#include "mpwide/Socket.h"
 
 #include <strings.h>
 #include <cstring>

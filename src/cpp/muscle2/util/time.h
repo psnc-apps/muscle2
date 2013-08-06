@@ -9,7 +9,7 @@
 #ifndef __CMuscle__time__
 #define __CMuscle__time__
 
-#include "../../muscle2/exception.hpp"
+#include "exception.hpp"
 
 #include <sys/time.h>
 #include <stdint.h>
@@ -99,17 +99,11 @@ public:
     duration duration_until() const;
     duration duration_since() const;
     inline static time far_future()
-	{ return time(LONG_MAX, 0); }
+	{ struct timeval t; t.tv_sec = LONG_MAX; t.tv_usec = 0; return time(t); }
 	
-    inline static time now()
-	{
-		struct timeval now;
-        if (gettimeofday(&now, NULL) == -1)
-            throw muscle_exception("Could not get time for timer", errno, true);
-        
-        return time(now);
-	}
-    bool is_past() const { return !(*this > now()); }
+    static time now();
+	
+	bool is_past() const { return !(*this > now()); }
     
     time operator+(const duration& other) const;
     time operator-(const duration& other) const;

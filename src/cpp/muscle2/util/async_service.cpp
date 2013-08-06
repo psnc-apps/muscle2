@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#include "../net/async_service.h"
+#include "async_service.h"
 
 #include <sys/time.h>
 #include <errno.h>
@@ -217,6 +217,8 @@ namespace muscle
     void async_service::erase(ServerSocket *socket)
     {
 		const int rfd = socket->getReadSock();
+		if (rfd >= listenSockets.size()) return;
+		
         pair<ServerSocket *, async_description> *ssockDesc = listenSockets[rfd];
         if (ssockDesc)
         {
@@ -332,18 +334,24 @@ namespace muscle
         }
 		
 		while (!readFds.empty()) {
-			if (recvQueues[readFds[0]]) erase(recvQueues[readFds[0]]->first);
-			else if (listenSockets[readFds[0]]) erase(listenSockets[readFds[0]]->first);
+			if (recvQueues.size() > readFds[0] && recvQueues[readFds[0]])
+				erase(recvQueues[readFds[0]]->first);
+			else if (listenSockets.size() > readFds[0] && listenSockets[readFds[0]])
+				erase(listenSockets[readFds[0]]->first);
 		}
 		
 		while (!writeFds.empty()) {
-			if (sendQueues[writeFds[0]]) erase(sendQueues[writeFds[0]]->first);
-			else if (connectSockets[writeFds[0]]) erase_connect(connectSockets[writeFds[0]]->second.code);
+			if (sendQueues.size() > writeFds[0] && sendQueues[writeFds[0]])
+				erase(sendQueues[writeFds[0]]->first);
+			else if (connectSockets.size() > writeFds[0] && connectSockets[writeFds[0]])
+				erase_connect(connectSockets[writeFds[0]]->second.code);
 		}
 		
 		while (!readableWriteFds.empty()) {
-			if (sendQueues[readableWriteFds[0]]) erase(sendQueues[readableWriteFds[0]]->first);
-			else if (connectSockets[readableWriteFds[0]]) erase_connect(connectSockets[readableWriteFds[0]]->second.code);
+			if (sendQueues.size() > readableWriteFds[0] && sendQueues[readableWriteFds[0]])
+				erase(sendQueues[readableWriteFds[0]]->first);
+			else if (connectSockets.size() > readableWriteFds[0] && connectSockets[readableWriteFds[0]])
+				erase_connect(connectSockets[readableWriteFds[0]]->second.code);
 		}
 		
         is_shutdown = true;
@@ -584,7 +592,6 @@ namespace muscle
                 q.pop();
             }
         }
-        num = recvQueues.size();
         logger::info("    Number of receiving sockets: %zu; total size of reserved buffers: %zu; receiving from:", num, totalsz);
         for (sockqueue_t::iterator it = recvQueues.begin(); it != recvQueues.end(); ++it) {
 			if (*it != NULL)

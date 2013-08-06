@@ -50,7 +50,7 @@ string socket::str()
 /** CLIENT SIDE **/
 void ClientSocket::async_cancel()
 {
-    if (server)
+    if (server != NULL)
         server->erase(this);
 }
 
@@ -76,7 +76,7 @@ void ServerSocket::listen(int max_connections)
 
 void ServerSocket::async_cancel()
 {
-    if (server)
+    if (server != NULL)
         server->erase(this);
 }
 

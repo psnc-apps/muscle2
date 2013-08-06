@@ -9,8 +9,8 @@
 #ifndef __CMuscle__helloreader__
 #define __CMuscle__helloreader__
 
-#include "../net/messages.hpp"
-#include "../net/socket.h"
+#include "../manager/messages.hpp"
+#include "muscle2/util/socket.h"
 
 #include <exception>
 #include <vector>

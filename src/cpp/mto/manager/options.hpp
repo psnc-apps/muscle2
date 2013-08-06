@@ -1,8 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "../util/option_parser.hpp"
-#include "../util/time.h"
+#include "muscle2/util/option_parser.hpp"
+#include "muscle2/util/time.h"
 
 #include <string>
 

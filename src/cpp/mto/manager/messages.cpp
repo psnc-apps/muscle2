@@ -1,39 +1,17 @@
 
 #include "messages.hpp"
-#include "../../muscle2/exception.hpp"
+#include "muscle2/util/exception.hpp"
+#include "muscle2/util/serialization.h"
 
 #include <cstdio>
 #include <sstream>
 #include <cstring>
 #include <cassert>
 
-template <typename T>
-inline static void writeToBuffer(char *&buffer, const T value)
-{
-    unsigned char *buffer_ptr = (unsigned char *)buffer;
+using namespace muscle;
+using namespace std;
 
-    for (size_t i = 0; i < sizeof(T); ++i)
-	    *buffer_ptr++ = (value >> 8*(sizeof(T)-i-1)) & 0xff;
-    
-    buffer = (char *)buffer_ptr;
-}
-
-template <typename T>
-inline static T readFromBuffer(char *&buffer)
-{
-
-    unsigned char *buffer_ptr = (unsigned char *)buffer;
-    T value = 0;
-
-    for (size_t i = 0; i < sizeof(T); ++i)
-        value |= T(*buffer_ptr++) << 8*(sizeof(T)-i-1);
-    
-    buffer = (char *)buffer_ptr;
-    return value;
-}
-
-
-std::string Request::type_str() const
+string Request::type_str() const
 {
     switch((Request::Type)type){
         case Register:
@@ -52,21 +30,21 @@ std::string Request::type_str() const
 			return "DataInLength";
         default:
         {
-            std::stringstream ss;
+            stringstream ss;
             ss << "Type " << (int)type << " is not well-specified";
-            throw muscle::muscle_exception(ss.str());
+            throw muscle_exception(ss.str());
         }
     }
 }
 
 size_t Request::getSize()
 {
-    return sizeof(/*type*/ char)+2*muscle::endpoint::getSize()+sizeof(/*sessionId*/ int32_t);
+    return sizeof(/*type*/ char)+2*endpoint::getSize()+sizeof(/*sessionId*/ int32_t);
 }
 
 Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint::getSize())
 {
-    buf += 1+2*muscle::endpoint::getSize();
+    buf += 1+2*endpoint::getSize();
     sessionId = readFromBuffer<int32_t>(buf);
 	src.resolve();
 	dst.resolve();
@@ -153,9 +131,9 @@ bool MtoHello::matches(const muscle::endpoint& ep)
     return ep.port >= portLow && ep.port <= portHigh;
 }
 
-std::string MtoHello::str() const
+string MtoHello::str() const
 {
-    std::stringstream ss;
+    stringstream ss;
     ss << portLow << "-" << portHigh;
     return ss.str();
 }

@@ -1,7 +1,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-#include "endpoint.h"
+#include "muscle2/util/endpoint.h"
 
 /** Message from client to MTO */
 class Request

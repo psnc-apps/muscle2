@@ -1,7 +1,7 @@
 #include "options.hpp"
 
-#include "../../muscle2/muscle_types.h"
-#include "../../muscle2/logger.hpp"
+#include "muscle2/muscle_types.h"
+#include "muscle2/util/logger.hpp"
 
 #include <iostream>
 #include <cstdlib>

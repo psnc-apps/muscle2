@@ -7,9 +7,9 @@
 //
 
 #include "localmto.h"
-#include "../../muscle2/logger.hpp"
 #include "../initiators/connectors.h"
-#include "../net/socket.h"
+#include "muscle2/util/logger.hpp"
+#include "muscle2/util/socket.h"
 
 using namespace std;
 using namespace muscle;

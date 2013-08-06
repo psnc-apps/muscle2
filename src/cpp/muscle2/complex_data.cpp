@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include "complex_data.hpp"
 #include "muscle_types.h"
-#include "logger.hpp"
+#include "util/logger.hpp"
 
 static const bool is_muscle_complex_t_array[] = {
 false, true, true, // null, map, collection

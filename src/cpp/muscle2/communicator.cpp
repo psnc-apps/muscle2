@@ -19,7 +19,7 @@
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "communicator.hpp"
-#include "exception.hpp"
+#include "util/exception.hpp"
 #include <strings.h>
 #include <string.h>
 #include <stdio.h>

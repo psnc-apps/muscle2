@@ -20,14 +20,14 @@
 */
 #include "xdr_communicator.hpp"
 #include "cppmuscle.hpp"
-#include "logger.hpp"
 #include "muscle_types.h"
 #include "complex_data.hpp"
+#include "util/exception.hpp"
+
 #include <cstring>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <cmath>
-#include "exception.hpp"
 #include <cstdlib>
 #define M2_XDR_BUFSIZE (64*1024+1)
 

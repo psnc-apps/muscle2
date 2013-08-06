@@ -1,8 +1,8 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "../net/messages.hpp"
-#include "../net/async_service.h"
+#include "messages.hpp"
+#include "muscle2/util/async_service.h"
 
 #include <set>
 #include <map>
@@ -24,7 +24,7 @@ class LocalMto;
 class Connection : public muscle::async_recvlistener, public muscle::async_sendlistener, public muscle::async_function
 {
 private:
-	static const muscle::duration recvTimeout;
+//	static const muscle::duration recvTimeout;
 	
     /** Local side of the connection */
     muscle::ClientSocket *sock;

@@ -15,7 +15,7 @@ if (PYTHONLIBS_FOUND)
     set_target_properties(${MUSCLE2_PYTHON} PROPERTIES PREFIX "")
     set_target_properties(${MUSCLE2_PYTHON} PROPERTIES SUFFIX ".so")
     
-    include_directories(${PYTHON_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src/cpp/muscle2)
+    include_directories(${PYTHON_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src/cpp)
     target_link_libraries(${MUSCLE2_PYTHON} ${PYTHON_LIBRARIES} ${MUSCLE2_LIB} )
 
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")

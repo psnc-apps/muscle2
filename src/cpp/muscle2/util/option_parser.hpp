@@ -1,8 +1,8 @@
 #ifndef __CMuscle_Topology_Hpp
 #define __CMuscle_Topology_Hpp
 
-#include "../net/endpoint.h"
-#include "../../muscle2/exception.hpp"
+#include "endpoint.h"
+#include "exception.hpp"
 
 #include <sstream>
 #include <map>

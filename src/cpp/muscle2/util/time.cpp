@@ -12,6 +12,15 @@
 #include <cstring>
 
 namespace muscle {
+	time time::now()
+	{
+		struct timeval now;
+		if (gettimeofday(&now, NULL) == -1)
+			throw muscle_exception("Could not get time for timer", errno, true);
+		
+		return time(now);		
+	}
+	
     void time::sleep() const
     {
         duration_until().sleep();

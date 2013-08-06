@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 #include "muscle_types.h"
-#include "logger.hpp"
+#include "util/logger.hpp"
 
 namespace muscle {
     

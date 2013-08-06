@@ -7,7 +7,7 @@
 //
 
 #include "rwmutex.h"
-#include "../../muscle2/exception.hpp"
+#include "muscle2/util/exception.hpp"
 
 using namespace muscle;
 

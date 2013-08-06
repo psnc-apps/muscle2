@@ -24,9 +24,9 @@
 #include <string>
 #include <unistd.h>
 #include <netdb.h>
-#include "logger.hpp"
+#include "util/logger.hpp"
 #include "muscle_types.h"
-#include "../mto/net/csocket.h"
+#include "util/csocket.h"
 
 // Keep in sync with Java protocol!
 typedef enum { 

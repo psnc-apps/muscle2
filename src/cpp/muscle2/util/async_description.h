@@ -9,8 +9,8 @@
 #ifndef __CMuscle__async_description__
 #define __CMuscle__async_description__
 
-#include "../../muscle2/exception.hpp"
-#include "../../muscle2/logger.hpp"
+#include "exception.hpp"
+#include "logger.hpp"
 
 namespace muscle {
     class ClientSocket;

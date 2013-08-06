@@ -9,10 +9,10 @@
 #include "acceptors.h"
 #include "connectors.h"
 #include "../constants.hpp"
-#include "../net/messages.hpp"
+#include "../manager/messages.hpp"
 #include "../manager/localmto.h"
 #include "../manager/connection.hpp"
-#include "../../muscle2/logger.hpp"
+#include "muscle2/util/logger.hpp"
 
 #define INIT_CONNECTION_REJECT 61
 

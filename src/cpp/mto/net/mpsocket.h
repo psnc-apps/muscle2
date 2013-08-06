@@ -8,7 +8,7 @@
 
 #ifndef __CMuscle__mpsocket__
 #define __CMuscle__mpsocket__
-#include "socket.h"
+#include "muscle2/util/socket.h"
 #include "../util/thread.h"
 #include "../util/rwmutex.h"
 #include "../util/mutex.h"

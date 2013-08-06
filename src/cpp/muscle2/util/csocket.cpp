@@ -151,8 +151,10 @@ namespace muscle {
         struct sockaddr saddr;
         address.getSockAddr(saddr);
         int res = ::connect(sockfd, &saddr, sizeof(struct sockaddr));
-        if (res < 0 && (blocking || errno != EINPROGRESS))
+        if (res < 0 && (blocking || errno != EINPROGRESS)) {
+			sockfd = -1;
             throw muscle_exception("can not connect to " + address.str(), errno);
+		}
         
         if (blocking)
             setBlocking(false);

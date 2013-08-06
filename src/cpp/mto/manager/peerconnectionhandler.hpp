@@ -2,8 +2,8 @@
 #define PEERCONNECTIONHANDLER_H
 
 #include "../constants.hpp"
-#include "../net/async_service.h"
-#include "../net/messages.hpp"
+#include "muscle2/util/async_service.h"
+#include "messages.hpp"
 
 #include <vector>
 #include <string>

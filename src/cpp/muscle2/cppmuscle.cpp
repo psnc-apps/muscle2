@@ -20,10 +20,10 @@
 */
 
 #include "cppmuscle.hpp"
-#include "exception.hpp"
 #include "communicator.hpp"
 #include "xdr_communicator.hpp"
-#include "../mto/net/endpoint.h"
+#include "util/endpoint.h"
+#include "util/exception.hpp"
 
 #include <stdlib.h>
 #include <rpc/types.h>
@@ -92,6 +92,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	// Start communicating with MUSCLE instance
 	try
 	{
+		ep.resolve();
 		muscle_comm = new XdrCommunicator(ep);
 	} catch (muscle_exception& e) {
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s", ep.str().c_str());

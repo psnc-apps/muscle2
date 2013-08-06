@@ -21,7 +21,7 @@
 #ifndef MSUCLE_LOGGER_HPP
 #define MSUCLE_LOGGER_HPP
 
-#include "muscle_types.h"
+#include "../muscle_types.h"
 
 #include <stdarg.h>
 #include <cstdio>

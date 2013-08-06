@@ -62,6 +62,9 @@ std::string endpoint::getHostFromAddress() const
 
 std::string endpoint::getHost() const
 {
+	if (!host.empty())
+		return host;
+	
 	assertValid();
 	return host;
 }

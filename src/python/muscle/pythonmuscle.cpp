@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <cassert>
 
-#include "cppmuscle.hpp"
-#include "exception.hpp"
+#include "muscle2/cppmuscle.hpp"
+#include "muscle2/util/exception.hpp"
 #include "pythonmuscle.hpp"
 
 #define MUSCLE_PY_CALL(CALL) try { CALL; } catch (muscle_exception ex) { MUSCLE_PY_ERR(ex.what()) }
