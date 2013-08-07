@@ -72,8 +72,6 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 		}
 		if (magic != TcpDataProtocol.MAGIC_NUMBER) {
 			logger.log(Level.WARNING, "Unrecognized protocol for data messages;\n[\t\t] the wrong manager address may have been specified");
-			out.writeInt(TcpDataProtocol.ERROR.intValue());
-			out.flush();
 			this.socket.close();
 			return null;
 		}
@@ -130,9 +128,6 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 			in.cleanUp();
 		}
 	
-		out.writeInt(proto.intValue());
-		out.flush();
-		
 		if (proto == TcpDataProtocol.ERROR) {
 			logger.log(Level.WARNING, "Unrecognized protocol for data messages;\n[\t\t] the wrong address may have been specified");
 			this.socket.close();

@@ -93,7 +93,6 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 			if (liveSocket.lock()) {
 				try {
 					SerializerWrapper out = liveSocket.getOutput();
-					DeserializerWrapper in = liveSocket.getInput();
 
 					out.writeInt(TcpDataProtocol.MAGIC_NUMBER.intValue());
 					if (obs != null) {
@@ -104,12 +103,6 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 					}
 					out.flush();
 					sent = true;
-					in.refresh();
-					TcpDataProtocol result = TcpDataProtocol.valueOf(in.readInt());
-					in.cleanUp();
-					if (result == TcpDataProtocol.ERROR) {
-						throw new MUSCLERuntimeException("Trying to send message to wrong port.");
-					}
 					if (tries > 1) {
 						logger.log(Level.INFO, "Sending message to {0} succeeded at try {1}", new Object[]{portalID, tries});
 					}
