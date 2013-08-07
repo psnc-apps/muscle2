@@ -27,7 +27,6 @@
 package muscle.util.serialization;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,8 +45,9 @@ import org.msgpack.unpacker.Unpacker;
  * @author Joris Borgdorff
  */
 public class ConverterWrapperFactory {
-	private final static int DATA_BUFFER_SIZE = 1024*1024;
+	private final static int DATA_BUFFER_SIZE = 2*1024*1024;
 	private final static int CONTROL_BUFFER_SIZE = 1024;
+	private final static int TCP_MTU_ESTIMATE = 1380;
 	private final static boolean isXdr = System.getProperty("muscle.core.serialization.method") != null && System.getProperty("muscle.core.serialization.method").equals("XDR");
 	
 	public static SerializerWrapper getDataSerializer(Socket s) throws IOException {
@@ -57,9 +57,9 @@ public class ConverterWrapperFactory {
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();
-			OutputStream stream = new BufferedOutputStream(socketStream, DATA_BUFFER_SIZE);
+			OutputStream stream = new SmartBufferedOutputStream(socketStream, TCP_MTU_ESTIMATE*2, 2);
 			Packer packer = msgPack.createPacker(stream);
-			return new PackerWrapper(packer, stream, socketStream);
+			return new PackerWrapper(packer, stream);
 		}
 	}
 	public static SerializerWrapper getControlSerializer(Socket s) throws IOException {
@@ -69,9 +69,9 @@ public class ConverterWrapperFactory {
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();
-			OutputStream stream = new BufferedOutputStream(socketStream, CONTROL_BUFFER_SIZE);
+			OutputStream stream = new SmartBufferedOutputStream(socketStream, CONTROL_BUFFER_SIZE, 1);
 			Packer packer = msgPack.createPacker(stream);
-			return new PackerWrapper(packer, stream, socketStream);
+			return new PackerWrapper(packer, stream);
 		}
 	}
 	public static DeserializerWrapper getDataDeserializer(Socket s) throws IOException {
@@ -82,7 +82,9 @@ public class ConverterWrapperFactory {
 			MessagePack msgPack = new MessagePack();
 			InputStream socketStream = System.getProperty(CrossSocketFactory.PROP_MTO_TRACE) == null ? s.getInputStream() : 
 				new CrossSocketFactory.LoggableInputStream(s.getRemoteSocketAddress().toString(), s.getInputStream()); // * temporary, there is no way to do it in cleaner way */
-			Unpacker unpacker = msgPack.createUnpacker(new BufferedInputStream(socketStream, DATA_BUFFER_SIZE));
+			// TEST
+			InputStream stream = new SmartBufferedInputStream(socketStream, DATA_BUFFER_SIZE, 2);
+			Unpacker unpacker = msgPack.createUnpacker(stream);
 			unpacker.setArraySizeLimit(Integer.MAX_VALUE);
 			unpacker.setMapSizeLimit(Integer.MAX_VALUE);
 			// 2 GB

@@ -40,12 +40,10 @@ import org.msgpack.packer.Packer;
 public class PackerWrapper implements SerializerWrapper {
 	private final Packer packer;
 	private final OutputStream stream;
-	private final OutputStream socketStream;
-
-	public PackerWrapper(Packer packer, OutputStream stream, OutputStream socketStream) {
+	
+	public PackerWrapper(Packer packer, OutputStream stream) {
 		this.packer = packer;
 		this.stream = stream;
-		this.socketStream = socketStream;
 	}
 
 	@Override
@@ -77,7 +75,6 @@ public class PackerWrapper implements SerializerWrapper {
 	public void flush() throws IOException {
 		packer.flush();
 		stream.flush();
-		socketStream.flush();
 	}
 
 	@Override
