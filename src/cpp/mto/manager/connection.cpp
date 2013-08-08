@@ -6,16 +6,12 @@
 
 #include <cassert>
 
-#define CONN_REMOTE_TO_LOCAL 1 // don't free
-#define CONN_CONN_REMOTE 2 // do free
-#define CONN_LOCAL_TO_REMOTE_R 3 // don't free
-#define CONN_SEND_DATA 4 // don't free
-#define CONN_TIMEOUT_CLOSE 5 // don't free
-#define CONN_RESTART_RECEIVE 6 // don't free
+#define RECEIVE_TIMEOUT_US 500
+#define RECEIVE_THRESHOLD_SZ 10240
 
 using namespace muscle;
 
-const muscle::duration Connection::recvTimeout(0l, 1000);
+const muscle::duration Connection::recvTimeout(0l, RECEIVE_TIMEOUT_US);
 
 /* from remote */
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
@@ -63,7 +59,7 @@ void Connection::close()
 	
 	if (pendingOperations > 1) {	// We have more than the timer running
 		muscle::time timer = duration(10l, 0).time_after();
-		closing_timer = sock->getServer()->timer(CONN_TIMEOUT_CLOSE, timer, this, (void *)0);
+		closing_timer = sock->getServer()->timer(TIMER_CLOSE, timer, this, (void *)0);
 	} else {
 		pendingOperations--;
 	}
@@ -102,7 +98,7 @@ void Connection::async_execute(size_t code, int flag, void *user_data)
 	// but also the socket that is still active
 	async_service * const server = sock->getServer();
 
-	if (flag == CONN_RESTART_RECEIVE) {
+	if (flag == TIMER_RECEIVE) {
 		// Stop receiving
 		logger::finer("Restart receive timer expired. Sending %zu bytes.", lastReceivedSize);
 		server->erase_socket(sock->getReadSock(), -1, -1);
@@ -140,7 +136,7 @@ void Connection::receive(void *buffer, size_t sz)
 	}
 	
 	pendingOperations++;
-	sock->async_recv(CONN_LOCAL_TO_REMOTE_R, buffer, sz, this);
+	sock->async_recv(RECEIVE, buffer, sz, this);
 }
 
 bool Connection::async_received(size_t code, int user_flag, void *buffer, void *last_data_ptr, size_t count, int is_final)
@@ -154,6 +150,11 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
     if (count == 0) return true;
 	
 	if (receiving_timer) {
+		// Previously we got a large data packet and we were expecting more.
+		// The expectation has now come true, so keep on with the same expectation
+		// until the buffer is full, and then send the data.
+		// If nothing more comes before the recvTimeout expires, in async_execute send
+		// all that we got.
 		if (is_final) {
 			remoteMto->send(header, buffer, count);
 			sock->getServer()->erase_timer(receiving_timer);
@@ -168,18 +169,19 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 	} else if (is_final) {
 		remoteMto->send(header, buffer, count);
 		receive();
-	} else if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
-		// If the received size is not too small, it's faster to just allocate some new memory
-		// Copying is almost always slower
+	} else if (count >= RECEIVE_THRESHOLD_SZ) {
+		// If the received size is not too small, probably we can expect some more
+		// so store the data now.
 		lastReceivedSize = count;
 		lastReceivedData = buffer;
-		// On large messages, use a pacing rate
+
 		muscle::time t = recvTimeout.time_after();
 		pendingOperations++;
-		receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
+		receiving_timer = sock->getServer()->timer(TIMER_RECEIVE, t, this, NULL);
 	} else if (count > 1) {
 		// Create new buffer to send, reuse the current buffer
 		char *sendData = new char[count];
+		// Copying is almost always slower
 		memcpy(sendData, buffer, count);
 		remoteMto->send(header, sendData, count);
 		

@@ -63,7 +63,8 @@ private:
 		CONNECT = 1,
 		RECEIVE = 2,
 		SEND = 3,
-		TIMEOUT_CLOSE = 4
+		TIMER_CLOSE = 4,
+		TIMER_RECEIVE = 5
 	};
     /** Close the Connection */
     void close();
