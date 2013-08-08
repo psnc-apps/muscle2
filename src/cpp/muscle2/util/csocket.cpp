@@ -63,7 +63,7 @@ namespace muscle {
 			socklen_t sz = sizeof(current_size);
             getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &current_size, &sz);
 			if (current_size < opts.recv_buffer_size) {
-				int target = opts.recv_buffer_size;
+				int target = (int)opts.recv_buffer_size;
 				while (true) {
             		setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &target, sizeof(target));
             		getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &current_size, &sz);
@@ -78,7 +78,7 @@ namespace muscle {
 			socklen_t sz = sizeof(current_size);
             getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &current_size, &sz);
 			if (current_size < opts.send_buffer_size) {
-				int target = opts.send_buffer_size;
+				int target = (int)opts.send_buffer_size;
 				while (true) {
             		setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &target, sizeof(target));
             		getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &current_size, &sz);
