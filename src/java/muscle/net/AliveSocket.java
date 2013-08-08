@@ -131,6 +131,16 @@ public class AliveSocket extends SafeTriggeredThread {
 		
 		if (socket == null) {
 			this.socket = this.socketFactory.createSocket();
+            this.socket.setKeepAlive(true);
+            this.socket.setTcpNoDelay(true);
+
+            //int target = 16777216;
+            //this.socket.setReceiveBufferSize(target);
+            //while (this.socket.getReceiveBufferSize() < target) {
+            //    target = (target*2)/3;
+            //    this.socket.setReceiveBufferSize(target);
+            //}
+            //logger.log(Level.FINER, "Set TCP receive buffer size to {0}", target);
 			this.socket.connect(this.address);
 		}
 	}

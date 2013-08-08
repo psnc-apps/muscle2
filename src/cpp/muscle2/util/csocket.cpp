@@ -161,7 +161,6 @@ namespace muscle {
     CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true), has_cork(false)
     {
         setOpts(opts);
-		setDelay(false);
     }
         
     CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true), has_cork(false)
@@ -169,7 +168,6 @@ namespace muscle {
         create();
         setOpts(opts);
         connect(opts.blocking_connect != 0);
-		setDelay(false);
     }
     
     void CClientSocket::connect(bool blocking)
@@ -194,14 +192,17 @@ namespace muscle {
 		if (delay != has_delay) {
 			int nodelay = delay ? 0 : 1;
 			socklen_t sz = sizeof(nodelay);
-			setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sz);
-			getsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, &sz);
-
-			has_delay = (nodelay == 0);
-			if (has_delay == delay)
-				logger::finer("Set TCP_NODELAY to %d", nodelay);
-			else
-				logger::warning("Could not set TCP_NODELAY to %d", nodelay);
+			if (setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sz) == 0
+				&& getsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, &sz) == 0) {
+				has_delay = (nodelay == 0);
+				if (has_delay == delay)
+					logger::finer("Set TCP_NODELAY to %d", nodelay);
+				else
+					logger::warning("Could not set TCP_NODELAY, set to %d instead", nodelay);
+			} else {
+				const char * const errmsg = strerror(errno);
+				logger::warning("Could not set TCP_NODELAY to %d: %s/%d", nodelay, errmsg, errno);
+			}
 		}
 #endif
 	}
@@ -262,7 +263,9 @@ namespace muscle {
         if (childfd < 0)
             throw muscle_exception("Failed to accept socket", errno);
         
-        return new CClientSocket(*this, childfd, opts);
+        CClientSocket *sock = new CClientSocket(*this, childfd, opts);
+		sock->setDelay(false);
+		return sock;
     }
     
     void CServerSocket::listen(int max_connections)
@@ -292,7 +295,9 @@ namespace muscle {
     
     ClientSocket *CSocketFactory::connect(muscle::endpoint &ep, const muscle::socket_opts &opts)
     {
-        return new CClientSocket(ep, service, opts);
+		CClientSocket *sock = new CClientSocket(ep, service, opts);
+		sock->setDelay(false);
+		return sock;
     }
 
     ServerSocket *CSocketFactory::listen(muscle::endpoint &ep, const muscle::socket_opts &opts)

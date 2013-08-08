@@ -65,7 +65,7 @@ public class SmartBufferedInputStream extends InputStream {
 			readIdx += ret;
 			if (readIdx >= atLeastLen)
 				return readIdx;
-
+			//Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Blocking for {0} bytes ({1} read)", new Object[]{atLeastLen - readIdx, ret});
 //			if (sleepNano > 0) {
 //				Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Sleeping {0} ms and {1} ns for {2} bytes ({3} read)", new Object[]{sleepMilli, sleepNano, atLeastLen, ret});
 //				try {

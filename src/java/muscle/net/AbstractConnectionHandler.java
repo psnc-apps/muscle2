@@ -86,6 +86,15 @@ public abstract class AbstractConnectionHandler<T extends ExceptionListener, E> 
 	@Override
 	protected final void execute() throws Exception {
 		Socket s = this.ss.accept();
+        s.setKeepAlive(true);
+        s.setTcpNoDelay(true);
+        //int target = 16777216;
+        //s.setReceiveBufferSize(target);
+        //while (s.getReceiveBufferSize() < target) {
+        //    target = (target*2)/3;
+        //    s.setReceiveBufferSize(target);
+        //}
+        //logger.log(Level.FINER, "Set TCP receive buffer size to {0}", target);
 		logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 		executor.submit(this.createProtocolHandler(s));
 	}
