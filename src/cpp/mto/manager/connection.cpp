@@ -15,11 +15,11 @@
 
 using namespace muscle;
 
-const muscle::duration Connection::recvTimeout(0l, 5000);
+const muscle::duration Connection::recvTimeout(0l, 1000);
 
 /* from remote */
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
-: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), pendingOperations(0), remoteMto(remoteMto), mto(mto), closing_timer(0), receiving_timer(0)
+: sock(s), header(h), closing(false), hasRemotePeer(remotePeerConnected), pendingOperations(0), remoteMto(remoteMto), mto(mto), closing_timer(0), receiving_timer(0), lastReceivedData(NULL), lastReceivedSize(0)
 {
     assert(remoteMto != NULL);
     if (hasRemotePeer)
@@ -103,6 +103,11 @@ void Connection::async_execute(size_t code, int flag, void *user_data)
 	async_service * const server = sock->getServer();
 
 	if (flag == CONN_RESTART_RECEIVE) {
+		// Stop receiving
+		logger::finer("Restart receive timer expired. Sending %zu bytes.", lastReceivedSize);
+		server->erase_socket(sock->getReadSock(), -1, -1);
+		remoteMto->send(header, lastReceivedData, lastReceivedSize);
+		lastReceivedData = NULL;
 		receive();
 		server->erase_timer(receiving_timer);
 		receiving_timer = 0;
@@ -113,6 +118,11 @@ void Connection::async_execute(size_t code, int flag, void *user_data)
 						  header.str().c_str(), pendingOperations);
 			server->printDiagnostics();
 			sock->async_cancel();
+			if (receiving_timer) {
+				server->erase_timer(receiving_timer);
+				receiving_timer = 0;
+				delete [] (char *)lastReceivedData;
+			}
 		}
 		// Prevent double delete
 		const size_t tmpTimer = closing_timer;
@@ -136,18 +146,37 @@ void Connection::receive(void *buffer, size_t sz)
 bool Connection::async_received(size_t code, int user_flag, void *buffer, void *last_data_ptr, size_t count, int is_final)
 {
     // Error occurred
-    if(is_final == -1 || closing) return false;
+    if(is_final == -1 || closing) {
+		if (buffer != lastReceivedData)
+			delete [] (char *)buffer;
+		return false;
+	}
     if (count == 0) return true;
-		
-	// If the received size is not too small, it's faster to just allocate some new memory
-	// Copying is almost always slower
-	if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
+	
+	if (receiving_timer) {
+		if (is_final) {
+			remoteMto->send(header, buffer, count);
+			sock->getServer()->erase_timer(receiving_timer);
+			receiving_timer = 0;
+			lastReceivedData = NULL;
+			receive();
+		} else {
+			lastReceivedSize += count;
+			muscle::time t = recvTimeout.time_after();
+			sock->getServer()->update_timer(receiving_timer, t, NULL);
+		}
+	} else if (is_final) {
 		remoteMto->send(header, buffer, count);
-
-        receive();
+		receive();
+	} else if (count >= MTO_CONNECTION_BUFFER_SIZE/100) {
+		// If the received size is not too small, it's faster to just allocate some new memory
+		// Copying is almost always slower
+		lastReceivedSize = count;
+		lastReceivedData = buffer;
 		// On large messages, use a pacing rate
-		//muscle::time t = recvTimeout.time_after();
-		//receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
+		muscle::time t = recvTimeout.time_after();
+		pendingOperations++;
+		receiving_timer = sock->getServer()->timer(CONN_RESTART_RECEIVE, t, this, NULL);
 	} else if (count > 1) {
 		// Create new buffer to send, reuse the current buffer
 		char *sendData = new char[count];
@@ -155,16 +184,19 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 		remoteMto->send(header, sendData, count);
 		
 		receive(buffer, MTO_CONNECTION_BUFFER_SIZE);
+		// Don't try to receive more information, we sent what we received
+		return false;
 	} else {
 		// Just send the one received byte in the header
 		header.type = Header::DataInLength;
 		remoteMto->sendHeader(header, *(unsigned char *)buffer);
 		header.type = Header::Data;
 		receive(buffer, MTO_CONNECTION_BUFFER_SIZE);
+		// Don't try to receive more information, we sent what we received
+		return false;
 	}
-    
-	// Don't try to receive more information, we sent what we received
-    return false;
+	// Keep on receiving until the timer expires
+    return true;
 }
 
 void Connection::send(void *data, size_t length, int user_flag)

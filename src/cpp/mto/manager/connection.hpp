@@ -56,6 +56,8 @@ private:
     
     size_t closing_timer;
 	size_t receiving_timer;
+	void *lastReceivedData;
+	size_t lastReceivedSize;
 	
 	enum {
 		CONNECT = 1,
