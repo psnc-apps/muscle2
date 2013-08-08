@@ -43,7 +43,7 @@ namespace muscle {
         int opts = fcntl(sockfd, F_GETFL);
         
         if (opts < 0)
-            throw muscle_exception("Can not set the blocking status", errno);
+            throw muscle_exception("Can not set the blocking status");
         
         if (blocking == ((opts&O_NONBLOCK) == O_NONBLOCK))
         {
@@ -58,10 +58,36 @@ namespace muscle {
     
     void csocket::setOpts(const socket_opts &opts)
     {
-        if (opts.recv_buffer_size != -1)
-            setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &opts.recv_buffer_size, sizeof(opts.recv_buffer_size));
-        if (opts.send_buffer_size != -1)
-            setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &opts.send_buffer_size, sizeof(opts.send_buffer_size));
+        if (opts.recv_buffer_size != -1) {
+			int current_size;
+			socklen_t sz = sizeof(current_size);
+            getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &current_size, &sz);
+			if (current_size < opts.recv_buffer_size) {
+				int target = opts.recv_buffer_size;
+				while (true) {
+            		setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &target, sizeof(target));
+            		getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &current_size, &sz);
+					if (current_size >= target) break;
+					target = (target * 3) / 4;
+				}
+			}
+			logger::finest("Set TCP receive size to %d bytes", current_size);
+		}
+        if (opts.send_buffer_size != -1) {
+			int current_size;
+			socklen_t sz = sizeof(current_size);
+            getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &current_size, &sz);
+			if (current_size < opts.send_buffer_size) {
+				int target = opts.send_buffer_size;
+				while (true) {
+            		setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &target, sizeof(target));
+            		getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &current_size, &sz);
+					if (current_size >= target) break;
+					target = (target * 3) / 4;
+				}
+			}
+			logger::finest("Set TCP send size to %d bytes", current_size);
+		}
         
         bool keep_alive = opts.keep_alive == -1 ? 1 : opts.keep_alive;
         setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive));
@@ -135,6 +161,7 @@ namespace muscle {
     CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true), has_cork(false)
     {
         setOpts(opts);
+		setDelay(false);
     }
         
     CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true), has_cork(false)
@@ -142,6 +169,7 @@ namespace muscle {
         create();
         setOpts(opts);
         connect(opts.blocking_connect != 0);
+		setDelay(false);
     }
     
     void CClientSocket::connect(bool blocking)
@@ -158,8 +186,6 @@ namespace muscle {
         
         if (blocking)
             setBlocking(false);
-		
-		setDelay(false);
     }
     
 	void CClientSocket::setDelay(const bool delay)
@@ -167,10 +193,15 @@ namespace muscle {
 #ifdef TCP_NODELAY
 		if (delay != has_delay) {
 			int nodelay = delay ? 0 : 1;
-		
-			setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
+			socklen_t sz = sizeof(nodelay);
+			setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sz);
+			getsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &nodelay, &sz);
 
-			has_delay = delay;
+			has_delay = (nodelay == 0);
+			if (has_delay == delay)
+				logger::finer("Set TCP_NODELAY to %d", nodelay);
+			else
+				logger::warning("Could not set TCP_NODELAY to %d", nodelay);
 		}
 #endif
 	}
@@ -202,9 +233,6 @@ namespace muscle {
         int so_error;
         socklen_t slen = sizeof so_error;
         getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &slen);
-		
-		if (!so_error)
-			setDelay(false);
 		
         return so_error;
     }

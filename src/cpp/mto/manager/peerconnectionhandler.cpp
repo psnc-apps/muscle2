@@ -11,6 +11,8 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
     logger::info("Established a connection with peer (receiver is %s)",
                  str().c_str());
     
+//	socket->setBlocking(true);
+
     // Start normal operation
     readHeader();
 }
@@ -18,6 +20,7 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
 PeerConnectionHandler::~PeerConnectionHandler()
 {
     delete [] headerBuffer;
+//	socket->setBlocking(false);
     delete socket;
 }
 
@@ -115,6 +118,7 @@ void PeerConnectionHandler::handleConnect(Header &h)
 			logger::finest("Trying to establish connection %s (Peer MTO = %s)",
 			               h.str().c_str(), str().c_str());
 		
+    	incrementPending();
 		HandleConnected *hc = new HandleConnected(h, this);
 	} else {
 		handleConnectFailed(h);
@@ -132,14 +136,12 @@ void PeerConnectionHandler::handleConnectFailed(Header &h)
 PeerConnectionHandler::HandleConnected::HandleConnected(Header& header, PeerConnectionHandler * thiz) : h(header), t(thiz)
 {
     h.type = Header::ConnectResponse;
-    t->incrementPending();
     t->mto->intSockFactory->async_connect(LOCAL_CONNECT, h.dst, &opts, this);
 }
 
 void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket)
 {
-    if(t->closing)
-    {
+    if(t->closing) {
         t->errorOccurred("Can't connect to " + h.str() + "; it is closing.");
         delete newSocket;
         return;
@@ -267,8 +269,8 @@ void PeerConnectionHandler::done()
     }
     incrementPending();
     
-    for(map<Identifier, PeerConnectionHandler*>::const_iterator it =  fwdMap.begin(); it!=fwdMap.end(); ++it) {
-		Header h(Header::Close, it->first);
+    while (!fwdMap.empty()) {
+		Header h(Header::Close, fwdMap.begin()->first);
         forwardToPeer(h, true);
     }
     

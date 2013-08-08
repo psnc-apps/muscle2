@@ -46,6 +46,7 @@ class socket
 public:
 	virtual ~socket() {}
 
+	virtual void setBlocking(bool) = 0;
     virtual std::string str() const;
     virtual std::string str();
     const endpoint& getAddress() const;

@@ -22,7 +22,7 @@ namespace muscle {
     class csocket : virtual public socket
     {
     public:
-		virtual void setBlocking(const bool);
+		virtual void setBlocking(bool);
 
         // Check if the socket is readable / writable. Timeout is MUSCLE_SOCKET_TIMEOUT seconds.
         // Override MUSCLE_SOCKET_TIMEOUT to choose a different number of seconds

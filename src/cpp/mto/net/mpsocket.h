@@ -68,6 +68,7 @@ namespace muscle {
         static mutex path_mutex;
 		
 		virtual bool selectWriteFdIsReadable() const { return true; }
+		virtual void setBlocking(bool) {}
     protected:
         mpsocket();
         virtual ~mpsocket();
