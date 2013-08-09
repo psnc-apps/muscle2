@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <muscle2/cppmuscle.hpp>
-#include <muscle2/exception.hpp>
+#include <muscle2/util/exception.hpp>
 #include <exception>
 
 using namespace muscle;
