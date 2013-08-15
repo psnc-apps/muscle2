@@ -31,16 +31,19 @@
 #include <cstdlib>
 #define M2_XDR_BUFSIZE (64*1024+1)
 
+#define WRITE_BUFSIZE (1024 * 1024)
+#define READ_BUFSIZE (1024 * 1024)
+
 namespace muscle {
 
 XdrCommunicator::XdrCommunicator(endpoint &ep) : Communicator(ep), sockfd(sock->getReadSock()) {
 /*TODO: detect signature in CMake */
 #ifdef __APPLE__
-	xdrrec_create(&xdro, 0, 0, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
-	xdrrec_create(&xdri, 0, 0, &sockfd,  (int (*) (void *, void *, int)) communicator_read_from_socket, 0);
+	xdrrec_create(&xdro, WRITE_BUFSIZE, READ_BUFSIZE, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
+	xdrrec_create(&xdri, WRITE_BUFSIZE, READ_BUFSIZE, &sockfd,  (int (*) (void *, void *, int)) communicator_read_from_socket, 0);
 #else
-	xdrrec_create(&xdro, 0, 0, (char *)&sockfd, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
-	xdrrec_create(&xdri, 0, 0, (char *)&sockfd,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
+	xdrrec_create(&xdro, WRITE_BUFSIZE, READ_BUFSIZE, (char *)&sockfd, 0, (int (*) (char *, char *, int)) communicator_write_to_socket);
+	xdrrec_create(&xdri, WRITE_BUFSIZE, READ_BUFSIZE, (char *)&sockfd,  (int (*) (char *, char *, int)) communicator_read_from_socket, 0);
 #endif
 	xdro.x_op = XDR_ENCODE;
 	xdri.x_op = XDR_DECODE;
