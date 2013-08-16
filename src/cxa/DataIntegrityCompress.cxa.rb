@@ -5,25 +5,25 @@ check = Instance.new('Check', 'examples.dataintegrity.Check')
 # configure connection scheme
 check.couple(bounce, 'datatype')
 # 3.93s user 0.55s system 79% cpu 5.617 total
-check.couple(bounce, {'out' => 'in'}, ["serialize","chunk_4","compress","thread"], ["decompress", "dechunk_4", "deserialize"])
-bounce.couple(check, {'out' => 'in'}, ["serialize","chunk_4","compress","thread"], ["decompress", "dechunk_4", "deserialize"])
+check.couple(bounce, {'out' => 'in'}, ['serialize','chunk_4','compress','thread'], ['decompress', 'dechunk_4', 'deserialize'])
+bounce.couple(check, {'out' => 'in'}, ['serialize','chunk_4','compress','thread'], ['decompress', 'dechunk_4', 'deserialize'])
 
 # configure cxa properties
-$env["max_timesteps"] = 1;
-$env["default_dt"] = 1
+$env['max_timesteps'] = 1;
+$env['default_dt'] = 1
 
 dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/dataintegrity'
 
-check["num_seeds"] = 1
-check["command"] = dir + '/check'
-bounce["command"] = dir + '/bounce'
+check['num_seeds'] = 1
+check['command'] = dir + '/check'
+bounce['command'] = dir + '/bounce'
 
 # 4.71s user 0.66s system 81% cpu 6.566 total
-#tie('out', 'in',["serialize","chunk_32","thread","compress"],["decompress", "dechunk_32", "deserialize"])
+#tie('out', 'in',['serialize','chunk_32','thread','compress'],['decompress', 'dechunk_32', 'deserialize'])
 # 4.71s user 0.63s system 80% cpu 6.602 total 
-#tie('out', 'in',["serialize","chunk_32","compress"],["decompress", "dechunk_32", "deserialize"])
+#tie('out', 'in',['serialize','chunk_32','compress'],['decompress', 'dechunk_32', 'deserialize'])
 # 4.00s user 0.55s system 79% cpu 5.708 total
-#tie('out', 'in',["serialize","chunk_4","thread","compress"],["decompress", "dechunk_4", "deserialize"])
+#tie('out', 'in',['serialize','chunk_4','thread','compress'],['decompress', 'dechunk_4', 'deserialize'])
 # 3.98s user 0.55s system 80% cpu 5.641 total
-#tie('out', 'in',["serialize","compress"],["decompress", "deserialize"])
+#tie('out', 'in',['serialize','compress'],['decompress', 'deserialize'])
 

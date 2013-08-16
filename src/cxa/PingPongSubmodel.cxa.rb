@@ -1,78 +1,28 @@
-=begin
-== Copyright and License
-   Copyright 2008,2009 Complex Automata Simulation Technique (COAST) consortium
-   Copyright 2010-2013 Multiscale Applications on European e-Infrastructures (MAPPER) project
-
-   GNU Lesser General Public License
-
-   This file is part of MUSCLE (Multiscale Coupling Library and Environment).
-
-   MUSCLE is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   MUSCLE is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
-=end
-
-# configuration file for a MUSCLE CxA
-abort "this is a configuration file for to be used with the MUSCLE bootstrap utility" if __FILE__ == $0
-
-# configure cxa properties
-cxa = Cxa.LAST
-
-# #safe
-#cxa.env["max_timesteps"] = 16*10 
-
-#unsafe
-cxa.env["same_size_runs"] = 30;
-
-cxa.env["cxa_path"] = File.dirname(__FILE__)
-
-cxa.env["steps"] = 10
-
-cxa.env["tests_count"] = 15
-cxa.env["preparation_steps"]=cxa.env["steps"]*cxa.env["same_size_runs"]
-cxa.env["max_timesteps"] = cxa.env["tests_count"] * cxa.env["steps"] * cxa.env["same_size_runs"] + cxa.env["preparation_steps"];
-cxa.env["start_kiB_per_message"] = 0;
-
-cxa.env["default_dt"] = 1
-cxa.env["Pong1:T"] = 1
-cxa.env["Pong2:T"] = 1
+$env['same_size_runs'] = 30;
+$env['steps'] = 10
+$env['tests_count'] = 15
+$env['start_kiB_per_message'] = 0;
 
 # declare kernels
-cxa.add_kernel('Pong1', 'examples.pingpong.Pong')
-cxa.add_kernel('Pong2', 'examples.pingpongsubmodel.Pong')
-cxa.add_kernel('dup', 'muscle.core.kernel.DuplicationMapper')
-cxa.add_kernel('combine', 'examples.pingpongsubmodel.PongCombiner')
-cxa.add_kernel('Ping', 'examples.pingpong.Ping')
+pong1 = Instance.new('Pong1', 'examples.pingpong.Pong')
+pong2 = Instance.new('Pong2', 'examples.pingpongsubmodel.Pong')
+dup   = Instance.new('dup', 'muscle.core.kernel.DuplicationMapper')
+combine = Instance.new('combine', 'examples.pingpongsubmodel.PongCombiner')
+ping = Instance.new('Ping', 'examples.pingpong.Ping')
 
-# configure connection scheme
-cs = cxa.cs
+# set variables
+$env['preparation_steps'] = $env['steps'] * $env['same_size_runs']
+$env['max_timesteps'] = cxa.env['tests_count'] * cxa.env['steps'] * cxa.env['same_size_runs'] + cxa.env['preparation_steps'];
+$env['default_dt'] = 1
 
-cs.attach('Ping' => 'dup') {
-	tie('out', 'in')
-}
-cs.attach('dup' => 'Pong1') {
-	tie('out1', 'in')
-}
-cs.attach('dup' => 'Pong2') {
-	tie('out2', 'in')
-}
-cs.attach('Pong1' => 'combine') {
-	tie('out', 'in1')
-}
-cs.attach('Pong2' => 'combine') {
-	tie('out', 'in2')
-}
-cs.attach('combine' => 'Ping') {
-	tie('out', 'in')
-}
+pong1['T'] = 1
+pong2['T'] = 1
 
+# configure couplings
+ping.couple(dup, 'out' => 'in')
+dup.couple(pong1, 'out1' => 'in')
+dup.couple(pong2, 'out2' => 'in')
+ping1.couple(combine, 'out' => 'in1')
+ping2.couple(combine, 'out' => 'in2')
+combine.couple(ping, 'out' => 'in')
 
