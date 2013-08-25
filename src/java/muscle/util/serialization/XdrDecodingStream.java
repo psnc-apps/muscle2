@@ -65,7 +65,6 @@ public interface XdrDecodingStream {
 	String[] xdrDecodeStringVector() throws IOException;
     long xdrDecodeLong() throws IOException;
     long[] xdrDecodeLongVector() throws IOException;
-    ByteBuffer xdrDecodeByteBuffer() throws IOException;
     float xdrDecodeFloat() throws IOException;
     double xdrDecodeDouble() throws IOException;
     double[] xdrDecodeDoubleVector() throws IOException;
