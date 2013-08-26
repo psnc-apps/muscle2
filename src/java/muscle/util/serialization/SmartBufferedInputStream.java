@@ -4,6 +4,7 @@
 
 package muscle.util.serialization;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -137,17 +138,23 @@ public class SmartBufferedInputStream extends InputStream {
 	
 	@Override
 	public long skip(final long n) throws IOException {
-		if (size == -1) {
-			return 0;
-		} else if (size < n) {
-			final int tmpSize = size;
-			size = 0;
-			idx = 0;
-			return in.skip(n - tmpSize) + tmpSize;
-		} else {
+		if (size == -1)
+			throw new EOFException("Stream previously set to invalid");
+		
+		if (size >= n) {
 			size -= n;
 			idx += n;
 			return n;
-		}
+		} else {
+			long skipped = size;
+			size = 0;
+			idx = 0;
+			try {
+				return in.skip(n - skipped) + skipped;
+			} catch (IOException ex) {
+				 // does not support seek
+				return super.skip(n - skipped) + skipped;
+			}
+		}	
 	}
 }
