@@ -22,6 +22,8 @@
 package muscle.core.standalone;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -37,10 +39,19 @@ import muscle.util.concurrency.Disposable;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
+import muscle.util.serialization.SmartBufferedInputStream;
+import muscle.util.serialization.SocketChannelOutputStream;
+import muscle.util.serialization.SmartBufferedOutputStream;
+import muscle.util.serialization.SocketChannelInputStream;
 import muscle.util.serialization.Xdr;
+import muscle.util.serialization.XdrArrayBufferIn;
+import muscle.util.serialization.XdrArrayBufferOut;
+import muscle.util.serialization.XdrBufferedIn;
 import muscle.util.serialization.XdrDeserializerWrapper;
+import muscle.util.serialization.XdrIn;
 import muscle.util.serialization.XdrNIODeserializerWrapper;
 import muscle.util.serialization.XdrNIOSerializerWrapper;
+import muscle.util.serialization.XdrOut;
 import muscle.util.serialization.XdrSerializerWrapper;
 import org.acplt.oncrpc.XdrTcpDecodingStream;
 import org.acplt.oncrpc.XdrTcpEncodingStream;
@@ -139,12 +150,18 @@ public class NativeGateway extends Thread implements Disposable {
 		try {
 			if (USE_ASYNC) {
 				SocketChannel sc = ss.getChannel().accept();
-				sc.configureBlocking(false);
+				sc.configureBlocking(true);
 				s = sc.socket();
 
-				int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
-				in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
-				out = new XdrNIOSerializerWrapper(new Xdr(sc, buffer_size), buffer_size);
+				final int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
+//				OutputStream xdrOut = new SmartBufferedOutputStream(new SocketChannelOutputStream(sc, buffer_size, true, true), buffer_size, 64);
+//				InputStream xdrIn = new SocketChannelInputStream(sc, buffer_size, true);
+				OutputStream xdrOut = new SocketChannelOutputStream(sc, buffer_size, true, true);
+				InputStream xdrIn = new SocketChannelInputStream(sc, buffer_size, true);
+				in =  new XdrNIODeserializerWrapper(new XdrArrayBufferIn(xdrIn, buffer_size));
+				out = new XdrNIOSerializerWrapper(new XdrArrayBufferOut(xdrOut, buffer_size), buffer_size);
+//				in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
+//				out = new XdrNIOSerializerWrapper(new Xdr(sc,buffer_size), buffer_size/4);
 			} else {
 				s = ss.accept();
 
@@ -153,7 +170,7 @@ public class NativeGateway extends Thread implements Disposable {
 				out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
 			}
 			
-			logger.log(Level.FINE, "Accepted connection from: {0}:{1}", new Object[]{s.getRemoteSocketAddress(), s.getPort()});
+			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			final boolean isFinestLog = logger.isLoggable(Level.FINEST);
 			while (!isDisposed) {
 				if (isFinestLog) logger.finest("Starting decoding...");

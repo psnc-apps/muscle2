@@ -29,10 +29,10 @@
 #include <rpc/xdr.h>
 #include <cmath>
 #include <cstdlib>
-#define M2_XDR_BUFSIZE (64*1024+1)
+#define M2_XDR_BUFSIZE (65*1024)
 
-#define WRITE_BUFSIZE (1024 * 1024)
-#define READ_BUFSIZE (1024 * 1024)
+#define WRITE_BUFSIZE (33*1024)
+#define READ_BUFSIZE (130*1024)
 
 namespace muscle {
 

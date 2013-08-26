@@ -40,21 +40,18 @@
  */
 package muscle.util.serialization;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class XdrIn implements XdrDecodingStream {
-	private final static Logger logger = Logger.getLogger(XdrIn.class.getName());
-	private final byte[] longbuffer = new byte[8];
+public class XdrArrayBufferIn implements XdrDecodingStream {
+	private final static Logger logger = Logger.getLogger(XdrArrayBufferIn.class.getName());
+	private final XDRInByteArray buffer;
 	
 	/**
 	 * Byte buffer used by XDR record.
 	 */
-	protected final InputStream in;
 	private int fragmentRemaining;
 	private boolean lastFragment;
 
@@ -63,8 +60,8 @@ public class XdrIn implements XdrDecodingStream {
 	 *
 	 * @param size of the buffer in bytes
 	 */
-	public XdrIn(InputStream in) {
-		this.in = in;
+	public XdrArrayBufferIn(InputStream in, int bufsize) {
+		this.buffer = new XDRInByteArray(in, bufsize);
 	}
 
 	public void beginDecoding() throws IOException {
@@ -73,23 +70,11 @@ public class XdrIn implements XdrDecodingStream {
 		 */
 		fragmentRemaining = 0;
 		lastFragment = false;
-		fill();
-		logger.log(Level.FINER, "Begin decoding {0} bytes", fragmentRemaining);
+		fill(4);
+		logger.log(Level.FINEST, "Begin decoding {0} bytes", fragmentRemaining);
 	}
 	
-	private int readInt() throws IOException {
-		if (in.read(longbuffer, 0, 4) != 4)
-			throw new IOException("Could not read 4 bytes in XDR");
-		return (longbuffer[0] & 0xff) << 24 | (longbuffer[1] & 0xff) << 16 | (longbuffer[2] & 0xff) << 8 | (longbuffer[3] & 0xff);
-	}
-	
-	private void skip(final long n) throws IOException {
-		if (in.skip(n) != n) {
-			throw new IOException("Stream for XDR does not do full seek");
-		}
-	}
-	
-	private void fill() throws IOException {
+	private void fill(int n) throws IOException {
 		if (fragmentRemaining == 0) {
 			if ( lastFragment ) {
 				// In case there is no more data in the current XDR record
@@ -97,20 +82,19 @@ public class XdrIn implements XdrDecodingStream {
 				throw new IOException("Buffer underflow");
 			}
 			
-			fragmentRemaining = readInt();
-			
-			logger.log(Level.FINE, "Fragment remaining: {0}", fragmentRemaining);
+			buffer.read(4);
+			fragmentRemaining = buffer.getInt();
 			
 			// XDR header is the last one if the sign is negative (& 0x80000000);
 			if ((fragmentRemaining & 0x80000000) != 0) {
 				// the rest is the length of the fragment
 				fragmentRemaining &= 0x7FFFFFFF;
-				lastFragment = true;
+				lastFragment = true;				
 			} else {
 				lastFragment = false;
 			}
-			
-			logger.log(Level.FINE, "Fragment remaining: {0}", fragmentRemaining);
+						
+			logger.log(Level.FINEST, "Fragment remaining: {0}", fragmentRemaining);
 			
 			// Sanity check on incomming fragment length: the length must
 			// be at least four bytes long, otherwise this fragment does
@@ -121,19 +105,22 @@ public class XdrIn implements XdrDecodingStream {
 			assert( (fragmentRemaining & 3) == 0 );
 			assert( fragmentRemaining != 0 || lastFragment);
 		}
+		buffer.read(n);
 	}
 	
 	public void endDecoding() throws IOException {
 		// Clear all buffers that are still remaining
 		while (true) {
 			if (fragmentRemaining > 0) {
-				skip(fragmentRemaining);
+				if (buffer.skip(fragmentRemaining) != fragmentRemaining) {
+					throw new IOException("Stream for XDR does not do full seek");
+				}
 				fragmentRemaining = 0;
 			}
 			if (lastFragment) {
 				break;
 			} else {
-				fill();
+				fill(4);
 			}
 		}
 	}
@@ -248,18 +235,15 @@ public class XdrIn implements XdrDecodingStream {
 		final int padding = (4 - (len & 3)) & 3;
 
 		while (len > 0) {
-			fill();
-			final int numRead = in.read(buf, offset, Math.min(fragmentRemaining, len));
-			if (numRead == -1) throw new EOFException("XDR stream closed.");
-			fragmentRemaining -= numRead;
-			len -= numRead;
-			offset += numRead;
+			fill(0);
+			final int cp = buffer.getPart(buf, offset, Math.min(fragmentRemaining, len));
+			fragmentRemaining -= cp;
+			len -= cp;
+			offset += cp;
 		}
 
-		if (padding > 0) {
-			skip(padding);
-			fragmentRemaining -= padding;
-		}
+		buffer.skip(padding);
+		fragmentRemaining -= padding;
 	}
 
 	public void xdrDecodeOpaque(byte[] buf, int len) throws IOException {
@@ -291,8 +275,7 @@ public class XdrIn implements XdrDecodingStream {
 	 */
 	public String xdrDecodeString() throws IOException {
 		int len = xdrDecodeInt();
-		logger.log(Level.FINEST, "Decoding string with len = {0}", len);
-
+		
 		if (len > 0) {
 			byte[] bytes = new byte[len];
 			xdrDecodeOpaque(bytes, 0, len);
@@ -314,11 +297,9 @@ public class XdrIn implements XdrDecodingStream {
 	 */
 	public long xdrDecodeLong() throws IOException {
 		if (fragmentRemaining >= 8) {
-			if (in.read(longbuffer, 0, 8) != 8)
-				throw new IOException("Could not read 8 bytes in XDR");
-		
+			fill(8);
 			fragmentRemaining -= 8;
-			return (longbuffer[0] & 0xffL) << 56 | (longbuffer[1] & 0xffL) << 48 | (longbuffer[2] & 0xffL) << 40 | (longbuffer[3] & 0xffL) << 32 | (longbuffer[4] & 0xffL) << 24 | (longbuffer[5] & 0xffL) << 16 | (longbuffer[6] & 0xffL) << 8 | (longbuffer[7] & 0xffL);
+			return buffer.getLong();
 		} else {
 			// The & is necessery to make sure the int is read as unsigned
 			return ((xdrDecodeInt() & 0xffffffffL) << 32) | (xdrDecodeInt() & 0xffffffffL);
@@ -362,12 +343,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @return Decoded byte value.
 	 */
 	public byte xdrDecodeByte() throws IOException {
-		fill();
+		fill(4);
 		fragmentRemaining -= 4;
-		skip(3);
-		final int b = in.read();
-		if (b == -1) throw new EOFException("XDR stream ended");
-		return (byte)b;
+		return buffer.getByte();
 	}
 
 	/**
@@ -377,14 +355,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @return Decoded short value.
 	 */
 	public short xdrDecodeShort() throws IOException {
-		fill();
+		fill(4);
 		fragmentRemaining -= 4;
-		skip(2);
-		int ret = in.read();
-		if (ret == -1) throw new EOFException("XDR stream ended");
-		int ret2 = in.read();
-		if (ret2 == -1) throw new EOFException("XDR stream ended");
-		return (short)((ret << 8) | ret2);
+		return buffer.getShort();
 	}
 
 	/**
@@ -441,8 +414,8 @@ public class XdrIn implements XdrDecodingStream {
 
 	@Override
 	public int xdrDecodeInt() throws IOException {
-		fill();
+		fill(4);
 		fragmentRemaining -= 4;
-		return readInt();
+		return buffer.getInt();
 	}
 }

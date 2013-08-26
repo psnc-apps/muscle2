@@ -53,35 +53,29 @@ public interface XdrEncodingStream {
 
     void beginEncoding();
     void endEncoding() throws IOException;
-    void xdrEncodeInt(int value);
-    void xdrEncodeIntVector(int[] ints);
-    void xdrEncodeDynamicOpaque(byte [] opaque);
-    void xdrEncodeOpaque(byte [] opaque, int len);
-    void xdrEncodeOpaque(byte [] opaque, int offset, int len);
-    void xdrEncodeBoolean(boolean bool);
-    void xdrEncodeBooleanVector(boolean[] bool);
-    void xdrEncodeString(String str);
-    void xdrEncodeStringVector(String[] str);
-    void xdrEncodeLong(long value);
-    void xdrEncodeLongVector(long[] longs);
-    void xdrEncodeByteBuffer(ByteBuffer buf);
-    void xdrEncodeFloat(float value);
-    void xdrEncodeDouble(double value);
-    void xdrEncodeFloatVector(float[] value);
-    void xdrEncodeFloatFixedVector(float[] value, int length);
-    void xdrEncodeDoubleVector(double[] value);
-    void xdrEncodeDoubleFixedVector(double[] value, int length);
-    void xdrEncodeByteVector(byte[] value);
-    void xdrEncodeByteFixedVector(byte[] value, int length);
-    void xdrEncodeByte(byte value);
-    void xdrEncodeShort(short value);
-    void xdrEncodeShortVector(short[] value);
-    void xdrEncodeShortFixedVector(short[] value, int length);
+    void xdrEncodeInt(int value) throws IOException;
+    void xdrEncodeIntVector(int[] ints) throws IOException;
+    void xdrEncodeDynamicOpaque(byte [] opaque) throws IOException;
+    void xdrEncodeOpaque(byte [] opaque, int len) throws IOException;
+    void xdrEncodeOpaque(byte [] opaque, int offset, int len) throws IOException;
+    void xdrEncodeBoolean(boolean bool) throws IOException;
+    void xdrEncodeBooleanVector(boolean[] bool) throws IOException;
+    void xdrEncodeString(String str) throws IOException;
+    void xdrEncodeStringVector(String[] str) throws IOException;
+    void xdrEncodeLong(long value) throws IOException;
+    void xdrEncodeLongVector(long[] longs) throws IOException;
+    void xdrEncodeFloat(float value) throws IOException;
+    void xdrEncodeDouble(double value) throws IOException;
+    void xdrEncodeFloatVector(float[] value) throws IOException;
+    void xdrEncodeFloatFixedVector(float[] value, int length) throws IOException;
+    void xdrEncodeDoubleVector(double[] value) throws IOException;
+    void xdrEncodeDoubleFixedVector(double[] value, int length) throws IOException;
+    void xdrEncodeByteVector(byte[] value) throws IOException;
+    void xdrEncodeByteFixedVector(byte[] value, int length) throws IOException;
+    void xdrEncodeByte(byte value) throws IOException;
+    void xdrEncodeShort(short value) throws IOException;
+    void xdrEncodeShortVector(short[] value) throws IOException;
+    void xdrEncodeShortFixedVector(short[] value, int length) throws IOException;
 
 	void close() throws IOException;
-
-    /*
-     * Fake interface for compatibility with Remote Tea RPC library
-     *
-     */
 }

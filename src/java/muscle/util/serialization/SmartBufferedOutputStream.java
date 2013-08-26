@@ -29,9 +29,6 @@ public class SmartBufferedOutputStream extends OutputStream {
 	
 	private void writeBuffer() throws IOException {
 		if (size > 0) {
-//			byte[] printbytes = new byte[size];
-//			System.arraycopy(data, 0, printbytes, 0, size);
-//			System.out.println(Arrays.toString(printbytes));
 			out.write(data, 0, size);
 			size = 0;	
 		}
@@ -39,7 +36,6 @@ public class SmartBufferedOutputStream extends OutputStream {
 
 	@Override
 	public void write(int b) throws IOException {
-		//Logger.getLogger(SmartBufferedOutputStream.class.getName()).log(Level.INFO, "Writing {0} ({1} bytes in cache)", new Object[] {b, size});
 		data[size] = (byte)(b & 0xff);
 		size++;
 		if (size == data.length) writeBuffer();
@@ -48,12 +44,10 @@ public class SmartBufferedOutputStream extends OutputStream {
 	@Override
 	public void write(byte[] b, int offset, int len) throws IOException {
 		if (len > tradeoff_size || size + len > data.length) {
-		 //   Logger.getLogger(SmartBufferedOutputStream.class.getName()).log(Level.INFO, "Writing {1} bytes in cache and {0} new bytes", new Object[] {len, size});
 			writeBuffer();
 			out.write(b, offset, len);
 		} else if (len > 0) {
-		  //  Logger.getLogger(SmartBufferedOutputStream.class.getName()).log(Level.INFO, "Copying {0} bytes to cache ({1} bytes already in cache)", new Object[] {len, size});
-			System.arraycopy(b, offset, data, size, len);
+		  	System.arraycopy(b, offset, data, size, len);
 			size += len - offset;
 		}
 	}
@@ -65,14 +59,12 @@ public class SmartBufferedOutputStream extends OutputStream {
 	
 	@Override
 	public void flush() throws IOException {
-		//Logger.getLogger(SmartBufferedOutputStream.class.getName()).log(Level.INFO, "Flushing {0} bytes", size);
 		writeBuffer();
 		out.flush();
 	}
 	
 	@Override
 	public void close() throws IOException {
-		//Logger.getLogger(SmartBufferedOutputStream.class.getName()).log(Level.INFO, "Closing stream (flushing {0} bytes)", size);
 		writeBuffer();
 		out.close();
 	}

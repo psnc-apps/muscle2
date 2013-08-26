@@ -91,8 +91,7 @@ public class XdrNIODeserializerWrapper implements DeserializerWrapper {
 			if (chunks > 1) {
 				int len = xdrIn.xdrDecodeInt();
 				Serializable value = MatrixTool.initializeArray(type, len);
-				int index = 0;
-				index += parseChunk(value, type, index);
+				int index = parseChunk(value, type, 0);
 				for (int i = 1; i < chunks; i++) {
 					xdrIn.endDecoding();
 					xdrIn.beginDecoding();

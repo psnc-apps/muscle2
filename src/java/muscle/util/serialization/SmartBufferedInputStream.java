@@ -16,6 +16,7 @@ import java.util.logging.Logger;
  * @author Joris Borgdorff
  */
 public class SmartBufferedInputStream extends InputStream {
+	private final static Logger logger = Logger.getLogger(SmartBufferedInputStream.class.getName());
 	private final byte[] data;
 	private final InputStream in;
 	private final int tradeoff_size;
@@ -36,8 +37,7 @@ public class SmartBufferedInputStream extends InputStream {
 	
 	private int copy(byte[] b, final int offset, final int len) {
 		if (size == 0) return 0;
-	//	Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Copying {0} bytes (max {1})", new Object[]{len, size});
-		final int cp = size >= len ? len : size;
+		final int cp = Math.min(size, len);
 		System.arraycopy(data, idx, b, offset, cp);
 		size -= cp;
 		idx += cp;
@@ -46,88 +46,82 @@ public class SmartBufferedInputStream extends InputStream {
 
 	private int readFromStream(byte[] b, final int offset, final int atLeastLen, final int atMostLen) throws IOException {
 		int readIdx = 0;
-//		int sleepMilli;
-//		int sleepNano;
-//		if (atLeastLen < 10*1000) {
-//			sleepNano = 0;
-//			sleepMilli = 0;
-//		} else {
-//			sleepNano = (atLeastLen % 10000000)/10;
-//			if (sleepNano == 0) sleepNano = 1;
-//			sleepMilli = atLeastLen / 10000000;
-//		}
-		while (true) {
-			final int ret = in.read(b, readIdx + offset, atMostLen - readIdx);
+
+		do {
+			final int ret = in.read(b, offset + readIdx, atMostLen - readIdx);
 			if (ret == -1) {
 				size = -1;
 				return readIdx > 0 ? readIdx : -1;
 			}
 
 			readIdx += ret;
-			if (readIdx >= atLeastLen)
-				return readIdx;
-			//Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Blocking for {0} bytes ({1} read)", new Object[]{atLeastLen - readIdx, ret});
-//			if (sleepNano > 0) {
-//				Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Sleeping {0} ms and {1} ns for {2} bytes ({3} read)", new Object[]{sleepMilli, sleepNano, atLeastLen, ret});
-//				try {
-//					Thread.sleep(sleepMilli, sleepNano);
-//				} catch (InterruptedException ex) {
-//					Thread.currentThread().interrupt();
-//					return readIdx;
-//				}
-//			}
-		}
+		} while (readIdx < atLeastLen);
+		
+		return readIdx;
 	}
 	
 	@Override
 	public int read(byte[] b, int offset, final int len) throws IOException {
-	//	Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Reading {0} bytes ({1} bytes in cache)", new Object[]{len, size});
-		if (size == -1) return -1;
-		if (len == 0) return 0;
-
-		final int cp = copy(b, offset, len);
-		if (cp == len) return cp;
+		logger.log(Level.FINE, "Reading {0} bytes", len);
 		
-		int newLen = len - cp;
-		int newOffset = offset + cp;
+		if (len == 0) return 0;
+		if (size == -1) {
+			logger.log(Level.FINE, "EOF");
+			return -1;
+		}
+		
+		final int cp = copy(b, offset, len);
+		if (cp == len) {
+			logger.log(Level.FINE, "Copied {0} bytes ({1} remaining)", new Object[] {cp, size});
+			return cp;
+		}
+		
+		final int newLen = len - cp;
+		final int newOffset = offset + cp;
 
-		final int avail = in.available();
-		if (newLen > tradeoff_size || newLen > avail - tradeoff_size) {
-	//		Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Reading {0} bytes without cache ({1} available)", new Object[]{newLen, avail});
+		if (newLen > tradeoff_size) {
 			final int ret = readFromStream(b, newOffset, newLen, newLen);
+			logger.log(Level.FINE, "Read {0} bytes", (ret == -1 ? cp : ret + cp));
 			return (ret == -1 ? cp : ret + cp);
 		} else {
-	//	    Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Reading {0} bytes of {1} available through cache", new Object[]{newLen, avail});
 			final int ret = readFromStream(data, 0, newLen, data.length);
 			if (size == -1) {
-				return cp + copy(b, newOffset, ret);
+				final int newCp = cp + copy(b, newOffset, Math.min(ret, newLen));
+				logger.log(Level.FINE, "Read {0} bytes (EOF)", newCp);
+				return newCp;
 			} else {
 				idx = 0;
 				size = ret;
-				return cp + copy(b, newOffset, newLen);
+				final int newCp = cp + copy(b, newOffset, newLen);
+				logger.log(Level.FINE, "Read {0} bytes, returning {1} bytes ({2} remaining)", new Object[] {ret, newCp, size});
+				return newCp;
 			}
 		}
 	}
 
 	public void close() throws IOException {
-		size = -1;
+		size = 0;
 		in.close();
 	}
 
 	@Override
 	public int read() throws IOException {
-	//	Logger.getLogger(SmartBufferedInputStream.class.getName()).log(Level.INFO, "Reading 1 bytes ({0} bytes in cache)", size);
-		
-		if (size == -1) return -1;
 		if (size > 0) {
 			size--;
-		} else {
+			return data[idx++] & 0xff;
+		} else if (size == 0) {
 			final int bytesRead = readFromStream(data, 0, 1, data.length);
-			if (bytesRead == -1) return -1;
-			idx = 0;
-			size = bytesRead - 1;
+			if (bytesRead == -1) {
+				size = -1;
+				return -1;
+			} else {
+				idx = 1;
+				size = bytesRead - 1;
+				return data[0] & 0xff;
+			}
+		} else {
+			return -1;
 		}
-		return data[idx++] & 0xff;
 	}
 	
 	@Override
@@ -146,15 +140,41 @@ public class SmartBufferedInputStream extends InputStream {
 			idx += n;
 			return n;
 		} else {
-			long skipped = size;
-			size = 0;
-			idx = 0;
+			long remain = n - size;
+			size = idx = 0;
+			long inSkipped = -1;
 			try {
-				return in.skip(n - skipped) + skipped;
+				inSkipped = in.skip(remain);
 			} catch (IOException ex) {
-				 // does not support seek
-				return super.skip(n - skipped) + skipped;
+				// If the underlying stream does not support seek, or some other error which we won't handle, but which will come
+				// up again when we try to read from the stream.
 			}
-		}	
+			if (inSkipped > 0) {
+				remain -= inSkipped;
+			}
+			if (remain > 0) {
+				while (true) {
+					int inRead = readFromStream(data, 0, (int)Math.min(data.length, remain), data.length);
+					if (inRead == -1) {
+						// on EOF, return the number of bytes successfully skipped
+						return n - remain;
+					} else if (inRead > remain) {
+						// Succeeded, with some buffer to spare, this should be the most frequent outcome
+						size -= remain;
+						idx += remain;
+						return n;
+					} else if (inRead == remain) {
+						// Succeeded, with no buffer left, outcome if the skipped bytes are the last in the file
+						size = idx = 0;
+						return n;
+					} else if (inRead < remain) {
+						// Read another buffer, outcome if the number of skipped bytes is larger than the buffer size
+						size = idx = 0;
+						remain -= inRead;
+					}
+				}
+			}
+			return n;
+		}
 	}
 }
