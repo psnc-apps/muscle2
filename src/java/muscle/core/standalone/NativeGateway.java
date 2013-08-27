@@ -39,22 +39,12 @@ import muscle.util.concurrency.Disposable;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
-import muscle.util.serialization.SmartBufferedInputStream;
 import muscle.util.serialization.SocketChannelOutputStream;
-import muscle.util.serialization.SmartBufferedOutputStream;
 import muscle.util.serialization.SocketChannelInputStream;
-import muscle.util.serialization.Xdr;
-import muscle.util.serialization.XdrArrayBufferIn;
-import muscle.util.serialization.XdrArrayBufferOut;
-import muscle.util.serialization.XdrBufferedIn;
-import muscle.util.serialization.XdrDeserializerWrapper;
 import muscle.util.serialization.XdrIn;
-import muscle.util.serialization.XdrNIODeserializerWrapper;
-import muscle.util.serialization.XdrNIOSerializerWrapper;
 import muscle.util.serialization.XdrOut;
+import muscle.util.serialization.XdrDeserializerWrapper;
 import muscle.util.serialization.XdrSerializerWrapper;
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
 
 /**
  * Communicates with the API in cppmuscle.cpp with a TCP/IP connection using the XDR protocol.
@@ -67,14 +57,14 @@ public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	private final static boolean USE_ASYNC = System.getProperty("muscle.core.standalone.use_async") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_async"));
+	private final static boolean USE_NIO = System.getProperty("muscle.core.standalone.use_nio") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_nio"));
 	private volatile boolean isDone;
 	private boolean isDisposed;
 	
 	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
 		
-		if (USE_ASYNC) {
+		if (USE_NIO) {
 			ServerSocketChannel ssc = ServerSocketChannel.open();
 			ss = ssc.socket();
 			ss.bind(new InetSocketAddress(SocketFactory.getMuscleHost(), 0), 1);
@@ -133,13 +123,9 @@ public class NativeGateway extends Thread implements Disposable {
 
 	public int getPort() {
 		return ss.getLocalPort();
-		
-		//return "tcp://" + ss.getInetAddress() + ":" + ss.getLocalPort();
 	}
 	public InetAddress getInetAddress() {
 		return ss.getInetAddress();
-	
-		//return "tcp://" + ss.getInetAddress() + ":" + ss.getLocalPort();
 	}
 	
 	@Override
@@ -148,27 +134,24 @@ public class NativeGateway extends Thread implements Disposable {
 		DeserializerWrapper in = null;
 		SerializerWrapper out = null;
 		try {
-			if (USE_ASYNC) {
+			final int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
+			OutputStream xdrOut;
+			InputStream xdrIn;
+			if (USE_NIO) {
 				SocketChannel sc = ss.getChannel().accept();
 				sc.configureBlocking(true);
 				s = sc.socket();
-
-				final int buffer_size = XdrNIOSerializerWrapper.DEFAULT_BUFFER_SIZE;
-//				OutputStream xdrOut = new SmartBufferedOutputStream(new SocketChannelOutputStream(sc, buffer_size, true, true), buffer_size, 64);
-//				InputStream xdrIn = new SocketChannelInputStream(sc, buffer_size, true);
-				OutputStream xdrOut = new SocketChannelOutputStream(sc, buffer_size, true, true);
-				InputStream xdrIn = new SocketChannelInputStream(sc, buffer_size, true);
-				in =  new XdrNIODeserializerWrapper(new XdrArrayBufferIn(xdrIn, buffer_size));
-				out = new XdrNIOSerializerWrapper(new XdrArrayBufferOut(xdrOut, buffer_size), buffer_size);
-//				in =  new XdrNIODeserializerWrapper(new Xdr(sc, buffer_size));
-//				out = new XdrNIOSerializerWrapper(new Xdr(sc,buffer_size), buffer_size/4);
+	
+				xdrOut = new SocketChannelOutputStream(sc, buffer_size);
+				xdrIn = new SocketChannelInputStream(sc, buffer_size);
 			} else {
 				s = ss.accept();
 
-				int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
-				in =  new XdrDeserializerWrapper(new XdrTcpDecodingStream(s, buffer_size));
-				out = new XdrSerializerWrapper(new XdrTcpEncodingStream(s, buffer_size), buffer_size);
+				xdrOut = s.getOutputStream();
+				xdrIn = s.getInputStream();
 			}
+			in =  new XdrDeserializerWrapper(new XdrIn(xdrIn, buffer_size));
+			out = new XdrSerializerWrapper(new XdrOut(xdrOut, buffer_size), buffer_size);
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			final boolean isFinestLog = logger.isLoggable(Level.FINEST);

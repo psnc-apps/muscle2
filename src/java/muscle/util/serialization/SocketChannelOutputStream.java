@@ -17,19 +17,12 @@ import java.nio.channels.SocketChannel;
 public class SocketChannelOutputStream extends OutputStream {
 	private final ByteBuffer buffer;
 	private final SocketChannel channel;
-	private final boolean writeXDRlen;
-
-	public SocketChannelOutputStream(SocketChannel sc, int size, boolean direct, boolean writeXDRLength) {
+	
+	public SocketChannelOutputStream(SocketChannel sc, int size) {
 		this.channel = sc;
-		this.buffer = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+		this.buffer = ByteBuffer.allocateDirect(size);
 		this.buffer.order(ByteOrder.BIG_ENDIAN);
 		this.buffer.clear();
-		
-		this.writeXDRlen = writeXDRLength;
-		if (this.writeXDRlen) {
-			// make room for the header
-			buffer.position(4);
-		}
 	}
 
 	@Override
@@ -49,21 +42,10 @@ public class SocketChannelOutputStream extends OutputStream {
 	
 	@Override
 	public void flush() throws IOException {
-		if (writeXDRlen) {
-			// Send a negative value: we're only sending single fragments.
-			final int size = (buffer.position() - 4) | 0x80000000;
-			buffer.putInt(0, size);
-		}
-		
 		buffer.flip();
 		// Assume a full write
 		this.channel.write(buffer);
 		buffer.clear();
-		
-		if (this.writeXDRlen) {
-			// make room for the header
-			buffer.position(4);
-		}
 	}
 	
 	@Override

@@ -34,8 +34,6 @@ import java.net.Socket;
 
 import muscle.net.CrossSocketFactory;
 
-import org.acplt.oncrpc.XdrTcpDecodingStream;
-import org.acplt.oncrpc.XdrTcpEncodingStream;
 import org.msgpack.MessagePack;
 import org.msgpack.packer.Packer;
 import org.msgpack.unpacker.Unpacker;
@@ -52,8 +50,8 @@ public class ConverterWrapperFactory {
 	
 	public static SerializerWrapper getDataSerializer(Socket s) throws IOException {
 		if (isXdr) {
-			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, DATA_BUFFER_SIZE);
-			return new XdrSerializerWrapper(xdrOut, DATA_BUFFER_SIZE);
+			XdrOut out = new XdrOut(s.getOutputStream(), DATA_BUFFER_SIZE);
+			return new XdrSerializerWrapper(out, DATA_BUFFER_SIZE);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();
@@ -64,8 +62,8 @@ public class ConverterWrapperFactory {
 	}
 	public static SerializerWrapper getControlSerializer(Socket s) throws IOException {
 		if (isXdr) {
-			XdrTcpEncodingStream xdrOut = new XdrTcpEncodingStream(s, CONTROL_BUFFER_SIZE);
-			return new XdrSerializerWrapper(xdrOut, CONTROL_BUFFER_SIZE);
+			XdrOut out = new XdrOut(s.getOutputStream(), CONTROL_BUFFER_SIZE);
+			return new XdrSerializerWrapper(out, CONTROL_BUFFER_SIZE);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			OutputStream socketStream = s.getOutputStream();
@@ -76,8 +74,8 @@ public class ConverterWrapperFactory {
 	}
 	public static DeserializerWrapper getDataDeserializer(Socket s) throws IOException {
 		if (isXdr) {
-			XdrTcpDecodingStream xdrIn = new XdrTcpDecodingStream(s, DATA_BUFFER_SIZE);
-			return new XdrDeserializerWrapper(xdrIn);
+			XdrIn in = new XdrIn(s.getInputStream(), DATA_BUFFER_SIZE);
+			return new XdrDeserializerWrapper(in);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			InputStream socketStream = System.getProperty(CrossSocketFactory.PROP_MTO_TRACE) == null ? s.getInputStream() : 
@@ -94,8 +92,8 @@ public class ConverterWrapperFactory {
 	}
 	public static DeserializerWrapper getControlDeserializer(Socket s) throws IOException {
 		if (isXdr) {
-			XdrTcpDecodingStream xdrIn = new XdrTcpDecodingStream(s,CONTROL_BUFFER_SIZE);
-			return new XdrDeserializerWrapper(xdrIn);
+			XdrIn in = new XdrIn(s.getInputStream(), CONTROL_BUFFER_SIZE);
+			return new XdrDeserializerWrapper(in);
 		} else {
 			MessagePack msgPack = new MessagePack();
 			Unpacker unpacker = msgPack.createUnpacker(new BufferedInputStream(s.getInputStream(), CONTROL_BUFFER_SIZE));

@@ -44,20 +44,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class XdrOut implements XdrEncodingStream {
-	private final byte[] longbytes = new byte[8];
-	
 	/**
 	 * Byte buffer used by XDR record.
 	 */
-	protected final OutputStream out;
+	private final XdrBuffer buffer;
 	
 	/**
 	 * Create a new Xdr object with a buffer of given size.
 	 *
 	 * @param size of the buffer in bytes
 	 */
-	public XdrOut(OutputStream out) {
-		this.out = out;
+	public XdrOut(OutputStream out, int bufsize) {
+		this.buffer = new XdrBuffer(out, bufsize);
 	}
 
 	public void beginEncoding() {
@@ -65,7 +63,7 @@ public class XdrOut implements XdrEncodingStream {
 	}
 
 	public void endEncoding() throws IOException {
-		out.flush();
+		buffer.flush();
 	}
 
 	/**
@@ -75,11 +73,7 @@ public class XdrOut implements XdrEncodingStream {
 	 * methods can rely on.
 	 */
 	public void xdrEncodeInt(final int value) throws IOException {
-		longbytes[0] = (byte)((value >> 24) & 0xff);
-		longbytes[1] = (byte)((value >> 16) & 0xff);
-		longbytes[2] = (byte)((value >>  8) & 0xff);
-		longbytes[3] = (byte)(value & 0xff);
-		out.write(longbytes, 0, 4);
+		buffer.put(value);
 	}
 
 	/**
@@ -191,8 +185,6 @@ public class XdrOut implements XdrEncodingStream {
 		xdrEncodeDynamicOpaque(string == null ? new byte[] {} : string.getBytes());
 	}
 
-	private static final byte [] paddingZeros = { 0, 0, 0 };
-
 	/**
 	 * Encodes (aka "serializes") a XDR opaque value, which is represented
 	 * by a vector of byte values. Only the opaque value is encoded, but
@@ -202,9 +194,7 @@ public class XdrOut implements XdrEncodingStream {
 	 * vector is not a multiple of four, zero bytes will be used for padding.
 	 */
 	public void xdrEncodeOpaque(byte[] bytes, int offset, int len) throws IOException {
-		out.write(bytes, offset, len);
-		int padding = (4 - (len & 3)) & 3;
-		out.write(paddingZeros, 0, padding);
+		buffer.put(bytes, offset, len);
 	}
 
 	public void xdrEncodeOpaque(byte[] bytes, int len) throws IOException {
@@ -233,15 +223,7 @@ public class XdrOut implements XdrEncodingStream {
 	 * babble and is 64&nbsp;bits wide) and write it down this XDR stream.
 	 */
 	public void xdrEncodeLong(long value) throws IOException {
-		longbytes[0] = (byte)((value >> 56) & 0xffL);
-		longbytes[1] = (byte)((value >> 48) & 0xffL);
-		longbytes[2] = (byte)((value >> 40) & 0xffL);
-		longbytes[3] = (byte)((value >> 32) & 0xffL);
-		longbytes[4] = (byte)((value >> 24) & 0xffL);
-		longbytes[5] = (byte)((value >> 16) & 0xffL);
-		longbytes[6] = (byte)((value >>  8) & 0xffL);
-		longbytes[7] = (byte)( value        & 0xffL);
-		out.write(longbytes, 0, 8);
+		buffer.put(value);
 	}
 
 	/**
@@ -270,10 +252,8 @@ public class XdrOut implements XdrEncodingStream {
 	public void xdrEncodeByteFixedVector(byte[] value, int length) throws IOException {
 		assert(value.length == length);
 
-		longbytes[0] = longbytes[1] = longbytes[2] = 0;
 		for (byte b : value) {
-			longbytes[3] =  b;
-			out.write(longbytes, 0, 4);
+			buffer.put(b);
 		}
 	}
 
@@ -286,9 +266,7 @@ public class XdrOut implements XdrEncodingStream {
 	 * @throws IOException if an I/O error occurs.
 	 */
 	public void xdrEncodeByte(byte value) throws IOException {
-		longbytes[0] = longbytes[1] = longbytes[2] = 0;
-		longbytes[3] =  value;
-		out.write(longbytes, 0, 4);
+		buffer.put(value);
 	}
 
 	/**
@@ -298,10 +276,7 @@ public class XdrOut implements XdrEncodingStream {
 	 * @param value Short value to encode.
 	 */
 	public void xdrEncodeShort(short value) throws IOException {
-		longbytes[0] = longbytes[1] = 0;
-		longbytes[2] = (byte)((value >> 8) & 0xff);
-		longbytes[3] = (byte)( value         & 0xff);
-		out.write(longbytes, 0, 4);
+		buffer.put(value);
 	}
 
 	/**
@@ -326,11 +301,8 @@ public class XdrOut implements XdrEncodingStream {
 	public void xdrEncodeShortFixedVector(short[] value, int length) throws IOException {
 		assert (value.length == length);
 		
-		longbytes[0] = longbytes[1] = 0;
 		for (short s : value) {
-			longbytes[2] = (byte)((s >> 8) & 0xff);
-			longbytes[3] = (byte)( s         & 0xff);
-			out.write(longbytes, 0, 4);
+			buffer.put(s);
 		}
 	}
 	
@@ -339,10 +311,8 @@ public class XdrOut implements XdrEncodingStream {
 	public void xdrEncodeBooleanVector(boolean[] bool) throws IOException {
 		xdrEncodeInt(bool.length);
 
-		longbytes[0] = longbytes[1] = longbytes[2] = 0;
 		for (boolean b : bool) {
-			longbytes[3] =  (byte)(b ? 1 : 0);
-			out.write(longbytes, 0, 4);
+			buffer.put((byte)(b ? 1 : 0));
 		}
 	}
 
@@ -356,5 +326,87 @@ public class XdrOut implements XdrEncodingStream {
 
 	public void close() {
 		// nop
+	}
+	
+	private static class XdrBuffer {
+		private final byte[] buffer;
+		private int idx;
+		private final OutputStream out;
+
+		public XdrBuffer(OutputStream out, int bufsize) {
+			buffer = new byte[bufsize];
+			idx = 4;
+			this.out = out;
+		}
+
+		public void put(long value) {
+			buffer[idx++] = (byte)((value >> 56) & 0xffL);
+			buffer[idx++] = (byte)((value >> 48) & 0xffL);
+			buffer[idx++] = (byte)((value >> 40) & 0xffL);
+			buffer[idx++] = (byte)((value >> 32) & 0xffL);
+			buffer[idx++] = (byte)((value >> 24) & 0xffL);
+			buffer[idx++] = (byte)((value >> 16) & 0xffL);
+			buffer[idx++] = (byte)((value >>  8) & 0xffL);
+			buffer[idx++] = (byte)( value        & 0xffL);
+		}
+
+		public void put(int value) {
+			buffer[idx++] = (byte)((value >> 24) & 0xff);
+			buffer[idx++] = (byte)((value >> 16) & 0xff);
+			buffer[idx++] = (byte)((value >>  8) & 0xff);
+			buffer[idx++] = (byte)(value & 0xff);
+		}
+
+		public void put(final short value) {
+			buffer[idx++] = 0;
+			buffer[idx++] = 0;
+			buffer[idx++] = (byte)((value >>  8) & 0xff);
+			buffer[idx++] = (byte)(value & 0xff);
+		}
+
+		public void put(byte value) {
+			buffer[idx++] = 0;
+			buffer[idx++] = 0;
+			buffer[idx++] = 0;
+			buffer[idx++] = value;		
+		}
+
+		public void put(byte[] b, final int offset, final int length) throws IOException {
+			final int padding = (4 - (length & 3)) & 3;
+			// Copy small packages, but send larger ones directly
+			if (length < 1024 && length + idx < buffer.length) {
+				System.arraycopy(b, offset, buffer, idx, length);
+				idx += length;
+				for (int i = 0; i < padding; i++) {
+					buffer[idx++] = 0;
+				}
+			} else {
+				final int oldidx = idx;
+				final int size = idx - 4 + length + padding;
+				idx = 0;
+				put(size);
+				out.write(buffer, 0, oldidx);
+				out.write(b, offset, length);
+				if (padding > 0) {
+					for (int i = 0; i < padding; i++) {
+						buffer[i] = 0;
+					}
+					out.write(buffer, 0, padding);
+				}
+			}
+		}
+
+		public void flush() throws IOException {
+			final int size = idx - 4;
+			idx = 0;
+			// Last fragment
+			put(size | 0x80000000);
+			out.write(buffer, 0, size + 4);
+			out.flush();
+		}
+
+		public int size() {
+			return idx;
+		}
 	}
 }

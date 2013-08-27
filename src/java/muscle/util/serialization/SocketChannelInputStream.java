@@ -20,9 +20,9 @@ public class SocketChannelInputStream extends InputStream {
 	private final ByteBuffer buffer;
 	private final SocketChannel channel;
 
-	public SocketChannelInputStream(SocketChannel sc, int size, boolean direct) {
+	public SocketChannelInputStream(SocketChannel sc, int size) {
 		this.channel = sc;
-		this.buffer = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+		this.buffer = ByteBuffer.allocateDirect(size);
 		this.buffer.limit(0);
 	}
 	
