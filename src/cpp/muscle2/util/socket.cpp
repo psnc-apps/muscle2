@@ -12,6 +12,8 @@
 using namespace muscle;
 using namespace std;
 
+namespace muscle {
+
 socket::socket(endpoint& ep, async_service *service) : address(ep), hasAddress(true), server(service)
 {
     if (!address.isValid())
@@ -71,5 +73,7 @@ void ServerSocket::listen(int max_connections)
 size_t SocketFactory::async_connect(int user_flag, muscle::endpoint &ep, muscle::socket_opts *opts, muscle::async_acceptlistener *accept)
 {
     return service->connect(user_flag, this, ep, opts, accept);
+}
+
 }
 
