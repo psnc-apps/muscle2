@@ -8,15 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author Joris Borgdorff
  */
 public class SocketChannelInputStream extends InputStream {
-	private static final Logger logger = Logger.getLogger(SocketChannelInputStream.class.getName());
 	private final ByteBuffer buffer;
 	private final SocketChannel channel;
 
@@ -36,7 +33,6 @@ public class SocketChannelInputStream extends InputStream {
 				this.channel.close();
 				return false;
 			} else {
-				logger.log(Level.FINE, "Read {0} bytes from channel", bytesRead);
 				buffer.flip();
 				return true;
 			}
