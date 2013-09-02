@@ -61,7 +61,10 @@ muscle_error_t env::init(int *argc, char ***argv)
 	int rank = env::detect_mpi_rank();
 	
 	// Only execute for rank 0
-	if (rank > 0) return MUSCLE_SUCCESS;
+	if (rank > 0) {
+		logger::initialize(NULL, NULL, MUSCLE_LOG_OFF, false);
+		return MUSCLE_SUCCESS;
+	}
 	is_main_processor = true;
 	
 	if (atexit(muscle::env::muscle2_kill) != 0) {

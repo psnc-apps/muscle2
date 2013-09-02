@@ -182,6 +182,10 @@ namespace muscle {
 	
 	void logger::initialize(const char *_name, const char *_tmp_path, int _level, bool will_log)
 	{
+		if (!will_log) {
+			min_level = MUSCLE_LOG_OFF; // No logging
+			return;
+		}
 		if (_name == NULL)
 			_name = "muscle";
 		
@@ -197,6 +201,12 @@ namespace muscle {
     
 	void logger::initialize(const char *_name, FILE *file, int _level, int _file_level, bool will_log)
 	{
+		if (!will_log) {
+			min_level = MUSCLE_LOG_OFF; // No logging
+			return;
+		}
+		min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
+
 		if (_name != NULL)
 			logger_name = strdup(_name);
 		logger_fd = file;
@@ -205,10 +215,6 @@ namespace muscle {
 		if (logger_fd)
 			logger_file_level = _file_level;
 		
-        if (will_log)
-			min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
-        else
-            min_level = MUSCLE_LOG_OFF; // No logging
 	}
     
 	void logger::finalize()
