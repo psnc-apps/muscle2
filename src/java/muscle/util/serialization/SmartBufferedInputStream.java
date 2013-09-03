@@ -16,7 +16,6 @@ import java.util.logging.Logger;
  * @author Joris Borgdorff
  */
 public class SmartBufferedInputStream extends InputStream {
-	private final static Logger logger = Logger.getLogger(SmartBufferedInputStream.class.getName());
 	private final byte[] data;
 	private final InputStream in;
 	private final int tradeoff_size;
@@ -62,38 +61,27 @@ public class SmartBufferedInputStream extends InputStream {
 	
 	@Override
 	public int read(byte[] b, int offset, final int len) throws IOException {
-		logger.log(Level.FINE, "Reading {0} bytes", len);
 		
 		if (len == 0) return 0;
-		if (size == -1) {
-			logger.log(Level.FINE, "EOF");
-			return -1;
-		}
+		if (size == -1) return -1;
 		
 		final int cp = copy(b, offset, len);
-		if (cp == len) {
-			logger.log(Level.FINE, "Copied {0} bytes ({1} remaining)", new Object[] {cp, size});
-			return cp;
-		}
-		
+		if (cp == len) return cp;
 		final int newLen = len - cp;
 		final int newOffset = offset + cp;
 
 		if (newLen > tradeoff_size) {
 			final int ret = readFromStream(b, newOffset, newLen, newLen);
-			logger.log(Level.FINE, "Read {0} bytes", (ret == -1 ? cp : ret + cp));
 			return (ret == -1 ? cp : ret + cp);
 		} else {
 			final int ret = readFromStream(data, 0, newLen, data.length);
 			if (size == -1) {
 				final int newCp = cp + copy(b, newOffset, Math.min(ret, newLen));
-				logger.log(Level.FINE, "Read {0} bytes (EOF)", newCp);
 				return newCp;
 			} else {
 				idx = 0;
 				size = ret;
 				final int newCp = cp + copy(b, newOffset, newLen);
-				logger.log(Level.FINE, "Read {0} bytes, returning {1} bytes ({2} remaining)", new Object[] {ret, newCp, size});
 				return newCp;
 			}
 		}
