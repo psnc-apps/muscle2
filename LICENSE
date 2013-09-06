@@ -1,0 +1,11 @@
+All files in the MUSCLE 2 package, except JAR files and files contained in the
+cmake_scripts/ directory fall under LGPLv3 (GNU Lesser General Public License
+version 3), as stated in src/lgpl.txt.
+
+The files in the cmake_scripts/ directory fall under the CMake copyright
+license, as stated in cmake_scripts/COPYRIGHT. 
+
+All JAR files are unmodified versions of their respective distributions; 
+they are included for ease of use. In thirdparty/FILE_LIST, their origins and
+licenses are listed.
+

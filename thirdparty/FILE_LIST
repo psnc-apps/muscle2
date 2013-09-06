@@ -1,0 +1,31 @@
+File: javassist-3.15.0-GA.jar
+Website: http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/
+Download: http://mvnrepository.com/artifact/org.javassist/javassist/3.15.0-GA
+License: A triple license of the MPL, the LGPL, and the Apache License.
+
+File: jcommander-1.17.jar
+Website: http://jcommander.org/
+Download: http://mvnrepository.com/artifact/com.beust/jcommander/1.17
+License: Apache License 2.0
+
+File: jmml-util-0.1.1.jar
+Website and download: http://github.org/blootsvoets/jmml
+License: LGPLv3
+
+File: json_simple-1.1.jar
+Website and download: http://code.google.com/p/json-simple/
+License: Apache License 2.0
+
+File: junit-4.10.jar
+Website: http://junit.org/
+Download: http://mvnrepository.com/artifact/junit/junit/4.10
+License: Common Public License v1.0
+
+File: msgpack-0.6.6.jar
+Website: http://msgpack.org/
+Download: http://mvnrepository.com/artifact/org.msgpack/msgpack/0.6.6
+License: Apache License 2.0
+
+File: oncrpc.jar
+Website and download: http://sourceforge.net/projects/remotetea/
+License: LGPLv2
