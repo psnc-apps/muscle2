@@ -17,7 +17,7 @@ namespace muscle {
 socket::socket(endpoint& ep, async_service *service) : address(ep), hasAddress(true), server(service)
 {
     if (!address.isValid())
-        throw muscle_exception("endpoint " + address.str() + " can not be resolved");
+        throw muscle_exception("endpoint " + address.str() + " cannot be resolved");
 }
 
 socket::socket(async_service *service) : address("", 0), hasAddress(false), server(service) {}

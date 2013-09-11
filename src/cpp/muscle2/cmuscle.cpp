@@ -64,3 +64,15 @@ void MUSCLE_Finalize(void)
 {
 	muscle::env::finalize();
 }
+
+int MUSCLE_Barrier_Init(char **barrier, size_t *len, int num_procs)
+{
+	return muscle::util::barrier_init(barrier, len, num_procs);
+}
+int MUSCLE_Barrier(const char *barrier) {
+	return muscle::util::barrier(barrier);
+}
+
+void MUSCLE_Barrier_Destroy(char *barrier) {
+	return muscle::util::barrier_destroy(barrier);
+}

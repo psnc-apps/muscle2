@@ -28,6 +28,7 @@ namespace muscle {
         endpoint(const char *buffer);
         endpoint(std::string host, uint16_t port);
         endpoint(uint32_t host, uint16_t port);
+        endpoint(uint16_t port);
         
         void resolve();
         inline bool isResolved() const
@@ -70,7 +71,7 @@ namespace muscle {
         
 		inline void assertValid() const
 		{
-			if (!isResolved() && host != "")
+			if (!isResolved() && !host.empty())
 				throw muscle::muscle_exception("Endpoint '" + host + "' must be resolved to get properties.");
 		}
 		

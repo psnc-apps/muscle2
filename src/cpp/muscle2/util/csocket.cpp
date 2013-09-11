@@ -105,7 +105,7 @@ namespace muscle {
         int proto = address.isIPv6() ? PF_INET6 : PF_INET;
         
         sockfd = ::socket(proto, SOCK_STREAM, 0);
-        if (sockfd < 0) throw muscle_exception("can not create socket", errno);
+        if (sockfd < 0) throw muscle_exception("cannot create socket", errno);
         int set = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(set));
 		setsockopt(sockfd, SOL_SOCKET, MSG_NOSIGNAL, &set, sizeof(set));
@@ -179,7 +179,7 @@ namespace muscle {
         int res = ::connect(sockfd, &saddr, sizeof(struct sockaddr));
         if (res < 0 && (blocking || errno != EINPROGRESS)) {
 			sockfd = -1;
-            throw muscle_exception("can not connect to " + address.str(), errno);
+            throw muscle_exception("cannot connect to " + address.str(), errno);
 		}
         
         if (blocking)
@@ -277,9 +277,15 @@ namespace muscle {
     void CServerSocket::init()
     {
         struct sockaddr saddr;
+        struct sockaddr_in sin;
+        socklen_t len = sizeof(sin);
+
         address.getSockAddr(saddr);
-        int res = ::bind(sockfd, &saddr, sizeof(struct sockaddr));
-        if (res < 0) throw muscle_exception("can not bind to " + address.str(), errno);
+        int res = ::bind(sockfd, &saddr, sizeof(saddr));
+
+        if (res < 0) throw muscle_exception("cannot bind to " + address.str() + "(" + address.getHostFromAddress() + ")", errno);
+        if (::getsockname(sockfd, (struct sockaddr *)&sin, &len) == 0)
+                address.port = ntohs(sin.sin_port);
     }
     
     size_t CServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)

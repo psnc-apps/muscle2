@@ -24,6 +24,7 @@
 #include "xdr_communicator.hpp"
 #include "util/endpoint.h"
 #include "util/exception.hpp"
+#include "util/csocket.h"
 
 #include <stdlib.h>
 #include <rpc/types.h>
@@ -401,6 +402,117 @@ endpoint env::muscle2_tcp_location(const pid_t pid)
         
         return ep;
 	}
+}
+
+ServerSocket *util::ssock = NULL;
+
+int util::barrier_init(char **barrier, size_t *len, const int num_procs)
+{
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::barrier_init()");
+#endif
+	if (num_procs < 2) {
+		logger::warning("Will not create barrier with less than 2 processes");
+		return -1;
+	}
+	*len = endpoint::getSize() + sizeof(int);
+	char *buf = new char[*len];
+	int *buf_intptr = (int *)buf;
+	*buf_intptr = num_procs;
+	if (env::is_main_processor) {
+		socket_opts opts(num_procs);
+		// Bind to any port
+		try {
+			endpoint ep((uint16_t)0);
+			ep.resolve();
+			ssock = new muscle::CServerSocket(ep, NULL, opts);
+			ssock->setBlocking(true);
+			ssock->getAddress().serialize(buf + sizeof(int));
+		} catch (const muscle_exception& ex) {
+			const char *msg = ex.what();
+			logger::severe("Could not initialize MUSCLE barrier: %s", msg);
+			if (ssock) {
+				delete ssock;
+				ssock = NULL;
+			}
+			return -1;
+		}
+	}
+	*barrier = buf;
+	
+	return 0;
+}
+
+int util::barrier(const char * const barrier)
+{
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::barrier()");
+#endif
+	const int num_procs = *(int*)barrier;
+	if (num_procs < 1) {
+		logger::warning("Will not do barrier with less than 2 processes");
+		return 0;
+	}
+	
+	const char *msg = NULL;
+	socket_opts opts;
+	
+	if (env::is_main_processor) {
+		// start at 1: the main processor is already counted
+		try {
+			const char data = 1;
+			for (int i = 1; i < num_procs; i++) {
+				ClientSocket *sock = ssock->accept(opts);
+				sock->setBlocking(true);
+				if (sock == NULL) {
+					msg = "failed to accept socket";
+				} else {
+					const int hasErr = sock->hasError();
+					if (hasErr) {
+						msg = strerror(hasErr);
+					} else {
+						sock->send(&data, 1);
+					}
+				}
+				delete sock;
+			}
+		} catch (muscle::muscle_exception& ex) {
+			msg = ex.what();
+		}
+		if (msg)
+			logger::severe("muscle::env::barrier failed to connect socket: %s", msg);
+	} else {
+		endpoint address(barrier + sizeof(int));
+		address.resolve();
+		const char * const addr_str = address.str().c_str();
+		char data;
+		try {
+			opts.blocking_connect = true;
+			muscle::CClientSocket sock(address, NULL, opts);
+			sock.setBlocking(true);
+			const int hasErr = sock.hasError();
+			if (hasErr) {
+				msg = strerror(hasErr);
+			} else {
+				sock.recv(&data, 1);
+			}
+		} catch (muscle::muscle_exception& ex) {
+			msg = ex.what();
+		}
+		if (msg)
+			printf("ERROR: muscle::env::barrier failed to connect socket: %s\n", msg);
+	}
+	
+	return msg == NULL ? 0 : -1;
+}
+
+void util::barrier_destroy(char * const barrier)
+{
+	if (env::is_main_processor) {
+		delete ssock;
+		ssock = NULL;
+	}
+	delete [] barrier;
 }
 
 char *env::create_tmpfifo()

@@ -36,6 +36,9 @@ const char* MUSCLE_Kernel_Name(void);
 const char* MUSCLE_Get_Property(const char* name);
 int MUSCLE_Has_Property(const char* name);
 int MUSCLE_Will_Stop(void);
+int MUSCLE_Barrier_Init(char **barrier, size_t *len, int num_procs);
+int MUSCLE_Barrier(const char *barrier);
+void MUSCLE_Barrier_Destroy(char *barrier);
 
 muscle_error_t MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type);
 void* MUSCLE_Receive(const char *entrance_name, void *array, size_t *size, muscle_datatype_t type);

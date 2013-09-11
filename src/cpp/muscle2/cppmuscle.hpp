@@ -29,6 +29,7 @@
 
 #include "muscle_types.h"
 #include "util/logger.hpp"
+#include "util/socket.h"
 
 namespace muscle {
     
@@ -65,7 +66,6 @@ public:
 	
 	static bool has_next(std::string exit_name);
 	static bool is_main_processor;
-
 private:
 	static int detect_mpi_rank(void);
 	static pid_t spawn(char * const *argv);
@@ -84,6 +84,17 @@ public:
 	static std::string get_property(std::string name);
 	static bool has_property(std::string name);
 	static std::string get_properties(void);
+};
+
+class util
+{
+public:
+	static int barrier_init(char **barrier, size_t *len, int num_procs);
+	static int barrier(const char *barrier);
+	static void barrier_destroy(char *barrier);
+
+private:
+	static ServerSocket *ssock;
 };
 
 } // EO namespace muscle

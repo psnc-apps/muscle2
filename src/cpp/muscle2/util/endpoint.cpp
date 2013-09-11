@@ -43,6 +43,19 @@ endpoint::endpoint(const char *buffer_ptr) : host("")
 	port = ntohs(*(const uint16_t *)buffer_ptr);
 }
 
+endpoint::endpoint(uint16_t port_)
+{
+	port = port_;
+	const size_t max_hostname = 256;
+	char hostname[max_hostname];
+	hostname[max_hostname - 1] = '\0';
+	if (gethostname(hostname, max_hostname) == -1) {
+		throw muscle_exception("Could not find hostname");
+	}
+	host = std::string(hostname);
+	memset(addr, 0, sizeof(addr));
+}
+
 std::string endpoint::getHostFromAddress() const
 {
 	assertValid();
