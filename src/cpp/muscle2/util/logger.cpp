@@ -205,7 +205,6 @@ namespace muscle {
 			min_level = MUSCLE_LOG_OFF; // No logging
 			return;
 		}
-		min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
 
 		if (_name != NULL)
 			logger_name = strdup(_name);
@@ -214,7 +213,8 @@ namespace muscle {
 		
 		if (logger_fd)
 			logger_file_level = _file_level;
-		
+
+		min_level = logger_level < logger_file_level ? logger_level : logger_file_level;
 	}
     
 	void logger::finalize()
