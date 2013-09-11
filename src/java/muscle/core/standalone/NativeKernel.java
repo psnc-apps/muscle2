@@ -263,7 +263,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	 * Returns the log level of the ConsoleHandler, if set, otherwise returns Level.ALL.
 	 */
 	public int getLogLevel() {
-		String strConsoleLevel = LogManager.getLogManager().getProperty("java.util.logging.ConsoleHandler.level");
+		String strConsoleLevel = LogManager.getLogManager().getProperty("muscle.util.logging.ConcurrentConsoleHandler.level");
 		try {
 			return Level.parse(strConsoleLevel).intValue();
 		} catch (Throwable ex) {
