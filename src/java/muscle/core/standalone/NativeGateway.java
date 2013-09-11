@@ -254,8 +254,9 @@ public class NativeGateway extends Thread implements Disposable {
 					}
 					case 9:
 					{
-						if (isFinestLog) logger.finest("getLogLevel() request.");
-						out.writeInt(listener.getLogLevel());
+						final int logLevel = listener.getLogLevel();
+						if (isFinestLog) logger.log(Level.FINEST, "request getLogLevel() = {0}", logLevel);
+						out.writeInt(logLevel);
 						break;
 					}
 					case 10:
