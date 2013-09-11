@@ -19,6 +19,7 @@
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <mpi.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <muscle2/cmuscle.h>
 
@@ -34,10 +35,23 @@ int main(int argc, char *argv[])
 	
 	int rank, mpi_size, will_stop;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+	
+	char *barrier;
+	size_t len;
+	int result = MUSCLE_Barrier_Init(&barrier, &len, mpi_size);
+	MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	
+	if (result == -1) {
+		MPI_Finalize();
+		MUSCLE_Finalize();
+		return 1;
+	}
+
+	MPI_Bcast(barrier, len, MPI_CHAR, 0, MPI_COMM_WORLD);
 	
 	// We will communicate in root only, so allocate memory for that
 	if (rank == 0) {
-		MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 		data = (double *)malloc(mpi_size * sizeof(double));
 		will_stop = MUSCLE_Will_Stop();
 	}
@@ -56,7 +70,9 @@ int main(int argc, char *argv[])
 			MUSCLE_Send("data", data, mpi_size, MUSCLE_DOUBLE);
 			// After sending, check and broadcast the will_stop condition again
 			will_stop = MUSCLE_Will_Stop();
+			usleep(500000);
 		}
+		MUSCLE_Barrier(barrier);
 		MPI_Bcast(&will_stop, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	}
 	
@@ -67,6 +83,7 @@ int main(int argc, char *argv[])
 	
 	// Finalize the frameworks in reverse order of initializing
 	MPI_Finalize();
+	MUSCLE_Barrier_Destroy(barrier);
 	MUSCLE_Finalize();
 	return 0;
 }
