@@ -103,7 +103,7 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			{
 				int count_i = count_int;
 				if (count_i < 0 || count_i + 8 < 0) {
-					throw muscle_exception("Message too large, can not send arrays with more than 2 147 483 639 elements.");
+					throw muscle_exception("Message too large, cannot send arrays with more than 2 147 483 639 elements.");
 				}
 				if (!xdr_int(&xdro, &count_i)) throw muscle_exception("Cannot write message size");
 			}

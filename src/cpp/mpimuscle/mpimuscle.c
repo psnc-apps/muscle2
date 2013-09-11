@@ -90,7 +90,7 @@ const char *strnext(char *buf, const char *str, int chr)
 
 /**
  * Detects the MPI rank using only environment variables.
- * @return the MPI rank, or -1 if can not be determined
+ * @return the MPI rank, or -1 if cannot be determined
  */
 int detect_mpi_rank() {
 	const char *possible_mpi_rank_vars[]={
