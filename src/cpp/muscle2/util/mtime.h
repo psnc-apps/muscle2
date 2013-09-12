@@ -1,13 +1,13 @@
 //
-//  time.h
+//  mtime.h
 //  CMuscle
 //
 //  Created by Joris Borgdorff on 4/24/13.
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#ifndef __CMuscle__time__
-#define __CMuscle__time__
+#ifndef __CMuscle__mtime__
+#define __CMuscle__mtime__
 
 #include "exception.hpp"
 
@@ -19,7 +19,6 @@
 
 namespace muscle {
 
-class time;
 class duration;
     
 class abstract_time {
@@ -88,40 +87,40 @@ private:
     }
 };
 
-class time : public abstract_time
+class mtime : public abstract_time
 {
 public:
-    time() : abstract_time() {}
-    time(const long sec, const int usec) : abstract_time(sec, usec) {}
-	time(const struct timeval& tval) : abstract_time(tval) {}
+    mtime() : abstract_time() {}
+    mtime(const long sec, const int usec) : abstract_time(sec, usec) {}
+	mtime(const struct timeval& tval) : abstract_time(tval) {}
 
     virtual void sleep() const;
     duration duration_until() const;
     duration duration_since() const;
-    inline static time far_future()
-	{ struct timeval t; t.tv_sec = LONG_MAX; t.tv_usec = 0; return time(t); }
+    inline static mtime far_future()
+	{ struct timeval t; t.tv_sec = LONG_MAX; t.tv_usec = 0; return mtime(t); }
 	
-    static time now();
+    static mtime now();
 	
 	bool is_past() const { return !(*this > now()); }
     
-    time operator+(const duration& other) const;
-    time operator-(const duration& other) const;
-    duration operator-(const time& other) const;
+    mtime operator+(const duration& other) const;
+    mtime operator-(const duration& other) const;
+    duration operator-(const mtime& other) const;
     
-    inline bool operator<(const time& other) const
+    inline bool operator<(const mtime& other) const
     {
         return t.tv_sec < other.t.tv_sec ||
               (t.tv_sec == other.t.tv_sec && t.tv_usec < other.t.tv_usec);
     }
-    inline bool operator>(const time& other) const
+    inline bool operator>(const mtime& other) const
     {
         return t.tv_sec > other.t.tv_sec ||
         (t.tv_sec == other.t.tv_sec && t.tv_usec > other.t.tv_usec);
     }
-    inline bool operator==(const time& other) const
+    inline bool operator==(const mtime& other) const
     { return t.tv_sec == other.t.tv_usec && t.tv_usec == other.t.tv_usec; }
-    inline bool operator!=(const time& other) const
+    inline bool operator!=(const mtime& other) const
     { return t.tv_sec != other.t.tv_usec || t.tv_usec != other.t.tv_usec; }
 };
     
@@ -153,11 +152,11 @@ public:
 		return (usec > INT_MAX ? INT_MAX : (int)usec);
 	}
 
-    inline time time_after() const
-    { return *this + time::now(); }
+    inline mtime time_after() const
+    { return *this + mtime::now(); }
     
-    inline time operator+(const time& other) const
-    { return time(plus(t, other.timeval())); }
+    inline mtime operator+(const mtime& other) const
+    { return mtime(plus(t, other.timeval())); }
 
     inline duration operator+(const duration& other) const
     { return duration(plus(t, other.timeval())); }
@@ -186,5 +185,5 @@ public:
 
 }
 
-#endif /* defined(__CMuscle__time__) */
+#endif /* defined(__CMuscle__mtime__) */
 

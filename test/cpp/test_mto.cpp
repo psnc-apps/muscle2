@@ -184,7 +184,7 @@ void testAsyncMPConnectServerSocket()
 
 int main(int argc, char * argv[])
 {
-    muscle::time t0 = muscle::time::now();
+    muscle::mtime t0 = muscle::mtime::now();
 
     try {
         testMutex();

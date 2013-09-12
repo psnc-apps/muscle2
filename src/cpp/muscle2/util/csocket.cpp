@@ -35,8 +35,8 @@
 using namespace std;
 
 namespace muscle {
-    csocket::csocket() : socket((async_service *)0) {}
-    csocket::csocket(int sockfd) : socket((async_service *)0) { this->sockfd = sockfd; }
+    csocket::csocket() : msocket((async_service *)0) {}
+    csocket::csocket(int sockfd) : msocket((async_service *)0) { this->sockfd = sockfd; }
     
     void csocket::setBlocking (const bool blocking)
     {
@@ -114,7 +114,7 @@ namespace muscle {
     int csocket::select(int mask) const
     { return select(mask, MUSCLE_SOCKET_TIMEOUT); }
     
-    int csocket::select(int mask, time time) const
+    int csocket::select(int mask, duration timeoutDuration) const
     {
         /* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
         int access = 0;
@@ -140,7 +140,7 @@ namespace muscle {
             FD_SET(sockfd,pesock);
         }
         
-        struct timeval timeout = time.timeval();
+        struct timeval timeout = timeoutDuration.time_after().timeval();
         
         int res = ::select(sockfd+1, prsock, pwsock, pesock, &timeout);
         
@@ -158,12 +158,12 @@ namespace muscle {
     }
     
     /** CLIENT SIDE **/
-    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : socket(parent), csocket(sockfd), has_delay(true), has_cork(false)
+    CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : msocket(parent), csocket(sockfd), has_delay(true), has_cork(false)
     {
         setOpts(opts);
     }
         
-    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), socket(ep, service), has_delay(true), has_cork(false)
+    CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), msocket(ep, service), has_delay(true), has_cork(false)
     {
         create();
         setOpts(opts);
@@ -245,7 +245,7 @@ namespace muscle {
 	}
     
     /** SERVER SIDE **/
-    CServerSocket::CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts)
+    CServerSocket::CServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : msocket(ep, service), ServerSocket(opts)
     {
         create();
         setOpts(opts);

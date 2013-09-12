@@ -9,7 +9,8 @@
 #ifndef __CMuscle__async_service__
 #define __CMuscle__async_service__
 
-#include "socket.h"
+#include "msocket.h"
+#include "mtime.h"
 
 #include <queue>
 #include <set>
@@ -18,7 +19,7 @@
 namespace muscle {
     class async_service
     {
-        typedef std::pair<time,async_description> timer_t;
+        typedef std::pair<mtime,async_description> timer_t;
         typedef std::pair<ClientSocket *,std::queue<async_description> > csockqueuepair_t;
         typedef std::vector<csockqueuepair_t *> sockqueue_t;
         typedef std::vector<std::pair<ServerSocket *, async_description> *> ssockdesc_t;
@@ -35,14 +36,14 @@ namespace muscle {
         size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);
         size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
         size_t listen(int user_flag, ServerSocket* socket, socket_opts *,async_acceptlistener* accept);
-        size_t timer(int user_flag, time& t, async_function* func, void *user_data);
+        size_t timer(int user_flag, mtime& t, async_function* func, void *user_data);
         virtual size_t connect(int user_flag, muscle::SocketFactory *factory, endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
 
         void erase_socket(int rfd, int wfd, int wrfd);
         void erase_listen(int fd);
         void erase_timer(size_t);
         void erase_connect(size_t);
-        void *update_timer(size_t, time&, void *user_data);
+        void *update_timer(size_t, mtime&, void *user_data);
         
 		void run();
         void done();

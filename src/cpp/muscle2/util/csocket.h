@@ -9,7 +9,12 @@
 #ifndef __CMuscle__csocket__
 #define __CMuscle__csocket__
 
-#include "socket.h"
+#include "msocket.h"
+#include "mtime.h"
+
+#ifndef MUSCLE_SOCKET_TIMEOUT
+#define MUSCLE_SOCKET_TIMEOUT (muscle::duration(10,0))
+#endif
 
 #include <string>
 #include <unistd.h>
@@ -19,7 +24,7 @@ namespace muscle {
     
     class CServerSocket;
     
-    class csocket : virtual public socket
+    class csocket : virtual public msocket
     {
     public:
 		virtual void setBlocking(bool);
@@ -27,7 +32,7 @@ namespace muscle {
         // Check if the socket is readable / writable. Timeout is MUSCLE_SOCKET_TIMEOUT seconds.
         // Override MUSCLE_SOCKET_TIMEOUT to choose a different number of seconds
         virtual int select(int mask) const;
-        virtual int select(int mask, time timeout) const;
+        virtual int select(int mask, duration timeout) const;
 
         virtual bool operator < (const csocket & s1) const { return sockfd < s1.sockfd; }
         virtual bool operator == (const csocket & s1) const { return sockfd == s1.sockfd; }

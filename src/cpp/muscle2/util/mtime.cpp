@@ -6,22 +6,22 @@
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#include "time.h"
+#include "mtime.h"
 
 #include <unistd.h>
 #include <cstring>
 
 namespace muscle {
-	time time::now()
+	mtime mtime::now()
 	{
 		struct timeval now;
 		if (gettimeofday(&now, NULL) == -1)
 			throw muscle_exception("Could not get time for timer", errno, true);
 		
-		return time(now);		
+		return mtime(now);		
 	}
 	
-    void time::sleep() const
+    void mtime::sleep() const
     {
         duration_until().sleep();
     }
@@ -32,26 +32,26 @@ namespace muscle {
             usleep(useconds());
     }
     
-    duration time::duration_until() const
+    duration mtime::duration_until() const
     {
         return *this - now();
     }
-    duration time::duration_since() const
+    duration mtime::duration_since() const
     {
         return now() - *this;
     }
     
-    time time::operator+(const duration &other) const
+    mtime mtime::operator+(const duration &other) const
     {
-        return time(plus(t, other.timeval()));
+        return mtime(plus(t, other.timeval()));
     }
 
-    time time::operator-(const duration &other) const
+    mtime mtime::operator-(const duration &other) const
     {
-        return time(minus(t, other.timeval()));
+        return mtime(minus(t, other.timeval()));
     }
     
-    duration time::operator-(const time& other) const
+    duration mtime::operator-(const mtime& other) const
     {
         return duration(minus(t, other.timeval()));
     }

@@ -2,7 +2,7 @@
 #define OPTIONS_H
 
 #include "muscle2/util/option_parser.hpp"
-#include "muscle2/util/time.h"
+#include "muscle2/util/mtime.h"
 
 #include <string>
 

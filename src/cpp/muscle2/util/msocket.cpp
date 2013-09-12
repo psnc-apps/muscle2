@@ -1,12 +1,12 @@
 //
-//  socket.cpp
+//  msocket.cpp
 //  CMuscle
 //
 //  Created by Joris Borgdorff on 4/15/13.
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#include "socket.h"
+#include "msocket.h"
 #include "async_service.h"
 
 using namespace muscle;
@@ -14,35 +14,35 @@ using namespace std;
 
 namespace muscle {
 
-socket::socket(endpoint& ep, async_service *service) : address(ep), hasAddress(true), server(service)
+msocket::msocket(endpoint& ep, async_service *service) : address(ep), hasAddress(true), server(service)
 {
     if (!address.isValid())
         throw muscle_exception("endpoint " + address.str() + " cannot be resolved");
 }
 
-socket::socket(async_service *service) : address("", 0), hasAddress(false), server(service) {}
+msocket::msocket(async_service *service) : address("", 0), hasAddress(false), server(service) {}
 
-socket::socket() : address("", 0), hasAddress(false), server(NULL) {}
+msocket::msocket() : address("", 0), hasAddress(false), server(NULL) {}
 
-socket::socket(const socket& other) : address(other.address), server(other.server), hasAddress(other.hasAddress) {}
+msocket::msocket(const msocket& other) : address(other.address), server(other.server), hasAddress(other.hasAddress) {}
 
-const endpoint& socket::getAddress() const
+const endpoint& msocket::getAddress() const
 {
     return address;
 }
 
-async_service *socket::getServer() const
+async_service *msocket::getServer() const
 {
     return server;
 }
 
-string socket::str() const
+string msocket::str() const
 {
     stringstream ss;
     ss << "socket[" << address << "]";
     return ss.str();
 }
-string socket::str()
+string msocket::str()
 {
     stringstream ss;
     ss << "socket[" << address << "]";

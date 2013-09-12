@@ -8,7 +8,7 @@
 
 #ifndef __CMuscle__mpsocket__
 #define __CMuscle__mpsocket__
-#include "muscle2/util/socket.h"
+#include "muscle2/util/msocket.h"
 #include "../util/thread.h"
 #include "../util/rwmutex.h"
 #include "../util/mutex.h"
@@ -54,7 +54,7 @@ namespace muscle {
         
     ///// Actual socket implementation ////
     
-    class mpsocket : virtual public socket
+    class mpsocket : virtual public msocket
     {
     public:
         virtual void setReadReady() const;

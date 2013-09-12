@@ -10,7 +10,7 @@
 #define __CMuscle__helloreader__
 
 #include "../manager/messages.hpp"
-#include "muscle2/util/socket.h"
+#include "muscle2/util/msocket.h"
 
 #include <exception>
 #include <vector>

@@ -10,6 +10,7 @@
 #define __CMuscle__connectors__
 
 #include "helloreader.h"
+#include "muscle2/util/mtime.h"
 
 #include <vector>
 

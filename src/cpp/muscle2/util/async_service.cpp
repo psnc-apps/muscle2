@@ -99,7 +99,7 @@ namespace muscle
         return code;
         
     }
-    size_t async_service::timer(const int user_flag, time& t, async_function* func, void *user_data)
+    size_t async_service::timer(const int user_flag, mtime& t, async_function* func, void *user_data)
     {
         if (!func)
             throw muscle_exception("Function for timer must not be empty");
@@ -253,7 +253,7 @@ namespace muscle
         }
     }
     
-    void *async_service::update_timer(size_t timer, time& t, void *user_data)
+    void *async_service::update_timer(size_t timer, mtime& t, void *user_data)
     {
         if (!timer)
             throw muscle_exception("Timer is not initialized");
@@ -531,7 +531,7 @@ namespace muscle
     
     size_t async_service::next_alarm()
     {
-        time min = time::far_future();
+        mtime min = mtime::far_future();
         size_t timer = 0;
         
         for (map<size_t,timer_t>::iterator t = timers.begin(); t != timers.end(); t++)
@@ -621,7 +621,7 @@ namespace muscle
         logger::info("    Number of active timers: %zu; at times:", num);
         for (map<size_t,timer_t>::iterator it = timers.begin(); it != timers.end(); ++it)
         {
-            time& t = it->second.first;
+            mtime& t = it->second.first;
             if (t.is_past())
                 logger::info("        -%s", t.duration_since().str().c_str());
             else

@@ -29,7 +29,7 @@
 
 #include "muscle_types.h"
 #include "util/logger.hpp"
-#include "util/socket.h"
+#include "util/msocket.h"
 
 namespace muscle {
     

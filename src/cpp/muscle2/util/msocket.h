@@ -1,17 +1,13 @@
 //
-//  socket.h
+//  msocket.h
 //  CMuscle
 //
 //  Created by Joris Borgdorff on 4/15/13.
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#ifndef __CMuscle__socket__
-#define __CMuscle__socket__
-
-#ifndef MUSCLE_SOCKET_TIMEOUT
-#define MUSCLE_SOCKET_TIMEOUT (muscle::time(10,0))
-#endif
+#ifndef __CMuscle__msocket__
+#define __CMuscle__msocket__
 
 #define MUSCLE_SOCKET_NONE 0
 #define MUSCLE_SOCKET_R 1
@@ -21,7 +17,6 @@
 
 #include "endpoint.h"
 #include "async_description.h"
-#include "../util/time.h"
 
 namespace muscle {
 
@@ -41,10 +36,10 @@ struct socket_opts
 
 class ServerSocket;
 
-class socket
+class msocket
 {
 public:
-	virtual ~socket() {}
+	virtual ~msocket() {}
 
 	virtual void setBlocking(bool) = 0;
     virtual std::string str() const;
@@ -53,9 +48,9 @@ public:
     const bool hasAddress;
     virtual int getWriteSock() const { return sockfd; }
     virtual int getReadSock() const { return sockfd; }
-    virtual bool operator < (const socket & s1) const
+    virtual bool operator < (const msocket & s1) const
     { return getReadSock() < s1.getReadSock(); }
-    virtual bool operator == (const socket & s1) const
+    virtual bool operator == (const msocket & s1) const
     { return getReadSock() == s1.getReadSock(); }
     async_service *getServer() const;
     virtual void async_cancel() = 0;
@@ -63,17 +58,17 @@ public:
     // To accomodate for pipes used in mpsocket
 	virtual bool selectWriteFdIsReadable() const { return false; }
 protected:
-    socket(endpoint& ep, async_service *service);
-    socket(async_service *service);
-    socket(const socket& other);
-    socket();
+    msocket(endpoint& ep, async_service *service);
+    msocket(async_service *service);
+    msocket(const msocket& other);
+    msocket();
 	
     int sockfd;
     endpoint address;
     async_service *server;
 }; // end class socket
 
-class ClientSocket : virtual public socket
+class ClientSocket : virtual public msocket
 {
 public:    
     virtual int hasError() { return 0; }
@@ -90,7 +85,7 @@ public:
     virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv);
 };
 
-class ServerSocket : virtual public socket
+class ServerSocket : virtual public msocket
 {
 public:
     virtual ClientSocket *accept(const socket_opts& opts) = 0;
@@ -114,4 +109,4 @@ public:
 
 } // end namespace muscle
 
-#endif /* defined(__CMuscle__socket__) */
+#endif /* defined(__CMuscle__msocket__) */

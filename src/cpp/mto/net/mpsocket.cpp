@@ -138,7 +138,7 @@ namespace muscle {
     
     //////// mpsocket /////////////////
     
-    mpsocket::mpsocket() : socket((async_service *)0)
+    mpsocket::mpsocket() : msocket((async_service *)0)
     {
         int fd[2];
         if (pipe(fd) == -1) throw muscle_exception("Could not create MPWide socket pipe", errno);
@@ -197,13 +197,13 @@ namespace muscle {
     }
   
     /** CLIENT SIDE **/
-    MPClientSocket::MPClientSocket(const ServerSocket& parent, int pathid, const socket_opts& opts) : socket(parent), pathid(pathid), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
+    MPClientSocket::MPClientSocket(const ServerSocket& parent, int pathid, const socket_opts& opts) : msocket(parent), pathid(pathid), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
     {
         setReadReady();
         setWriteReady();
     }
     
-    MPClientSocket::MPClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
+    MPClientSocket::MPClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : msocket(ep, service), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
     {
         if (opts.blocking_connect)
         {
@@ -327,7 +327,7 @@ namespace muscle {
 	}
 
     /** SERVER SIDE **/
-    MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : socket(ep, service), ServerSocket(opts), server_opts(opts)
+    MPServerSocket::MPServerSocket(endpoint& ep, async_service *service, const socket_opts& opts) : msocket(ep, service), ServerSocket(opts), server_opts(opts)
     {
         listener = new mpsocket_connect_thread(address, server_opts, this, true);
     }

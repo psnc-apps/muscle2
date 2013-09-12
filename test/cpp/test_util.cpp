@@ -93,9 +93,9 @@ void testTime()
 {
     cout << endl << "time" << endl << endl;
     
-    muscle::time t = muscle::time::now();
+    muscle::mtime t = muscle::mtime::now();
     assert(t.is_past(), "current time is past");
-    assert(!muscle::time::far_future().is_past(), "far future is not past");
+    assert(!muscle::mtime::far_future().is_past(), "far future is not past");
     muscle::duration d(10,0);
     assert(!d.time_after().is_past(), "duration time_after has time in the future");
     assert(t < d.time_after(), "evaluation up to now takes less than 10 seconds");
@@ -137,14 +137,14 @@ void testAsyncTimer()
     cout << endl << "async_cservice timer" << endl << endl;
 	
     muscle::async_service service;
-    muscle::time t = muscle::duration(0l, 100).time_after();
+    muscle::mtime t = muscle::duration(0l, 100).time_after();
     const char *str = "test string";
     
     async_func_call func(&service, true);
     service.timer(1, t, &func, (void *)str);
 	
     async_func_call func2(&service, false);
-    muscle::time t2 = muscle::duration(1l, 0).time_after();
+    muscle::mtime t2 = muscle::duration(1l, 0).time_after();
     service.timer(1, t2, &func2, (void *)str);
     
     service.run();
@@ -286,7 +286,7 @@ void testEndpoint()
 
 int main(int argc, char * argv[])
 {
-    muscle::time t0 = muscle::time::now();
+    muscle::mtime t0 = muscle::mtime::now();
 	
     try {
         testEndpoint();
