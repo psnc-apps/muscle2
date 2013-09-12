@@ -21,11 +21,8 @@ Website: http://junit.org/
 Download: http://mvnrepository.com/artifact/junit/junit/4.10
 License: Common Public License v1.0
 
-File: msgpack-0.6.6.jar
+File: msgpack-0.6.7.jar
 Website: http://msgpack.org/
-Download: http://mvnrepository.com/artifact/org.msgpack/msgpack/0.6.6
+Download: http://mvnrepository.com/artifact/org.msgpack/msgpack/0.6.7
 License: Apache License 2.0
 
-File: oncrpc.jar
-Website and download: http://sourceforge.net/projects/remotetea/
-License: LGPLv2
