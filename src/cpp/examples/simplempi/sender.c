@@ -56,8 +56,6 @@ int main(int argc, char *argv[])
 		will_stop = MUSCLE_Will_Stop();
 	}
 	
-	char c = muscle::en
-	
 	// Check that will_stop does not start false
 	MPI_Bcast(&will_stop, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	

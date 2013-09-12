@@ -69,8 +69,8 @@ int MUSCLE_Barrier_Init(char **barrier, size_t *len, int num_procs)
 {
 	return muscle::env::barrier_init(barrier, len, num_procs);
 }
-int MUSCLE_Barrier(const char *barrier, int num_procs) {
-	return muscle::env::barrier(barrier, num_procs);
+int MUSCLE_Barrier(const char *barrier) {
+	return muscle::env::barrier(barrier);
 }
 
 void MUSCLE_Barrier_Destroy(char *barrier) {

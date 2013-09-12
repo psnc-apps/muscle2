@@ -62,8 +62,8 @@ public:
 
 	static void free_data(void *ptr, muscle_datatype_t type);
 
-	static int barrier_init(char **barrier, size_t *len, int max_procs);
-	static int barrier(const char *barrier, int num_procs);
+	static int barrier_init(char **barrier, size_t *len, int num_procs);
+	static int barrier(const char *barrier);
 	static void barrier_destroy(char *barrier);
 
 	static std::string get_tmp_path(void);
@@ -89,17 +89,6 @@ public:
 	static std::string get_property(std::string name);
 	static bool has_property(std::string name);
 	static std::string get_properties(void);
-};
-
-class util
-{
-public:
-	static int barrier_init(char **barrier, size_t *len, int num_procs);
-	static int barrier(const char *barrier);
-	static void barrier_destroy(char *barrier);
-
-private:
-	static ServerSocket *ssock;
 };
 
 } // EO namespace muscle
