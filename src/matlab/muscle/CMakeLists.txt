@@ -29,7 +29,7 @@ if (MEX_EXECUTABLE)
 	endforeach()
 
 else()
-    message( WARNING "mex binary not found. Skipping Matlab extension" )
+    message( WARNING "Matlab binary 'mex' not found. Skipping Matlab extension" )
 endif()
 
 
