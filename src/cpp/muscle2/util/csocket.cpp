@@ -140,7 +140,7 @@ namespace muscle {
             FD_SET(sockfd,pesock);
         }
         
-        struct timeval timeout = timeoutDuration.time_after().timeval();
+        struct timeval timeout = timeoutDuration.timeval();
         
         int res = ::select(sockfd+1, prsock, pwsock, pesock, &timeout);
         
