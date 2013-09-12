@@ -107,13 +107,3 @@ class Cxa
   	# visibility
 	attr_reader :env, :cs, :components
 end
-
-
-## test
-if $0 == __FILE__
-	cxa = Cxa.new('foo/bar')
-
-	cxa.env.merge!({123=>456})
-	cxa.env['kin_viscosity[m2/s]'] = '4E-6'
-	puts cxa.inspect
-end
