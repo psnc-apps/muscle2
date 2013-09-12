@@ -53,6 +53,7 @@ pid_t muscle_pid;
 const char *muscle_tmpfifo;
 std::string muscle_kernel_name, muscle_tmp_path;
 bool env::is_main_processor = false;
+ServerSocket *env::barrier_ssock = NULL;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -404,9 +405,7 @@ endpoint env::muscle2_tcp_location(const pid_t pid)
 	}
 }
 
-ServerSocket *util::ssock = NULL;
-
-int util::barrier_init(char **barrier, size_t *len, const int num_procs)
+int env::barrier_init(char **barrier, size_t *len, const int num_procs)
 {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::barrier_init()");
@@ -425,15 +424,15 @@ int util::barrier_init(char **barrier, size_t *len, const int num_procs)
 		try {
 			endpoint ep((uint16_t)0);
 			ep.resolve();
-			ssock = new muscle::CServerSocket(ep, NULL, opts);
-			ssock->setBlocking(true);
-			ssock->getAddress().serialize(buf + sizeof(int));
+			barrier_ssock = new muscle::CServerSocket(ep, NULL, opts);
+			barrier_ssock->setBlocking(true);
+			barrier_ssock->getAddress().serialize(buf + sizeof(int));
 		} catch (const muscle_exception& ex) {
 			const char *msg = ex.what();
 			logger::severe("Could not initialize MUSCLE barrier: %s", msg);
-			if (ssock) {
-				delete ssock;
-				ssock = NULL;
+			if (barrier_ssock) {
+				delete barrier_ssock;
+				barrier_ssock = NULL;
 			}
 			return -1;
 		}
@@ -443,7 +442,7 @@ int util::barrier_init(char **barrier, size_t *len, const int num_procs)
 	return 0;
 }
 
-int util::barrier(const char * const barrier)
+int env::barrier(const char * const barrier)
 {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::barrier()");
@@ -462,7 +461,7 @@ int util::barrier(const char * const barrier)
 		try {
 			const char data = 1;
 			for (int i = 1; i < num_procs; i++) {
-				ClientSocket *sock = ssock->accept(opts);
+				ClientSocket *sock = barrier_ssock->accept(opts);
 				sock->setBlocking(true);
 				if (sock == NULL) {
 					msg = "failed to accept socket";
@@ -506,11 +505,11 @@ int util::barrier(const char * const barrier)
 	return msg == NULL ? 0 : -1;
 }
 
-void util::barrier_destroy(char * const barrier)
+void env::barrier_destroy(char * const barrier)
 {
 	if (env::is_main_processor) {
-		delete ssock;
-		ssock = NULL;
+		delete barrier_ssock;
+		barrier_ssock = NULL;
 	}
 	delete [] barrier;
 }

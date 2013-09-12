@@ -62,6 +62,10 @@ public:
 
 	static void free_data(void *ptr, muscle_datatype_t type);
 
+	static int barrier_init(char **barrier, size_t *len, int max_procs);
+	static int barrier(const char *barrier, int num_procs);
+	static void barrier_destroy(char *barrier);
+
 	static std::string get_tmp_path(void);
 	
 	static bool has_next(std::string exit_name);
@@ -75,6 +79,7 @@ private:
 	static void muscle2_kill(void);
 	static void muscle2_sighandler(int signal);
 	static void install_sighandler();
+	static ServerSocket *barrier_ssock;
 };
 
 class cxa

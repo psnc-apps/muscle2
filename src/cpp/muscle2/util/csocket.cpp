@@ -284,7 +284,7 @@ namespace muscle {
         int res = ::bind(sockfd, &saddr, sizeof(saddr));
 
         if (res < 0) throw muscle_exception("cannot bind to " + address.str() + "(" + address.getHostFromAddress() + ")", errno);
-        if (::getsockname(sockfd, (struct sockaddr *)&sin, &len) == 0)
+        if (address.port == 0 && ::getsockname(sockfd, (struct sockaddr *)&sin, &len) == 0)
                 address.port = ntohs(sin.sin_port);
     }
     
