@@ -25,7 +25,7 @@ Options::Options(int argc, char **argv)
 
 void Options::setOptions(option_parser& opts)
 {
-    opts.add("help", "Print this dialog");
+    opts.add("help", "Print this dialog", false);
     opts.add("config", "Location of the MTO local configuration file (default: $MUSCLE_HOME/etc/mto-config.cfg)");
     opts.add("topology", "Location of the MTO global topology configuration file (default: $MUSCLE_HOME/etc/mto-topology.cfg)");
     
