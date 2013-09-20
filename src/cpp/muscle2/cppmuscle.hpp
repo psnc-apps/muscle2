@@ -70,16 +70,21 @@ public:
 	
 	static bool has_next(std::string exit_name);
 	static bool is_main_processor;
+    static std::string kernel_name;
 private:
 	static int detect_mpi_rank(void);
 	static pid_t spawn(char * const *argv);
-	static pid_t muscle2_spawn(int* argc, char ***argv);
+	static pid_t muscle2_spawn(int* argc, char ***argv, char **muscle_tmpfifo);
 	static char * create_tmpfifo(void);
-	static endpoint muscle2_tcp_location(pid_t pid);
+	static endpoint muscle2_tcp_location(pid_t pid, const char *muscle_tmpfifo);
 	static void muscle2_kill(void);
 	static void muscle2_sighandler(int signal);
 	static void install_sighandler();
+
 	static ServerSocket *barrier_ssock;
+    
+    static pid_t muscle_pid;
+    static std::string tmp_path;
 };
 
 class cxa

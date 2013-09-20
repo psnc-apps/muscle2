@@ -20,9 +20,7 @@
 */
 
 #include "cppmuscle.hpp"
-#include "communicator.hpp"
 #include "xdr_communicator.hpp"
-#include "util/endpoint.h"
 #include "util/exception.hpp"
 #include "util/csocket.h"
 
@@ -48,12 +46,11 @@ using namespace std;
 
 namespace muscle {
 
-Communicator *muscle_comm;
-pid_t muscle_pid;
-const char *muscle_tmpfifo;
-std::string muscle_kernel_name, muscle_tmp_path;
-bool env::is_main_processor = false;
+bool env::is_main_processor = true;
 ServerSocket *env::barrier_ssock = NULL;
+static Communicator *comm = NULL;
+pid_t env::muscle_pid = -1;
+std::string env::kernel_name, env::tmp_path;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -64,6 +61,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	
 	// Only execute for rank 0
 	if (rank > 0) {
+        is_main_processor = false;
 		logger::initialize(NULL, NULL, MUSCLE_LOG_OFF, false);
 		return MUSCLE_SUCCESS;
 	}
@@ -78,15 +76,19 @@ muscle_error_t env::init(int *argc, char ***argv)
 	// Initialize host and port on which MUSCLE is listening
 	muscle_pid = -1;
 	
-	endpoint ep = env::muscle2_tcp_location(muscle_pid);
+	endpoint ep = env::muscle2_tcp_location(muscle_pid, NULL);
 	
 	// Port is not initialized, initialize MUSCLE instead.
 	if (ep.port == 0)
 	{
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
-		muscle_pid = env::muscle2_spawn(argc, argv);
-		env::install_sighandler();		
-		ep = env::muscle2_tcp_location(muscle_pid);
+        
+        char *muscle_tmpfifo;
+		muscle_pid = env::muscle2_spawn(argc, argv, &muscle_tmpfifo);
+		env::install_sighandler();
+		ep = env::muscle2_tcp_location(muscle_pid, muscle_tmpfifo);
+        free(muscle_tmpfifo);
+        
 		if (ep.port == 0)
 		{
 			logger::severe("Could not contact MUSCLE: no TCP port given.");
@@ -98,30 +100,32 @@ muscle_error_t env::init(int *argc, char ***argv)
 	try
 	{
 		ep.resolve();
-		muscle_comm = new XdrCommunicator(ep);
+		comm = new XdrCommunicator(ep);
 	} catch (muscle_exception& e) {
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s", ep.str().c_str());
 		exit(1);
 	}
 	
 	int log_level;
-	muscle_kernel_name = muscle_comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
-	muscle_tmp_path = muscle_comm->retrieve_string(PROTO_TMP_PATH, NULL);
-	muscle_comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
+	kernel_name = comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
+	tmp_path = comm->retrieve_string(PROTO_TMP_PATH, NULL);
+	comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
 	
-	logger::initialize(muscle_kernel_name.c_str(), muscle_tmp_path.c_str(), log_level, is_main_processor);
+	logger::initialize(kernel_name.c_str(), tmp_path.c_str(), log_level, is_main_processor);
 	return MUSCLE_SUCCESS;
 }
 
 void env::finalize(void)
 {
 	if (!is_main_processor) return;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::finalize() ");
 #endif
-	muscle_comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
-	delete muscle_comm;
-	
+	comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
+	delete comm;
+    comm = NULL;
+    
 	if (muscle_pid > 0)
 	{
 		int status;
@@ -137,6 +141,9 @@ void env::finalize(void)
 		}
 		else logger::severe("MUSCLE failed");
 	}
+    kernel_name = string();
+    tmp_path = string();
+    is_main_processor = true;
 }
 
 int env::detect_mpi_rank() {
@@ -169,20 +176,22 @@ int env::detect_mpi_rank() {
 std::string cxa::kernel_name(void)
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::kernel_name() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::kernel_name() ");
 #endif
-	return muscle_kernel_name;
+	return env::kernel_name;
 }
 
 std::string cxa::get_property(std::string name)
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::get_property(%s) ", name.c_str());
 #endif
 
-	std::string prop_value_str = muscle_comm->retrieve_string(PROTO_PROPERTY, &name);
+	std::string prop_value_str = comm->retrieve_string(PROTO_PROPERTY, &name);
 
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::get_property(%s) = %s", name.c_str(), prop_value_str.c_str());
@@ -193,11 +202,12 @@ std::string cxa::get_property(std::string name)
 bool cxa::has_property(std::string name)
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_property() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::has_property(%s) ", name.c_str());
 #endif
 	bool has_prop = false;
-	muscle_comm->execute_protocol(PROTO_HAS_PROPERTY, &name, MUSCLE_BOOLEAN, NULL, 0, &has_prop, NULL);
+	comm->execute_protocol(PROTO_HAS_PROPERTY, &name, MUSCLE_BOOLEAN, NULL, 0, &has_prop, NULL);
 
 #ifdef CPPMUSCLE_TRACE
 	const char *bool_str = has_prop ? "true" : "false";
@@ -210,31 +220,34 @@ bool cxa::has_property(std::string name)
 std::string cxa::get_properties()
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::cxa::get_properties() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::cxa::get_properties()");
 #endif
-	return muscle_comm->retrieve_string(PROTO_PROPERTIES, NULL);
+	return comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
 std::string env::get_tmp_path()
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::get_tmp_path()");
 #endif
-	return muscle_tmp_path;
+	return tmp_path;
 }
 
 bool env::will_stop(void)
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::will_stop() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 	bool_t is_will_stop = false;
 	
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::will_stop()");
 #endif
-	muscle_comm->execute_protocol(PROTO_WILL_STOP, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_will_stop, NULL);
+	comm->execute_protocol(PROTO_WILL_STOP, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_will_stop, NULL);
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::will_stop -> %d", is_will_stop);
 #endif
@@ -246,12 +259,13 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 {
 	// No error: simply ignore send in all MPI processes except 0.
 	if (!env::is_main_processor) return;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::send()");
 #endif
 
-	muscle_comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
+	comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
 }
 
 void env::sendDoubleVector(std::string entrance_name, const std::vector<double>& data)
@@ -267,12 +281,13 @@ void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_dat
 {
 	// No error: simply ignore receive in all MPI processes except 0.
 	if (!env::is_main_processor) return (void *)0;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::receive()");
 #endif
 
-	muscle_comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
+	comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
 
 	return data;
 }
@@ -303,7 +318,7 @@ std::vector<double> env::receiveDoubleVector(std::string exit_name)
  * @param pid of the created MUSCLE instance
  * @return port number
  */
-endpoint env::muscle2_tcp_location(const pid_t pid)
+endpoint env::muscle2_tcp_location(const pid_t pid, const char *muscle_tmpfifo)
 {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::muscle2_tcp_location()");
@@ -548,7 +563,7 @@ char *env::create_tmpfifo()
  * @param argv pointer to the arguments of the main function.
  * @return pid of the created MUSCLE instance.
  */
-pid_t env::muscle2_spawn(int* argc, char ***argv)
+pid_t env::muscle2_spawn(int* argc, char ***argv, char **muscle_tmpfifo)
 {
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::muscle2_spawn()");
@@ -572,7 +587,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 		exit(1);
 	}
 	
-	muscle_tmpfifo = env::create_tmpfifo();
+	*muscle_tmpfifo = env::create_tmpfifo();
 	
 	// Size:                           1            | i - 1                     | 1    | *argc - (i + 1)          | 3
 	// Number of arguments for muscle: muscle2      +                                    all arguments after "--" + tmparg + tmpdir + null terminator
@@ -586,7 +601,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv)
 	// Copy all arguments after "--"
 	memcpy(&argv_new[1], &(*argv)[term+1], (argc_new - (new_args + 1))*sizeof(char *));
 	argv_new[argc_new - 3] = "--native-tmp-file";
-	argv_new[argc_new - 2] = muscle_tmpfifo;
+	argv_new[argc_new - 2] = *muscle_tmpfifo;
 	argv_new[argc_new - 1] = NULL;
 
 	// Spawn Java MUSCLE
@@ -762,8 +777,9 @@ void env::free_data(void *ptr, muscle_datatype_t type)
 	// No error: simply ignore send in all MPI processes except 0
 	// we did not create any data in other ranks to free.
 	if (!env::is_main_processor) return;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 	
-	muscle_comm->free_data(ptr, type);
+	comm->free_data(ptr, type);
 }
 
 

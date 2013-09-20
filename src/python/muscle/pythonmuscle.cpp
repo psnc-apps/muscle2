@@ -27,7 +27,8 @@
 #include "muscle2/util/exception.hpp"
 #include "pythonmuscle.hpp"
 
-#define MUSCLE_PY_CALL(CALL) try { CALL; } catch (muscle_exception ex) { MUSCLE_PY_ERR(ex.what()) }
+#define MUSCLE_PY_CALL(CALL) try { CALL; } catch (const muscle_exception& ex) { MUSCLE_PY_ERR(ex.what()) }
+#define MUSCLE_PY_TRY(CALL, FINALLY) try { CALL; FINALLY; } catch (const muscle_exception& ex) { FINALLY; MUSCLE_PY_ERR(ex.what()) }
 #define MUSCLE_PY_SET(SET, CALL) MUSCLE_PY_CALL(SET = CALL)
 #define MUSCLE_PY_ERR(MSG) MUSCLE_PY_PY_ERR(MuscleError, MSG)
 #define MUSCLE_PY_PY_ERR(ERR, MSG) { PyErr_SetString(ERR, MSG); return NULL; }
@@ -139,8 +140,7 @@ static PyObject *muscle_init(PyObject *self, PyObject *args)
         return NULL;
     
     int argc = (int)len;
-	MUSCLE_PY_CALL(muscle::env::init(&argc, &argv));
-    pyFree<char *>(argv, len);
+	MUSCLE_PY_TRY(muscle::env::init(&argc, &argv), pyFree<char *>(argv, len));
     
 	Py_RETURN_NONE;
 }
@@ -198,15 +198,13 @@ static PyObject *muscle_send(PyObject *self, PyObject *args)
 			MUSCLE_PY_ERR("expected one of the MUSCLE types");
 	}
     
+    Py_DECREF(data);
+
     if (result == NULL)
         return NULL;
     
 	string portStr(port);
-	MUSCLE_PY_CALL(muscle::env::send(portStr, result, len, type));
-    
-    delete [] (char *)result;
-    
-    Py_DECREF(data);
+	MUSCLE_PY_TRY(muscle::env::send(portStr, result, len, type), delete [] (char *)result);
     
 	Py_RETURN_NONE;
 }
@@ -246,6 +244,7 @@ static PyObject *muscle_receive(PyObject *self, PyObject *args)
             result = pyArrayToList<bool,int>(data, len, "boolean");
             break;
 		default:
+            MUSCLE_PY_CALL(muscle::env::free_data(data, type));
 			MUSCLE_PY_ERR("Datatype not recognized");
 	}
 	MUSCLE_PY_CALL(muscle::env::free_data(data, type));
