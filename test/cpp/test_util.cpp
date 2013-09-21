@@ -12,6 +12,8 @@
 #include "muscle2/util/async_service.h"
 #include "muscle2/util/option_parser.hpp"
 
+#include <arpa/inet.h> // htons
+
 class async_ss : public muscle::async_acceptlistener, muscle::async_recvlistener, muscle::async_sendlistener
 {
 public:
