@@ -51,7 +51,6 @@ ServerSocket *env::barrier_ssock = NULL;
 static Communicator *comm = NULL;
 pid_t env::muscle_pid = -1;
 std::string env::kernel_name, env::tmp_path;
-ServerSocket *env::barrier_ssock = NULL;
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
