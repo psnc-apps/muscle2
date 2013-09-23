@@ -119,7 +119,8 @@ void PeerConnectionHandler::handleConnect(Header &h)
 			               h.str().c_str(), str().c_str());
 		
     	incrementPending();
-		HandleConnected *hc = new HandleConnected(h, this);
+		// Self-destruct
+		new HandleConnected(h, this);
 	} else {
 		handleConnectFailed(h);
 	}

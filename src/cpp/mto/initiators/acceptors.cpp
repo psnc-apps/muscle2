@@ -35,15 +35,15 @@ void ExternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
     logger::finest( "Accepted peer connection %s, starting hello exchange",
                   sock->str().c_str());
     
-    InitPeerConnection *init = new InitPeerConnection(sock, mto);
+	// Self-destruct
+    new InitPeerConnection(sock, mto);
 }
 
 
 void InternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
 {
-    InitConnection *initConn = new InitConnection(sock, mto);
-//
-//    Connection *conn = new Connection(sock, mto);
+	// Self-destruct
+    new InitConnection(sock, mto);
 }
 
 InitConnection::InitConnection(ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)

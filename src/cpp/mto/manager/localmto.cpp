@@ -37,7 +37,8 @@ void LocalMto::startConnectingToPeers(map<string, endpoint>& mtoConfigs)
             try {
                 endpoint& ep = it->second;
                 ep.resolve();
-                StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
+				// Self-destruct
+                new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
             } catch (const muscle_exception& ex) {
                 logger::severe("Cannot resolve %s (error %s). Ignoring MTO '%s'.",
                               it->second.str().c_str(), ex.what(), it->first.c_str());
@@ -52,10 +53,10 @@ void LocalMto::peerDied(PeerConnectionHandler *handler)
     conns.peerDied(handler);
     const endpoint& ep = handler->address();
     if (ep != externalEp) {
-        StubbornConnecter *sc = new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
+        // Self-destruct
+		new StubbornConnecter(ep, service, extSockFactory, client_opts, sockTimeout, this);
     }
 }
-
 
 void LocalMto::startListeningForClients()
 {

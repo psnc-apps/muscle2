@@ -42,7 +42,8 @@ void StubbornConnecter::async_accept(size_t code, int flag, ClientSocket *sock_)
     sock = sock_;
     // TODO install error listener
     mto->peers.introduce(sock);
-    HelloReader *rd = new HelloReader(sock, this, hellos);
+	// Self-destruct
+    new HelloReader(sock, this, hellos);
 }
 
 void StubbornConnecter::async_report_error(size_t code, int flag, const muscle_exception& ex)
@@ -71,6 +72,7 @@ void StubbornConnecter::allHellosFailed(const muscle_exception &ex)
 {
     logger::finest("Reading hellos from peer %s failed - occurred error: %s",
                   sock->str().c_str(), ex.what());
-    StubbornConnecter *sc = new StubbornConnecter(where, service, sockFactory, opts, timeout, mto);
+	// Self-destruct
+    new StubbornConnecter(where, service, sockFactory, opts, timeout, mto);
 	delete this;
 }
