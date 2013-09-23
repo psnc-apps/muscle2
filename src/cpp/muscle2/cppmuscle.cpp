@@ -498,7 +498,6 @@ int env::barrier(const char * const barrier)
 	} else {
 		endpoint address(barrier + sizeof(int));
 		address.resolve();
-		const char * const addr_str = address.str().c_str();
 		char data;
 		try {
 			opts.blocking_connect = true;
