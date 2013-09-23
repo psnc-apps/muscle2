@@ -162,9 +162,9 @@ void testAsyncTimer()
     try {
         service.update_timer(1, t2, (void *)str);
         service.run();
-        assertFalse("can not update erased timer");
+        assertFalse("cannot update erased timer");
     } catch (...) {
-        assertTrue("can not update erased timer");
+        assertTrue("cannot update erased timer");
     }
 }
 
