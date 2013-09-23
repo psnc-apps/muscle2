@@ -27,7 +27,6 @@ namespace muscle {
         endpoint();
         endpoint(const char *buffer);
         endpoint(std::string host, uint16_t port);
-        endpoint(uint32_t host, uint16_t port);
         endpoint(uint16_t port);
         
         void resolve();

@@ -26,13 +26,6 @@ endpoint::endpoint(std::string _host, const uint16_t _port) : is_ipv6(false), ad
 endpoint::endpoint() : is_ipv6(false), addr(), host(""), port(0)
 {}
 
-endpoint::endpoint(uint32_t host, const uint16_t _port) : is_ipv6(false), port(htons(_port)), host("")
-{
-	uint32_t nhost = htonl(host);
-	memcpy(addr, &nhost, IPV4_SZ);
-	memset(addr+IPV4_SZ, 0, sizeof(addr) - IPV4_SZ);
-}
-
 endpoint::endpoint(const char *buffer_ptr) : host("")
 {
 	is_ipv6 = *buffer_ptr++ == IPV6_FLAG;
@@ -43,7 +36,7 @@ endpoint::endpoint(const char *buffer_ptr) : host("")
 	port = ntohs(*(const uint16_t *)buffer_ptr);
 }
 
-endpoint::endpoint(uint16_t port_)
+endpoint::endpoint(uint16_t port_) : addr()
 {
 	port = port_;
 	const size_t max_hostname = 256;
@@ -53,7 +46,6 @@ endpoint::endpoint(uint16_t port_)
 		throw muscle_exception("Could not find hostname");
 	}
 	host = std::string(hostname);
-	memset(addr, 0, sizeof(addr));
 }
 
 std::string endpoint::getHostFromAddress() const
