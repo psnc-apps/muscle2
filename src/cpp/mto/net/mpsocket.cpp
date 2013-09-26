@@ -302,7 +302,7 @@ namespace muscle {
     
     bool MPClientSocket::isConnecting()
     {
-        if (connectThread && connectThread->isDone()) {
+        if (connectThread && (connectThread->isDone() || isWriteReady())) {
             int *res = (int *)connectThread->getResult();
             pathid = *res;
             delete res;
