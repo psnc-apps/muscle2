@@ -262,7 +262,6 @@ void testEndpoint()
     assertEquals<int>(buf[3], 56, "third IPv4 segment matches 56");
     assertEquals<int>(buf[4], 52, "last IPv4 segment matches 52");
     assertEquals<uint16_t>(*(uint16_t *)&buf[17],htons(50022), "port matches 50022");
-    // 146.50.56.52 = 146*256^3 + 50*256^2 + 56*256 + 52 = 2452764724
     
     muscle::endpoint bep((char *)buf);
     assertEquals(bep, ep, "Serialized data matches original data");
@@ -272,12 +271,11 @@ void testEndpoint()
     assert(cep.isResolved(), "const resolve existing host without calling resolve");
     assert(cep.isValid(), "const validate existing host");
     assert(!cep.isIPv6(), "const check IPv4 host");
-    // 146.50.56.52 = 146*256^3 + 50*256^2 + 56*256 + 52 = 2452764724
     
     muscle::endpoint invEp("XXXnapoli.science.uva.nl", 5000);
     try {
         invEp.resolve();
-        assertFalse("throw exception on resolve invalid hosts");
+        assertFalse("throw exception on resolve invalid hosts: " + invEp.getHost() + "; " + invEp.getHostFromAddress());
     }
     catch (const muscle::muscle_exception& ex)
     {
