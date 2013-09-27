@@ -25,9 +25,8 @@ Acceptor::Acceptor(ServerSocket *sock, LocalMto *mto) : ss(sock), mto(mto)
 
 void Acceptor::async_report_error(size_t code, int flag, const muscle_exception& ex)
 {
-    logger::severe( "Failed to listen on incoming connections on %s. Got error: %s. Aborting.",
+    logger::severe("Failed to accept incoming connection on %s. Got error: %s.",
                   ss->str().c_str(), ex.what());
-    exit(1);
 }
 
 void ExternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
