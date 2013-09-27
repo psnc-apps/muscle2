@@ -197,12 +197,15 @@ namespace muscle {
     }
   
     /** CLIENT SIDE **/
+	
+	// Accept
     MPClientSocket::MPClientSocket(const ServerSocket& parent, int pathid, const socket_opts& opts) : msocket(parent), pathid(pathid), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
     {
         setReadReady();
         setWriteReady();
     }
-    
+
+    // Connect
     MPClientSocket::MPClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : msocket(ep, service), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
     {
         if (opts.blocking_connect)
@@ -226,12 +229,13 @@ namespace muscle {
         }
     }
     
+	// Cancel, close and destroy
     MPClientSocket::~MPClientSocket()
     {
 		async_cancel();
 		
         if (recvThread) delete recvThread;
-		if (sendThread) delete recvThread;
+		if (sendThread) delete sendThread;
 
         if (connectThread) {
 			connectThread->cancel();
@@ -355,7 +359,7 @@ namespace muscle {
         
         delete res;
         delete listener;
-        listener = new mpsocket_connect_thread(endpoint("0", address.port), server_opts, this, true);
+        listener = new mpsocket_connect_thread(address, server_opts, this, true);
         return sock;
     }
 
