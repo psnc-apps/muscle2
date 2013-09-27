@@ -91,26 +91,35 @@ int main(int argc, char **argv)
         
         string myName = opts.getMyName();
         
-        if(opts.getDaemonize())
+        if (opts.getDaemonize())
         {
             logger::info("Daemonizing...");
             daemon(0,1);
         }
         
-        if(mtoConfigs.find(myName) == mtoConfigs.end()){
+        if (mtoConfigs.find(myName) == mtoConfigs.end()){
             logger::severe("The name of this MTO (%s) could not be found in the topology file", myName.c_str());
             return 1;
         }
 
         endpoint& externalAddress = mtoConfigs[myName];
+		
+		uint16_t extport = externalAddress.port;
+		uint16_t intport = opts.getInternalEndpoint().port;
 
-        if (externalAddress.port)
-        {
+		if (opts.useMPWide && extport <= intport && extport + MAX_EXTERNAL_WAITING > intport) {
+			logger::severe("Topology port %hu (in mto-topology.cfg), using %d MPWide streams, conflicts with internal port %hu (in mto-config.cfg)", extport, MAX_EXTERNAL_WAITING, intport);
+			return 1;
+		}
+		if (!opts.useMPWide && extport == intport) {
+			logger::severe("Topology port %hu (in mto-topology.cfg) must differ from internal port (in mto-config.cfg)", extport);
+			return 1;
+		}
+
+        if (extport) {
             try {
                 externalAddress.resolve();
-            }
-            catch (muscle_exception& ex)
-            {
+            } catch (muscle_exception& ex) {
                 logger::severe("Cannot resolve MTO external address (%s)", externalAddress.str().c_str());
                 return 1;
             }
@@ -119,11 +128,12 @@ int main(int argc, char **argv)
 		const int numPeers = int(mtoConfigs.size() > 1 ? mtoConfigs.size() - 1 : 1);
 		asyncService = new async_service(size_t(6*1024*1024)*numPeers, numPeers*6);
         SocketFactory *intSockFactory = new CSocketFactory(asyncService);
-        SocketFactory *extSockFactory;
-        if (opts.useMPWide)
+        SocketFactory *extSockFactory; 
+        if (opts.useMPWide) {
             extSockFactory = new MPSocketFactory(asyncService);
-        else
+		} else {
             extSockFactory = new CSocketFactory(asyncService);
+		}
         
         localMto = new LocalMto(opts, asyncService, intSockFactory, extSockFactory, externalAddress);
         
