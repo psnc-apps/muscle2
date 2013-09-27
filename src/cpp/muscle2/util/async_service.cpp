@@ -683,7 +683,7 @@ namespace muscle
             async_acceptlistener* accept = static_cast<async_acceptlistener*>(desc.listener);
             accept->async_accept(desc.code, desc.user_flag, ccsock);
         } else {
-            muscle_exception ex("Could accept socket", errno);
+            muscle_exception ex("Could not accept socket", errno);
             desc.listener->async_report_error(desc.code, desc.user_flag, ex);
         }
     }
