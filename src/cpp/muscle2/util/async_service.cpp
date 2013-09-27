@@ -667,10 +667,8 @@ namespace muscle
             return;
         }
         
-        socket_opts *opts = static_cast<socket_opts*>(desc.data);
-		opts->blocking_connect = false;
-
 		ClientSocket *ccsock = NULL;
+        socket_opts *opts = static_cast<socket_opts*>(desc.data);
 
         try {
             ccsock = sock->accept(*opts);
