@@ -39,8 +39,14 @@ class Muscle
 		# set value for LIBPATHENV or abort
 		assert_LIBPATHENV self.env
 
-		# load (machine specific) default env
-		load_env(File.expand_path("#{PARENT_DIR}/muscle.env.rb"), true)
+    begin
+      # load (machine specific) default env
+      load_env(File.expand_path("#{PARENT_DIR}/muscle.env.rb"))
+    rescue Exception => e
+      puts "Failed to load MUSCLE configuration file <#{PARENT_DIR}/muscle.env.rb>:"
+      puts e.message
+      exit(1)
+    end
 	end
 	
 	def add_env(e)

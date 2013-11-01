@@ -62,8 +62,25 @@ class Cxa
 		$env = self.env
 		$muscle_connection_scheme = self.cs
 
-		load_env(File.expand_path(cxa_file), true)
-
+    path = File.expand_path(cxa_file)
+    begin
+      load_env(path)
+    rescue LoadError => e
+      puts "Failed to load configuration file <#{path}>:"
+      puts e.message
+      exit(1)
+    rescue ScriptError => e
+      puts "Configuration file <#{path}> is not a valid Ruby file:"
+      puts e.message
+      stack_no_muscle = e.backtrace.reject { |x| x =~ /\/share\/muscle\/ruby\// }
+      if not stack_no_muscle.empty?
+        puts "====== Stack trace ======"
+        puts stack_no_muscle
+        puts "========================="
+      end
+      exit(1)
+    end
+    
 		# After loading, remove the global $env variable again
 		$env = nil
 		$muscle_connection_scheme

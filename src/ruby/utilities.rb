@@ -65,7 +65,7 @@ module MuscleUtils
 	end
 
 	# load env files
-	def load_env(path,mandatory=false)
+	def load_env(path)
 		base_load_path = File.expand_path(path)
 		machine = `hostname -s`.chomp
 		machine_load_path = File.join(File.dirname(base_load_path), "#{File.basename(base_load_path, File.extname(base_load_path))}.#{machine}#{File.extname(base_load_path)}")
@@ -73,16 +73,7 @@ module MuscleUtils
 		load_path = base_load_path
 		load_path = machine_load_path if File.readable?(machine_load_path)
 
-		begin
-			load(load_path)
-			return true
-		rescue LoadError
-			if mandatory
-				raise $!
-			else
-				return false
-			end
-		end
+		load(load_path)
 	end	
 
 	# determine current host os
