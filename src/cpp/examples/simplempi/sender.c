@@ -21,6 +21,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h> // usleep
 #include <muscle2/cmuscle.h>
 
 int main(int argc, char *argv[])
