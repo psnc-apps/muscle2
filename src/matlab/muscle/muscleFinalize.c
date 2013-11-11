@@ -4,7 +4,5 @@ void mexFunction(int nlhs, mxArray *plhs[], /* Output variables */ int nrhs, con
 {
 	MUSCLE_Finalize();
 
-	mexPrintf("MUSCLE finalized\n");
-
 	return;
 }
