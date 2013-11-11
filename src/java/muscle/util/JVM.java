@@ -31,8 +31,8 @@ singleton class which provides access to global (JVM wide) settings
 public class JVM {
 	// be careful to init all other static fields we may use here before our singleton
 	public final static JVM ONLY = new JVM(); // handle for the singleton
-	private File tmpDir;
-	private Set<String> libraries;
+	private final File tmpDir;
+	private final Set<String> libraries;
 
 	public static boolean is64bitJVM() {
 		return System.getProperty("sun.arch.data.model").indexOf("64") != -1;
@@ -45,6 +45,7 @@ public class JVM {
 
 	/**
 	tmp dir for this JVM (e.g. /tmp/<JVMNAME>)
+        * @return The File containing the temporary directory
 	 */
 	public File tmpDir() {
 		return tmpDir;
@@ -82,7 +83,11 @@ public class JVM {
 	public synchronized void loadLibrary(String name) {
 		if (!libraries.contains(name)) {
 			libraries.add(name);
-			System.loadLibrary(name);
+			try {
+				System.loadLibrary(name);
+			} catch (UnsatisfiedLinkError ex) {
+				throw new Error("Can not find library " + name + " in java.library.path: <" + System.getProperty("java.library.path") + ">", ex);
+			}
 		}
 	}
 }
