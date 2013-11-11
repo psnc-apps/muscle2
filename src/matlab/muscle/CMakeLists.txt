@@ -15,6 +15,7 @@ if (MEX_EXECUTABLE)
 		    COMMAND   ${MEX_EXECUTABLE}
 		    ARGS      ${CMAKE_SOURCE_DIR}/src/matlab/muscle/${mf}.c
 -lmuscle2 -L${CMAKE_BINARY_DIR}/src/cpp/muscle2
+-I${CMAKE_SOURCE_DIR}/src/cpp/muscle2
 		    TARGET    MexLibs
 		    OUTPUTS   ${mf}.mexa64
 		)
