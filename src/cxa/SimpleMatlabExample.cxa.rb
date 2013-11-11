@@ -12,5 +12,5 @@ w.couple(r, 'data', ['multiply_0.5'])
 $env['max_timesteps'] = 4
 $env['default_dt'] = 1;
 
-w['script'] = "#{dir}/simplematlab.m"
+w['script'] = "#{dir}/sender.m"
 
