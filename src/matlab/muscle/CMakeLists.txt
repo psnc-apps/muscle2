@@ -4,7 +4,14 @@ PROJECT(muscle2-matlab)
 
 find_program(MEX_EXECUTABLE mex)
 
-if (MEX_EXECUTABLE)
+if(MEX_EXECUTABLE)
+	execute_process(COMMAND ${MEX_EXECUTABLE} -help OUTPUT_VARIABLE MEX_OUT)
+endif()
+
+SET(MATLAB_STRING ".*MATLAB.*")
+# exclude mex that works with pdftex
+if("${MEX_OUT}" MATCHES ${MATLAB_STRING}) 
+	
 	file(GLOB MEX_INPUTS "*.c")
 	add_custom_target( MexLibs ALL )
 
