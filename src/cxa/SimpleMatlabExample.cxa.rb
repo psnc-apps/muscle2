@@ -4,6 +4,7 @@ dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/simplematlab'
 # declare kernels
 w = Instance.new('w', 'muscle.core.standalone.MatlabKernel')
 r = Instance.new('r', 'examples.simplejava.ConsoleWriter')
+#r = Instance.new('r', 'muscle.core.standalone.MatlabKernel')
 
 # configure connection scheme
 w.couple(r, 'data', ['multiply_0.5'])
@@ -13,4 +14,5 @@ $env['max_timesteps'] = 4
 $env['default_dt'] = 1;
 
 w['script'] = "#{dir}/sender.m"
+r['script'] = "#{dir}/receiver.m"
 
