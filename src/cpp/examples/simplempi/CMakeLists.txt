@@ -9,7 +9,7 @@ include_directories("${CMAKE_SOURCE_DIR}/src/cpp")
 # add our library that is built from the source files
 add_executable(${SENDER} sender.c)
 
-target_link_libraries (${SENDER} ${MUSCLE2_LIB})
+target_link_libraries(${SENDER} ${MUSCLE2_LIB})
 target_link_libraries(${SENDER} ${MPI_LIBRARY})
 
 if (MPI_C_FLAGS)
