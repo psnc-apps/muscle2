@@ -1,4 +1,5 @@
 #include "mex.h" 
+#include "cmuscle.h"
 
 #define NAME_ARG prhs[0]
 
