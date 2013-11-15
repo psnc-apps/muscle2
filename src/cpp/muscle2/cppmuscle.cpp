@@ -81,16 +81,19 @@ muscle_error_t env::init(int *argc, char ***argv)
 	// Port is not initialized, initialize MUSCLE instead.
 	if (ep.port == 0)
 	{
+		if (argc == NULL || argv == NULL) {
+			logger::severe("No arguments provided in MUSCLE initialization method so MUSCLE can not be started.");
+			exit(1);
+		}
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
         
-        char *muscle_tmpfifo;
+		char *muscle_tmpfifo;
 		muscle_pid = env::muscle2_spawn(argc, argv, &muscle_tmpfifo);
 		env::install_sighandler();
 		ep = env::muscle2_tcp_location(muscle_pid, muscle_tmpfifo);
-        free(muscle_tmpfifo);
-        
-		if (ep.port == 0)
-		{
+		free(muscle_tmpfifo);
+
+		if (ep.port == 0) {
 			logger::severe("Could not contact MUSCLE: no TCP port given.");
 			exit(1);
 		}
@@ -580,8 +583,7 @@ pid_t env::muscle2_spawn(int* argc, char ***argv, char **muscle_tmpfifo)
 		}
 	}
 	
-	if (term == -1)
-	{
+	if (term == -1) {
 		logger::severe("Could not instantiate MUSCLE: no command line arguments given.");			
 		exit(1);
 	}
