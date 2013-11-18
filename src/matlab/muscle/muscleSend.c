@@ -11,21 +11,26 @@ void mexFunction(int nlhs, mxArray *plhs[], /* Output variables */ int nrhs, con
 	int count;
 	void *ptr;
 	int data_type;
+	char buf[4096];
 	
 	
 	mxGetString(NAME_ARG, name, 128);
 
 	count = mxGetN(DATA_ARG);
 
+#ifdef TRACE
 	mexPrintf("arguments = %d\n", nrhs);
+#endif
 
 	if (mxIsDouble(DATA_ARG)) {
 		data_type = MUSCLE_DOUBLE;
 		ptr = mxGetPr(DATA_ARG);
 	} else if (mxIsChar(DATA_ARG)) {
 		data_type = MUSCLE_STRING;
-		ptr = mxGetChars(DATA_ARG);	
-		printf("ptr=%s\n", (((char *)ptr) + 6));
+		mxGetString(DATA_ARG, buf, sizeof(buf));	
+		mexPrintf("String = %s\n", buf);
+		ptr = buf;
+		count = strlen(buf) + 1;
 	} else if (mxIsInt32(DATA_ARG)) {
 		data_type = MUSCLE_INT32;
 		ptr = mxGetPr(DATA_ARG);
@@ -35,12 +40,6 @@ void mexFunction(int nlhs, mxArray *plhs[], /* Output variables */ int nrhs, con
 	} else {
 		mexErrMsgTxt("Unsupported data type");
 	}
-
-	/* mexPrintf("MUSCLE Send nlhs=%d nrhs=%d  mxGetN=%d name=%s\n", nlhs, nrhs,  mxGetN(prhs[1]), name); 
-
-	for (i=0 ; i < mxGetN(prhs[1]); i++) {
-		printf("data[%d]=%f\n", i, mxGetPr(prhs[1])[i]);
-	} */
 
 	
 	MUSCLE_Send(name, ptr, count,  data_type);	
