@@ -39,13 +39,21 @@ public class MatlabKernel extends NativeKernel {
 	 */
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Builds a command for a matlab script using the following recipe:
+	 * :matlab_command :matlab_args -nosplash -nodisplay -r $wrapper :args
+	 * where $wrapper = "addpath(':script', '$MUSCLE_HOME/share/muscle/matlab/modules/'); try, :script, catch Ex, Error = Ex, ErrorReport = getReport(Ex, 'extended'), ErrorStack = Ex.stack, exit(4), end; exit"
+	 * @param command List that the command will be added to
+	 * @throws IllegalStateException if the MUSCLE_HOME environment variables is not set
+	 * @throws IllegalArgumentException if the "script" property for this kernel is not set
+	 * @throws NullPointerException if command is null
+	 */
 	@Override
 	protected void buildCommand(List<String> command) {
 		if (hasProperty("matlab_command")) {			
 			command.add(getProperty("matlab_command"));
-		}
-		else {
-			logger.log(Level.WARNING, "MATLAB command variable ''matlab_command''  for {0} not given. Using matlab.", getLocalName());
+		} else {
+			logger.log(Level.INFO, "MATLAB command variable ''matlab_command''  for {0} not given. Using matlab.", getLocalName());
 			command.add("matlab");
 		}
 		
@@ -53,7 +61,7 @@ public class MatlabKernel extends NativeKernel {
 			String args[] = getProperty("matlab_args").trim().split(" ");
 			command.addAll(Arrays.asList(args));
 		} else {
-			logger.log(Level.WARNING, "MATLAB arguments variable ''matlab_args'' for {0} not given. Not using arguments.", getLocalName());
+			logger.log(Level.INFO, "MATLAB arguments variable ''matlab_args'' for {0} not given. Not giving additional arguments.", getLocalName());
 		}
 		command.add("-nosplash");
 		command.add("-nodisplay");
@@ -61,7 +69,7 @@ public class MatlabKernel extends NativeKernel {
 		String muscleHome = System.getenv("MUSCLE_HOME");
 
 		if (muscleHome == null) {
-			throw new IllegalArgumentException("MUSCLE_HOME not set");
+			throw new IllegalStateException("MUSCLE_HOME not set");
 		}
 
 		if (hasInstanceProperty("script")) {
@@ -69,9 +77,12 @@ public class MatlabKernel extends NativeKernel {
 			String scriptDir = script.getParent();
 			String mainFunction = script.getName().split("\\.")[0];
 			command.add("-r");
-			command.add("addpath('" + scriptDir + "','" + muscleHome + "/share/muscle/matlab/modules/'); try, " + mainFunction + ", catch Ex, Error = Ex," + " ErrorReport = getReport(Ex, 'extended'), ErrorStack = Ex.stack, exit(4), end; exit");
-		}
-		else {
+			command.add(
+					"addpath('" + scriptDir + "','" + muscleHome + "/share/muscle/matlab/modules/'); "
+					+ "try, " + mainFunction + ", catch Ex, Error = Ex, "
+					+ "ErrorReport = getReport(Ex, 'extended'), "
+					+ "ErrorStack = Ex.stack, exit(4), end; exit");
+		} else {
 			throw new IllegalArgumentException("Missing property: " + getLocalName() + ":script" );
 		}
 		
@@ -79,7 +90,6 @@ public class MatlabKernel extends NativeKernel {
 			String args[] = getProperty("args").split(" ");
 			command.addAll(Arrays.asList(args));
 		}
-
 	}
 
 }

@@ -29,7 +29,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import muscle.core.*;
+import muscle.core.ConduitEntrance;
+import muscle.core.ConduitEntranceController;
+import muscle.core.ConduitExit;
+import muscle.core.ConduitExitController;
+import muscle.core.CxADescription;
 import muscle.core.kernel.CAController;
 import muscle.core.model.Distance;
 import muscle.core.model.Observation;
@@ -70,7 +74,8 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		type = SerializableDatatype.NULL;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	@Override
 	public synchronized void send(String entranceName, SerializableData data) {
 		ConduitEntranceController ec = entrances.get(entranceName);
 		ConduitEntrance entrance;
@@ -84,6 +89,8 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		entrance.send(obs);
 	}
 	
+	@SuppressWarnings("rawtypes")
+	@Override
 	public synchronized SerializableData receive(String exitName) {
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
@@ -119,6 +126,8 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		}
 	}
 	
+	@SuppressWarnings("rawtypes")
+	@Override
 	public synchronized boolean hasNext(String exitName) {
 		ConduitExitController ec = exits.get(exitName);
 		ConduitExit exit;
@@ -129,28 +138,37 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		return exit.hasNext();
 	}
 
+	@Override
 	public synchronized String getKernelName() {
 		return getLocalName();
 	}
 	
+	@Override
 	public synchronized String getProperty(String name) {
 		return super.getProperty(name);
 	}
 	
+	@Override
 	public synchronized String getProperties() {
 		return CxADescription.ONLY.getLegacyProperties();
 	}
 	
+	@Override
 	public synchronized String getTmpPath() {
 		return super.getTmpPath();
 	}
 	
+	@Override
 	public synchronized void isFinished() {
 		isDone = true;
 		notify();
 	}
 	
-	/** Adds the command to execute to the given list. */
+	/**
+	 * Adds the command to execute to the given list.
+	 * @param command an empty list that will be filled with an input list for a ProcessBuilder
+	 * @throws IllegalArgumentException if the "command" property is not set for the current kernel
+	 */
 	protected void buildCommand(List<String> command) {
 		if (hasInstanceProperty("debugger")) {
 			command.add(getProperty("debugger"));
@@ -158,8 +176,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		
 		if (hasInstanceProperty("command")) {
 			command.add(getProperty("command"));
-		}
-		else {
+		} else {
 			throw new IllegalArgumentException("Missing property: " + getLocalName() + ":command" );
 		}
 		
@@ -246,8 +263,11 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 			} else {
 				this.writeContactInformation(host, port);
 			}
-		} catch (Exception ex) {
-			logger.log(Level.SEVERE, getLocalName() + " could not start communicating with native code", ex);
+		} catch (IOException ex) {
+			logger.log(Level.SEVERE, getLocalName() + " could not start native code", ex);
+			this.controller.fatalException(ex);
+		} catch (InterruptedException ex) {
+			logger.log(Level.SEVERE, getLocalName() + " was interrupted and stopped", ex);
 			this.controller.fatalException(ex);
 		} finally {
 			// Make sure the gateway thread quits
@@ -260,18 +280,23 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 	/**
 	 * Get int value of the log Level {@link java.util.logger.Level}.
 	 * 
-	 * Returns the log level of the ConsoleHandler, if set, otherwise returns Level.ALL.
+	 * @return the log level of the ConsoleHandler, if set, otherwise returns Level.ALL.
 	 */
+	@Override
 	public int getLogLevel() {
 		String strConsoleLevel = LogManager.getLogManager().getProperty("muscle.util.logging.ConcurrentConsoleHandler.level");
+		if (strConsoleLevel == null)
+			return 0;
+		
 		try {
 			return Level.parse(strConsoleLevel).intValue();
-		} catch (Throwable ex) {
+		} catch (IllegalArgumentException ex) {
 			// Just log everything if there is no well-defined log level.
 			return 0;
 		}
 	}
 	
+	@Override
 	public void afterExecute() {
 		synchronized (childLock) {
 			if (processThread != null) {
@@ -280,6 +305,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		}
 	}
 	
+	@Override
 	public void fatalException(Throwable thr) {
 		this.controller.fatalException(thr);
 	}
