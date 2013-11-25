@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <netinet/in.h> // INADDR_ANY
 
 using namespace muscle;
 
@@ -39,26 +40,17 @@ endpoint::endpoint(const char *buffer_ptr) : host("")
 endpoint::endpoint(uint16_t port_) : addr()
 {
 	port = port_;
-	const size_t max_hostname = 256;
-	char hostname[max_hostname];
-	hostname[max_hostname - 1] = '\0';
-	if (gethostname(hostname, max_hostname) == -1) {
-		throw muscle_exception("Could not find hostname");
-	}
-	host = std::string(hostname);
+	host = "*";
 }
 
 std::string endpoint::getHostFromAddress() const
 {
 	assertValid();
-	if (is_ipv6)
-	{
+	if (is_ipv6) {
 		char hostname[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, addr, hostname, INET6_ADDRSTRLEN);
 		return std::string(hostname);
-	}
-	else
-	{
+	} else {
 		char hostname[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, addr, hostname, INET_ADDRSTRLEN);
 		return std::string(hostname);
@@ -83,18 +75,19 @@ void endpoint::getSockAddr(struct sockaddr& serv_addr) const
 {
 	assertValid();
 	memset(&serv_addr, 0, sizeof(struct sockaddr));
-	if (is_ipv6)
-	{
+	if (is_ipv6) {
 		struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&serv_addr;
 		saddr->sin6_family = AF_INET6;
 		memcpy(saddr->sin6_addr.s6_addr, addr, IPV6_SZ);
 		saddr->sin6_port = htons(port);
-	}
-	else
-	{
+	} else {
 		struct sockaddr_in *saddr = (struct sockaddr_in *)&serv_addr;
 		saddr->sin_family = AF_INET;
-		memcpy(&saddr->sin_addr.s_addr, addr, IPV4_SZ);
+		if (isWildcard()) {
+			saddr->sin_addr.s_addr = INADDR_ANY;
+		} else {
+			memcpy(&saddr->sin_addr.s_addr, addr, IPV4_SZ);
+		}
 		saddr->sin_port = htons(port);
 	}
 }
@@ -109,26 +102,35 @@ void endpoint::resolve()
 	// No use resolving empty host
 	if (host.empty()) return;
 	
-	struct hostent *s;
-	s = gethostbyname2(c_host(), AF_INET);
-
-	if (s == NULL) {
-		s = gethostbyname2(c_host(), AF_INET6);
-
-		if (s == NULL)
-			throw muscle_exception("host " + host + " not found");
-		else
-			is_ipv6 = true;
-		
-	} else {
+	if (host == "*")
+	{
 		is_ipv6 = false;
+		addr[0] = 1;
+		memset(addr+1, 0, sizeof(addr) - 1);
 	}
-	
-	if (is_ipv6) {
-		memcpy(addr, s->h_addr, IPV6_SZ);
-	} else {
-		memcpy(addr, s->h_addr, IPV4_SZ);
-		memset(addr+IPV4_SZ, 0, sizeof(addr)-IPV4_SZ);
+	else
+	{
+		struct hostent *s;
+		s = gethostbyname2(c_host(), AF_INET);
+
+		if (s == NULL) {
+			s = gethostbyname2(c_host(), AF_INET6);
+
+			if (s == NULL)
+				throw muscle_exception("host " + host + " not found");
+			else
+				is_ipv6 = true;
+
+		} else {
+			is_ipv6 = false;
+		}
+
+		if (is_ipv6) {
+			memcpy(addr, s->h_addr, IPV6_SZ);
+		} else {
+			memcpy(addr, s->h_addr, IPV4_SZ);
+			memset(addr+IPV4_SZ, 0, sizeof(addr)-IPV4_SZ);
+		}
 	}
 }
 
