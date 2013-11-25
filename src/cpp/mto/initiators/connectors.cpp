@@ -40,7 +40,7 @@ void StubbornConnecter::async_accept(size_t code, int flag, ClientSocket *sock_)
     logger::finest("Connected to peer %s, starting hello exchange", where.str().c_str());
     
     sock = sock_;
-    // TODO install error listener
+
     mto->peers.introduce(sock);
 	// Self-destruct
     new HelloReader(sock, this, hellos);

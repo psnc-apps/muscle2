@@ -233,7 +233,7 @@ void PeerCollection::introduce(ClientSocket *sock)
         
         char * data = new char[MtoHello::getSize()];
         hello.serialize(data);
-        // TODO Add more sophisticated error listener
+
         sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new async_sendlistener_delete, async_service::PLUG_CORK);
     }
     
@@ -241,7 +241,7 @@ void PeerCollection::introduce(ClientSocket *sock)
     
     char * data = new char[MtoHello::getSize()];
     mto->hello.serialize(data);
-    // TODO Add more sophisticated error listener
+
     sock->async_send(MAIN_WRITE_HELLO, data, MtoHello::getSize(), new async_sendlistener_delete, async_service::UNPLUG_CORK);
 }
 
