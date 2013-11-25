@@ -87,7 +87,7 @@ if [ "$MODE" = "install" ]; then
 	#3. Install MUSCLE
 	echo "========== BUILDING MUSCLE ==========="
 	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS .. \
-	&& make clean && make -j 4 install
+	&& make clean && (make -j 4; make install)
 	if [ $? -eq 0 ]; then
 		echo "----------- MUSCLE INSTALLED IN $INSTALL_PREFIX -----------"
 	else
@@ -98,7 +98,7 @@ else
 	#3. Build release
 	echo "========== BUILDING RELEASE ==========="
 	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS .. \
-	&& make clean && make  install
+	&& make clean && (make -j 4; make install)
 	if [ $? -eq 0 ]; then
 		echo "----------- RELEASE INSTALLED IN $INSTALL_PREFIX/devel -----------"
 	else
@@ -109,7 +109,7 @@ else
 	#4. Build with debug symbols
 	echo "========== BUILDING DEBUG version ==========="
 	cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX/devel-debug -DCMAKE_BUILD_TYPE=Debug $MUSCLE_CMAKE_OPTIONS .. \
-	&& make clean && make  install
+	&& make clean && (make -j 4; make install)
 	if [ $? -eq 0 ]; then
 		echo "----------- DEBUG INSTALLED IN $INSTALL_PREFIX/devel-debug -----------"
 	else
