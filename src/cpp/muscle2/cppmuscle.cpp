@@ -502,21 +502,36 @@ int env::barrier(const char * const barrier)
 		endpoint address(barrier + sizeof(int));
 		address.resolve();
 		char data;
-		try {
-			opts.blocking_connect = true;
-			muscle::CClientSocket sock(address, NULL, opts);
-			sock.setBlocking(true);
-			const int hasErr = sock.hasError();
-			if (hasErr) {
-				msg = strerror(hasErr);
-			} else {
-				sock.recv(&data, 1);
+		const int num_tries = 3;
+		int tries = 0;
+		do {
+			msg = NULL;
+			try {
+				opts.blocking_connect = true;
+				muscle::CClientSocket sock(address, NULL, opts);
+				sock.setBlocking(true);
+				const int hasErr = sock.hasError();
+				if (hasErr) {
+					msg = strerror(hasErr);
+				} else {
+					sock.recv(&data, 1);
+				}
+			} catch (muscle::muscle_exception& ex) {
+				msg = ex.what();
 			}
-		} catch (muscle::muscle_exception& ex) {
-			msg = ex.what();
-		}
-		if (msg)
-			printf("ERROR: muscle::env::barrier failed to connect socket: %s\n", msg);
+			if (msg) {
+				tries++;
+				if (tries <= num_tries) {
+					printf("WARNING: muscle::env::barrier failed to connect socket at try %d: %s. Retrying...\n", tries, msg);
+					duration(1, 0).sleep();
+				} else {
+					printf("ERROR: muscle::env::barrier failed to connect socket after %d tries: %s\n", num_tries, msg);
+				}
+			} else if (tries > 1) {
+				tries++;
+				printf("success: muscle::env::barrier connected socket at try %d\n", tries);
+			}
+		} while (msg && tries <= num_tries);
 	}
 	
 	return msg == NULL ? 0 : -1;
