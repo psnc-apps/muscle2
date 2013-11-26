@@ -527,7 +527,7 @@ int env::barrier(const char * const barrier)
 				} else {
 					printf("ERROR: muscle::env::barrier failed to connect socket after %d tries: %s\n", num_tries, msg);
 				}
-			} else if (tries > 1) {
+			} else if (tries > 0) {
 				tries++;
 				printf("success: muscle::env::barrier connected socket at try %d\n", tries);
 			}
