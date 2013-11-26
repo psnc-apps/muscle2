@@ -52,7 +52,9 @@ endpoint::endpoint(uint16_t port_) : addr()
 std::string endpoint::getHostFromAddress() const
 {
 	assertValid();
-	if (is_ipv6) {
+	if (isWildcard()) {
+		return "*";
+	} else if (is_ipv6) {
 		char hostname[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, addr, hostname, INET6_ADDRSTRLEN);
 		return std::string(hostname);

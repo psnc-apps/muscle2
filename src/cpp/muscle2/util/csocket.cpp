@@ -172,6 +172,9 @@ namespace muscle {
     
     void CClientSocket::connect(bool blocking)
     {
+		if (address.isWildcard())
+			throw muscle_exception("Can not connect to wildcard address");
+
         setBlocking(blocking);
         
         struct sockaddr saddr;

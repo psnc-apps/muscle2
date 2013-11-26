@@ -36,17 +36,22 @@
 using namespace std;
 
 namespace muscle {
-    mutex mpsocket::path_mutex;
+	mutex mpsocket::path_mutex;
+	
+	/////// Internal MPWide wrappers ///////
+	// They do locking on a shared mutex, so take
+	// care to not lock any mutexes before calling
+	// these functions
     
-    /////// Internal MPWide wrappers ///////
-    // They do locking on a shared mutex, so take
-    // care to not lock any mutexes before calling
-    // these functions
-    
-    // Returns path_id if succeeded and -1 if failed.
-    static int _mpsocket_do_connect(const endpoint& ep, const socket_opts& opts, bool asServer)
-    {
-        int path_id;
+	// Returns path_id if succeeded and -1 if failed.
+	static int _mpsocket_do_connect(const endpoint& ep, const socket_opts& opts, bool asServer)
+	{
+		int path_id;
+
+		if (!asServer && ep.isWildcard()) {
+			logger::severe("Cannot connect to a wildcard address %s",ep.str().c_str());
+			return -1;
+		}
 		const string host = asServer ? "0" : ep.getHost();
 		
 		{
@@ -59,8 +64,9 @@ namespace muscle {
 
 		}
 
-        if (path_id >= 0 && MPW_ConnectPath(path_id, asServer) == -1) {
-            // Clean up
+        if (path_id >= 0 && MPW_ConnectPath(path_id, asServer) == -1)
+		{
+			// Clean up
 			mutex_lock lock = mpsocket::path_mutex.acquire();
 			logger::fine("Destroying path %d", path_id);
 			MPW_DestroyPath(path_id);

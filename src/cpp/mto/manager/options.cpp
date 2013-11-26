@@ -36,7 +36,7 @@ void Options::setOptions(option_parser& opts)
     opts.add("TCPBufSize", "TCP Buffers sizes");
     
     opts.add("internalPort", "Port to listen for connections to be transported");
-    opts.add("internalAddress", "Address to listen for connections to be transported");
+    opts.add("internalAddress", "Address to listen for connections to be transported (default: *)");
     opts.add("autoRegister", "Address:Port to be registered automatically (used for accessing QCG-Coordinator)", false);
     
     
@@ -155,7 +155,7 @@ bool Options::load(int argc, char **argv)
     
     logger::config("My name in topology file: %s", myName.c_str());
     internalEndpoint = endpoint(
-                            opts.forceGet<string>("internalAddress"),
+                            opts.get<string>("internalAddress", "*"),
                             opts.forceGet<uint16_t>("internalPort"));
     internalEndpoint.resolve();
 
