@@ -40,7 +40,13 @@ endpoint::endpoint(const char *buffer_ptr) : host("")
 endpoint::endpoint(uint16_t port_) : addr()
 {
 	port = port_;
-	host = "*";
+	const size_t max_hostname = 256;
+	char hostname[max_hostname];
+	hostname[max_hostname - 1] = '\0';
+	if (gethostname(hostname, max_hostname) == -1) {
+		throw muscle_exception("Could not find hostname");
+	}
+	host = std::string(hostname);
 }
 
 std::string endpoint::getHostFromAddress() const
