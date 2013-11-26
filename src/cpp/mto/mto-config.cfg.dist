@@ -8,6 +8,8 @@ localPortLow    = 5002
 localPortHigh   = 5099
 
 # Port and address where this MTO will listen for client requests.
+# Fill in definite address if for security reasons MTO may not listen
+# from all addresses
 # Port and address for other MTO's is located in the topology file.
 internalPort    = 5001
-internalAddress = localhost
+internalAddress = *
