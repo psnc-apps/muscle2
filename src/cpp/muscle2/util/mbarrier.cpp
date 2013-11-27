@@ -136,6 +136,7 @@ BarrierClient::BarrierClient(const char *server)
 	socket_opts opts;
 	opts.blocking_connect = true;
 	csock = new CClientSocket(ep, NULL, opts);
+	csock->setBlocking(true);
 }
 
 BarrierClient::~BarrierClient()

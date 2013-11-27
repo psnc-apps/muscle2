@@ -467,9 +467,7 @@ int env::barrier(const char * const barrier)
 			logger::warning("Will pass uninitialized MUSCLE barrier.");
 		}
 	} else {
-		if (barrier_client == NULL) {
-			barrier_client = new BarrierClient(barrier);
-		}
+		if (barrier_client == NULL) barrier_client = new BarrierClient(barrier);
 
 		barrier_client->wait();
 	}
