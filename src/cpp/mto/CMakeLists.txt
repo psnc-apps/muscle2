@@ -2,8 +2,6 @@ project(mto)
 
 set(MTO mto)
 
-find_package(Threads)
-
 include_directories(..)
 
 add_executable(${MTO} 
@@ -14,7 +12,6 @@ add_executable(${MTO}
 
 target_link_libraries(${MTO} ${MPWIDE_LIB} )
 target_link_libraries(${MTO} ${MUSCLE2_LIB} )
-target_link_libraries(${MTO} ${CMAKE_THREAD_LIBS_INIT} )
 
 install(TARGETS ${MTO} DESTINATION bin)
 install(FILES "${PROJECT_SOURCE_DIR}/etc/mto-config.cfg.dist" DESTINATION etc)

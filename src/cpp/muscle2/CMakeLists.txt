@@ -8,7 +8,10 @@ SET(MUSCLE2_CPP_FILES cmuscle.cpp fortranmuscle.cpp cppmuscle.cpp complex_data.c
         util/endpoint.cpp util/async_service.cpp util/msocket.cpp util/csocket.cpp util/mtime.cpp util/option_parser.cpp util/logger.cpp
 		util/mutex.cpp util/rwmutex.cpp util/thread.cpp util/mbarrier.cpp)
 
+find_package(Threads)
+
 add_library(${MUSCLE2_LIB} SHARED ${MUSCLE2_CPP_FILES})
+target_link_libraries(${MUSCLE2_LIB} ${CMAKE_THREAD_LIBS_INIT} )
 set_target_properties(${MUSCLE2_LIB} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
 set_target_properties(${MUSCLE2_LIB} PROPERTIES OUTPUT_NAME muscle2)
 
@@ -16,6 +19,7 @@ install(TARGETS ${MUSCLE2_LIB} DESTINATION lib)
 
 if (BUILD_STATIC_LIBS)
 	add_library(${MUSCLE2_LIB_STATIC} STATIC ${MUSCLE2_CPP_FILES})
+	target_link_libraries(${MUSCLE2_LIB_STATIC} ${CMAKE_THREAD_LIBS_INIT} )
 	set_target_properties(${MUSCLE2_LIB_STATIC} PROPERTIES VERSION ${MUSCLE2CPP_VERSION})
 	set_target_properties(${MUSCLE2_LIB_STATIC} PROPERTIES OUTPUT_NAME muscle2)
 	install(TARGETS ${MUSCLE2_LIB_STATIC} DESTINATION lib)

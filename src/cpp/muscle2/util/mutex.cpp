@@ -7,7 +7,7 @@
 //
 
 #include "mutex.h"
-#include "muscle2/util/exception.hpp"
+#include "exception.hpp"
 
 using namespace muscle::util;
 

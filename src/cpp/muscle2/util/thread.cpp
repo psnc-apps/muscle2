@@ -7,7 +7,7 @@
 //
 
 #include "thread.h"
-#include "muscle2/util/exception.hpp"
+#include "exception.hpp"
 
 #include <cassert>
 #include <signal.h>
