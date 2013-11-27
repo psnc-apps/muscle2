@@ -50,13 +50,13 @@ extern "C" size_t communicator_write_to_socket(void *socket_handle, void *buf, i
 
 namespace muscle {
 
-Communicator::Communicator(endpoint &ep)
+Communicator::Communicator(net::endpoint &ep)
 {
-	socket_opts opts;
+	net::socket_opts opts;
 	opts.blocking_connect = true;
 	opts.keep_alive = true;
 
-	sock = new CClientSocket(ep, NULL, opts);
+	sock = new net::CClientSocket(ep, NULL, opts);
 	sock->setBlocking(true);
 }
 

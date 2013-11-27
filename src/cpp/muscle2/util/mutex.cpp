@@ -9,7 +9,7 @@
 #include "mutex.h"
 #include "muscle2/util/exception.hpp"
 
-using namespace muscle;
+using namespace muscle::util;
 
 mutex_lock::mutex_lock(pthread_mutex_t *m, pthread_cond_t *c, bool onlyTry) : mut(m), cond(c)
 {

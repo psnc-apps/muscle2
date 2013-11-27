@@ -15,6 +15,8 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::util;
+using namespace muscle::net;
 
 bool option_parser::load(int argc, char **argv)
 {
@@ -113,7 +115,7 @@ bool option_parser::load(string fname)
         if (ptr == line.npos || line.compare(ptr, 1, commentH) == 0 || line.compare(ptr, 2, commentS) == 0)
             continue;
         
-        vector<string> match = split(line, spaces);
+        vector<string> match = muscle::util::split(line, spaces);
         
         if (match.size() == 1)
             results.insert(pair<string, string>(match[0], ""));
@@ -128,7 +130,7 @@ bool option_parser::load(string fname)
     return true;
 }
 
-bool loadTopology(string fname, map<string, muscle::endpoint> & results)
+bool muscle::util::loadTopology(string fname, map<string, endpoint> & results)
 {
 	if (fname.empty())
 		return false;
@@ -153,7 +155,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
         if (ptr == line.npos || line.compare(ptr, 1, commentH) == 0 || line.compare(ptr, 2, commentS) == 0)
             continue;
         
-        vector<string> match = split(line, spaces);
+        vector<string> match = muscle::util::split(line, spaces);
         if (match.size() != 2 && match.size() != 3) {
             throw muscle::muscle_exception("Syntax error in config file, on line: '" + line + "'");
         }
@@ -176,7 +178,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
             port = (uint16_t)portl;
         }
         
-        muscle::endpoint& ep = results[match[0]] = muscle::endpoint(match[1], port);
+        endpoint& ep = results[match[0]] = endpoint(match[1], port);
 
         try {
 			ep.resolve();
@@ -199,7 +201,7 @@ bool loadTopology(string fname, map<string, muscle::endpoint> & results)
     return true;
 }
 
-vector<string> split(const string& str, const string& chars)
+vector<string> muscle::util::split(const string& str, const string& chars)
 {
     vector<string> list;
     size_t ptr = str.find_first_not_of(chars);
@@ -217,7 +219,7 @@ vector<string> split(const string& str, const string& chars)
     return list;
 }
 
-string to_upper_ascii(const string& str)
+string muscle::util::to_upper_ascii(const string& str)
 {
     char *newstr = new char[str.length()+1];
     char *ptr = newstr;

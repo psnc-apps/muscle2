@@ -16,15 +16,15 @@
 
 class LocalMto;
 
-class Acceptor : public muscle::async_acceptlistener
+class Acceptor : public muscle::net::async_acceptlistener
 {
 protected:
     /** Ptr to new socket */
-    muscle::ServerSocket * const ss;
+    muscle::net::ServerSocket * const ss;
     LocalMto * const mto;
     
 public:
-    Acceptor(muscle::ServerSocket *sock, LocalMto *mto);
+    Acceptor(muscle::net::ServerSocket *sock, LocalMto *mto);
     virtual ~Acceptor() { delete ss; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
@@ -36,23 +36,23 @@ public:
 class InternalAcceptor : public Acceptor
 {
 public:
-    InternalAcceptor(muscle::ServerSocket *_ss, LocalMto *mto, muscle::socket_opts *client_opts) : Acceptor(_ss, mto) {
+    InternalAcceptor(muscle::net::ServerSocket *_ss, LocalMto *mto, muscle::net::socket_opts *client_opts) : Acceptor(_ss, mto) {
 	    _ss->async_accept(ACCEPT_INTERNAL, this, client_opts);
 	}
     
     /** Triggered on accept; reads the header and constructs a connection */
-    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock);
 };
 
 struct ExternalAcceptor : public Acceptor
 {
 public:
-    ExternalAcceptor(muscle::ServerSocket * _ss, LocalMto *mto, muscle::socket_opts *client_opts) : Acceptor(_ss, mto) {
+    ExternalAcceptor(muscle::net::ServerSocket * _ss, LocalMto *mto, muscle::net::socket_opts *client_opts) : Acceptor(_ss, mto) {
 		_ss->async_accept(ACCEPT_EXTERNAL, this, client_opts);
 	}
     
     /** Triggered on accept; reads the header and constructs a connection */
-    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock);
 };
 
 /**
@@ -61,21 +61,21 @@ public:
 class InitPeerConnection : public Initiator
 {
 private:
-    muscle::ClientSocket * const sock;
+    muscle::net::ClientSocket * const sock;
     std::vector<MtoHello> hellos;
     LocalMto * const mto;
     
 public:
-    InitPeerConnection(muscle::ClientSocket *_sock, LocalMto *mto);
+    InitPeerConnection(muscle::net::ClientSocket *_sock, LocalMto *mto);
     virtual void allHellosRead();
     virtual void allHellosFailed(const muscle::muscle_exception& ex);
 };
 
-class InitConnection : public muscle::async_recvlistener, public muscle::async_sendlistener
+class InitConnection : public muscle::net::async_recvlistener, public muscle::net::async_sendlistener
 {
 private:
     // Set to null if it needs to be preserved for another object
-    muscle::ClientSocket *sock;
+    muscle::net::ClientSocket *sock;
     LocalMto * const mto;
     char *reqBuf;
     int refs;
@@ -83,7 +83,7 @@ private:
     void registerAddress(const Request &request);
     void connect(const Request &request);
 public:
-    InitConnection(muscle::ClientSocket *sock, LocalMto *mto);
+    InitConnection(muscle::net::ClientSocket *sock, LocalMto *mto);
     virtual ~InitConnection() { if (sock) delete sock; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);

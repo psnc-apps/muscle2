@@ -21,13 +21,13 @@ class LocalMto;
 /**
  * Represents connection between two end points
  */
-class Connection : public muscle::async_recvlistener, public muscle::async_sendlistener, public muscle::async_function
+class Connection : public muscle::net::async_recvlistener, public muscle::net::async_sendlistener, public muscle::net::async_function
 {
 private:
-	static const muscle::duration recvTimeout;
+	static const muscle::util::duration recvTimeout;
 	
     /** Local side of the connection */
-    muscle::ClientSocket *sock;
+    muscle::net::ClientSocket *sock;
     
     /** Represents the remote end */
     PeerConnectionHandler *remoteMto;
@@ -70,7 +70,7 @@ private:
     void close();
 
 public:
-    Connection(Header h, muscle::ClientSocket* s, PeerConnectionHandler * remoteMto, LocalMto *mto, bool remotePeerConnected);
+    Connection(Header h, muscle::net::ClientSocket* s, PeerConnectionHandler * remoteMto, LocalMto *mto, bool remotePeerConnected);
     
     virtual ~Connection();
     

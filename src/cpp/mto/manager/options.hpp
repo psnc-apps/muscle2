@@ -18,16 +18,16 @@ class Options
 {
 private:
     uint16_t localPortLow, localPortHigh; ///< Local port range
-    muscle::endpoint internalEndpoint;             ///< Address and port for listening to clients
+    muscle::net::endpoint internalEndpoint;             ///< Address and port for listening to clients
     std::string myName;                              ///< Name as in config file
     bool daemonize;                             ///< If the MTO should go to background
     int tcpBufSize;			      ///< TCP Buff size
-    muscle::duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
+    muscle::util::duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
     
     std::string topologyFilePath;                    ///< Location of the topology
     
-    option_parser opts;
-    void setOptions(option_parser& opts);
+	muscle::util::option_parser opts;
+    void setOptions(muscle::util::option_parser& opts);
     
     bool load(int argc, char **argv);
     
@@ -45,12 +45,12 @@ public:
     
     unsigned short getLocalPortLow() const {return localPortLow;}
     unsigned short getLocalPortHigh() const {return localPortHigh;}
-    muscle::endpoint getInternalEndpoint() const {return internalEndpoint;}
+    muscle::net::endpoint getInternalEndpoint() const {return internalEndpoint;}
     std::string getMyName() const {return myName;}
     bool getDaemonize() const {return daemonize;}
     int getTCPBufSize() const {return tcpBufSize;}
     std::string getTopologyFilePath() const {return topologyFilePath;}
-    const muscle::duration& getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
+    const muscle::util::duration& getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
 
     bool useMPWide;			      ///< use MPWide
 private:

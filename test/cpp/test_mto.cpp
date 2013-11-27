@@ -9,23 +9,23 @@
 #include "muscle2/util/csocket.h"
 #include "muscle2/util/async_service.h"
 #include "muscle2/util/option_parser.hpp"
-#include "mto/util/thread.h"
+#include "muscle2/util/thread.h"
 #include "mto/net/mpsocket.h"
 #include "assertTemplates.h"
 
 #include <arpa/inet.h>
 
-class async_ss : public muscle::async_acceptlistener, muscle::async_recvlistener, muscle::async_sendlistener
+class async_ss : public muscle::net::async_acceptlistener, muscle::net::async_recvlistener, muscle::net::async_sendlistener
 {
 public:
-    muscle::async_service * const service;
+    muscle::net::async_service * const service;
     int i;
-    muscle::ServerSocket *ss;
-    muscle::ClientSocket *cs;
-    muscle::ClientSocket *as;
-    async_ss(muscle::async_service *s, muscle::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
+    muscle::net::ServerSocket *ss;
+    muscle::net::ClientSocket *cs;
+    muscle::net::ClientSocket *as;
+    async_ss(muscle::net::async_service *s, muscle::net::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
     
-    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock)
+    virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock)
     {
         i++;
         if (i == 1) {
@@ -71,11 +71,11 @@ public:
     }
 };
 
-void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& factory, muscle::endpoint& ep, muscle::socket_opts& opts)
+void testAsyncConnect(muscle::net::async_service &service, muscle::net::SocketFactory& factory, muscle::net::endpoint& ep, muscle::net::socket_opts& opts)
 {
     try
     {
-        muscle::ServerSocket *ssock = factory.listen(ep, opts);
+        muscle::net::ServerSocket *ssock = factory.listen(ep, opts);
         usleep(1000000);
         async_ss ass(&service, ssock);
         ssock->async_accept(1, &ass, &opts);
@@ -88,7 +88,7 @@ void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& fac
 }
 
 struct mutexThreadData {
-    muscle::mutex m;
+    muscle::util::mutex m;
     int data;
 };
 
@@ -97,12 +97,12 @@ void *testMutexThread(void *d)
     mutexThreadData *data = (mutexThreadData *)d;
     
     {
-        muscle::mutex_lock lock = data->m.acquire();
+        muscle::util::mutex_lock lock = data->m.acquire();
         data->data++;
     }
     usleep(150);
     {
-        muscle::mutex_lock lock = data->m.acquire();
+        muscle::util::mutex_lock lock = data->m.acquire();
         while (data->data != 2) {
             lock.wait();
         }
@@ -123,11 +123,11 @@ void testMutex()
     ::pthread_create(&t, NULL, &testMutexThread, &data);
     usleep(50);
     {
-        muscle::mutex_lock lock = data.m.acquire();
+        muscle::util::mutex_lock lock = data.m.acquire();
         assertEquals(data.data, 1, "data is increased in thread");
     }
     {
-        muscle::mutex_lock lock = data.m.acquire();
+        muscle::util::mutex_lock lock = data.m.acquire();
         data.data++;
         lock.notify();
         usleep(150);
@@ -135,7 +135,7 @@ void testMutex()
     }
     usleep(100);
     {
-        muscle::mutex_lock lock = data.m.acquire();
+        muscle::util::mutex_lock lock = data.m.acquire();
         assertEquals(data.data, 3, "Notify woke up thread");
     }
     
@@ -143,12 +143,12 @@ void testMutex()
     assertTrue("Joined thread");
 }
 
-class test_thread : public muscle::thread
+class test_thread : public muscle::util::thread
 {
     int *data;
-    muscle::duration timeout;
+    muscle::util::duration timeout;
 public:
-    test_thread(int *data, muscle::duration timeout) : data(data), timeout(timeout) { start(); }
+    test_thread(int *data, muscle::util::duration timeout) : data(data), timeout(timeout) { start(); }
     virtual void *run()
     {
         timeout.sleep();
@@ -162,7 +162,7 @@ void testThread()
     cout << endl << "thread" << endl << endl;
     
     int data = 0;
-    muscle::duration timeout(0, 100);
+    muscle::util::duration timeout(0, 100);
     test_thread t(&data, timeout);
     assertEquals(t.isDone(), false, "Not done before execution");
     assertEquals(data, 0, "Increase only after timeout");
@@ -175,16 +175,16 @@ void testThread()
 void testAsyncMPConnectServerSocket()
 {
     cout << endl << "async_connect/accept mpsocket" << endl << endl;
-    muscle::endpoint ep("127.0.0.1", 40108);
-    muscle::socket_opts opts(16);
-    muscle::async_service service;
+    muscle::net::endpoint ep("127.0.0.1", 40108);
+    muscle::net::socket_opts opts(16);
+    muscle::net::async_service service;
     muscle::MPSocketFactory factory(&service);
     testAsyncConnect(service, factory, ep, opts);
 }
 
 int main(int argc, char * argv[])
 {
-    muscle::mtime t0 = muscle::mtime::now();
+    muscle::util::mtime t0 = muscle::util::mtime::now();
 
     try {
         testMutex();

@@ -23,6 +23,7 @@
 #include "xdr_communicator.hpp"
 #include "util/exception.hpp"
 #include "util/csocket.h"
+#include "util/mbarrier.h"
 
 #include <stdlib.h>
 #include <rpc/types.h>
@@ -43,11 +44,13 @@
 #include <signal.h>
 
 using namespace std;
-
-namespace muscle {
-
+using namespace muscle;
+using namespace muscle::net;
+using namespace muscle::util;
+	
 bool env::is_main_processor = true;
-ServerSocket *env::barrier_ssock = NULL;
+Barrier *env::barrier_server = NULL;
+BarrierClient *env::barrier_client = NULL;
 static Communicator *comm = NULL;
 pid_t env::muscle_pid = -1;
 std::string env::kernel_name, env::tmp_path;
@@ -432,30 +435,13 @@ int env::barrier_init(char **barrier, size_t *len, const int num_procs)
 		logger::warning("Will not create barrier with less than 2 processes");
 		return -1;
 	}
-	*len = endpoint::getSize() + sizeof(int);
-	char *buf = new char[*len];
-	int *buf_intptr = (int *)buf;
-	*buf_intptr = num_procs;
+	
+	*len = Barrier::createBuffer(barrier);
+	
 	if (env::is_main_processor) {
-		socket_opts opts(num_procs);
-		// Bind to any port
-		try {
-			endpoint ep((uint16_t)0);
-			ep.resolve();
-			barrier_ssock = new muscle::CServerSocket(ep, NULL, opts);
-			barrier_ssock->setBlocking(true);
-			barrier_ssock->getAddress().serialize(buf + sizeof(int));
-		} catch (const muscle_exception& ex) {
-			const char *msg = ex.what();
-			logger::severe("Could not initialize MUSCLE barrier: %s", msg);
-			if (barrier_ssock) {
-				delete barrier_ssock;
-				barrier_ssock = NULL;
-			}
-			return -1;
-		}
+		barrier_server = new Barrier(num_procs);
+		barrier_server->fillBuffer(*barrier);
 	}
-	*barrier = buf;
 	
 	return 0;
 }
@@ -465,83 +451,26 @@ int env::barrier(const char * const barrier)
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::barrier()");
 #endif
-	const int num_procs = *(int*)barrier;
-	if (num_procs < 1) {
-		logger::warning("Will not do barrier with less than 2 processes");
-		return 0;
-	}
-	
-	const char *msg = NULL;
-	socket_opts opts;
-	
 	if (env::is_main_processor) {
-		// start at 1: the main processor is already counted
-		try {
-			const char data = 1;
-			for (int i = 1; i < num_procs; i++) {
-				ClientSocket *sock = barrier_ssock->accept(opts);
-				sock->setBlocking(true);
-				if (sock == NULL) {
-					msg = "failed to accept socket";
-				} else {
-					const int hasErr = sock->hasError();
-					if (hasErr) {
-						msg = strerror(hasErr);
-					} else {
-						sock->send(&data, 1);
-					}
-				}
-				delete sock;
-			}
-		} catch (muscle::muscle_exception& ex) {
-			msg = ex.what();
-		}
-		if (msg)
-			logger::severe("muscle::env::barrier failed to connect socket: %s", msg);
+		barrier_server->signal();
 	} else {
-		endpoint address(barrier + sizeof(int));
-		address.resolve();
-		char data;
-		const int num_tries = 3;
-		int tries = 0;
-		do {
-			msg = NULL;
-			try {
-				opts.blocking_connect = true;
-				muscle::CClientSocket sock(address, NULL, opts);
-				sock.setBlocking(true);
-				const int hasErr = sock.hasError();
-				if (hasErr) {
-					msg = strerror(hasErr);
-				} else {
-					sock.recv(&data, 1);
-				}
-			} catch (muscle::muscle_exception& ex) {
-				msg = ex.what();
-			}
-			if (msg) {
-				tries++;
-				if (tries <= num_tries) {
-					printf("WARNING: muscle::env::barrier failed to connect socket at try %d: %s. Retrying...\n", tries, msg);
-					duration(1, 0).sleep();
-				} else {
-					printf("ERROR: muscle::env::barrier failed to connect socket after %d tries: %s\n", num_tries, msg);
-				}
-			} else if (tries > 0) {
-				tries++;
-				printf("success: muscle::env::barrier connected socket at try %d\n", tries);
-			}
-		} while (msg && tries <= num_tries);
+		if (barrier_client == NULL) {
+			barrier_client = new BarrierClient(barrier);
+		}
+
+		barrier_client->wait();
 	}
-	
-	return msg == NULL ? 0 : -1;
+	return 0;
 }
 
 void env::barrier_destroy(char * const barrier)
 {
-	if (env::is_main_processor) {
-		delete barrier_ssock;
-		barrier_ssock = NULL;
+	if (barrier_client) {
+		delete barrier_client;
+		barrier_client = NULL;
+	} else if (barrier_server) {
+		delete barrier_server;
+		barrier_server = NULL;
 	}
 	delete [] barrier;
 }
@@ -797,7 +726,3 @@ void env::free_data(void *ptr, muscle_datatype_t type)
 	
 	comm->free_data(ptr, type);
 }
-
-
-} // EO namespace muscle
-

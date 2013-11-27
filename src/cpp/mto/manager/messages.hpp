@@ -30,7 +30,7 @@ public:
      * (i.e. these are identical on both ends)
      */
     
-    muscle::endpoint src, ///< Source address for the connection
+    muscle::net::endpoint src, ///< Source address for the connection
                      dst; ///< Destination address for the connection
     
     /** Serializes the Request to an existing char* of size at least of getSize */
@@ -46,7 +46,7 @@ public:
     static size_t getSize();
 
     Request() : type(0), sessionId(0) {}
-    Request(char type, const muscle::endpoint &src, const muscle::endpoint &dst) : type(type), src(src), dst(dst), sessionId(0) {}
+    Request(char type, const muscle::net::endpoint &src, const muscle::net::endpoint &dst) : type(type), src(src), dst(dst), sessionId(0) {}
     Request(char *buf);
 protected:
     /** Some unused int field */
@@ -70,7 +70,7 @@ public:
     bool operator<(const Identifier & other) const
     { return src < other.src || (src == other.src && dst < other.dst); }
     
-    muscle::endpoint src, dst;
+    muscle::net::endpoint src, dst;
 };
 
 /** Hash for storing the Identifiers in a hash map */
@@ -96,7 +96,7 @@ public:
     /** Constructs the header basing on the given request */
     Header(const Request & r) : Request(r), length(0) {}
     Header(char type, const Identifier &id) : Request(type, id.src, id.dst), length(0) {}
-    Header(char type, const muscle::endpoint& src, const muscle::endpoint& dst, size_t length) : Request(type, src, dst), length(length) {}
+    Header(char type, const muscle::net::endpoint& src, const muscle::net::endpoint& dst, size_t length) : Request(type, src, dst), length(length) {}
     Header(char *buf);
 
     /** Length is the length of data */
@@ -131,7 +131,7 @@ struct MtoHello
     
     bool overlaps(const MtoHello& o) const;
     bool matches(const MtoHello& o) const;
-    bool matches(const muscle::endpoint& ep);
+    bool matches(const muscle::net::endpoint& ep);
 };
 
 #endif // MESSAGES_H

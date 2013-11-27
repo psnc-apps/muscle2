@@ -37,9 +37,9 @@ namespace muscle {
         
         /* ====== Reconnect issues ====== */
         
-        void recreateSocket(muscle::async_function *func);
+        void recreateSocket(muscle::net::async_function *func);
         
-        std::vector< muscle::async_function * > recreateSocketPending;
+        std::vector< muscle::net::async_function * > recreateSocketPending;
         
         void recreateSocketFired();
         void recreateSocketSentHello(char * data);

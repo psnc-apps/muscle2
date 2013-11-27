@@ -19,6 +19,7 @@
 #include <cstdlib>
 
 using namespace muscle;
+using namespace muscle::net;
 
 Acceptor::Acceptor(ServerSocket *sock, LocalMto *mto) : ss(sock), mto(mto)
 {}

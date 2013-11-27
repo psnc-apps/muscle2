@@ -9,9 +9,9 @@
 #ifndef __CMuscle__mpsocket__
 #define __CMuscle__mpsocket__
 #include "muscle2/util/msocket.h"
-#include "../util/thread.h"
-#include "../util/rwmutex.h"
-#include "../util/mutex.h"
+#include "muscle2/util/thread.h"
+#include "muscle2/util/rwmutex.h"
+#include "muscle2/util/mutex.h"
 
 #include <string>
 #include <unistd.h>
@@ -20,7 +20,9 @@
 #include <stack>
 
 namespace muscle {
-	
+	using namespace net;
+	using namespace util;
+
     class MPServerSocket;
     class MPClientSocket;
     class mpsocket;

@@ -20,29 +20,29 @@ class LocalMto;
  * Connects to a given peer until success. Retries every peerReconnectTimeout.
  * On successfull connection creates PeerConnectionHandler and finihses
  */
-struct StubbornConnecter : public Initiator, public muscle::async_function, public muscle::async_acceptlistener
+struct StubbornConnecter : public Initiator, public muscle::net::async_function, public muscle::net::async_acceptlistener
 {
 private:
-    muscle::endpoint where;
-    muscle::async_service *service;
-    muscle::socket_opts opts;
-    const muscle::duration timeout;
-    muscle::ClientSocket *sock;
-    muscle::SocketFactory *sockFactory;
+    muscle::net::endpoint where;
+    muscle::net::async_service *service;
+    muscle::net::socket_opts opts;
+    const muscle::util::duration timeout;
+    muscle::net::ClientSocket *sock;
+    muscle::net::SocketFactory *sockFactory;
     size_t timer;
     size_t sockId;
     std::vector<MtoHello> hellos;
     LocalMto *mto;
     
 public:
-    StubbornConnecter(const muscle::endpoint& ep, muscle::async_service *service, muscle::SocketFactory *sockFactory, muscle::socket_opts& opts, const muscle::duration& timeout, LocalMto *mto);
+    StubbornConnecter(const muscle::net::endpoint& ep, muscle::net::async_service *service, muscle::net::SocketFactory *sockFactory, muscle::net::socket_opts& opts, const muscle::util::duration& timeout, LocalMto *mto);
     virtual ~StubbornConnecter() { if (sock) delete sock; }
     
     /** Executed after no responce has been received (or at abort) */
     virtual void async_execute(size_t code, int flag, void *user_data);
     
     /** Executed when connecting state changed (new connection, or some error)  */
-    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock);
+    virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock);
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
     

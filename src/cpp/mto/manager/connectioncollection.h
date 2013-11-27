@@ -21,21 +21,21 @@ class ConnectionCollection
     
     /** Open connections tunneled via proxy */
     conns_t remoteConnections;
-    std::set<muscle::endpoint> availableConnections;
+    std::set<muscle::net::endpoint> availableConnections;
     LocalMto *mto;
 
 public:
     ConnectionCollection(LocalMto *mto) : mto(mto) {}
     
     Connection *get(const Header& h);
-    Connection *create(muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected);
+    Connection *create(muscle::net::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected);
     void erase(const Header& h);
     void replacePeer(PeerConnectionHandler *oldh, PeerConnectionHandler *newh);
     void peerDied(PeerConnectionHandler *handler);    
     
-    void setAvailable(const muscle::endpoint& ep);
-    void setUnavailable(const muscle::endpoint& ep);
-    bool isAvailable(const muscle::endpoint& ep);
+    void setAvailable(const muscle::net::endpoint& ep);
+    void setUnavailable(const muscle::net::endpoint& ep);
+    bool isAvailable(const muscle::net::endpoint& ep);
 };
 
 #endif /* defined(__CMuscle__connectioncollection__) */

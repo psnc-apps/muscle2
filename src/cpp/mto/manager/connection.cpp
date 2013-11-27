@@ -10,8 +10,10 @@
 #define RECEIVE_THRESHOLD_SZ 10240
 
 using namespace muscle;
+using namespace muscle::net;
+using namespace muscle::util;
 
-const muscle::duration Connection::recvTimeout(0l, RECEIVE_TIMEOUT_US);
+const muscle::util::duration Connection::recvTimeout(0l, RECEIVE_TIMEOUT_US);
 
 /* from remote */
 Connection::Connection(Header h, ClientSocket* s, PeerConnectionHandler* remoteMto, LocalMto *mto, bool remotePeerConnected)
@@ -58,7 +60,7 @@ void Connection::close()
     mto->conns.erase(header);
 	
 	if (pendingOperations > 1) {	// We have more than the timer running
-		muscle::mtime timer = duration(10l, 0).time_after();
+		muscle::util::mtime timer = duration(10l, 0).time_after();
 		closing_timer = sock->getServer()->timer(TIMER_CLOSE, timer, this, (void *)0);
 	} else {
 		pendingOperations--;
@@ -163,7 +165,7 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 			receive();
 		} else {
 			lastReceivedSize += count;
-			muscle::mtime t = recvTimeout.time_after();
+			muscle::util::mtime t = recvTimeout.time_after();
 			sock->getServer()->update_timer(receiving_timer, t, NULL);
 		}
 	} else if (is_final) {
@@ -175,7 +177,7 @@ bool Connection::async_received(size_t code, int user_flag, void *buffer, void *
 		lastReceivedSize = count;
 		lastReceivedData = buffer;
 
-		muscle::mtime t = recvTimeout.time_after();
+		muscle::util::mtime t = recvTimeout.time_after();
 		pendingOperations++;
 		receiving_timer = sock->getServer()->timer(TIMER_RECEIVE, t, this, NULL);
 	} else if (count > 1) {

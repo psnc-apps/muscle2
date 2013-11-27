@@ -16,10 +16,10 @@ class LocalMto;
 /**
  * The part responsible for interconnection between two MTOs.
  */
-class PeerConnectionHandler : public muscle::async_recvlistener, public muscle::async_sendlistener
+class PeerConnectionHandler : public muscle::net::async_recvlistener, public muscle::net::async_sendlistener
 {
 public:
-    PeerConnectionHandler(muscle::ClientSocket * _socket, LocalMto *mto);
+    PeerConnectionHandler(muscle::net::ClientSocket * _socket, LocalMto *mto);
     virtual ~PeerConnectionHandler();
     
     /** Informs peer about MTO reachable via me */
@@ -36,7 +36,7 @@ public:
     virtual void async_done(size_t code, int user_flag) { decrementPending(); }
     
     /** Returns the remote endpoint for this connection*/
-    const muscle::endpoint & address() const;
+    const muscle::net::endpoint & address() const;
     
     void send(Header& h, void *data, size_t len);
     void sendHeader(Header& h, size_t value = 0);
@@ -53,9 +53,9 @@ public:
 
 private:
     bool closing;
-	muscle::async_service *service;
+	muscle::net::async_service *service;
     Header latestHeader;
-    muscle::ClientSocket *socket;
+    muscle::net::ClientSocket *socket;
     LocalMto *mto;
     char *headerBuffer;
     int pendingOperations;
@@ -90,14 +90,14 @@ private:
     void handleClose(Header &h);
 
     /** Once connection requested by peer has been established or failed, this is called */
-    struct HandleConnected : public muscle::async_acceptlistener
+    struct HandleConnected : public muscle::net::async_acceptlistener
     {
         Header h;
         PeerConnectionHandler *t;
-		muscle::socket_opts opts;
+		muscle::net::socket_opts opts;
         HandleConnected(Header& header, PeerConnectionHandler *thiz);
         
-        virtual void async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket);
+        virtual void async_accept(size_t code, int user_flag, muscle::net::ClientSocket *newSocket);
         virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
         virtual void async_done(size_t code, int user_flag);
     };

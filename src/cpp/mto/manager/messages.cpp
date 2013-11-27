@@ -10,6 +10,7 @@
 
 using namespace muscle;
 using namespace std;
+using namespace muscle::net;
 
 string Request::type_str() const
 {
@@ -42,7 +43,7 @@ size_t Request::getSize()
     return sizeof(/*type*/ char)+2*endpoint::getSize()+sizeof(/*sessionId*/ int32_t);
 }
 
-Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::endpoint::getSize())
+Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::net::endpoint::getSize())
 {
     buf += 1+2*endpoint::getSize();
     sessionId = readFromBuffer<int32_t>(buf);
@@ -126,7 +127,7 @@ bool MtoHello::matches(const MtoHello &o) const
     return o.portHigh == portHigh && o.portLow == portLow;
 }
 
-bool MtoHello::matches(const muscle::endpoint& ep)
+bool MtoHello::matches(const muscle::net::endpoint& ep)
 {
     return ep.port >= portLow && ep.port <= portHigh;
 }

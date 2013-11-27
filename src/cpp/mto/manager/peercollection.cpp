@@ -13,6 +13,7 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::net;
 
 PeerConnectionHandler *PeerCollection::get(Header header) const
 {

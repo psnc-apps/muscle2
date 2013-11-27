@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h> // INADDR_ANY
 
-using namespace muscle;
+using namespace muscle::net;
 
 const char endpoint::IPV4_FLAG = 1;
 const char endpoint::IPV6_FLAG = 2;

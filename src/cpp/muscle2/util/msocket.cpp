@@ -10,9 +10,8 @@
 #include "async_service.h"
 
 using namespace muscle;
+using namespace muscle::net;
 using namespace std;
-
-namespace muscle {
 
 msocket::msocket(endpoint& ep, async_service *service) : address(ep), hasAddress(true), server(service)
 {
@@ -70,10 +69,7 @@ ServerSocket::ServerSocket(const socket_opts& opts)
 void ServerSocket::listen(int max_connections)
 {}
 
-size_t SocketFactory::async_connect(int user_flag, muscle::endpoint &ep, muscle::socket_opts *opts, muscle::async_acceptlistener *accept)
+size_t SocketFactory::async_connect(int user_flag, endpoint &ep, socket_opts *opts, async_acceptlistener *accept)
 {
     return service->connect(user_flag, this, ep, opts, accept);
 }
-
-}
-

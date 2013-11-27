@@ -17,76 +17,78 @@
 #include <map>
 
 namespace muscle {
-    class async_service
-    {
-        typedef std::pair<mtime,async_description> timer_t;
-        typedef std::pair<ClientSocket *,std::queue<async_description> > csockqueuepair_t;
-        typedef std::vector<csockqueuepair_t *> sockqueue_t;
-        typedef std::vector<std::pair<ServerSocket *, async_description> *> ssockdesc_t;
-        typedef std::vector<std::pair<ClientSocket *, async_description> *> csockdesc_t;
-    public:
-		enum SendOptions {
-			NONE = 0,
-			PLUG_CORK = 1,
-			UNPLUG_CORK = 2
+	namespace net {
+		class async_service
+		{
+			typedef std::pair<muscle::util::mtime,async_description> timer_t;
+			typedef std::pair<ClientSocket *,std::queue<async_description> > csockqueuepair_t;
+			typedef std::vector<csockqueuepair_t *> sockqueue_t;
+			typedef std::vector<std::pair<ServerSocket *, async_description> *> ssockdesc_t;
+			typedef std::vector<std::pair<ClientSocket *, async_description> *> csockdesc_t;
+		public:
+			enum SendOptions {
+				NONE = 0,
+				PLUG_CORK = 1,
+				UNPLUG_CORK = 2
+			};
+			
+			async_service(size_t limitSendSize = 6*1024*1024, int limitBufferNum = 10);
+			
+			size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);
+			size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
+			size_t listen(int user_flag, ServerSocket* socket, socket_opts *,async_acceptlistener* accept);
+			size_t timer(int user_flag, muscle::util::mtime& t, async_function* func, void *user_data);
+			virtual size_t connect(int user_flag, SocketFactory *factory, endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
+			
+			void erase_socket(int rfd, int wfd, int wrfd);
+			void erase_listen(int fd);
+			void erase_timer(size_t);
+			void erase_connect(size_t);
+			void *update_timer(size_t, muscle::util::mtime&, void *user_data);
+			
+			void run();
+			void done();
+			bool isDone() const;
+			bool isShutdown() const;
+			void printDiagnostics();
+		private:
+			void run_timer(size_t timer);
+			void run_send(int fd, bool hasErr);
+			void run_recv(int fd, bool hasErr);
+			void run_accept(int fd, bool hasErr);
+			void run_connect(int fd, bool hasErr);
+			size_t getNextCode() { return _current_code++; }
+			int select(int *writeFd, int *readableWriteFd, int *readFd, muscle::util::duration& utimeout);
+			
+			std::vector<int> readFds;
+			std::vector<int> readableWriteFds;
+			std::vector<int> writeFds;
+			ssockdesc_t listenSockets;
+			csockdesc_t connectSockets;
+			sockqueue_t recvQueues;
+			sockqueue_t sendQueues;
+			
+			std::map<size_t,timer_t> timers;
+			std::map<size_t,async_description> done_timers;
+			size_t next_alarm();
+			
+			size_t _current_code;
+			bool is_communicating;
+			
+			void do_erase_commsocket();
+			
+			volatile bool is_done;
+			volatile bool is_shutdown;
+			
+			size_t szSendBuffers;
+			int numSendBuffers;
+			const size_t limitReadAtSendBufferSize;
+			const int limitReadAtSendBufferNum;
+			
+			std::vector<int> readFdsToErase;
+			std::vector<int> writeFdsToErase;
+			std::vector<int> readableWriteFdsToErase;
 		};
-		
-        async_service(size_t limitSendSize = 6*1024*1024, int limitBufferNum = 10);
-        
-        size_t send(int user_flag, ClientSocket* socket, const void *data, size_t size, async_sendlistener* send, int options);
-        size_t receive(int user_flag, ClientSocket* socket, void *data, size_t size, async_recvlistener* recv);
-        size_t listen(int user_flag, ServerSocket* socket, socket_opts *,async_acceptlistener* accept);
-        size_t timer(int user_flag, mtime& t, async_function* func, void *user_data);
-        virtual size_t connect(int user_flag, muscle::SocketFactory *factory, endpoint& ep, socket_opts *opts, async_acceptlistener* accept);
-
-        void erase_socket(int rfd, int wfd, int wrfd);
-        void erase_listen(int fd);
-        void erase_timer(size_t);
-        void erase_connect(size_t);
-        void *update_timer(size_t, mtime&, void *user_data);
-        
-		void run();
-        void done();
-        bool isDone() const;
-        bool isShutdown() const;
-        void printDiagnostics();
-    private:
-        void run_timer(size_t timer);
-        void run_send(int fd, bool hasErr);
-        void run_recv(int fd, bool hasErr);
-        void run_accept(int fd, bool hasErr);
-        void run_connect(int fd, bool hasErr);
-        size_t getNextCode() { return _current_code++; }
-        int select(int *writeFd, int *readableWriteFd, int *readFd, duration& utimeout);
-
-		std::vector<int> readFds;
-        std::vector<int> readableWriteFds;
-        std::vector<int> writeFds;
-        ssockdesc_t listenSockets;
-        csockdesc_t connectSockets;
-        sockqueue_t recvQueues;
-        sockqueue_t sendQueues;
-		
-        std::map<size_t,timer_t> timers;
-        std::map<size_t,async_description> done_timers;
-        size_t next_alarm();
-		
-		size_t _current_code;
-		bool is_communicating;
-		
-		void do_erase_commsocket();
-		
-        volatile bool is_done;
-        volatile bool is_shutdown;
-		
-		size_t szSendBuffers;
-		int numSendBuffers;
-		const size_t limitReadAtSendBufferSize;
-		const int limitReadAtSendBufferNum;
-
-		std::vector<int> readFdsToErase;
-		std::vector<int> writeFdsToErase;
-		std::vector<int> readableWriteFdsToErase;
-    };
+	}
 }
 #endif /* defined(__CMuscle__async_service__) */

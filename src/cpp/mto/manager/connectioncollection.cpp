@@ -27,7 +27,7 @@ Connection *ConnectionCollection::get(const Header& h)
     }
 }
 
-Connection *ConnectionCollection::create(muscle::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected)
+Connection *ConnectionCollection::create(muscle::net::ClientSocket *sock, Header& h, PeerConnectionHandler *handler, bool remoteHasConnected)
 {
     logger::fine("Creating connection %s", h.str().c_str());
     Connection *conn = new Connection(h, sock, handler, mto, remoteHasConnected);
@@ -62,17 +62,17 @@ void ConnectionCollection::peerDied(PeerConnectionHandler *handler)
     }
 }
 
-void ConnectionCollection::setAvailable(const muscle::endpoint& ep)
+void ConnectionCollection::setAvailable(const muscle::net::endpoint& ep)
 {
     availableConnections.insert(ep);
 }
 
-bool ConnectionCollection::isAvailable(const muscle::endpoint& ep)
+bool ConnectionCollection::isAvailable(const muscle::net::endpoint& ep)
 {
     return availableConnections.find(ep) != availableConnections.end();
 }
 
-void ConnectionCollection::setUnavailable(const muscle::endpoint& ep)
+void ConnectionCollection::setUnavailable(const muscle::net::endpoint& ep)
 {
     availableConnections.erase(ep);
 }

@@ -34,7 +34,7 @@ namespace muscle {
 class XdrCommunicator : public Communicator
 {
 public:
-	XdrCommunicator(endpoint& ep);
+	XdrCommunicator(net::endpoint& ep);
 	virtual ~XdrCommunicator() { xdr_destroy(&xdro); xdr_destroy(&xdri); }
 	int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len);
 	void free_data(void *ptr, muscle_datatype_t type);

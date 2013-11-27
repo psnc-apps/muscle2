@@ -54,7 +54,7 @@ namespace muscle {
 class Communicator
 {
 public:
-	Communicator(endpoint &ep);
+	Communicator(net::endpoint &ep);
 	virtual ~Communicator();
     
 	/** Execute a MUSCLE protocol. Identifier is an ID of the name for which to communicate, the msg is the message to MUSCLE and the result the result from MUSCLE. */
@@ -64,7 +64,7 @@ public:
 	/** Free data that MUSCLE allocated */
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
 protected:
-	CClientSocket *sock;
+	net::CClientSocket *sock;
 };
 
 } // EO namespace muscle

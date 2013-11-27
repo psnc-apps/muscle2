@@ -9,7 +9,7 @@
 #include "rwmutex.h"
 #include "muscle2/util/exception.hpp"
 
-using namespace muscle;
+using namespace muscle::util;
 
 rwmutex_lock::rwmutex_lock(bool read, pthread_rwlock_t *m, bool onlyTry) : mut(m)
 {

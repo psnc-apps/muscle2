@@ -32,8 +32,13 @@
 #include "util/msocket.h"
 
 namespace muscle {
-    
-class endpoint;
+	namespace net {
+		class endpoint;
+	}
+	namespace util {
+		class Barrier;
+		class BarrierClient;
+	}
 
 class env
 {
@@ -76,12 +81,13 @@ private:
 	static pid_t spawn(char * const *argv);
 	static pid_t muscle2_spawn(int* argc, char ***argv, char **muscle_tmpfifo);
 	static char * create_tmpfifo(void);
-	static endpoint muscle2_tcp_location(pid_t pid, const char *muscle_tmpfifo);
+	static net::endpoint muscle2_tcp_location(pid_t pid, const char *muscle_tmpfifo);
 	static void muscle2_kill(void);
 	static void muscle2_sighandler(int signal);
 	static void install_sighandler();
 
-	static ServerSocket *barrier_ssock;
+	static util::Barrier *barrier_server;
+	static util::BarrierClient *barrier_client;
     
     static pid_t muscle_pid;
     static std::string tmp_path;

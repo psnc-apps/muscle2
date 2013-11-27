@@ -14,11 +14,13 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::net;
+using namespace muscle::util;
 
 StubbornConnecter::StubbornConnecter(const endpoint& where_, async_service *service, SocketFactory *sockFactory, socket_opts& newOpts, const duration& timeout, LocalMto *mto)
 : where(where_), service(service), opts(newOpts), timeout(timeout), mto(mto), sock(NULL), sockFactory(sockFactory)
 {
-    muscle::mtime t = timeout.time_after();
+    muscle::util::mtime t = timeout.time_after();
     timer = service->timer(1, t, this, (void *)0);
     sockId = sockFactory->async_connect(1, where, &opts, this);
 }
@@ -29,7 +31,7 @@ void StubbornConnecter::async_execute(size_t code, int flag, void *user_data)
     
     sockId = sockFactory->async_connect(1, where, &opts, this);
     
-    muscle::mtime t = timeout.time_after();
+    muscle::util::mtime t = timeout.time_after();
     service->update_timer(timer, t, (void *)0);
 }
 

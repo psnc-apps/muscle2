@@ -3,6 +3,7 @@
 
 using namespace muscle;
 using namespace std;
+using namespace muscle::net;
 
 PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *mto)
 : socket(_socket), pendingOperations(0), closing(false), service(_socket->getServer()), mto(mto)
@@ -140,7 +141,7 @@ PeerConnectionHandler::HandleConnected::HandleConnected(Header& header, PeerConn
     t->mto->intSockFactory->async_connect(LOCAL_CONNECT, h.dst, &opts, this);
 }
 
-void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::ClientSocket *newSocket)
+void PeerConnectionHandler::HandleConnected::async_accept(size_t code, int user_flag, muscle::net::ClientSocket *newSocket)
 {
     if(t->closing) {
         t->errorOccurred("Can't connect to " + h.str() + "; it is closing.");

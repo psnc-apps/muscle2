@@ -14,17 +14,17 @@
 
 #include <arpa/inet.h> // htons
 
-class async_ss : public muscle::async_acceptlistener, muscle::async_recvlistener, muscle::async_sendlistener
+class async_ss : public muscle::net::async_acceptlistener, muscle::net::async_recvlistener, muscle::net::async_sendlistener
 {
 public:
-    muscle::async_service * const service;
+    muscle::net::async_service * const service;
     int i;
-    muscle::ServerSocket *ss;
-    muscle::ClientSocket *cs;
-    muscle::ClientSocket *as;
-    async_ss(muscle::async_service *s, muscle::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
+    muscle::net::ServerSocket *ss;
+    muscle::net::ClientSocket *cs;
+    muscle::net::ClientSocket *as;
+    async_ss(muscle::net::async_service *s, muscle::net::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
     
-    virtual void async_accept(size_t code, int flag, muscle::ClientSocket *sock)
+    virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock)
     {
         i++;
         if (i == 1) {
@@ -70,12 +70,12 @@ public:
     }
 };
 
-class async_func_call : public muscle::async_function
+class async_func_call : public muscle::net::async_function
 {
 public:
-    muscle::async_service * const service;
+    muscle::net::async_service * const service;
     const bool first;
-    async_func_call(muscle::async_service *s, bool first) : service(s), first(first) {}
+    async_func_call(muscle::net::async_service *s, bool first) : service(s), first(first) {}
     virtual void async_report_error(size_t,int,const muscle::muscle_exception&) {}
     virtual void async_execute(size_t code, int flag, void *data)
     {
@@ -95,23 +95,23 @@ void testTime()
 {
     cout << endl << "time" << endl << endl;
     
-    muscle::mtime t = muscle::mtime::now();
+    muscle::util::mtime t = muscle::util::mtime::now();
     assert(t.is_past(), "current time is past");
-    assert(!muscle::mtime::far_future().is_past(), "far future is not past");
-    muscle::duration d(10,0);
+    assert(!muscle::util::mtime::far_future().is_past(), "far future is not past");
+    muscle::util::duration d(10,0);
     assert(!d.time_after().is_past(), "duration time_after has time in the future");
     assert(t < d.time_after(), "evaluation up to now takes less than 10 seconds");
-    muscle::duration dnine(9,1);
+    muscle::util::duration dnine(9,1);
     assert(dnine.time_after().duration_until() < d && dnine < d.time_after().duration_until(), "Evaluation of time and duration has the right ordering and takes less than a second");
     assertEquals<long>(dnine.seconds(), 9, "seconds match given");
     assertEquals<unsigned>(dnine.useconds(), 9000001, "microseconds match given");
 }
 
-void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& factory, muscle::endpoint& ep, muscle::socket_opts& opts)
+void testAsyncConnect(muscle::net::async_service &service, muscle::net::SocketFactory& factory, muscle::net::endpoint& ep, muscle::net::socket_opts& opts)
 {
     try
     {
-        muscle::ServerSocket *ssock = factory.listen(ep, opts);
+        muscle::net::ServerSocket *ssock = factory.listen(ep, opts);
         usleep(1000000);
         async_ss ass(&service, ssock);
         ssock->async_accept(1, &ass, &opts);
@@ -126,11 +126,11 @@ void testAsyncConnect(muscle::async_service &service, muscle::SocketFactory& fac
 void testAsyncConnectServerSocket()
 {
     cout << endl << "async_connect/accept csocket" << endl << endl;
-    muscle::endpoint ep("localhost", 40104);
+    muscle::net::endpoint ep("localhost", 40104);
 	ep.resolve();
-    muscle::socket_opts opts(10);
-    muscle::async_service service;
-    muscle::CSocketFactory factory(&service);
+    muscle::net::socket_opts opts(10);
+    muscle::net::async_service service;
+    muscle::net::CSocketFactory factory(&service);
     testAsyncConnect(service, factory, ep, opts);
 }
 
@@ -138,15 +138,15 @@ void testAsyncTimer()
 {
     cout << endl << "async_cservice timer" << endl << endl;
 	
-    muscle::async_service service;
-    muscle::mtime t = muscle::duration(0l, 100).time_after();
+    muscle::net::async_service service;
+    muscle::util::mtime t = muscle::util::duration(0l, 100).time_after();
     const char *str = "test string";
     
     async_func_call func(&service, true);
     service.timer(1, t, &func, (void *)str);
 	
     async_func_call func2(&service, false);
-    muscle::mtime t2 = muscle::duration(1l, 0).time_after();
+    muscle::util::mtime t2 = muscle::util::duration(1l, 0).time_after();
     service.timer(1, t2, &func2, (void *)str);
     
     service.run();
@@ -171,12 +171,12 @@ void testAsyncTimer()
 void testSocket()
 {
     cout << endl << "csocket" << endl << endl;
-    muscle::endpoint ep("napoli.science.uva.nl", 50022);
+    muscle::net::endpoint ep("napoli.science.uva.nl", 50022);
 	ep.resolve();
     
     try {
-		muscle::socket_opts opts;
-        muscle::CClientSocket sock(ep, NULL, opts);
+		muscle::net::socket_opts opts;
+        muscle::net::CClientSocket sock(ep, NULL, opts);
         assert(true, "Connection to existing host");
         char s[] = "some string";
 		assertEquals<int>(sock.select(MUSCLE_SOCKET_W), MUSCLE_SOCKET_W, "Select sending");
@@ -190,10 +190,10 @@ void testSocket()
         assertFalse("Connection to existing host (" + string(ex.what()) + ")");
     }
     
-    muscle::endpoint nep("XXXnapoli.science.uva.nl", 50022);
+    muscle::net::endpoint nep("XXXnapoli.science.uva.nl", 50022);
     try {
-		muscle::socket_opts opts;
-        muscle::CClientSocket sock(nep, NULL, opts);
+		muscle::net::socket_opts opts;
+        muscle::net::CClientSocket sock(nep, NULL, opts);
         assertFalse("Do not connect to non-existing host");
     } catch (const exception& ex) {
         assertTrue("Do not connect to non-existing host (" + string(ex.what()) + ")");
@@ -205,21 +205,21 @@ void testParsing()
     cout << endl << "parsing" << endl << endl;
     vector<string> v;
     v.push_back("some"); v.push_back("text");
-    assertEquals(split("some text", " "), v, "Split string by spaces");
-    assertEquals(split(" some text", " "), v, "Left trim string by spaces");
-    assertEquals(split("some text ", " "), v, "Right trim string by spaces");
-    assertEquals(split("some=text", "="), v, "Split string by equal signs");
-    assertEquals(split("some = text ", "= "), v, "Split string by spaces and equal signs");
-    assertEquals(split("some = 	text ", "= \t"), v, "Split string by spaces, equal and tabs");
-    assertEquals<string>(to_upper_ascii("ascii"), "ASCII", "Upper case");
-    assertEquals<string>(to_upper_ascii("AsCIi"), "ASCII", "Mixed to upper case");
-    assertEquals<string>(to_upper_ascii("AsC1=*20Ii"), "ASC1=*20II", "Mixed symbols to upper case");
+    assertEquals(muscle::util::split("some text", " "), v, "Split string by spaces");
+    assertEquals(muscle::util::split(" some text", " "), v, "Left trim string by spaces");
+    assertEquals(muscle::util::split("some text ", " "), v, "Right trim string by spaces");
+	assertEquals(muscle::util::split("some=text", "="), v, "Split string by equal signs");
+    assertEquals(muscle::util::split("some = text ", "= "), v, "Split string by spaces and equal signs");
+    assertEquals(muscle::util::split("some = 	text ", "= \t"), v, "Split string by spaces, equal and tabs");
+    assertEquals<string>(muscle::util::to_upper_ascii("ascii"), "ASCII", "Upper case");
+    assertEquals<string>(muscle::util::to_upper_ascii("AsCIi"), "ASCII", "Mixed to upper case");
+    assertEquals<string>(muscle::util::to_upper_ascii("AsC1=*20Ii"), "ASC1=*20II", "Mixed symbols to upper case");
 }
 
 void testOptions()
 {
     cout << endl << "options" << endl << endl;
-    option_parser opt;
+    muscle::util::option_parser opt;
     opt.add("left", "left side", false);
     opt.add("optA", "opt A");
 	
@@ -242,7 +242,7 @@ void testOptions()
 void testEndpoint()
 {
     cout << endl << "endpoint" << endl << endl;
-    muscle::endpoint ep("napoli.science.uva.nl", 50022);
+    muscle::net::endpoint ep("napoli.science.uva.nl", 50022);
 	
     
     assertEquals(ep.c_host(), "napoli.science.uva.nl", "c-host name is preserved");
@@ -256,23 +256,23 @@ void testEndpoint()
     assertEquals<uint16_t>(ep.port, 50022, "host order port number matches");
     unsigned char *buf = new unsigned char[ep.getSize()];
     ep.serialize((char *)buf);
-    assertEquals<int>(buf[0], muscle::endpoint::IPV4_FLAG, "serialized protocol is IPv4");
+    assertEquals<int>(buf[0], muscle::net::endpoint::IPV4_FLAG, "serialized protocol is IPv4");
     assertEquals<int>(buf[1], 146, "first IPv4 segment matches 146");
     assertEquals<int>(buf[2], 50, "second IPv4 segment matches 50");
     assertEquals<int>(buf[3], 56, "third IPv4 segment matches 56");
     assertEquals<int>(buf[4], 52, "last IPv4 segment matches 52");
     assertEquals<uint16_t>(*(uint16_t *)&buf[17],htons(50022), "port matches 50022");
     
-    muscle::endpoint bep((char *)buf);
+    muscle::net::endpoint bep((char *)buf);
     assertEquals(bep, ep, "Serialized data matches original data");
     
-    const muscle::endpoint cep(ep);
+    const muscle::net::endpoint cep(ep);
     
     assert(cep.isResolved(), "const resolve existing host without calling resolve");
     assert(cep.isValid(), "const validate existing host");
     assert(!cep.isIPv6(), "const check IPv4 host");
     
-    muscle::endpoint invEp("XXXnapoli.science.uva.nl", 5000);
+    muscle::net::endpoint invEp("XXXnapoli.science.uva.nl", 5000);
     try {
         invEp.resolve();
         assertFalse("throw exception on resolve invalid hosts: " + invEp.getHost() + "; " + invEp.getHostFromAddress());
@@ -286,7 +286,7 @@ void testEndpoint()
 
 int main(int argc, char * argv[])
 {
-    muscle::mtime t0 = muscle::mtime::now();
+    muscle::util::mtime t0 = muscle::util::mtime::now();
 	
     try {
         testEndpoint();

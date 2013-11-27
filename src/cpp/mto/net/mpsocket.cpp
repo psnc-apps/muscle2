@@ -36,6 +36,7 @@
 using namespace std;
 
 namespace muscle {
+	using namespace net;
 	mutex mpsocket::path_mutex;
 	
 	/////// Internal MPWide wrappers ///////
@@ -380,12 +381,12 @@ namespace muscle {
 			server->erase_listen(sockfd);
 	}
 	
-    ClientSocket *MPSocketFactory::connect(muscle::endpoint &ep, const muscle::socket_opts &opts)
+    ClientSocket *MPSocketFactory::connect(muscle::net::endpoint &ep, const muscle::net::socket_opts &opts)
     {
         return new MPClientSocket(ep, service, opts);
     }
     
-    ServerSocket *MPSocketFactory::listen(muscle::endpoint &ep, const muscle::socket_opts &opts)
+    ServerSocket *MPSocketFactory::listen(muscle::net::endpoint &ep, const muscle::net::socket_opts &opts)
     {
         return new MPServerSocket(ep, service, opts);
     }

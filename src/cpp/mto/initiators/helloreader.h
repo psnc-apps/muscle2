@@ -28,17 +28,17 @@ public:
  * Once a connection between MTO's is established, this class is ued to read all Hellos
  * before starting normal communication.
  */
-struct HelloReader : public muscle::async_recvlistener
+struct HelloReader : public muscle::net::async_recvlistener
 {
 private:
-    muscle::ClientSocket * sock;
+    muscle::net::ClientSocket * sock;
     char * buf;
     int refs;
     std::vector<MtoHello>& hellos;
     Initiator *initiator;
     
 public:
-    HelloReader(muscle::ClientSocket * _sock, Initiator *init, std::vector<MtoHello>& hellos_);
+    HelloReader(muscle::net::ClientSocket * _sock, Initiator *init, std::vector<MtoHello>& hellos_);
     
     virtual ~HelloReader();
     /** Triggered on accept; reads the header and constructs a connection */

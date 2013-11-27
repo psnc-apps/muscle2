@@ -8,6 +8,9 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::util;
+using namespace muscle::net;
+
 
 Options::Options(int argc, char **argv)
 {

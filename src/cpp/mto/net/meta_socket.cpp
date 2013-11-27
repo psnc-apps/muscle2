@@ -108,7 +108,7 @@ void meta_socket::iddleSocketClose()
 }
 
 
-void meta_socket::recreateSocket(muscle::async_function *func)
+void meta_socket::recreateSocket(muscle::net::async_function *func)
 {
     recreateSocketPending.push_back(func);
     
@@ -120,7 +120,7 @@ void meta_socket::recreateSocket(muscle::async_function *func)
                  socketEndpt.str().c_str());
     
     ClientSocket::async_connect(asyncService, PCH_RECREATE, socketEndpt, this, this);
-    muscle::time timeout = muscle::duration(10,0).time_after();
+    muscle::time timeout = muscle::util::duration(10,0).time_after();
     asyncService->update_timer(recreateSocketTimer, timeout, NULL);
 }
 
@@ -167,7 +167,7 @@ void meta_socket::recreateSocketReadHello(char* data)
     ready = true;
     startReadHeader();
     
-    std::vector<muscle::async_function *> ops(recreateSocketPending);
+    std::vector<muscle::net::async_function *> ops(recreateSocketPending);
     recreateSocketPending.clear();
     
     for (int i = 0; i < ops.size(); ++i) {
@@ -196,9 +196,9 @@ void meta_socket::recreateSocketTimedOut(size_t timer, int user_flag, void *user
     
     delete socket;
     
-    muscle::time timeout = muscle::duration(20,0).time_after();
+    muscle::time timeout = muscle::util::duration(20,0).time_after();
     asyncService->update_timer(recreateSocketTimer, timeout, retryCount);
-    muscle::ClientSocket::async_connect(asyncService, PCH_SOCKET_TIMER, socketEndpt, this, this);
+    muscle::net::ClientSocket::async_connect(asyncService, PCH_SOCKET_TIMER, socketEndpt, this, this);
 }
 
 }

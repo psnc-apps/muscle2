@@ -13,6 +13,7 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::net;
 
 LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSockFactory, SocketFactory *extSockFactory, const endpoint& externalEp) : hello(opts.getLocalPortLow(), opts.getLocalPortHigh(), 0), name(opts.getMyName()), internalEp(opts.getInternalEndpoint()), willDaemonize(opts.getDaemonize()), service(service), intSockFactory(intSockFactory), extSockFactory(extSockFactory), sockTimeout(opts.getSockAutoCloseTimeout()), externalEp(externalEp), peers(this), conns(this), extAcceptor(NULL), intAcceptor(NULL), sock_opts(MAX_EXTERNAL_WAITING), client_opts(MAX_EXTERNAL_WAITING)
 {
