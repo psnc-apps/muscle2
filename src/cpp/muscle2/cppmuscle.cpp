@@ -460,8 +460,12 @@ int env::barrier(const char * const barrier)
 	logger::finest("muscle::env::barrier()");
 #endif
 	if (env::is_main_processor) {
-		barrier_server->signal();
-		logger::fine("Passed MUSCLE barrier");
+		if (barrier_server) {
+			barrier_server->signal();
+			logger::fine("Passed MUSCLE barrier");
+		} else {
+			logger::warning("Will pass uninitialized MUSCLE barrier.");
+		}
 	} else {
 		if (barrier_client == NULL) {
 			barrier_client = new BarrierClient(barrier);
