@@ -26,9 +26,9 @@ namespace muscle {
 			static size_t createBuffer(char **buffer);
 		private:
 			const int num_procs;
-			mutex signalMutex;
 			int signals;
-			net::endpoint *ep;
+			const char *epBuffer;
+			mutex signalMutex;
 		};
 		
 		class BarrierClient

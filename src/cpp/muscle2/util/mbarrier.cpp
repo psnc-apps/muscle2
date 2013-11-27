@@ -12,14 +12,13 @@
 using namespace muscle::util;
 using namespace muscle::net;
 
-Barrier::Barrier(int num_procs) : num_procs(num_procs), signals(0), ep(NULL)
+Barrier::Barrier(int num_procs) : num_procs(num_procs), signals(0), epBuffer(NULL)
 {
 	start();
 }
 
 Barrier::~Barrier()
 {
-	mutex_lock lock = signalMutex.acquire();
 	cache.stop_condition = true;
 	signalMutex.acquire().notify();
 	cancel();
@@ -36,11 +35,11 @@ void Barrier::fillBuffer(char *buffer)
 {
 	{
 		mutex_lock lock = signalMutex.acquire();
-		while (ep == NULL)
+		while (epBuffer == NULL)
 			lock.wait();
 	}
 	
-	ep->serialize(buffer);
+	memcpy(buffer, epBuffer, endpoint::getSize());
 }
 
 size_t Barrier::createBuffer(char **buffer)
@@ -56,18 +55,23 @@ void *Barrier::run()
 	int num_csocks = 0;
 
 	// 1. Create server socket
-	endpoint ep((uint16_t)0);
 	socket_opts server_opts(num_procs);
+	endpoint ep((uint16_t)0);
 	ep.resolve();
 	ServerSocket *ssock = new CServerSocket(ep, NULL, server_opts);
 	ssock->setBlocking(true);
+	
+	// 2. Send server address to main thread
+	char *buffer;
+	createBuffer(&buffer);
+	ssock->getAddress().serialize(buffer);
 	{
 		mutex_lock lock = signalMutex.acquire();
-		ep = ssock->getAddress();
+		epBuffer = buffer;
 		lock.notify();
 	}
 
-	// 2. Accept clients
+	// 3. Accept clients
 	socket_opts client_opts;
 	ClientSocket **socks = new ClientSocket*[total_csocks];
 	while (!cache.stop_condition)
@@ -92,23 +96,31 @@ void *Barrier::run()
 			break;
 		}
 	}
-	// 3. Send notifications until stop_condition
+	// 4. Send notifications until stop_condition
 	char data = 1;
-	while (!cache.stop_condition)
+	while (true)
 	{
 		{
 			mutex_lock lock = signalMutex.acquire();
 			while (signals == 0 && !cache.stop_condition)
 				lock.wait();
 			
+			if (signals == 0)
+				break;
+
 			signals--;
 		}
 		
-		for (int i = 0; i < total_csocks && !cache.stop_condition; i++) {
+		for (int i = 0; i < total_csocks; i++) {
 			socks[i]->send(&data, 1);
 		}
 	}
-	// 4. Clean up (only for accepted sockets num_csocks)
+	// 5. Clean up (only for accepted sockets num_csocks)
+	{
+		mutex_lock lock = signalMutex.acquire();
+		epBuffer = NULL;
+	}
+	delete [] buffer;
 	delete ssock;
 	for (int i = 0; i < num_csocks; i++) {
 		delete socks[i];
@@ -120,6 +132,7 @@ void *Barrier::run()
 BarrierClient::BarrierClient(const char *server)
 {
 	endpoint ep(server);
+	ep.resolve();
 	socket_opts opts;
 	opts.blocking_connect = true;
 	csock = new CClientSocket(ep, NULL, opts);

@@ -439,8 +439,16 @@ int env::barrier_init(char **barrier, size_t *len, const int num_procs)
 	*len = Barrier::createBuffer(barrier);
 	
 	if (env::is_main_processor) {
+		const bool logFine = logger::isLoggable(MUSCLE_LOG_FINE);
+		if (logFine) logger::fine("Creating MUSCLE barrier");
 		barrier_server = new Barrier(num_procs);
+		if (logFine) logger::finer("Retrieving MUSCLE barrier address");
 		barrier_server->fillBuffer(*barrier);
+		if (logFine) {
+			endpoint ep(*barrier);
+			ep.resolve();
+			logger::fine("MUSCLE barrier address is %s", ep.str().c_str());
+		}
 	}
 	
 	return 0;
@@ -453,6 +461,7 @@ int env::barrier(const char * const barrier)
 #endif
 	if (env::is_main_processor) {
 		barrier_server->signal();
+		logger::fine("Passed MUSCLE barrier");
 	} else {
 		if (barrier_client == NULL) {
 			barrier_client = new BarrierClient(barrier);
