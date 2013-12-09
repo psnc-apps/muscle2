@@ -26,7 +26,6 @@
 
 package muscle.util.concurrency;
 
-import muscle.exception.ExceptionListener;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -36,7 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import muscle.client.LocalManager;
+import muscle.exception.ExceptionListener;
 
 /**
  * A thread pool that is principle bounded to a fixed number of threads, but will
@@ -51,9 +50,8 @@ public class LimitedThreadPool extends SafeThread {
 	private final static long TIMEOUT_NEXTGET = 100;
 	private int numberOfRunners;
 	private int numberOfWaiting;
-	private LinkedBlockingQueue<TaskFuture> queue;
-	@SuppressWarnings("unchecked")
-	private final TaskFuture EMPTY = new TaskFuture(null);
+	private final LinkedBlockingQueue<TaskFuture<?>> queue;
+	private final TaskFuture<?> EMPTY = new TaskFuture<Object>(null);
 	private long lastGet;
 	private final Object counterLock = new Object();
 	private final ExceptionListener listener;
@@ -64,7 +62,7 @@ public class LimitedThreadPool extends SafeThread {
 		this.numberOfRunners = 0;
 		this.numberOfWaiting = 0;
 		this.lastGet = Long.MAX_VALUE;
-		queue = new LinkedBlockingQueue<TaskFuture>();
+		queue = new LinkedBlockingQueue<TaskFuture<?>>();
 		this.listener = listener;
 	}
 	
@@ -75,7 +73,7 @@ public class LimitedThreadPool extends SafeThread {
 		return fut;
 	}
 
-	private TaskFuture getNextTask() throws InterruptedException {
+	private TaskFuture<?> getNextTask() throws InterruptedException {
 		synchronized (counterLock) {
 			this.numberOfWaiting++;
 		}
@@ -163,7 +161,7 @@ public class LimitedThreadPool extends SafeThread {
 	}
 	
 	private class TaskRunner extends SafeThread {
-		private TaskFuture taskFuture;
+		private TaskFuture<?> taskFuture;
 		TaskRunner() {
 			super("threadpool-taskrunner");
 			this.taskFuture = null;
@@ -209,7 +207,7 @@ public class LimitedThreadPool extends SafeThread {
 		private Thread runningThread;
 		private Thread waitingThread;
 		private boolean cancelled;
-		private final NamedCallable<T> task;
+		final NamedCallable<T> task;
 		
 		TaskFuture(NamedCallable<T> task) {
 			this.resultQueue = new ArrayBlockingQueue<T>(1);
@@ -315,6 +313,7 @@ public class LimitedThreadPool extends SafeThread {
 		public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 			return this.getAll(timeout, unit);
 		}
+		@Override
 		public T get() throws InterruptedException, ExecutionException {
 			try {
 				return this.getAll(0L, null);

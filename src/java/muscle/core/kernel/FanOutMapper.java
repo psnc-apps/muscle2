@@ -33,18 +33,20 @@ import muscle.core.model.Observation;
  * A fan-out mapper.
  * Use the value variable in to send in writeAll().
  * @author Joris Borgdorff
+ * @param <T> received data type
  */
 public abstract class FanOutMapper<T extends Serializable> extends Mapper {
 	protected ConduitExit<T> onlyExit;
 	protected Observation<T> value;
 
 	@SuppressWarnings("unchecked")
+	@Override
 	public void addPortals() {
 		super.addPortals();
 		if (this.exits.size() != 1) {
 			throw new IllegalStateException("A fan-out mapper only allows a single output, instead of " + exits.size());
 		}
-		onlyExit = this.exits.values().iterator().next().getExit();
+		onlyExit = (ConduitExit<T>)this.exits.values().iterator().next().getExit();
 	}
 
 	@Override

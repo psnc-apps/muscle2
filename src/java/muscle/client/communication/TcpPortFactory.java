@@ -50,12 +50,12 @@ import muscle.util.serialization.SerializableDataConverter;
  *
  * @author Joris Borgdorff
  */
-public class TcpPortFactoryImpl extends PortFactory {
+public class TcpPortFactory extends PortFactory {
 	private final SocketFactory socketFactory;
 	private final LocalDataHandler localMsgProcessor;
-	private final static Logger logger = Logger.getLogger(TcpPortFactoryImpl.class.getName());
+	private final static Logger logger = Logger.getLogger(TcpPortFactory.class.getName());
 		
-	public TcpPortFactoryImpl(Resolver res, ExceptionListener listener, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
+	public TcpPortFactory(Resolver res, ExceptionListener listener, SocketFactory sf, IncomingMessageProcessor globalMsgProcessor, LocalDataHandler localMsgProcessor) {
 		super(res, listener, globalMsgProcessor);
 		this.localMsgProcessor = localMsgProcessor;
 		this.socketFactory = sf;

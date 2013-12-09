@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.PortFactory;
-import muscle.client.communication.TcpPortFactoryImpl;
+import muscle.client.communication.TcpPortFactory;
 import muscle.client.communication.TcpIncomingConnectionHandler;
 import muscle.client.communication.LocalDataHandler;
 import muscle.client.id.DelegatingResolver;
@@ -136,7 +136,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		localConnectionHandler = new LocalDataHandler();
 		
 		// Create new conduit exits/entrances using this location.
-		factory = new TcpPortFactoryImpl(res, this, sf, tcpConnectionHandler, localConnectionHandler);
+		factory = new TcpPortFactory(res, this, sf, tcpConnectionHandler, localConnectionHandler);
 		
 		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
 		ConnectionScheme connections = new ConnectionScheme(res, opts.getAgents().size());

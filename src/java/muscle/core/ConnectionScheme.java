@@ -27,14 +27,18 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
-import muscle.util.data.Env;
 
 /**
 describes the p2p connections between kernels
@@ -45,17 +49,10 @@ public class ConnectionScheme implements Serializable {
 	private final Map<Identifier,Map<String,ConduitDescription>> conduitExits;
 	private final Map<Identifier,Map<String,ConduitDescription>> conduitEntrances;
 	private static final transient Logger logger = Logger.getLogger(ConnectionScheme.class.getName());
-	protected Env env;
 	public List<Identifier> kernelList; // for otf
 	public List<String> conduitList; // for otf
 	private final Resolver resolver;
 	
-	{
-		this.env = CxADescription.ONLY.subenv(this.getClass());
-	}
-
-	private transient final static String cs_file_uri = "cs_file_uri";
-
 	public ConnectionScheme(Resolver res, int size) {
 		this.resolver = res;
 		kernelList = null;
@@ -82,7 +79,7 @@ public class ConnectionScheme implements Serializable {
 	private void init() {
 		// parse input file (this should be done in the CxADescription)
 		try {
-			File infile = new File(new URI((String)this.env.get(cs_file_uri)));
+			File infile = CxADescription.ONLY.getConnectionSchemeFile();
 			BufferedReader reader = new BufferedReader(new FileReader(infile));
 			String line;
 			

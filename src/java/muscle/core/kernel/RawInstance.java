@@ -28,7 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.core.*;
+import muscle.core.ConduitEntrance;
+import muscle.core.ConduitEntranceController;
+import muscle.core.ConduitExit;
+import muscle.core.ConduitExitController;
+import muscle.core.CxADescription;
+import muscle.core.Portal;
+import muscle.core.Scale;
 import muscle.core.model.Distance;
 import muscle.core.model.Timestamp;
 import muscle.exception.IgnoredException;
@@ -39,8 +45,8 @@ A basic kernel, that all kernels must extend
  */
 public abstract class RawInstance extends Module {
 	private static final Logger logger = Logger.getLogger(RawInstance.class.getName());
-	protected final Map<String,ConduitEntranceController> entrances = new HashMap<String,ConduitEntranceController>();
-	protected final Map<String,ConduitExitController> exits = new HashMap<String,ConduitExitController>();
+	protected final Map<String,ConduitEntranceController<?>> entrances = new HashMap<String,ConduitEntranceController<?>>();
+	protected final Map<String,ConduitExitController<?>> exits = new HashMap<String,ConduitExitController<?>>();
 	private boolean acceptPortals;
 	protected InstanceController controller;
 	protected Timestamp maxTime = null;
@@ -56,7 +62,7 @@ public abstract class RawInstance extends Module {
 			originTime = Timestamp.ZERO;
 		}
 		if (maxTime == null) {
-			maxTime = Timestamp.valueOf(CxADescription.ONLY.getProperty(CxADescription.Key.MAX_TIMESTEPS.toString()));
+			maxTime = Timestamp.valueOf(CxADescription.ONLY.getProperty(CxADescription.Key.MAX_TIMESTEPS));
 		}
 		Distance omegaInterval = getScale().getOmegaT();
 		Timestamp omegaT;
@@ -74,7 +80,7 @@ public abstract class RawInstance extends Module {
 		Object[] msg = isLogFiner ? new Object[2] : null;
 		
 		// search for the maximum "time" in our portals
-		for (ConduitEntranceController p : entrances.values()) {
+		for (ConduitEntranceController<?> p : entrances.values()) {
 			if (isLogFiner) {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", msg);
@@ -83,7 +89,7 @@ public abstract class RawInstance extends Module {
 				portalTime = p.getSITime();
 			}
 		}
-		for (ConduitExitController p : exits.values()) {
+		for (ConduitExitController<?> p : exits.values()) {
 			if (isLogFiner) {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Exit SI Time of {0} is {1}", msg);
@@ -310,7 +316,7 @@ public abstract class RawInstance extends Module {
 		if (!acceptPortals) {
 			throw new IgnoredException("adding of portals not allowed here");
 		}
-		ConduitExitController old = exits.put(portName, exit);
+		ConduitExitController<?> old = exits.put(portName, exit);
 		// only add if not already added
 		if (old != null) {
 			exits.put(portName, old);
@@ -323,7 +329,7 @@ public abstract class RawInstance extends Module {
 			throw new IgnoredException("adding of portals not allowed here");
 		}
 		
-		ConduitEntranceController old = entrances.put(portName, entrance);
+		ConduitEntranceController<?> old = entrances.put(portName, entrance);
 		// only add if not already added
 		if (old != null) {
 			entrances.put(portName, old);

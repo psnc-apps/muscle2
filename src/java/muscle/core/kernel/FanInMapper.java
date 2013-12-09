@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package muscle.core.kernel;
 
@@ -33,6 +30,7 @@ import muscle.core.model.Observation;
  * A fan-in mapper.
  * Set the value variable in readAll(), this will be sent.
  * @author Joris Borgdorff
+ * @param <T> sent data type
  */
 public abstract class FanInMapper<T extends Serializable> extends Mapper {
 	protected ConduitEntrance<T> onlyEntrance;

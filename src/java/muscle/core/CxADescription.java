@@ -20,58 +20,87 @@ along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
  */
 package muscle.core;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.util.Iterator;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.util.FileTool;
 import muscle.util.JVM;
-import muscle.util.data.Env;
+import org.json.simple.JSONValue;
 
 /**
 singleton which holds information about the current CxA
 @author Jan Hegewald
  */
-public class CxADescription extends muscle.util.data.Env {
-	private final static transient Logger logger = Logger.getLogger(CxADescription.class.getName());
-	private static final long serialVersionUID = 1L;
-
+public class CxADescription {
+	private final static Logger logger = Logger.getLogger(CxADescription.class.getName());
+	private final static String CS_FILE_URI_KEY = "cs_file_uri";
+	private final static String CS_KEY = "muscle.core.ConnectionScheme";
+	private final static String CXA_KEY = "muscle.core.CxADescription";
+	private final static String ENV_PROPERTY = "muscle.Env";
+	
+	private final Map<String,Object> description;
+	private final File tmpDir;
+	
 	public enum Key {
-
 		MAX_TIMESTEPS("max_timesteps");
-		private String str;
+		private final String str;
 
 		Key(String str) {
 			this.str = str;
 		}
 
+		@Override
 		public String toString() {
 			return this.str;
 		}
 	}
-	static private final Env DEFAULT_ENV = new Env();
-	//
-
-	static {
-		// init default values for mandatory flags
-		DEFAULT_ENV.put(Key.MAX_TIMESTEPS.toString(), 1);
-	}
+	
 	// be careful to init all other static fields we may use here before our singleton
 	public final static CxADescription ONLY = new CxADescription(); // handle for the singleton
 	
-	private File tmpDir;
-	{
-		putAll(DEFAULT_ENV);
-
-		// load (mandatory) cxa properties from muscle environment
-		Env env = muscle.Env.ONLY.subenv(this.getClass());
-		putAll(env);
-	}
-
 	// disallow instantiation from everywhere
-	protected CxADescription() {
+	private CxADescription() {
 		tmpDir = JVM.ONLY.tmpDir();
 		logger.log(Level.INFO, "Using directory <{0}>", tmpDir);
+		
+		description = new HashMap<String,Object>();
+		description.put(Key.MAX_TIMESTEPS.toString(), Integer.valueOf(1));
+		
+		final String envFilename = System.getProperty(ENV_PROPERTY);
+		if(envFilename == null) {
+			logger.severe("Property muscle.Env is not specified; cannot start MUSCLE");
+			System.exit(1);
+		} else {
+			try {
+				final File envFile = new File(new URI(envFilename));
+				Reader reader = new BufferedReader(new FileReader(envFile));
+				// treat input as a org.json.simple.JSONObject and put in our env
+				@SuppressWarnings("unchecked")
+				Map<String,Object> jsonHash = (Map<String,Object>)JSONValue.parse(reader);
+				@SuppressWarnings("unchecked")
+				Map<String,Object> cxaParams = (Map<String,Object>)jsonHash.get(CXA_KEY);
+				if (cxaParams == null) {
+					logger.severe("CxA parameters are not passed in the configuration.");
+					System.exit(1);
+				}
+				// load (mandatory) cxa properties from muscle environment
+				description.putAll(cxaParams);
+			} catch(java.net.URISyntaxException e) {
+				logger.log(Level.SEVERE, "Cannot load MUSCLE parameters from <" + envFilename + ">", e);
+				System.exit(1);
+			} catch (FileNotFoundException e) {
+				logger.log(Level.SEVERE, "Cannot load MUSCLE parameters from <" + envFilename + ">: path does not exist", e);
+				System.exit(1);
+			}
+		}
 	}
 
 	// tmps path where kernels can create individual subdirs
@@ -79,16 +108,27 @@ public class CxADescription extends muscle.util.data.Env {
 		return tmpDir.toString();
 	}
 
+	public String getProperty(Key key) {
+		return getProperty(key.toString());
+	}
+
 	public String getProperty(String key) {
-		return get(key).toString();
+		return description.get(key).toString();
 	}
 
 	public Object getRawProperty(String key) {
-		return get(key);
+		return description.get(key);
 	}
 
 	public File getPathProperty(String key) {
 		return FileTool.resolveTilde(getEnvAndAssert(key).toString());
+	}
+	
+	// project-accessible
+	File getConnectionSchemeFile() throws URISyntaxException {
+		@SuppressWarnings("unchecked")
+		Map<String, Object> csMap = (Map<String,Object>)getRawProperty(CS_KEY);
+		return new File(new URI((String)csMap.get(CS_FILE_URI_KEY)));
 	}
 
 	public boolean getBooleanProperty(String key) {
@@ -96,16 +136,15 @@ public class CxADescription extends muscle.util.data.Env {
 	}
 
 	public int getIntProperty(String key) {
-		// json only uses Long, not Integer
-		return ((Long) getEnvAndAssert(key)).intValue();
+		return ((Number) getEnvAndAssert(key)).intValue();
 	}
 
 	public double getDoubleProperty(String key) {
-		return (Double) getEnvAndAssert(key);
+		return ((Number)getEnvAndAssert(key)).doubleValue();
 	}
 	
 	public boolean hasProperty(String name) {
-		return containsKey(name);
+		return description.containsKey(name);
 	}
 
 	/**
@@ -114,15 +153,27 @@ public class CxADescription extends muscle.util.data.Env {
 	key val\n
 	 */
 	public String getLegacyProperties() {
-		StringBuilder text = new StringBuilder();
-		for (Iterator e = keySet().iterator(); e.hasNext();) {
-			Object key = e.next();
-			text.append(key.toString());
+		StringBuilder text = new StringBuilder(35*description.size());
+		for (Map.Entry<String,Object> entry : description.entrySet()) {
+			text.append(entry.getKey());
 			text.append(' ');
-			text.append(get(key).toString());
+			text.append(entry.getValue());
 			text.append('\n');
 		}
 
 		return text.toString();
+	}
+	
+	/**
+	 throw exception if key does not exist
+	 * @param key
+	 * @return 
+	*/
+	public Object getEnvAndAssert(String key) {
+		if (!description.containsKey(key)) {
+			throw new RuntimeException("property <"+key+"> not set");
+		}
+		
+		return description.get(key);
 	}
 }

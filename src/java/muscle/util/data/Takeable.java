@@ -19,14 +19,12 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.util.data;
 
 /**
- *
+ * Take data (blocking) until empty
  * @author jborgdo1
+ * @param <T> type of data which can be taken
  */
 public interface Takeable<T> {
 	public T take() throws InterruptedException;

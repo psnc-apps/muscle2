@@ -31,6 +31,7 @@ import java.util.concurrent.Callable;
 /**
  *
  * @author Joris Borgdorff
+ * @param <T> type of returned value when called
  */
 public interface NamedCallable<T> extends Callable<T> {
 	public String getName();
