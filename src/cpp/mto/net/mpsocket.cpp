@@ -370,11 +370,6 @@ namespace muscle {
         return sock;
     }
 
-    size_t MPServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)
-    {
-        return server->listen(user_flag, this, opts, accept);
-    }
-	
 	void MPServerSocket::async_cancel()
 	{
 		if (server != NULL)

@@ -294,11 +294,6 @@ void CServerSocket::init()
 			address.port = ntohs(sin.sin_port);
 }
 
-size_t CServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)
-{
-	return server->listen(user_flag, this, opts, accept);
-}
-
 void CServerSocket::async_cancel()
 {
 	if (server != NULL)

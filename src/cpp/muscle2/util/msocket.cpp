@@ -69,7 +69,14 @@ ServerSocket::ServerSocket(const socket_opts& opts)
 void ServerSocket::listen(int max_connections)
 {}
 
+size_t ServerSocket::async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts)
+{
+	return server->listen(user_flag, this, opts, accept);
+}
+
+
 size_t SocketFactory::async_connect(int user_flag, endpoint &ep, socket_opts *opts, async_acceptlistener *accept)
 {
     return service->connect(user_flag, this, ep, opts, accept);
 }
+

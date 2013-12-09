@@ -6,10 +6,11 @@ CXXFLAGS    = -O3 -Wall -fPIC
 TARGET_ARCH =  #-arch i386
 INSTALL_PREFIX    = .
 
-Test_objects = Test.o
-TestConcurrent_objects = TestConcurrent.o
+Test_objects = tests/Test.o
+UnitTests_objects = tests/UnitTests.o
+TestConcurrent_objects = tests/TestConcurrent.o
 Amuse_objects = amuse/AmuseAgent.o
-TestRestart_objects = TestRestart.o
+TestRestart_objects = tests/TestRestart.o
 dg_objects   = DataGather.o
 fw_objects = Forwarder.o
 wcp_objects =  mpw-cp.o
@@ -22,7 +23,7 @@ wcp_objects =  mpw-cp.o
 SO_EXT = so
 SHARED_LINK_FLAGS = -shared
 
-all : MPWTest MPWTestConcurrent MPWTestRestart MPWDataGather MPWForwarder MPWFileCopy libMPW.a libMPW.$(SO_EXT)
+all : MPWUnitTests MPWTest MPWTestConcurrent MPWDataGather MPWForwarder MPWFileCopy libMPW.a libMPW.$(SO_EXT)
 
 install: libMPW.a libMPW.$(SO_EXT) MPWForwarder
 	mkdir -p $(INSTALL_PREFIX)/lib
@@ -42,6 +43,9 @@ libMPW.$(SO_EXT): MPWide.o Socket.o
 
 LINK_EXE = $(CXX) $(LDFLAGS) $(TARGET_ARCH) $< $(LOADLIBES) $(LDLIBS) -o $@
 
+MPWUnitTests: $(UnitTests_objects) libMPW.a
+	$(LINK_EXE)
+
 MPWTest: $(Test_objects) libMPW.a
 	$(LINK_EXE)
 
@@ -49,9 +53,6 @@ MPWTestConcurrent: $(TestConcurrent_objects) libMPW.a
 	$(LINK_EXE)
 
 MPWAmuseAgent: $(Amuse_objects) libMPW.a
-	$(LINK_EXE)
-
-MPWTestRestart: $(TestRestart_objects) libMPW.a
 	$(LINK_EXE)
 
 MPWForwarder: $(fw_objects) libMPW.a
@@ -63,10 +64,9 @@ MPWDataGather: $(dg_objects) libMPW.a
 MPWFileCopy: $(wcp_objects) libMPW.a
 	$(LINK_EXE)
 
-Test: Test.cpp
-TestConcurrent: TestConcurrent.cpp
-TestRestart: TestRestart.cpp
+Test: tests/Test.cpp
+TestConcurrent: tests/TestConcurrent.cpp
 Forwarder: Forwarder.cpp
 
 clean:
-	rm -f *.o MPWTest MPWTestConcurrent MPWTestRestart MPWDataGather MPWForwarder MPWAmuseAgent MPWFileCopy libMPW.a libMPW.$(SO_EXT)* bin lib include mpw-cp
+	rm -f *.o MPWUnitTests MPWTest MPWTestConcurrent MPWDataGather MPWForwarder MPWAmuseAgent MPWFileCopy libMPW.a libMPW.$(SO_EXT)* bin lib include tests/*.o

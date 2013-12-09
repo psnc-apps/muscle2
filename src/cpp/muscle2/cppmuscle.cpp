@@ -23,7 +23,7 @@
 #include "xdr_communicator.hpp"
 #include "util/exception.hpp"
 #include "util/csocket.h"
-#include "util/mbarrier.h"
+#include "util/barrier.h"
 
 #include <stdlib.h>
 #include <rpc/types.h>
@@ -441,7 +441,8 @@ int env::barrier_init(char **barrier, size_t *len, const int num_procs)
 	if (env::is_main_processor) {
 		const bool logFine = logger::isLoggable(MUSCLE_LOG_FINE);
 		if (logFine) logger::fine("Creating MUSCLE barrier");
-		barrier_server = new Barrier(num_procs);
+		// Don't count the server as a connecting process
+		barrier_server = new Barrier(num_procs - 1);
 		if (logFine) logger::finer("Retrieving MUSCLE barrier address");
 		barrier_server->fillBuffer(*barrier);
 		if (logFine) {

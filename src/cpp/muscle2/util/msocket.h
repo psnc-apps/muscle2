@@ -89,7 +89,7 @@ namespace muscle {
 		{
 		public:
 			virtual ClientSocket *accept(const socket_opts& opts) = 0;
-			virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts) = 0;
+			virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
 		protected:
 			ServerSocket(const socket_opts& opts);
 			virtual void listen(int max_connections);

@@ -6,13 +6,13 @@
 //  Copyright (c) 2013 Joris Borgdorff. All rights reserved.
 //
 
-#include "mbarrier.h"
+#include "barrier.h"
 #include "csocket.h"
 
 using namespace muscle::util;
 using namespace muscle::net;
 
-Barrier::Barrier(int num_procs) : num_procs(num_procs), signals(0), epBuffer(NULL)
+Barrier::Barrier(const int num_clients) : num_clients(num_clients), signals(0), epBuffer(NULL)
 {
 	start();
 }
@@ -51,11 +51,10 @@ size_t Barrier::createBuffer(char **buffer)
 
 void *Barrier::run()
 {
-	const int total_csocks = num_procs - 1;
 	int num_csocks = 0;
 
 	// 1. Create server socket
-	socket_opts server_opts(num_procs);
+	socket_opts server_opts(num_clients);
 	endpoint ep((uint16_t)0);
 	ep.resolve();
 	ServerSocket *ssock = new CServerSocket(ep, NULL, server_opts);
@@ -73,7 +72,7 @@ void *Barrier::run()
 
 	// 3. Accept clients
 	socket_opts client_opts;
-	ClientSocket **socks = new ClientSocket*[total_csocks];
+	ClientSocket **socks = new ClientSocket*[num_clients];
 	while (!cache.stop_condition)
 	{
 		const char *msg = NULL;
@@ -92,7 +91,7 @@ void *Barrier::run()
 				logger::info("Barrier failed to accept socket: %s (%s)", msg, errstr);
 			else
 				logger::info("Barrier failed to accept socket: %s", errstr);
-		} else if (++num_csocks == total_csocks) {
+		} else if (++num_csocks == num_clients) {
 			break;
 		}
 	}
@@ -111,7 +110,7 @@ void *Barrier::run()
 			signals--;
 		}
 		
-		for (int i = 0; i < total_csocks; i++) {
+		for (int i = 0; i < num_clients; i++) {
 			socks[i]->send(&data, 1);
 		}
 	}

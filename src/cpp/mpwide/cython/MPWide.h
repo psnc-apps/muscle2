@@ -20,16 +20,15 @@
  * **************************************************************/
 #include <iostream>
 #include <cassert>
+using namespace std;
 
 /* Enable/disable software-based packet pacing. */
-#define MPW_PacingMode 1
+#define PacingMode 1
 
 char* MPW_DNSResolve(char* host);
-char* MPW_DNSResolve(std::string host);
 
 /* Enable/disable autotuning. Set before initialization. */
 void MPW_setAutoTuning(bool b);
-bool MPW_AutoTuning();
 
 /* Print all connections. */
 void MPW_Print();
@@ -38,9 +37,9 @@ void MPW_Print();
 int MPW_NumChannels();
 
 // Return path id or negative error value. 
-int MPW_CreatePathWithoutConnect(std::string host, int server_side_base_port, int streams_in_path); 
+int MPW_CreatePathWithoutConnect(string host, int server_side_base_port, int streams_in_path); 
 int MPW_ConnectPath(int path_id, bool server_wait);
-int MPW_CreatePath(std::string host, int server_side_base_port, int num_streams); 
+int MPW_CreatePath(string host, int server_side_base_port, int num_streams); 
 // Return 0 on success (negative on failure).
 int MPW_DestroyPath(int path);
 
@@ -52,9 +51,10 @@ int MPW_DSendRecv(char* sendbuf, long long int sendsize, char* recvbuf, long lon
 
 
 /* Initialize MPWide. */
-int MPW_Init(std::string* url, int* server_side_ports, int* client_side_ports, int num_channels);
-int MPW_Init(std::string* url, int* server_side_ports, int num_channels); //this call omits client-side port binding.
-int MPW_Init(std::string url, int port);
+int MPW_Init(string* url, int* server_side_ports, int* client_side_ports, int num_channels);
+int MPW_Init(string* url, int* server_side_ports, int num_channels); //this call omits client-side port binding.
+int MPW_Init(string url, int port);
+int MPW_Init();
 
 /* Set tcp window size. */
 void MPW_setWin(int channel, int size);
@@ -62,6 +62,8 @@ void MPW_setPathWin(int path, int size);
 
 /* Close channels. */
 void MPW_CloseChannels(int* channels , int num_channels);
+/* Reopen them. */
+void MPW_ReOpenChannels(int* channels, int num_channels);
 
 /* Close all sockets and free data structures related to the library. */
 int MPW_Finalize();
@@ -104,7 +106,7 @@ bool MPW_Has_NBE_Finished(int NBE_id);
 void MPW_Wait(int NBE_id);
 
 
-#if MPW_PacingMode == 1
+#if PacingMode == 1
 /* Get and set rates for pacing data. */
 double MPW_getPacingRate();
 void   MPW_setPacingRate(double rate);

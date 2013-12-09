@@ -13,16 +13,16 @@
 #define MAX_NUM_PATHS 1000
 
 /* Enable (define)/Disable(don't define) Performance Timing Measurements */
-//#define PERF_TIMING
+#define PERF_TIMING
 
 // Run a performance monitoring thread
-#define MONITORING 0
+#define MONITORING 1
 
 // Report the buffer sizes of sockets
-#define REPORT_BUFFERSIZES 0
+#define REPORT_BUFFERSIZES 1
 
 // Immediately exit if a send or receive error is found
-#define EXIT_ON_SENDRECV_ERROR 0
+#define EXIT_ON_SENDRECV_ERROR 1
 
 // Use a smaller number of streams for small messages 
 #define OptimizeStreamCount 1
@@ -44,12 +44,12 @@
 #define LVL_TRACE 6
 
 // SET THE LOG LEVEL
-#define LOG_LVL LVL_NONE
+#define LOG_LVL LVL_WARN
 
 #if LOG_LVL > LVL_NONE
 #include <pthread.h>
 static pthread_mutex_t __log_mutex__ = PTHREAD_MUTEX_INITIALIZER;
-#define DO_LOG_(MSG) { pthread_mutex_lock(&__log_mutex__); cout << MSG << endl; pthread_mutex_unlock(&__log_mutex__); }
+#define DO_LOG_(MSG) { pthread_mutex_lock(&__log_mutex__); std::cout << MSG << std::endl; pthread_mutex_unlock(&__log_mutex__); }
 #endif
 
 #if LOG_LVL >= LVL_ERR

@@ -36,7 +36,7 @@ private:
     
 public:
     StubbornConnecter(const muscle::net::endpoint& ep, muscle::net::async_service *service, muscle::net::SocketFactory *sockFactory, muscle::net::socket_opts& opts, const muscle::util::duration& timeout, LocalMto *mto);
-    virtual ~StubbornConnecter() { if (sock) delete sock; }
+    virtual ~StubbornConnecter();
     
     /** Executed after no responce has been received (or at abort) */
     virtual void async_execute(size_t code, int flag, void *user_data);

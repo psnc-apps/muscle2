@@ -25,6 +25,7 @@
 #include "manager/localmto.h"
 #include "muscle2/util/csocket.h"
 #include "net/mpsocket.h"
+//#include "net/MPWPathSocket.h"
 
 #include <iostream>
 #include <map>
@@ -131,6 +132,7 @@ int main(int argc, char **argv)
         SocketFactory *extSockFactory; 
         if (opts.useMPWide) {
             extSockFactory = new MPSocketFactory(asyncService);
+//			  extSockFactory = new MPWPathSocketFactory(asyncService, 8);
 		} else {
             extSockFactory = new CSocketFactory(asyncService);
 		}

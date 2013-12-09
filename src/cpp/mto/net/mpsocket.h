@@ -112,8 +112,7 @@ namespace muscle {
         virtual ~MPServerSocket() { async_cancel(); delete listener; }
 		
         virtual ClientSocket *accept(const socket_opts& opts);
-        virtual size_t async_accept(int user_flag, async_acceptlistener *accept, socket_opts *opts);
-		virtual void async_cancel();
+        virtual void async_cancel();
 	private:
         mpsocket_connect_thread *listener;
 		socket_opts server_opts;

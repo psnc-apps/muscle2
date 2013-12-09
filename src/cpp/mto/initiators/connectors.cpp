@@ -25,24 +25,32 @@ StubbornConnecter::StubbornConnecter(const endpoint& where_, async_service *serv
     sockId = sockFactory->async_connect(1, where, &opts, this);
 }
 
+StubbornConnecter::~StubbornConnecter()
+{
+	if (sockId != 0) service->erase_connect(sockId);
+	else if (sock) delete sock;
+}
+
 void StubbornConnecter::async_execute(size_t code, int flag, void *user_data)
 {
-    service->erase_connect(sockId);
-    
-    sockId = sockFactory->async_connect(1, where, &opts, this);
-    
-    muscle::util::mtime t = timeout.time_after();
-    service->update_timer(timer, t, (void *)0);
+	// Only do a reconnect if the previous connect already failed
+	if (sockId == 0) {
+		sockId = sockFactory->async_connect(1, where, &opts, this);
+		
+		muscle::util::mtime t = timeout.time_after();
+		service->update_timer(timer, t, (void *)0);
+	}
 }
 
 void StubbornConnecter::async_accept(size_t code, int flag, ClientSocket *sock_)
 {
+	// Connected; don't do another connect
     service->erase_timer(timer);
-    
+    sockId = 0;
+	
     logger::finest("Connected to peer %s, starting hello exchange", where.str().c_str());
     
     sock = sock_;
-
     mto->peers.introduce(sock);
 	// Self-destruct
     new HelloReader(sock, this, hellos);
@@ -50,17 +58,15 @@ void StubbornConnecter::async_accept(size_t code, int flag, ClientSocket *sock_)
 
 void StubbornConnecter::async_report_error(size_t code, int flag, const muscle_exception& ex)
 {
-    if (ex.error_code == ECONNREFUSED)
-    {
+    if (ex.error_code == ECONNREFUSED) {
         logger::info("Connection refused to %s - will retry later", where.str().c_str());
-    }
-    else if (ex.error_code != ECONNABORTED)
-    {
+    } else if (ex.error_code != ECONNABORTED) {
         service->erase_timer(timer);
         logger::severe("Encountered error while connecting to %s: %s. Aborting connection.",
                       where.str().c_str(), ex.what());
     }
     service->erase_connect(sockId);
+	sockId = 0;
 }
 
 void StubbornConnecter::allHellosRead()
