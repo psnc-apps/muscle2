@@ -13,3 +13,5 @@
 bandwidth_monitor.txt
 /python/build
 CMakeLists.txt
+/mpw-cp
+/cython/old/
