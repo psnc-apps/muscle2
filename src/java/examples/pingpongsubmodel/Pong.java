@@ -32,16 +32,19 @@ import muscle.core.model.Timestamp;
 public class Pong extends Submodel {
 	private Serializable data;
 
+	@Override
 	protected Timestamp init(Timestamp previousTime) {
 		Observation obs = in("in").receiveObservation();
 		data = obs.getData();
 		return obs.getTimestamp();
 	}
 	
+	@Override
 	protected void finalObservation() {
 		out("out").send(data);
 	}
 	
+	@Override
 	protected boolean restartSubmodel() {
 		return in("in").hasNext();
 	}

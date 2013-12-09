@@ -29,12 +29,12 @@ import muscle.client.communication.Transmitter;
 import muscle.core.ConduitEntranceController;
 
 /**
- *
- * @author jborgdo1
+ * Implementation of a ConduitEntranceController, with the notion of transmitters.
+ * @author Joris Borgdorff
+ * @param <T> Type of data sent of over the conduit
  */
 public interface ConduitEntranceControllerImpl<T extends Serializable> extends ConduitEntranceController<T> {
 	public void start();
 	public void setTransmitter(Transmitter<T,?> trans);
-
 	public void setSharedData();
 }

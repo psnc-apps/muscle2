@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.instance;
 
 import java.io.StringReader;

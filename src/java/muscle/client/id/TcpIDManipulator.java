@@ -31,7 +31,13 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.exception.MUSCLERuntimeException;
-import muscle.id.*;
+import muscle.id.IDType;
+import muscle.id.Identifier;
+import muscle.id.InstanceID;
+import muscle.id.Location;
+import muscle.id.PortalID;
+import muscle.id.Resolver;
+import muscle.id.TcpLocation;
 import muscle.manager.SimulationManagerProtocol;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
@@ -94,6 +100,7 @@ public class TcpIDManipulator implements IDManipulator {
 		runQuery(id, SimulationManagerProtocol.LOCATE);
 	}
 	
+	@Override
 	public boolean willActivate(Identifier id) {
 		if (this.resolver == null) {
 			throw new IllegalStateException("Can not search for an ID while no Resolver is known.");
@@ -181,8 +188,11 @@ public class TcpIDManipulator implements IDManipulator {
 		try {
 			Socket s = socketPool.createSocket(action == SimulationManagerProtocol.LOCATE);
 			return new ManagerProtocolHandler(s, (InstanceID)id, action);
-		} catch (Exception ex) {
+		} catch (IOException ex) {
 			logger.log(Level.SEVERE, "Could not open socket to initiate the " + action + " protocol with SimulationManager", ex);
+			return null;
+		} catch (InterruptedException ex) {
+			logger.log(Level.SEVERE, "Interrupted while waiting for socket to initiate the " + action + " protocol with SimulationManager", ex);
 			return null;
 		}
 	}

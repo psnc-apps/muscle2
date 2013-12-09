@@ -36,8 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.PortFactory;
 import muscle.client.communication.TcpPortFactoryImpl;
-import muscle.client.communication.message.DataConnectionHandler;
-import muscle.client.communication.message.LocalDataHandler;
+import muscle.client.communication.TcpIncomingConnectionHandler;
+import muscle.client.communication.LocalDataHandler;
 import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.instance.MultiControllerRunner;
@@ -45,7 +45,10 @@ import muscle.client.instance.ThreadedInstanceController;
 import muscle.core.ConnectionScheme;
 import muscle.core.kernel.InstanceControllerListener;
 import muscle.exception.ExceptionListener;
-import muscle.id.*;
+import muscle.id.IDType;
+import muscle.id.Identifier;
+import muscle.id.InstanceClass;
+import muscle.id.TcpLocation;
 import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
@@ -58,7 +61,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 	private final static Logger logger = Logger.getLogger(LocalManager.class.getName());
 	private final List<NamedRunnable> controllers;
 	private final List<Thread> controllerThreads;
-	private DataConnectionHandler tcpConnectionHandler;
+	private TcpIncomingConnectionHandler tcpConnectionHandler;
 	private LocalDataHandler localConnectionHandler;
 	private DelegatingResolver res;
 	private TcpIDManipulator idManipulator;
@@ -129,7 +132,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
 		idManipulator.setResolver(res);
 		
-		tcpConnectionHandler = new DataConnectionHandler(ss, res);
+		tcpConnectionHandler = new TcpIncomingConnectionHandler(ss, res);
 		localConnectionHandler = new LocalDataHandler();
 		
 		// Create new conduit exits/entrances using this location.
@@ -257,6 +260,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		public DisposeOfControllersHook() {
 			super("DisposeOfControllersHook");
 		}
+		@Override
 		public void run() {
 			synchronized (controllers) {
 				if (controllers.isEmpty()) {
@@ -289,6 +293,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		public ForcefulQuitHook() {
 			super("ForcefulQuitHook");
 		}
+		@Override
 		public void run() {
 			try {
 				this.waitForDisposer();

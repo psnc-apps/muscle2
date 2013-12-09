@@ -21,7 +21,11 @@
 */
 package muscle.client;
 
-import com.beust.jcommander.*;
+import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.IStringConverter;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,7 +49,7 @@ import muscle.net.SocketFactory;
  * @author Joris Borgdorff
  */
 public class LocalManagerOptions {
-	private JCommander jcom;
+	private final JCommander jcom;
 	
 	@Parameter(description="INST_NAME:INST_CLASS ...",converter=AgentNameConverter.class)
 	private List<InstanceClass> agents = new FastArrayList<InstanceClass>();

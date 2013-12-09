@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.communication;
 
 import java.io.IOException;
@@ -40,14 +37,18 @@ import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DataConverter;
-import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
- *
+ * Transmits data using TCP/IP.
+ * It uses muscle.net.AliveSocket to do the communication, so that the connection
+ * will remain active until a timeout occurs. At the timeout, -1 is sent over the
+ * socket, this must be caught by the receiving end.
+ * 
  * @author Joris Borgdorff
+ * @param <T> Datatype that will be serialized
  */
-public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<SerializableData>> implements Transmitter<T, Observation<SerializableData>> {
+public class TcpTransmitter<T extends Serializable> extends Transmitter<T, SerializableData> {
 	private final AliveSocket liveSocket;
 	private final static Logger logger = Logger.getLogger(TcpTransmitter.class.getName());
 	private final static long socketKeepAlive = 5000*1000;
@@ -64,6 +65,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	}
 	
 	// Synchronized: can only transmit one signal or message at a time.
+	@Override
 	public synchronized void transmit(Observation<T> obs) {
 		if (converter == null) {
 			throw new IllegalStateException("Can not send message without serialization");
@@ -76,6 +78,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 	}
 
 	// Synchronized: can only transmit one signal or message at a time.
+	@Override
 	public synchronized void signal(Signal signal) {
 		if (this.isDisposed()) {
 			if (!(signal instanceof DetachConduitSignal)) {
@@ -118,7 +121,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 					}
 					logger.log(Level.SEVERE, "Message not sent: socket was closed by " + portalID + ".", ex);
 					throw new MUSCLERuntimeException(ex);
-				} catch (Exception ex) {
+				} catch (IOException ex) {
 					if (isDisposed()) {
 						break;
 					}
@@ -132,6 +135,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 						throw new MUSCLERuntimeException(ex);
 					} else if (tries > 1) {
 						try {
+							// Sleep longer and longer
 							Thread.sleep(1000*(55*(tries - 2) + 5));
 						} catch (InterruptedException ex1) {}
 					}
@@ -172,6 +176,7 @@ public class TcpTransmitter<T extends Serializable> extends AbstractCommunicatin
 		out.writeInt(sig.ordinal());
 	}
 	
+	@Override
 	public synchronized void dispose() {
 		super.dispose();
 		liveSocket.dispose();

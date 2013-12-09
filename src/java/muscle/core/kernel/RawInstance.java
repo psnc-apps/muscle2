@@ -243,6 +243,7 @@ public abstract class RawInstance extends Module {
 		acceptPortals = false;
 	}
 
+	@Override
 	public final void beforeExecute() {
 		beforeSetup();
 	}

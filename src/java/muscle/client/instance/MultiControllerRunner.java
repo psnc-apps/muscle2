@@ -19,11 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package muscle.client.instance;
 
 import eu.mapperproject.jmml.util.FastArrayList;
@@ -39,14 +34,14 @@ import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
 
 /**
- *
+ * Runs multiple instance controllers in a single thread.
  * @author Joris Borgdorff
  */
 public class MultiControllerRunner implements NamedRunnable {
 	private final String name;
 	private PortFactory portFactory;
 	private Resolver resolver;
-	private InstanceControllerListener listener;
+	private final InstanceControllerListener listener;
 	private List<InstanceClass> instances;
 	private final List<PassiveInstanceController> controllers;
 	private boolean isDone;

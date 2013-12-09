@@ -88,6 +88,7 @@ public class Ping extends CAController {
 		}
 	}
 	
+	@SuppressWarnings("ManualArrayToCollectionCopy")
 	private long doComputation(boolean send, int size, long[] totalTimes, int runs, int steps) {
 		SerializableDataConverter<byte[]> converter = new SerializableDataConverter<byte[]>();
 		byte[] data = new byte[size];

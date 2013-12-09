@@ -26,12 +26,13 @@ package muscle.client.communication.message;
 
 import java.io.Serializable;
 import muscle.core.model.Observation;
-import muscle.core.model.Timestamp;
 import muscle.id.Identifier;
 
 /**
- *
+ * A message containing either a data or a signal, associated with a recipient.
+ * 
  * @author Joris Borgdorff
+ * @param <E> Type of the data in the message
  */
 public class BasicMessage<E extends Serializable> implements Message<E> {
 	private static final long serialVersionUID = 1L;
@@ -51,14 +52,17 @@ public class BasicMessage<E extends Serializable> implements Message<E> {
 		this.signal = null;
 	}
 
+	@Override
 	public E getRawData() {
 		return this.obs.getData();
 	}
 
+	@Override
 	public Observation<E> getObservation() {
 		return this.obs;
 	}
 
+	@Override
 	public Identifier getRecipient() {
 		return this.recv;
 	}
@@ -73,6 +77,7 @@ public class BasicMessage<E extends Serializable> implements Message<E> {
 		return this.signal;
 	}
 	
+	@Override
 	public String toString() {
 		if (isSignal()) {
 			return "BasicMessage<" + this.signal + "," + this.recv + ">";

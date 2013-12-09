@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package examples.simplesubmodel;
 
@@ -32,6 +29,7 @@ import muscle.core.kernel.Submodel;
  * @author Joris Borgdorff
  */
 public class ConsoleWriter extends Submodel {
+	@Override
 	protected void solvingStep() {
 		double[][] data = (double[][])in("data").receive();
 		

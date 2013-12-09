@@ -25,15 +25,13 @@
 
 package muscle.net;
 
-import muscle.exception.ExceptionListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import muscle.exception.ExceptionListener;
 import muscle.util.concurrency.NamedCallable;
 import muscle.util.concurrency.NamedExecutor;
 import muscle.util.concurrency.SafeThread;
@@ -46,6 +44,8 @@ import muscle.util.concurrency.SafeThread;
  * accepted socket, until the dispose() function is called.
  * 
  * @author Joris Borgdorff
+ * @param <T> Class that will listen for exceptions
+ * @param <E> Class that will communicate over an accepted connection
  */
 public abstract class AbstractConnectionHandler<T extends ExceptionListener, E> extends SafeThread {
 	protected final ServerSocket ss;
@@ -69,17 +69,17 @@ public abstract class AbstractConnectionHandler<T extends ExceptionListener, E> 
 		}
 	}
 	
+	@Override
 	protected final synchronized void handleException(Throwable ex) {
 		if (ex instanceof IOException) {
 			if (!isDisposed())
 				logger.log(Level.SEVERE, "ConnectionHandler could not accept connection.", ex);
 			// Else, we're closing the serversocket ourselves.
-			ex = null;
 		} else {
 			logger.log(Level.SEVERE, "Fatal exception in connectionhandling occurred", ex);
-		}
-		if (ex != null) {
-			listener.fatalException(ex);
+			if (ex != null) {
+				listener.fatalException(ex);
+			}
 		}
 	}
 	
@@ -101,6 +101,7 @@ public abstract class AbstractConnectionHandler<T extends ExceptionListener, E> 
 	
 	protected abstract NamedCallable<E> createProtocolHandler(Socket s);
 	
+	@Override
 	public synchronized void dispose() {
 		logger.finer("Stopping connection handler");
 		super.dispose();

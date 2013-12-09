@@ -19,20 +19,49 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.communication;
 
 import java.io.Serializable;
 import muscle.client.communication.message.Signal;
 import muscle.core.model.Observation;
+import muscle.id.PortalID;
+import muscle.util.serialization.DataConverter;
 
 /**
- *
- * @author jborgdo1
+ * Implementation of a point that is communicated from or to, storing a
+ * way to convert between the internal data representation and the serialized
+ * data.
+ * 
+ * @author Joris Borgdorff
+ * @param <E> datatype that is seen internally
+ * @param <F> serialized datatype
  */
-public interface Transmitter<E extends Serializable,F> extends CommunicatingPoint<Observation<E>,F> {
-	public void signal(Signal signal);
-	public void transmit(Observation<E> msg);
+public abstract class Transmitter<E extends Serializable,F extends Serializable> implements CommunicatingPoint<Observation<E>,Observation<F>> {
+	protected DataConverter<Observation<E>, Observation<F>> converter;
+	protected final PortalID portalID;
+	private boolean isDone;
+
+	public Transmitter(DataConverter<Observation<E>, Observation<F>> converter, PortalID portalID) {
+		this.converter = converter;
+		this.portalID = portalID;
+		this.isDone = false;
+	}
+	
+	@Override
+	public void setDataConverter(DataConverter<Observation<E>,Observation<F>> converter) {
+		this.converter = converter;
+	}
+	
+	@Override
+	public synchronized void dispose() {
+		this.isDone = true;
+	}
+	
+	@Override
+	public synchronized boolean isDisposed() {
+		return this.isDone;
+	}
+	
+	public abstract void transmit(Observation<E> obs);
+	public abstract void signal(Signal signal);
 }

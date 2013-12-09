@@ -29,10 +29,12 @@ a simple java example kernel which sends data
 public class Sender extends muscle.core.kernel.CAController {
 	private ConduitEntrance<double[]> entrance;
 
+	@Override
 	protected void addPortals() {
 		entrance = addEntrance("data", double[].class);
 	}
 
+	@Override
 	protected void execute() {
 		double[] dataA = new double[5];
 		

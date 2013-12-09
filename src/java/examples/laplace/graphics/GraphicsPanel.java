@@ -73,6 +73,7 @@ public class GraphicsPanel extends JPanel {
 		repaint();
 	}
 	
+	@Override
 	protected void paintComponent(Graphics gg) {
 		synchronized (this) {
 			if (data == null) return;

@@ -105,7 +105,7 @@ public class Ping extends CAController {
 	}
 	
 	private void printOutcomes(long[] totalTimes, long sum, int size, int steps) {	
-		double avg = sum/((double)(totalTimes.length * steps));
+		double avg = sum/(double)(totalTimes.length * steps);
 		double stdDev = stdDev(totalTimes, avg, steps);
 
 		// nano -> micro

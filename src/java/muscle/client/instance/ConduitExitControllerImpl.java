@@ -19,17 +19,15 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.instance;
 
 import java.io.Serializable;
 import muscle.core.ConduitExitController;
 
 /**
- *
- * @author jborgdo1
+ * Implementation of a ConduitExit, with the notion of starting to listen.
+ * @author Joris Borgdorff
+ * @param <T> Type of data sent of over the conduit
  */
 public interface ConduitExitControllerImpl<T extends Serializable> extends ConduitExitController<T> {
 	public void start();

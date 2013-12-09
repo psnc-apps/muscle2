@@ -39,6 +39,7 @@ import muscle.id.PortalID;
 /**
 this is the (remote) head of a conduit,
 an entrance sends data to the conduit exit through a transmitter
+ * @param <T> Type of data received
  */
 public class PassiveConduitEntranceController<T extends Serializable> extends PassivePortal<T>  implements ConduitEntranceControllerImpl<T> {// generic T will be the underlying unwrapped data, e.g. double[]
 	private ConduitEntrance<T> conduitEntrance;
@@ -85,7 +86,8 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		}
 		
 		FilterChain fc = new FilterChain() {
-			@SuppressWarnings("unchecked")
+			@SuppressWarnings({"unchecked", "rawtypes"})
+			@Override
 			public void queue(Observation subject) {
 				transmitter.transmit(subject);
 			}
@@ -96,26 +98,42 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		return fc;
 	}
 
-	/** Set the transmitter that will be used to transmit messages. Before this
+	/**
+	 * Set the transmitter that will be used to transmit messages. Before this
 	 * is called, the conduit will not be able to send messages.
+	 * @param trans Transmitter that will be sent
 	 */
+	@Override
 	public synchronized void setTransmitter(Transmitter<T,?> trans) {
 		this.transmitter = trans;
 		this.notifyAll();
 	}
 	
-	/** Set the entrance that will be the interface for the CAController. Before
-	 *  this is called, messages are not added. */
+	/**
+	 * Set the entrance that will be the interface for the Instance. Before
+	 * this is called, messages are not added.
+	 * @param entrance The entrance that messages will be forwarded to
+	 */
+	@Override
 	public void setEntrance(ConduitEntrance<T> entrance) {		
 		this.conduitEntrance = entrance;
 	}
 	
-	/** Get the entrance that is the interface for the CAController. */
+	/**
+	 * Get the entrance that is the interface for the Instance
+	 * @return Entrance to receive messages over
+	 */
+	@Override
 	public ConduitEntrance<T> getEntrance() {
 		return this.conduitEntrance;
 	}
 	
-	/** Waits until no more messages have to be sent. */
+	/**
+	 * Waits until no more messages have to be sent.
+	 * @return false if the controller is disposed before the last message is sent, true otherwise
+	 * @throws java.lang.InterruptedException if interrupted before the last message is sent.
+	 */
+	@Override
 	public synchronized boolean waitUntilEmpty() throws InterruptedException {
 		while ((this.processingMessage || (this.filters != null && this.filters.isBusy())) && !isDisposed()) {
 			wait();
@@ -123,6 +141,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
 	}
 	
+	@Override
 	public synchronized boolean isEmpty() {
 		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
 	}
@@ -137,6 +156,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		return transmitterFound;
 	}
 	
+	@Override
 	public synchronized boolean hasTransmitter() {
 		this.transmitterFound = (transmitter != null);
 		return transmitterFound;
@@ -192,6 +212,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		increment();
 	}
 	
+	@Override
 	public String toString() {
 		return "out:" + this.getLocalName();
 	}
@@ -232,6 +253,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		// Do nothing
 	}
 	
+	@Override
 	public void setSharedData() {
 		this.isSharedData = true;
 	}

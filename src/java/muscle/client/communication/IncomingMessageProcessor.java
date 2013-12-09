@@ -19,20 +19,16 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-package muscle.client.communication.message;
+package muscle.client.communication;
 
 import muscle.client.communication.Receiver;
 import muscle.id.Identifier;
 
 /**
- *
+ * Processes incoming messages and sends them on to receivers
  * @author Joris Borgdorff
  */
+@SuppressWarnings("rawtypes") // We don't know the type of the receivers, and we don't need to
 public interface IncomingMessageProcessor {
 	public void addReceiver(Identifier id, Receiver recv);
 	public void removeReceiver(Identifier id);

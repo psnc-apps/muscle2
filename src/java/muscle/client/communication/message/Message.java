@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.communication.message;
 
 import java.io.Serializable;
@@ -29,7 +26,9 @@ import muscle.core.model.Observation;
 import muscle.id.Identifier;
 
 /**
+ * A message containing either a data or a signal, associated with a recipient.
  * @author Joris Borgdorff
+ * @param <E> Type of data contained, if any
  */
 public interface Message<E extends Serializable> extends Serializable {
 	public E getRawData();

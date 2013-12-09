@@ -29,8 +29,6 @@ package muscle.client.communication;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.message.IncomingMessageProcessor;
-import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.kernel.InstanceController;
@@ -41,7 +39,12 @@ import muscle.id.PortalID;
 import muscle.id.Resolver;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.NamedCallable;
-import muscle.util.serialization.*;
+import muscle.util.serialization.BasicMessageConverter;
+import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.ObservationConverter;
+import muscle.util.serialization.PipeConverter;
+import muscle.util.serialization.PipeObservationConverter;
+import muscle.util.serialization.SerializableDataConverter;
 
 /**
  *
@@ -61,7 +64,9 @@ public class TcpPortFactoryImpl extends PortFactory {
 	@Override
 	protected <T extends Serializable> NamedCallable<Receiver<T, ?>> getReceiverTask(final InstanceController ic, final ConduitExitControllerImpl<T> exit, final PortalID port) {
 		return new NamedCallable<Receiver<T,?>>() {
-			@SuppressWarnings("unchecked")
+			// Datatypes are not filled in Java Generics, because we don't know
+			// them yet: they depend on the messages sent.
+			@Override @SuppressWarnings({"unchecked", "rawtypes"})
 			public Receiver<T, ?> call() throws Exception {
 				exit.start();
 				try {
@@ -71,21 +76,24 @@ public class TcpPortFactoryImpl extends PortFactory {
 					if (!(exit instanceof Receiver)) {
 						throw new IllegalArgumentException("ConduitExitController must be a receiver");
 					}
+				// We need to generate an exception, to make sure that the
+				// exception stack gets activated. It doesn't matter which
 				} catch (Exception ex) {
 					logger.log(Level.SEVERE, "Port {0} for {1} will not activate. Aborting.", new Object[]{port, exit});
 					ic.fatalException(ex);
 					throw ex;
 				}
-				@SuppressWarnings("unchecked")
 				PortalID instancePort = port;
 				
 				Receiver recv = (Receiver)exit;
 				DataConverter converter;
 				
 				if (resolver.isLocal(instancePort)) {
+					// Local data is simply read without modification
 					converter = new PipeConverter();
 					localMsgProcessor.addReceiver(exit.getIdentifier(), recv);				
 				} else {
+					// Remote data is converted frpm serialized format and wrapped in a message
 					converter = new BasicMessageConverter(new SerializableDataConverter());
 					messageProcessor.addReceiver(exit.getIdentifier(), recv);				
 				}
@@ -104,13 +112,17 @@ public class TcpPortFactoryImpl extends PortFactory {
 	@Override
 	protected <T extends Serializable> NamedCallable<Transmitter<T, ?>> getTransmitterTask(final InstanceController ic, final ConduitEntranceControllerImpl<T> entrance, final PortalID port, final boolean shared) {
 		return new NamedCallable<Transmitter<T,?>>() {
-			@SuppressWarnings("unchecked")
+			// Datatypes are not filled in Java Generics, because we don't know
+			// them yet: they depend on the messages sent.
+			@Override @SuppressWarnings({"unchecked", "rawtypes"})
 			public Transmitter<T, ?> call() throws Exception {
 				entrance.start();
 				try {
 					if (!resolvePort(port)) {
 						throw new IllegalStateException("Port was not resolved");
 					}
+				// We need to generate an exception, to make sure that the
+				// exception stack gets activated. It doesn't matter which
 				} catch (Exception ex) {
 					logger.log(Level.SEVERE, "Could not resolve port {0} for {1}. Aborting.", new Object[]{port, entrance});
 					ic.fatalException(ex);

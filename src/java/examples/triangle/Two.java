@@ -32,11 +32,13 @@ public class Two extends muscle.core.kernel.CAController {
 	private ConduitExit<double[]> reader2;
 	private ConduitEntrance<double[]> writer2;
 
+	@Override
 	protected void addPortals() {
 		reader2 = addExit("data", double[].class);
 		writer2 = addEntrance("data", double[].class);
 	}
 
+	@Override
 	protected void execute() {		
 		while (!willStop()) {
 		

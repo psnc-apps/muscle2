@@ -23,15 +23,17 @@
  * 
  */
 
-package muscle.client.communication.message;
+package muscle.client.communication;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.Receiver;
-import muscle.client.communication.TcpDataProtocol;
+import muscle.client.communication.message.BasicMessage;
+import muscle.client.communication.message.DetachConduitSignal;
+import muscle.client.communication.message.Signal;
+import muscle.client.communication.message.SignalEnum;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
 import muscle.id.IDType;
@@ -46,13 +48,14 @@ import muscle.util.serialization.SerializerWrapper;
  *
  * @author Joris Borgdorff
  */
+@SuppressWarnings("rawtypes") // We don't know the type of the receiver, and we don't need to
 public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Identifier,Receiver>> {
 	private final static Logger logger = Logger.getLogger(TcpIncomingMessageHandler.class.getName());
 	private final static SignalEnum[] signals = SignalEnum.values();
-	private final DataConnectionHandler connectionHandler;
+	private final TcpIncomingConnectionHandler connectionHandler;
 	private final Resolver resolver;
 	
-	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, Resolver res, DataConnectionHandler handler) {
+	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, Resolver res, TcpIncomingConnectionHandler handler) {
 		super(s, receivers, false, true, 3);
 		this.resolver = res;
 		this.connectionHandler = handler;

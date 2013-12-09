@@ -99,6 +99,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		return true;
 	}
 	
+	@Override
 	public synchronized boolean isDisposed() {
 		return isDone;
 	}
@@ -108,6 +109,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		return id.getName();
 	}
 	
+	@Override
 	public void dispose() {
 		synchronized (this) {
 			if (isDisposed()) {
@@ -219,8 +221,9 @@ public abstract class AbstractInstanceController implements InstanceController {
 		return this.id;
 	}
 	
-		/** Disposes the current instance, without deregistering it.
+	/** Disposes the current instance, without deregistering it.
 	 *   It will only be executed once per instance, after this it becomes a no-op, unless force is true.
+	 * @param force whether the dispose will be executed again, even if already called
 	 */
 	protected void disposeNoDeregister(boolean force) {
 		synchronized (this) {
@@ -272,6 +275,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		this.isExecuting = false;
 	}
 
+	@Override
 	public boolean isExecuting() {
 		return this.isExecuting;
 	}
@@ -291,9 +295,11 @@ public abstract class AbstractInstanceController implements InstanceController {
 		this.resolver.makeAvailable(this);
 	}
 	
+	@Override
 	public Map<String,ConduitDescription> getExitDescriptions() {
 		return this.exitDescriptions;
 	}
+	@Override
 	public Map<String,ConduitDescription> getEntranceDescriptions() {
 		return this.entranceDescriptions;
 	}

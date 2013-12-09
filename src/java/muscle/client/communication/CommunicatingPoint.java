@@ -29,8 +29,11 @@ import muscle.util.concurrency.Disposable;
 import muscle.util.serialization.DataConverter;
 
 /**
+ * A point that is communicated from or to
  *
  * @author Joris Borgdorff
+ * @param <E> datatype that is seen internally
+ * @param <F> datatype that will be communicated with another communicating point
  */
 public interface CommunicatingPoint<E,F> extends Disposable {
 	public void setDataConverter(DataConverter<E,F> convert);

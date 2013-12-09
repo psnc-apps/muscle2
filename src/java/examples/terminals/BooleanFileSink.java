@@ -27,7 +27,6 @@ package examples.terminals;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
 import muscle.core.conduit.terminal.FileSink;
 import muscle.core.model.Observation;
 

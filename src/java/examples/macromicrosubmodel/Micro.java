@@ -19,9 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package examples.macromicrosubmodel;
 
@@ -36,9 +33,10 @@ import muscle.core.model.Timestamp;
 public class Micro extends Submodel {
 	private double firstValue;
 	
+	@Override
 	protected Timestamp init(Timestamp previousTime) {
-		Observation obs = in("macroObs").receiveObservation();
-		double[][] data = (double[][])obs.getData();
+		Observation<double[][]> obs = this.<double[][]>in("macroObs").receiveObservation();
+		double[][] data = obs.getData();
 		System.out.println("Got matrix:");
 		System.out.println("(" + data[0][0] + "\t" + data[1][0] + "\t)");
 		System.out.println("(" + data[0][1] + "\t" + data[1][1] + "\t)");
@@ -50,14 +48,17 @@ public class Micro extends Submodel {
 	}
 	
 	
+	@Override
 	protected void solvingStep() {
 		firstValue++;
 	}
 	
+	@Override
 	protected void finalObservation() {
 		out("microObs").send(firstValue);
 	}
 	
+	@Override
 	protected boolean restartSubmodel() {
 		return in("macroObs").hasNext();
 	}

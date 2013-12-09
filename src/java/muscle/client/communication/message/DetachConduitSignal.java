@@ -22,11 +22,12 @@
 package muscle.client.communication.message;
 
 /**
- *
+ * Send a signal that the conduit is detached from the sending side.
  * @author Joris Borgdorff
  */
 public class DetachConduitSignal implements Signal {
 	private static final long serialVersionUID = 1L;
+	@Override
 	public String toString() {
 		return "DetachConduitSignal";
 	}

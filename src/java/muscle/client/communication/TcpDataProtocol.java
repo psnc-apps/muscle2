@@ -19,15 +19,14 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package muscle.client.communication;
 
 /**
- *
- * @author bobby
+ * Values that are sent over the MUSCLE data connections over TCP/IP.
+ * Converts between numeric and semantic variables explicitly, with valueOf()
+ * and intValue().
+ * 
+ * @author Joris Borgdorff
  */
 public enum TcpDataProtocol {
 	OBSERVATION(0), SIGNAL(1), KEEPALIVE(2), FINISHED(3), ERROR(-2), CLOSE(-1), MAGIC_NUMBER(134405);

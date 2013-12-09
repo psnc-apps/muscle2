@@ -24,13 +24,15 @@
  * and open the template in the editor.
  */
 
-package muscle.client.communication.message;
+package muscle.client.communication;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.client.communication.Receiver;
+import muscle.client.communication.message.DetachConduitSignal;
+import muscle.client.communication.message.Message;
 import muscle.id.Identifier;
 import muscle.util.concurrency.Disposable;
 
@@ -38,6 +40,7 @@ import muscle.util.concurrency.Disposable;
  *
  * @author Joris Borgdorff
  */
+@SuppressWarnings("rawtypes") // We don't know the type of the receivers, and we don't need to
 public class LocalDataHandler implements Disposable, IncomingMessageProcessor {
 	private final Map<Identifier,Receiver> listener;
 	private final static Logger logger = Logger.getLogger(LocalDataHandler.class.getName());

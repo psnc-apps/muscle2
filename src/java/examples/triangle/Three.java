@@ -32,11 +32,13 @@ public class Three extends muscle.core.kernel.CAController {
 	private ConduitExit<double[]> reader3;
 	private ConduitEntrance<double[]> writer3;
 
+	@Override
 	protected void addPortals() {	
 		reader3 = addExit("data", double[].class);
 		writer3 = addEntrance("data", double[].class);
 	}
 	
+	@Override
 	protected void execute() {
 		while (!willStop()) {
 			// read from our portals at designated frequency

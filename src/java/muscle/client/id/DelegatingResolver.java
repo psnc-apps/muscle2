@@ -27,7 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.kernel.InstanceController;
-import muscle.id.*;
+import muscle.id.IDType;
+import muscle.id.Identifier;
+import muscle.id.Location;
+import muscle.id.PortalID;
+import muscle.id.Resolver;
 
 /**
  * A simple resolver that delegates the actual creation and searching of Identifiers and Locations.
@@ -38,7 +42,7 @@ public class DelegatingResolver implements Resolver {
 	/** Stores all resolved IDs */
 	private final Set<String> expecting;
 	private final Set<Identifier> registeredHere;
-	private Location here;
+	private final Location here;
 	private final Set<Identifier> searchingNow;
 	private volatile boolean isDone;
 	private final static Logger logger = Logger.getLogger(DelegatingResolver.class.getName());
@@ -57,7 +61,11 @@ public class DelegatingResolver implements Resolver {
 	/**
 	 * Gets a current identifier based on the name and type, or creates
 	 * a new one if none is available.
+	 * @param name Name of the new identifier
+	 * @param type Type of identifier, currently port or instance
+	 * @return an identifier
 	 */
+	@Override
 	public Identifier getIdentifier(String name, IDType type) {
 		if (type == IDType.instance) {
 			// Try cache first, not synchronized as making a new id is not expensive
@@ -72,40 +80,35 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 	
-	private Identifier canonicalId(Identifier id) {
-		if (id.getType() == IDType.port) {
-			id = ((PortalID)id).getOwnerID();
-		}
-		if (id.getType() == IDType.instance) {
-			Identifier altId = canonicalIds.putIfAbsent(id.getName(), id);
-			if (isDisposed()) {
-				if (id.canBeResolved()) {
-					id.willNotBeResolved();
-					synchronized (id) {
-						id.notifyAll();
-					}
-				}
-				if (altId != null && altId.canBeResolved()) {
-					altId.willNotBeResolved();
-					synchronized (altId) {
-						altId.notifyAll();
-					}
+	private Identifier canonicalId(final Identifier origId) {
+		final Identifier id = getProperId(origId);
+
+		Identifier altId = canonicalIds.putIfAbsent(id.getName(), id);
+		if (isDisposed()) {
+			if (id.canBeResolved()) {
+				id.willNotBeResolved();
+				synchronized (id) {
+					id.notifyAll();
 				}
 			}
-			if (altId != null) {
-				id = altId;
+			if (altId != null && altId.canBeResolved()) {
+				altId.willNotBeResolved();
+				synchronized (altId) {
+					altId.notifyAll();
+				}
 			}
-			return id;
 		}
-		return null;
+		return altId == null ? id : altId;
 	}
 	
 	/**
 	 * Resolves an identifier, waiting until this is finished.
-	 * 
-	 * @param id will be resolved if there is no error. Always check isResolved() function afterwards.
+	 * Always check the return value or Identifier.isResolved() function afterwards.
+	 * @param origId will be resolved if there is no error. 
+	 * @return whether the ID is available (has not yet stopped)
 	 * @throws InterruptedException if the process was interrupted before the id was resolved.
 	 */
+	@Override
 	public boolean resolveIdentifier(Identifier origId) throws InterruptedException  {
 		Identifier id = canonicalId(origId);
 		
@@ -158,11 +161,13 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 
-	/** Whether the id resides in the current location */
-	public boolean isLocal(Identifier id) {
-		if (id instanceof PortalID) {
-			id = ((PortalID)id).getOwnerID();
-		}
+	/**
+	 * whether the id resides in the current location
+	 * @param origId Identifier to be checked
+	 * @return whether the id resides in the current location */
+	@Override
+	public boolean isLocal(Identifier origId) {
+		Identifier id = getProperId(origId);
 		String name = id.getName();
 
 		try {
@@ -178,7 +183,11 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 
-	/** Registers a local InstanceController. */
+	/** Registers a local InstanceController.
+	 * @param controller controller of instance to be registered
+	 * @return whether the instance was the first of its name to be registered
+	 */
+	@Override
 	public boolean register(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		logger.log(Level.FINE, "Registering identifier {0}", id);
@@ -194,6 +203,11 @@ public class DelegatingResolver implements Resolver {
 		return ret;
 	}
 	
+	/**
+	 * Makes the instance available for communication with other instances
+	 * @param controller controller of the available instance
+	 */
+	@Override
 	public void makeAvailable(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
 		logger.log(Level.FINER, "Making identifier {0} available to MUSCLE", id);
@@ -206,7 +220,10 @@ public class DelegatingResolver implements Resolver {
 		delegate.propagate(id);
 	}
 	
-	/** Deregisters a local InstanceController. */
+	/**
+	 * Deregisters a local Instance.
+	 * @param controller controller of the instance to be deregistered
+	 */
 	@Override
 	public void deregister(InstanceController controller) {
 		Identifier id = controller.getIdentifier();
@@ -216,16 +233,23 @@ public class DelegatingResolver implements Resolver {
 	}
 	
 	/**
-	 * Removes the identifier with given name and type from the resolver.
+	 * Removes the identifier with from the resolver, setting that it will not resolve.
+	 * @param name name of the identifier to be removed
+	 * @param type type of identifier to be removed, resolving to the instance identifier
 	 */
+	@Override
 	public void removeIdentifier(String name, IDType type) {
 		// Still know that it was known, but make it inactive.
 		canonicalId(this.getIdentifier(name, type)).willNotBeResolved();
 	}
 	
-	/** Add an identifier to the resolver. This also removes it from any 
+	/**
+	 * Add an identifier to the resolver. This removes it from any 
 	 *  search list it might be on.
+	 * @param origId identifier to be made available
+	 * @throws IllegalArgumentException if the provided origId is not resolved (or isAvailable() is false)
 	 */
+	@Override
 	public void addAvailableIdentifier(Identifier origId) {
 		if (!origId.isAvailable()) {
 			throw new IllegalArgumentException("ID " + origId + " is not resolved, but Resolver only accepts resolved IDs");
@@ -247,6 +271,12 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 	
+	/**
+	 * Set that an identifier will not be able to be resolved because it stopped.
+	 * The identifier will be made unavailable.
+	 * @param origId identifier to de-resolve
+	 */
+	@Override
 	public void canNotResolveIdentifier(Identifier origId) {
 		if (origId.isResolved()) {
 			throw new IllegalArgumentException("ID " + origId + " is resolved, so it can be resolved.");
@@ -260,6 +290,7 @@ public class DelegatingResolver implements Resolver {
 		}
 	}
 	
+	@Override
 	public void dispose() {
 		this.isDone = true;
 		synchronized (registeredHere) {
@@ -280,16 +311,27 @@ public class DelegatingResolver implements Resolver {
 		return this.isDone;
 	}
 	
+	/**
+	 * Whether given identifier has not yet quit.
+	 * @param origId identifier to check
+	 * @return whether it can still activate
+	 */
 	@Override
-	public boolean identifierMayActivate(Identifier id) {
-		if (id.getType() == IDType.port) {
-			id = ((PortalID)id).getOwnerID();
-		}
+	public boolean identifierMayActivate(final Identifier origId) {
+		final Identifier id = getProperId(origId);
 		synchronized (registeredHere) {
 			if (registeredHere.contains(id)) {
 				return true;
 			}
 		}
 		return delegate.willActivate(id);
+	}
+	
+	private Identifier getProperId(Identifier id) {
+		if (id.getType() == IDType.port) {
+			return ((PortalID)id).getOwnerID();
+		} else {
+			return id;
+		}
 	}
 }

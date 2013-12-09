@@ -19,11 +19,7 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package muscle.client.communication.message;
+package muscle.client.communication;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -39,19 +35,21 @@ import muscle.net.AbstractConnectionHandler;
 import muscle.util.concurrency.NamedCallable;
 
 /**
- *
+ * Accepts TCP/IP connections and registers receivers for those connections
  * @author Joris Borgdorff
  */
-public class DataConnectionHandler extends AbstractConnectionHandler<LocalManager,Boolean> implements IncomingMessageProcessor {
+@SuppressWarnings("rawtypes") // We don't know the type of the receivers, and we don't need to
+public class TcpIncomingConnectionHandler extends AbstractConnectionHandler<LocalManager,Boolean> implements IncomingMessageProcessor {
 	private final Resolver resolver;
 	private final Map<Identifier,Receiver> receivers;
-	private final static Logger logger = Logger.getLogger(DataConnectionHandler.class.getName());
+	private final static Logger logger = Logger.getLogger(TcpIncomingConnectionHandler.class.getName());
 
-	public DataConnectionHandler(ServerSocket ss, Resolver res) {
+	public TcpIncomingConnectionHandler(ServerSocket ss, Resolver res) {
 		super(ss, LocalManager.getInstance());
 		logger.log(Level.CONFIG, "Listening for data connections on {0}:{1}", new Object[]{ss.getInetAddress().getHostAddress(), ss.getLocalPort()});
 		this.resolver = res;
-		this.receivers = new ConcurrentHashMap<Identifier,Receiver>();
+		Map<Identifier,Receiver> rawRecv = new ConcurrentHashMap<Identifier,Receiver>();
+		this.receivers = rawRecv;
 	}
 	
 	@Override

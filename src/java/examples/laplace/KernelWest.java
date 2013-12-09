@@ -36,16 +36,20 @@ public class KernelWest extends TemperatureKernel {
 	@Override
 	protected void initFunctions() {
 		east = remoteEast = new CommunicationBoundary(Direction.East, nx, ny, data);
-		if (wrapAround)
+		if (wrapAround) {
 			west = remoteWest = new CommunicationBoundary(Direction.West, nx, ny, data);
-		else
+		} else {
 			west = new BoundaryCondition(Direction.West, nx, ny);
+		}
+		
 		north = new BoundaryCondition(Direction.North, nx, ny) {
+					@Override
 					public double get(int x, int y, int step) {
 						return Math.sin(x * 2 * Math.PI / (nx * 2));
 					}
 				};
 		south = new BoundaryCondition(Direction.South, nx, ny) {
+					@Override
 					public double get(int x, int y, int step) {
 						return Math.cos(x * 2 * Math.PI / (nx * 2) + Math.PI);
 					}

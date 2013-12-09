@@ -33,7 +33,7 @@ import examples.laplace.BoundaryCondition.Direction;
  */
 public final class CommunicationBoundary extends BoundaryCondition {
 	private double[] remoteSlice;
-	private double[] localSlice;
+	private final double[] localSlice;
 	private double[][] data;
 	
 	public CommunicationBoundary(Direction dir, int newNx, int newNy, double[][] data) {
@@ -61,6 +61,7 @@ public final class CommunicationBoundary extends BoundaryCondition {
 	
 	// synchronize ghostnode column with their corresponding original data
 	// calc new boundary value based on the neighbours
+	@Override
 	public double get(int x, int y, int step) {
 		double val;
 		if (y == 0 || y == ny - 1) {

@@ -19,26 +19,24 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.communication;
 
 import java.io.Serializable;
 import muscle.client.communication.message.BasicMessage;
-import muscle.client.communication.message.LocalDataHandler;
 import muscle.client.communication.message.Message;
 import muscle.client.communication.message.Signal;
 import muscle.core.model.Observation;
-import muscle.id.InstanceID;
 import muscle.id.PortalID;
 import muscle.util.serialization.DataConverter;
 
 /**
- *
+ * Transmits data within a MUSCLE process by sending it to the local data
+ * handler, after the converter has the possibility to make a copy.
+ * 
  * @author Joris Borgdorff
+ * @param <T> datatype that is transmitted
  */
-public class LocalTransmitter<T extends Serializable> extends AbstractCommunicatingPoint<Observation<T>, Observation<T>> implements Transmitter<T, Observation<T>> {
+public class LocalTransmitter<T extends Serializable> extends Transmitter<T, T> {
 	private final LocalDataHandler dataHandler;
 	
 	public LocalTransmitter(LocalDataHandler dataHandler, DataConverter<Observation<T>, Observation<T>> converter, PortalID portalID) {
@@ -46,6 +44,7 @@ public class LocalTransmitter<T extends Serializable> extends AbstractCommunicat
 		this.dataHandler = dataHandler;
 	}
 
+	@Override
 	public final void transmit(Observation<T> obs) {
 		// If converter is null here, we made a mistake creating the transmitter.
 		// We need to copy here, so that the data on the receiving end is independent from the sending end.
@@ -53,6 +52,7 @@ public class LocalTransmitter<T extends Serializable> extends AbstractCommunicat
 		this.dataHandler.put(msg);
 	}
 
+	@Override
 	public final void signal(Signal signal) {
 		@SuppressWarnings("unchecked")
 		Message<T> msg = new BasicMessage<T>(signal, portalID);

@@ -30,10 +30,12 @@ a simple java example kernel which receives data and prints its content to stdou
 public class ConsoleWriter extends muscle.core.kernel.CAController {
 	private ConduitExit<double[]> readerA;
 
+	@Override
 	protected void addPortals() {	
 		readerA = addExit("data", double[].class);
 	}
 
+	@Override
 	protected void execute() {
 		while (!this.willStop()) {
 			// read from our portals

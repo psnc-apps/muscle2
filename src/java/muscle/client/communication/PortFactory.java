@@ -19,16 +19,12 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 package muscle.client.communication;
 
 import java.io.Serializable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.message.IncomingMessageProcessor;
 import muscle.client.instance.ConduitEntranceControllerImpl;
 import muscle.client.instance.ConduitExitControllerImpl;
 import muscle.core.kernel.InstanceController;
@@ -110,7 +106,7 @@ public abstract class PortFactory implements Disposable {
 	}
 	
 		/** Resolves a PortalID, if not already done. */
-	protected boolean portWillActivate(PortalID port) throws InterruptedException {
+	protected boolean portWillActivate(PortalID port) {
 		return resolver.identifierMayActivate(port);
 	}
 	
@@ -119,10 +115,12 @@ public abstract class PortFactory implements Disposable {
 	}
 	
 	/** Frees all resources attached to the PortFactory. After this call, getReceiver() and getTransmitter() can not be called anymore. */
+	@Override
 	public void dispose() {
 		this.executor.dispose();
 	}
 	
+	@Override
 	public boolean isDisposed() {
 		return this.executor.isDisposed();
 	}

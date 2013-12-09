@@ -41,6 +41,7 @@ public class AreaFunction extends BoundaryCondition {
 	}
 	
 	// calc new value based on the neighbours
+	@Override
 	public double get(int x, int y, int step) {
 		double n = data[x][y + 1];
 		double e = data[x + 1][y];

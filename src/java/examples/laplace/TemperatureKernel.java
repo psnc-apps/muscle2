@@ -19,18 +19,10 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package examples.laplace;
 
 import examples.laplace.graphics.GraphicsPanel;
-import java.util.ArrayList;
-import java.util.Collection;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import muscle.core.kernel.CAController;
 import muscle.core.kernel.Submodel;
 import muscle.core.model.Timestamp;
 
@@ -53,6 +45,7 @@ public abstract class TemperatureKernel extends Submodel {
 	protected AreaFunction areaFunction;
 	protected GraphicsPanel panel;
 	
+	@Override
 	protected void beforeSetup() {
 		nx = getIntProperty("nx");
 		ny = getIntProperty("ny");
@@ -94,6 +87,7 @@ public abstract class TemperatureKernel extends Submodel {
 	}
 	
 	// iterate	
+	@Override
 	protected void solvingStep() {
 		iteration++;
 		areaFunction.updateData(data);
