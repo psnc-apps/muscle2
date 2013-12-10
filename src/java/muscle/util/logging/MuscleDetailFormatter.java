@@ -21,11 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.util.logging;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
@@ -34,10 +31,7 @@ formats log messages
 @author Joris Borgdorff
 */
 public class MuscleDetailFormatter extends SimpleFormatter {
-	private final static int SEVERE = Level.SEVERE.intValue();
-	private final static int WARNING = Level.WARNING.intValue();
-	private final static int INFO = Level.INFO.intValue();
-	
+	@Override
 	public String format(LogRecord record) {
 		StringBuilder sb = new StringBuilder(200);
 		String loggerName = record.getLoggerName();
@@ -71,34 +65,10 @@ public class MuscleDetailFormatter extends SimpleFormatter {
 		MuscleFormatter.leftAlign(sb, method, 20);
 		sb.append("] ");
 
-		int intLevel = record.getLevel().intValue();
-		if (intLevel >= SEVERE) {
-			sb.append("ERROR: ");
-		} else if (intLevel >= WARNING) {
-			sb.append("warning: ");
-		} else if (intLevel < INFO) {
-			sb.append("debug: ");
-		}
-		
 		MuscleFormatter.formatMessage(sb, record);
 		sb.append('\n');
+		MuscleFormatter.addTrace(sb, record, false);
 		
-		Throwable thrown = record.getThrown();
-		if (thrown != null) {
-			try {
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				thrown.printStackTrace(pw);
-				pw.close();
-				
-				sb.append("[================== ERROR ===================] ");
-				sb.append(sw);
-				sb.append("[================ END TRACE =================]\n");
-			} catch (Exception ex) {
-				// Do nothing
-			}
-		}
-
 		return sb.toString();
 	}
 }

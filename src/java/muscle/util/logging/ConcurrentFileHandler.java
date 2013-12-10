@@ -19,10 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package muscle.util.logging;
 
@@ -122,6 +118,7 @@ public class ConcurrentFileHandler extends FileHandler implements LogWriter {
 		}
 	}
 	
+	@Override
 	public void write(String msg, int next) {
 		try {
 			writer.write(msg);

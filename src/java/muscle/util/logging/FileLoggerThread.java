@@ -48,6 +48,7 @@ public class FileLoggerThread extends SafeThread {
 	}
 
 	@Override
+	@SuppressWarnings("StringEquality")
 	protected void execute() throws Exception {
 		// Repeats until dispose is called
 		// wait for new messages with the blocking queue
@@ -68,6 +69,7 @@ public class FileLoggerThread extends SafeThread {
 		Logger.getLogger(ConcurrentFileHandler.class.getName()).severe("Logging error occurred. No further file logging.");
 	}
 
+	@Override
 	public void dispose() {
 		synchronized (this) {
 			if (this.isDisposed()) {

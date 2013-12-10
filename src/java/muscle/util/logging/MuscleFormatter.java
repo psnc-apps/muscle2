@@ -21,6 +21,8 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle.util.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -55,7 +57,22 @@ public class MuscleFormatter extends SimpleFormatter {
 		rightAlign(sb, loggerName, 6);
 		sb.append("] ");
 		
-		int intLevel = record.getLevel().intValue();
+		formatMessage(sb, record);
+		sb.append('\n');
+		Throwable thrown = record.getThrown();
+		if(thrown != null) {
+			sb.append("                         (")
+				.append(thrown.getClass().getName())
+				.append(": ")
+				.append(thrown.getMessage())
+				.append(")\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	public static void formatMessage(StringBuilder sb, LogRecord record) {
+		final int intLevel = record.getLevel().intValue();
 		if (intLevel >= SEVERE) {
 			sb.append("ERROR: ");
 		} else if (intLevel >= WARNING) {
@@ -64,21 +81,6 @@ public class MuscleFormatter extends SimpleFormatter {
 			sb.append("debug: ");
 		}
 		
-		formatMessage(sb, record);
-		sb.append('\n');
-		Throwable thrown = record.getThrown();
-		if(thrown != null) {
-			sb.append("                         (");
-			sb.append(thrown.getClass().getName());
-			sb.append(": ");
-			sb.append(thrown.getMessage());
-			sb.append(")\n");
-		}
-		
-		return sb.toString();
-	}
-	
-	public static void formatMessage(StringBuilder sb, LogRecord record) {
 		String msg = record.getMessage();
 		try {
             Object parameters[] = record.getParameters();
@@ -151,5 +153,28 @@ public class MuscleFormatter extends SimpleFormatter {
 			sb.append('0');
 		}
 		sb.append(t);
+	}
+	
+	static void addTrace(StringBuilder sb, LogRecord record, boolean addName) {
+		Throwable thrown = record.getThrown();
+		if (thrown != null) {
+			try {
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				thrown.printStackTrace(pw);
+				pw.close();
+				
+				sb.append("[================== ERROR ===================] ");
+				if (addName) {
+					sb.append(thrown.getClass().getName())
+						.append(": ")
+						.append(thrown.getMessage());
+				}
+				sb.append(sw);
+				sb.append("[================ END TRACE =================]\n");
+			} catch (Exception ex) {
+				// Do nothing
+			}
+		}
 	}
 }
