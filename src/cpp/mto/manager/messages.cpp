@@ -46,17 +46,17 @@ size_t Request::getSize()
 Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::net::endpoint::getSize())
 {
     buf += 1+2*endpoint::getSize();
-    sessionId = readFromBuffer<int32_t>(buf);
+    sessionId = readFromBuffer<int32_t,4>(buf);
 	src.resolve();
 	dst.resolve();
 }
 
 char *Request::serialize(char* buf) const
 {
-    writeToBuffer(buf, type);
+    writeToBuffer<char,1>(buf, type);
     buf = src.serialize(buf);
     buf = dst.serialize(buf);
-    writeToBuffer<int32_t>(buf, sessionId);
+    writeToBuffer<int32_t,4>(buf, sessionId);
     return buf;
 }
 
@@ -68,13 +68,13 @@ size_t Header::getSize()
 Header::Header(char *buf) : Request(buf)
 {
     buf += Request::getSize();
-    length = readFromBuffer<int64_t>(buf);
+    length = readFromBuffer<int64_t,8>(buf);
 }
 
 char *Header::serialize(char* buf) const
 {
     buf = Request::serialize(buf);
-    writeToBuffer<int64_t>(buf, length);
+    writeToBuffer<int64_t,8>(buf, length);
     return buf;
 }
 
@@ -95,18 +95,18 @@ size_t MtoHello::getSize()
 
 MtoHello::MtoHello(char * buf)
 {
-    portLow =  readFromBuffer<uint16_t>(buf);
-    portHigh = readFromBuffer<uint16_t>(buf);
-    distance = readFromBuffer<uint16_t>(buf);
-    isLastMtoHello = (bool)readFromBuffer<char>(buf);
+    portLow =  readFromBuffer<uint16_t,2>(buf);
+    portHigh = readFromBuffer<uint16_t,2>(buf);
+    distance = readFromBuffer<uint16_t,2>(buf);
+    isLastMtoHello = (bool)readFromBuffer<char,1>(buf);
 }
 
 void MtoHello::serialize(char * buf) const
 {
-    writeToBuffer(buf, portLow);
-    writeToBuffer(buf, portHigh);
-    writeToBuffer(buf, distance);
-    writeToBuffer(buf, (char)isLastMtoHello);
+    writeToBuffer<uint16_t,2>(buf, portLow);
+    writeToBuffer<uint16_t,2>(buf, portHigh);
+    writeToBuffer<uint16_t,2>(buf, distance);
+    writeToBuffer<char,1>(buf, (char)isLastMtoHello);
 }
 
 bool MtoHello::operator==(const MtoHello& o) const

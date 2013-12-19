@@ -8,6 +8,7 @@
 
 #include "custom_communicator.h"
 #include <vector>
+#include <cstdlib>
 #define M2_XDR_BUFSIZE 2147483647
 
 using namespace muscle::net;
