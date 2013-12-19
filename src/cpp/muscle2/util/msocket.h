@@ -80,6 +80,10 @@ namespace muscle {
 			virtual ssize_t send (const void* s, size_t size) = 0;
 			virtual ssize_t recv (void* s, size_t size) = 0;
 			
+			// All or -1
+			virtual void sendAll(const void* s, size_t size);
+			virtual size_t recvAll(void* s, size_t minimal, size_t size);
+			
 			// asynchronous, light-weight, non-blocking
 			virtual ssize_t async_send (int user_flag, const void* s, size_t size, async_sendlistener *send, int opts);
 			virtual ssize_t async_recv (int user_flag, void* s, size_t size, async_recvlistener *recv);

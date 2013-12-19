@@ -38,6 +38,7 @@ public interface ConduitExitController<T extends Serializable> extends Portal {
 	/**
 	 * The queue on which all messages will be placed.
 	 * The ConduitExit uses this to get the messages.
+	 * @return a message queue
 	 */
 	Takeable<Observation<T>> getMessageQueue();
 	/** For the ConduitExit to signal that it will pass a message to the user. */

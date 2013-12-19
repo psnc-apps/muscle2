@@ -49,6 +49,30 @@ string msocket::str()
 }
 
 /** CLIENT SIDE **/
+void ClientSocket::sendAll(const void* s, size_t size)
+{
+	size_t sent = 0;
+	const char *s_ptr = (const char *)s;
+	do {
+		ssize_t didSend = this->send(s_ptr + sent, size - sent);
+		if (didSend == -1) throw muscle_exception("Cannot send all data");
+		sent += didSend;
+	} while (sent < size);
+}
+
+size_t ClientSocket::recvAll(void* s, size_t minimal, size_t size)
+{
+	size_t recvd = 0;
+	char *s_ptr = (char *)s;
+	do {
+		ssize_t didRecv = this->recv(s_ptr + recvd, size - recvd);
+		if (didRecv == -1) throw muscle_exception("Cannot receive all data");
+		recvd += didRecv;
+	} while (recvd < minimal);
+	
+	return recvd;
+}
+
 ssize_t ClientSocket::async_recv(int user_flag, void* s, size_t size, async_recvlistener *receiver)
 {
     return server->receive(user_flag, this, s, size, receiver);

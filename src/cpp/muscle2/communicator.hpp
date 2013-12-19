@@ -64,7 +64,7 @@ public:
 	/** Free data that MUSCLE allocated */
 	virtual void free_data(void *ptr, muscle_datatype_t type) {};
 protected:
-	net::CClientSocket *sock;
+	net::ClientSocket *sock;
 };
 
 } // EO namespace muscle

@@ -21,8 +21,26 @@
 */
 package muscle.net;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -39,7 +57,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /** 
- * 
  * @author Mariusz Mamonski
  */
 
@@ -144,7 +161,7 @@ public class CrossSocketFactory extends SocketFactory {
 				if (bread >= 0) {
 					logger.log(Level.FINEST, "id = {0},  bread = {1}, off = {2}, b = {3}, pos = {4}", new Object[] {id, bread, off, bytesToHex(b, off, bread), pos});
 					traceFile.write(b, off, bread);
-					pos+=bread;
+					pos += bread;
 				} else {
 					logger.log(Level.FINEST, "id = {0},  bread = {1}, pos = {2}", new Object[] {id, bread, pos});
 				}
@@ -153,9 +170,6 @@ public class CrossSocketFactory extends SocketFactory {
 			} catch (IOException ex) {
 				logger.log(Level.WARNING, "read failed", ex);
 				throw ex;
-			} catch (Exception ex) {
-				logger.log(Level.SEVERE, "Unchecked exception", ex);
-				throw new AssertionError(ex);
 			}
 			/* not reached */
 		}	
@@ -222,18 +236,14 @@ public class CrossSocketFactory extends SocketFactory {
 			InetAddress addr) throws IOException {
 		
 		ServerSocket ss;
-		if (port == qcgMagicPort) {
-			logger.log(Level.FINE, "binding socket on MAIN port and addr {0}", addr);
-			 ss = createServerSocketInRange(backlog, addr);
-		} else if (port == 0) {
+		if (port == qcgMagicPort || port == 0) {
 			logger.log(Level.FINE, "binding socket on ANY port and addr {0}", addr);
-			 ss = createServerSocketInRange(backlog, addr);
+			ss = createServerSocketInRange(backlog, addr);
+			logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
 		} else {
 			logger.log(Level.FINE, "binding socket on port {0} and addr {1}", new Object[]{port, addr});
 			ss = new ServerSocket(port, backlog, addr);
 		}
-
-		logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
 
 		if (mtoAddr == null || mtoPort == -1) {
 			logger.fine("Missing MTO address / port. MTO will not be used.");
@@ -251,7 +261,9 @@ public class CrossSocketFactory extends SocketFactory {
 			try {
 				putConnectionData(InetAddress.getLocalHost()
 					.getHostAddress(), ss.getLocalPort());
+				logger.info("Registered to QCG-Coordinator");
 			} catch (IOException ex) {
+				ss.close();
 				throw new IOException("Cannot communicate with QCG-Coordinator", ex);
 			}
 		}
@@ -454,6 +466,7 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 	}
 
+	@Override
 	public Socket createSocket() {
 		logger.fine("creating new client socket");
         return new CrossSocket();
@@ -568,6 +581,7 @@ public class CrossSocketFactory extends SocketFactory {
 			this.selectorName = selectorName;
 		}
 
+		@Override
 		public void characters(char[] ch, int start, int length)
 				throws SAXException {
 
@@ -577,6 +591,7 @@ public class CrossSocketFactory extends SocketFactory {
 			}
 		}
 
+		@Override
 		public void startElement(String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
 			if (qName.endsWith(selectorName)) {

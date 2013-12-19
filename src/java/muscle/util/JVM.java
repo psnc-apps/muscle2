@@ -34,10 +34,6 @@ public class JVM {
 	private final File tmpDir;
 	private final Set<String> libraries;
 
-	public static boolean is64bitJVM() {
-		return System.getProperty("sun.arch.data.model").indexOf("64") != -1;
-	}
-
 	public JVM() {
 		tmpDir = mkTmpDir();
 		libraries = new ArraySet<String>();

@@ -32,22 +32,28 @@ import muscle.core.model.Observation;
 /**
  * Controls what happens to data of the ConduitEntrance.
  * @author Joris Borgdorff
+ * @param <T> datatype to be sent by entrance
  */
 public interface ConduitEntranceController<T extends Serializable> extends Portal {
-	/** Send a message. */
+	/** Send a message.
+	 * @param msg message to be sent */
 	void send(Observation<T> msg);
 	
-	/** Get the ConduitEntrance that is controlled. */
-	public ConduitEntrance getEntrance();
+	/** Get the ConduitEntrance that is controlled.
+	 * @return the controlled entrance */
+	public ConduitEntrance<T> getEntrance();
 	
 	/**
 	 * Set the ConduitEntrance that will be controlled.
 	 * Use only by MUSCLE during initialization phase.
+	 * @param entrance entrance that will be controlled
 	 */
 	public void setEntrance(ConduitEntrance<T> entrance);
 	/**
 	 * Waits until all the messages of the ConduitEntrance are sent.
 	 * Use only by MUSCLE during finalization phase.
+	 * @return true if the conduit entrance was empty
+	 * @throws java.lang.InterruptedException when interrupted before wait is finished
 	 */
 	public boolean waitUntilEmpty() throws InterruptedException;
 	

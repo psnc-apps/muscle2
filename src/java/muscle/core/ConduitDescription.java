@@ -64,10 +64,12 @@ public class ConduitDescription {
 		return entrance;
 	}
 	
+	@Override
 	public String toString() {
 		return entrance + " -> " + exit;
 	}
 
+	@Override
 	public boolean equals(Object b) {
 		return b != null && getClass().equals(b.getClass())
 				&& entrance.equals(((ConduitDescription)b).entrance)

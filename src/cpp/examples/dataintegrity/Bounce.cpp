@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 		env::init(&argc, &argv);
 		
 		while (true) {
+			sz = 1;
 			muscle::env::receive("datatype", &datatype_i, sz, MUSCLE_INT32);
 			if (datatype_i == -1) {
 				break;

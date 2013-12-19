@@ -28,6 +28,8 @@ package muscle.util.data;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import muscle.util.serialization.ByteJavaObjectConverter;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
@@ -46,6 +48,7 @@ import muscle.util.serialization.SerializerWrapper;
  */
 public class SerializableData implements Serializable {
 	private static final long serialVersionUID = 1L;
+	private final static Logger logger = Logger.getLogger(SerializableData.class.getName());
 
 	private final SerializableDatatype type;
 	private final Serializable value;
@@ -210,9 +213,10 @@ public class SerializableData implements Serializable {
 		long size = sizeOf(value, type);		
 		if (type.isMatrix()) {
 			int length = MatrixTool.lengthOfMatrix(value, type);
-			
+			logger.log(Level.FINE, "Length of matrix {0}", length);
 			int dimX, dimY, dimZ, dimZZ;
 			dimX = in.readInt();
+			logger.log(Level.FINE, "DimX {0}", dimX);
 			// Read the next int if type is not Matrix2D
 			dimY = type.isMatrix2D() ? length / dimX : in.readInt();
 			// Only read the last int if type is Matrix 4D.

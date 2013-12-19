@@ -37,13 +37,17 @@ import java.util.logging.Logger;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.Disposable;
 import muscle.util.data.SerializableData;
+import muscle.util.serialization.CustomDeserializer;
+import muscle.util.serialization.CustomDeserializerWrapper;
+import muscle.util.serialization.CustomSerializer;
+import muscle.util.serialization.CustomSerializerWrapper;
 import muscle.util.serialization.DeserializerWrapper;
 import muscle.util.serialization.SerializerWrapper;
-import muscle.util.serialization.SocketChannelOutputStream;
 import muscle.util.serialization.SocketChannelInputStream;
+import muscle.util.serialization.SocketChannelOutputStream;
+import muscle.util.serialization.XdrDeserializerWrapper;
 import muscle.util.serialization.XdrIn;
 import muscle.util.serialization.XdrOut;
-import muscle.util.serialization.XdrDeserializerWrapper;
 import muscle.util.serialization.XdrSerializerWrapper;
 
 /**
@@ -57,7 +61,8 @@ public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final CallListener listener;
 	protected static final Logger logger = Logger.getLogger(NativeGateway.class.getName());
-	private final static boolean USE_NIO = System.getProperty("muscle.core.standalone.use_nio") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_nio"));
+	private final static boolean USE_NIO = System.getProperty("muscle.core.standalone.use_nio") == null ? false : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_nio"));
+	private final static boolean USE_XDR = System.getProperty("muscle.core.standalone.use_xdr") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_xdr"));
 	private volatile boolean isDone;
 	private boolean isDisposed;
 	
@@ -150,8 +155,13 @@ public class NativeGateway extends Thread implements Disposable {
 				xdrOut = s.getOutputStream();
 				xdrIn = s.getInputStream();
 			}
-			in =  new XdrDeserializerWrapper(new XdrIn(xdrIn, buffer_size));
-			out = new XdrSerializerWrapper(new XdrOut(xdrOut, buffer_size), buffer_size);
+			if (USE_XDR) {
+				in =  new XdrDeserializerWrapper(new XdrIn(xdrIn, buffer_size));
+				out = new XdrSerializerWrapper(new XdrOut(xdrOut, buffer_size), buffer_size);
+			} else {
+				in =  new CustomDeserializerWrapper(new CustomDeserializer(xdrIn, buffer_size));
+				out = new CustomSerializerWrapper(new CustomSerializer(xdrOut, buffer_size), buffer_size);
+			}
 			
 			logger.log(Level.FINE, "Accepted connection from: {0}", s.getRemoteSocketAddress());
 			final boolean isFinestLog = logger.isLoggable(Level.FINEST);

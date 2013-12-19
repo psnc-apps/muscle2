@@ -52,16 +52,19 @@ public class XdrOut implements XdrEncodingStream {
 	/**
 	 * Create a new Xdr object with a buffer of given size.
 	 *
-	 * @param size of the buffer in bytes
+	 * @param out stream to write the XDR data to
+	 * @param bufsize of the buffer in bytes
 	 */
 	public XdrOut(OutputStream out, int bufsize) {
 		this.buffer = new XdrBuffer(out, bufsize);
 	}
 
+	@Override
 	public void beginEncoding() {
 		// nop
 	}
 
+	@Override
 	public void endEncoding() throws IOException {
 		buffer.flush();
 	}

@@ -31,13 +31,7 @@ public class Version {
 	private final static String VERSION_NUM = "2.0";
 	private final static String INFO_TEXT = "Multiscale Coupling Library and Environment (MUSCLE) version " + VERSION_NUM + "\n\t$Revision$\n\t$Date$\n\t";
 	
-	public static String info() {
-		 // remove the $$ in case the version text has not been modified
-		return INFO_TEXT.replaceAll("$$", "");
-	}
-
 	public static void main(String[] args) {
-		String mode = JVM.is64bitJVM() ? "64":"32";
-		System.out.println(info()+"Running in "+mode+"-bit mode");		
+		System.out.println(INFO_TEXT.replaceAll("$$", ""));
 	}
 }

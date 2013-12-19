@@ -36,6 +36,7 @@ import muscle.util.data.Takeable;
  * It is not thread-safe, in the sense that only a single thread may call hasNext() and receive().
  * 
  * @author Joris Borgdorff
+ * @param <T> Type of data to be received from the conduit
 */
 public class ConduitExit<T extends Serializable> { // generic T will be the underlying unwrapped data, e.g. double[]
 	private final Takeable<Observation<T>> queue;
@@ -54,6 +55,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	/**
 	 * Whether the next call to hasNext or receive will return without blocking.
 	 * This is a non-blocking function. If it returns true, that does not guarantee that hasNext returns true.
+	 * @return if and only if true, receive() will return without blocking
 	 */
 	public boolean ready() {
 		return this.nextElem != null || !this.queue.isEmpty();
@@ -68,6 +70,7 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 * guaranteed to return a result. Conversely, if hasNext() returns false,
 	 * the subsequent call to receive() will throw a
 	 * MUSCLEConduitExhaustedException.
+	 * @return true if and only if there is a next piece of data
 	 */
 	public boolean hasNext() {
 		// As long as receive() is not called, return true.

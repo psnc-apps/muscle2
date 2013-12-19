@@ -41,7 +41,6 @@
 package muscle.util.serialization;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * Defines interface for decoding XDR stream. A decoding

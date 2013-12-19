@@ -4,8 +4,9 @@ set(MUSCLE2CPP_VERSION "1.0")
 
 FILE (GLOB THIS_HEADERS *.h *.hpp)
 FILE (GLOB UTIL_HEADERS util/*.h util/*.hpp)
-SET(MUSCLE2_CPP_FILES cmuscle.cpp fortranmuscle.cpp cppmuscle.cpp complex_data.cpp communicator.cpp xdr_communicator.cpp
+SET(MUSCLE2_CPP_FILES cmuscle.cpp fortranmuscle.cpp cppmuscle.cpp complex_data.cpp communicator.cpp xdr_communicator.cpp custom_communicator.cpp
         util/endpoint.cpp util/async_service.cpp util/msocket.cpp util/csocket.cpp util/mtime.cpp util/option_parser.cpp util/logger.cpp
+	util/custom_serializer.cpp
 		util/mutex.cpp util/rwmutex.cpp util/thread.cpp util/barrier.cpp)
 
 find_package(Threads)

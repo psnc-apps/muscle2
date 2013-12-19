@@ -19,15 +19,21 @@
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define USE_XDR
+//#define CPPMUSCLE_TRACE
+
 #include "cppmuscle.hpp"
-#include "xdr_communicator.hpp"
 #include "util/exception.hpp"
 #include "util/csocket.h"
 #include "util/barrier.h"
 
+#ifdef USE_XDR
+#include "xdr_communicator.hpp"
+#else
+#include "custom_communicator.h"
+#endif
+
 #include <stdlib.h>
-#include <rpc/types.h>
-#include <rpc/xdr.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -85,7 +91,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	if (ep.port == 0)
 	{
 		if (argc == NULL || argv == NULL) {
-			logger::severe("No arguments provided in MUSCLE initialization method so MUSCLE can not be started.");
+			logger::severe("No arguments provided in MUSCLE initialization method so MUSCLE cannot be started.");
 			exit(1);
 		}
 		logger::info("MUSCLE port not given. Starting new MUSCLE instance.");
@@ -106,7 +112,11 @@ muscle_error_t env::init(int *argc, char ***argv)
 	try
 	{
 		ep.resolve();
+#ifdef USE_XDR
 		comm = new XdrCommunicator(ep);
+#else
+		comm = new CustomCommunicator(ep);
+#endif
 	} catch (muscle_exception& e) {
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s", ep.str().c_str());
 		exit(1);
@@ -157,26 +167,34 @@ int env::detect_mpi_rank() {
 	logger::finest("muscle::env::detect_mpi_rank() ");
 #endif
 	const char * const possible_mpi_rank_vars[] = {
-			"OMPI_COMM_WORLD_RANK",
-			"MV2_COMM_WORLD_RANK",
-			"MPISPAWN_ID",
-			"MP_CHILD",
-			"PMI_RANK",
-			"X10_PLACE",
-			"OMPI_MCA_orte_ess_vpid",
-			"OMPI_MCA_ns_nds_vpid",
-			"SLURM_PROCID" };
+		"OMPI_COMM_WORLD_RANK",
+		"MV2_COMM_WORLD_RANK",
+		"MPISPAWN_ID",
+		"MP_CHILD",
+		"PMI_RANK",
+		"X10_PLACE",
+		"OMPI_MCA_orte_ess_vpid",
+		"OMPI_MCA_ns_nds_vpid",
+		"SLURM_PROCID",
+		"LAMRANK",
+		"GMPI_ID"
+	};
 
-	int irank = 0;
 	const size_t len = sizeof(possible_mpi_rank_vars)/sizeof(const char *);
 	for (size_t i = 0; i < len; i++) {
 		const char *rank = getenv(possible_mpi_rank_vars[i]);
 		if (rank != NULL) {
-			irank = atoi(rank);
-			break;
+#ifdef CPPMUSCLE_TRACE
+			const int irank = atoi(rank);
+			logger::finest("muscle::env::detect_mpi_rank(): %d (detected through %s)", irank, rank);
+#endif
+			return atoi(rank);
 		}
 	}
-	return irank;
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::detect_mpi_rank() not detected");
+#endif
+	return 0;
 }
 
 std::string cxa::kernel_name(void)
@@ -248,7 +266,7 @@ bool env::will_stop(void)
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::will_stop() from main MPI processor (MPI rank 0)");
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
-	bool_t is_will_stop = false;
+	bool is_will_stop = false;
 	
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::will_stop()");
@@ -268,7 +286,10 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 #ifdef CPPMUSCLE_TRACE
-	logger::finest("muscle::env::send()");
+	{
+	const char *entrance_str = entrance_name.c_str();
+	logger::finest("muscle::env::send(%s, len(%zu))", entrance_str, count);
+	}
 #endif
 
 	comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
@@ -500,13 +521,13 @@ char *env::create_tmpfifo()
 			break;
 		if (errno != EEXIST)
 		{
-			logger::severe("Can not create temporary file; error %s", strerror(errno));
+			logger::severe("Cannot create temporary file; error %s", strerror(errno));
 			return NULL;
 		}
 	}
 	if (!tmppath)
 	{
-		logger::severe("Can not create temporary file.");
+		logger::severe("Cannot create temporary file.");
 		return NULL;
 	}
 	

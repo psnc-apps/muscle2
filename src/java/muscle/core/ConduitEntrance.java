@@ -37,6 +37,7 @@ import muscle.core.model.Timestamp;
  * at which a piece of data will be sent.
  * 
  * @author Joris Borgdorff
+ * @param <T> datatype that will be sent
  */
 public class ConduitEntrance<T extends Serializable> {
 	private final ConduitEntranceController<T> controller;
@@ -52,6 +53,7 @@ public class ConduitEntrance<T extends Serializable> {
 	
 	/**
 	 * Sets the timestep between messages.
+	 * @param dt timestep
 	 */
 	public void setDt(Distance dt) {
 		this.dt = dt;
@@ -64,6 +66,7 @@ public class ConduitEntrance<T extends Serializable> {
 	 * this possible, the data is copied before its sent, so that the submodel may make use of it and modify
 	 * it without affecting the data sent. It is not necessary to make a copy of the data inside the submodel
 	 * before sending.
+	 * @param data data
 	 */
 	public void send(T data) {
 		this.send(data, nextTime, nextTime.add(dt));
@@ -72,6 +75,8 @@ public class ConduitEntrance<T extends Serializable> {
 	/**
 	 * Send a piece of data at the current timestep. This assumes that the next timestep
 	 * follows statically from the temporal scale.
+	 * @param data data
+	 * @param currentTime time at which the data is sent
 	 * @see send(T)
 	 */
 	public void send(T data, Timestamp currentTime) {
@@ -81,6 +86,9 @@ public class ConduitEntrance<T extends Serializable> {
 	/**
 	 * Send a piece of data at the current timestep, also mentioning when the next
 	 * piece of data will be sent.
+	 * @param data data
+	 * @param currentTime time at which the data is sent
+	 * @param next time at which the next message will be sent
  	 * @see send(T)
 	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
@@ -91,6 +99,7 @@ public class ConduitEntrance<T extends Serializable> {
 	/**
 	 * Send an observation with data at the current timestep, also mentioning when the next
 	 * piece of message will be sent.
+	 * @param obs observation to be sent
  	 * @see send(T)
 	 */
 	public void send(Observation<T> obs) {

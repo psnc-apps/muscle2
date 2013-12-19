@@ -19,14 +19,11 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package muscle.net;
 
-import java.net.InetAddress;
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -52,16 +49,14 @@ public class MtoRequest {
 	public int sessionId = 0;
 	
 	
-	public MtoRequest(byte type, InetAddress srcA, InetAddress dstA)
-	{
+	public MtoRequest(byte type, InetAddress srcA, InetAddress dstA) {
 		if (dstA == null || srcA == null)
 			throw new IllegalArgumentException("Source and destination may not be null");
 		this.type = type;
 		this.srcA = srcA;
 		this.dstA = dstA;
 	}
-	public MtoRequest(byte type, InetSocketAddress src, InetSocketAddress dst)
-	{
+	public MtoRequest(byte type, InetSocketAddress src, InetSocketAddress dst) {
 		if (src == null)
 			throw new IllegalArgumentException("Source may not be null");
 		
@@ -77,6 +72,7 @@ public class MtoRequest {
 		}
 	}
 	
+	@Override
 	public String toString() {
 		return "MtoRequest<" + type + ">[" + srcA.toString() + ":" + srcP + " - " + dstA.toString() + ":" + dstP + "]";
 	}

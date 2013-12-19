@@ -37,13 +37,13 @@ public abstract class FanInMapper<T extends Serializable> extends Mapper {
 	protected Observation<T> value;
 
 	@Override
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked"})
 	public void addPortals() {
 		super.addPortals();
 		if (this.entrances.size() != 1) {
 			throw new IllegalStateException("A fan-in mapper only allows a single output, instead of " + entrances.size());
 		}
-		onlyEntrance = this.entrances.values().iterator().next().getEntrance();
+		onlyEntrance = (ConduitEntrance<T>)this.entrances.values().iterator().next().getEntrance();
 	}
 
 	@Override

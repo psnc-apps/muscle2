@@ -61,12 +61,14 @@ public class XdrIn implements XdrDecodingStream {
 	/**
 	 * Create a new Xdr object with a buffer of given size.
 	 *
-	 * @param size of the buffer in bytes
+	 * @param in inputstream to read the bytes of the object from
+	 * @param bufsize of the buffer in bytes
 	 */
 	public XdrIn(InputStream in, int bufsize) {
 		this.buffer = new XdrBuffer(in, bufsize);
 	}
 
+	@Override
 	public void beginDecoding() throws IOException {
 		/*
 		 * Set position to the beginning of this XDR in back end buffer.
@@ -105,6 +107,7 @@ public class XdrIn implements XdrDecodingStream {
 		buffer.read(n);
 	}
 	
+	@Override
 	public void endDecoding() throws IOException {
 		// Clear all buffers that are still remaining
 		while (true) {
@@ -126,7 +129,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Get next array of integers.
 	 *
 	 * @return the array on integers
+	 * @throws java.io.IOException 
 	 */
+	@Override
 	public int[] xdrDecodeIntVector() throws IOException {
 		final int len = xdrDecodeInt();
 		int[] ints = new int[len];
@@ -140,7 +145,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Get next array of long.
 	 *
 	 * @return the array on integers
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public long[] xdrDecodeLongVector() throws IOException {
 		final int len = xdrDecodeInt();
 		long[] longs = new long[len];
@@ -154,8 +161,10 @@ public class XdrIn implements XdrDecodingStream {
 	 * Decodes (aka "deserializes") a float (which is a 32 bits wide floating
 	 * point entity) read from a XDR stream.
 	 *
-	 * @return Decoded float value.rs.
+	 * @return Decoded float values.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public float xdrDecodeFloat() throws IOException {
 		return Float.intBitsToFloat(xdrDecodeInt());
 	}
@@ -164,8 +173,10 @@ public class XdrIn implements XdrDecodingStream {
 	 * Decodes (aka "deserializes") a double (which is a 64 bits wide floating
 	 * point entity) read from a XDR stream.
 	 *
-	 * @return Decoded double value.rs.
+	 * @return Decoded double values.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public double xdrDecodeDouble() throws IOException {
 		return Double.longBitsToDouble(xdrDecodeLong());
 	}
@@ -174,7 +185,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Decodes (aka "deserializes") a vector of doubles read from a XDR stream.
 	 *
 	 * @return Decoded double vector.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public double[] xdrDecodeDoubleVector() throws IOException {
 		final int length = xdrDecodeInt();
 		return xdrDecodeDoubleFixedVector(length);
@@ -186,7 +199,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @param length of vector to read.
 	 *
 	 * @return Decoded double vector..
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public double[] xdrDecodeDoubleFixedVector(int length) throws IOException {
 		double[] value = new double[length];
 		for (int i = 0; i < length; ++i) {
@@ -199,7 +214,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Decodes (aka "deserializes") a vector of floats read from a XDR stream.
 	 *
 	 * @return Decoded float vector.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public float[] xdrDecodeFloatVector() throws IOException {
 		final int length = xdrDecodeInt();
 		return xdrDecodeFloatFixedVector(length);
@@ -211,7 +228,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @param length of vector to read.
 	 *
 	 * @return Decoded float vector.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public float[] xdrDecodeFloatFixedVector(int length) throws IOException {
 		float[] value = new float[length];
 		for (int i = 0; i < length; ++i) {
@@ -227,7 +246,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @param buf buffer where date have to be stored
 	 * @param offset in the buffer.
 	 * @param len number of bytes to read.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public void xdrDecodeOpaque(byte[] buf, int offset, int len) throws IOException {		
 		final int padding = (4 - (len & 3)) & 3;
 
@@ -247,6 +268,7 @@ public class XdrIn implements XdrDecodingStream {
 		xdrDecodeOpaque(buf, 0, len);
 	}
 
+	@Override
 	public byte[] xdrDecodeOpaque(final int len) throws IOException {
 		byte[] opaque = new byte[len];
 		xdrDecodeOpaque(opaque, 0, len);
@@ -259,7 +281,10 @@ public class XdrIn implements XdrDecodingStream {
 	 * is pulled off of the XDR stream, so the caller does not need to know
 	 * the exact length in advance. The decoded data is always padded to be
 	 * a multiple of four (because that's what the sender does).
+	 * @return decoded bytes, not necessarily a multiple of four
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public byte [] xdrDecodeDynamicOpaque() throws IOException {
 		final int length = xdrDecodeInt();
 		return xdrDecodeOpaque(length);
@@ -269,7 +294,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Get next String.
 	 *
 	 * @return decoded string
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public String xdrDecodeString() throws IOException {
 		final int len = xdrDecodeInt();
 		
@@ -282,6 +309,7 @@ public class XdrIn implements XdrDecodingStream {
 		}
 	}
 
+	@Override
 	public boolean xdrDecodeBoolean() throws IOException {
 		return xdrDecodeByte() != (byte)0;
 	}
@@ -291,7 +319,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * babble and is 64&nbsp;bits wide) read from a XDR stream.
 	 *
 	 * @return Decoded long value.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public long xdrDecodeLong() throws IOException {
 		if (fragmentRemaining >= 8) {
 			// Only try to read in one assignment if the long is in a single fragment
@@ -312,7 +342,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * length of the vector in advance.
 	 *
 	 * @return The byte vector containing the decoded data.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public byte[] xdrDecodeByteVector() throws IOException {
 		final int length = xdrDecodeInt();
 		return xdrDecodeByteFixedVector(length);
@@ -326,7 +358,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @param length of vector to read.
 	 *
 	 * @return The byte vector containing the decoded data.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public byte[] xdrDecodeByteFixedVector(final int length) throws IOException {
 		byte[] bytes = new byte[length];
 		for (int i = 0; i < length; ++i) {
@@ -339,7 +373,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * Decodes (aka "deserializes") a byte read from this XDR stream.
 	 *
 	 * @return Decoded byte value.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public byte xdrDecodeByte() throws IOException {
 		fill(4);
 		fragmentRemaining -= 4;
@@ -351,7 +387,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * from this XDR stream.
 	 *
 	 * @return Decoded short value.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public short xdrDecodeShort() throws IOException {
 		fill(4);
 		fragmentRemaining -= 4;
@@ -363,7 +401,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * stream.
 	 *
 	 * @return Decoded vector of short integers..
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public short[] xdrDecodeShortVector() throws IOException {
 		final int length = xdrDecodeInt();
 		return xdrDecodeShortFixedVector(length);
@@ -376,7 +416,9 @@ public class XdrIn implements XdrDecodingStream {
 	 * @param length of vector to read.
 	 *
 	 * @return Decoded vector of short integers.
+	 * @throws java.io.IOException if the underlying stream has an IOException
 	 */
+	@Override
 	public short[] xdrDecodeShortFixedVector(final int length) throws IOException {
 		short[] value = new short[length];
 		for (int i = 0; i < length; ++i) {
@@ -385,6 +427,7 @@ public class XdrIn implements XdrDecodingStream {
 		return value;
 	}
 
+	@Override
 	public void close() {
 		// nop
 	}

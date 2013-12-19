@@ -132,9 +132,9 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			if (!xdr_int(&xdro, &val)) throw muscle_exception("Cannot write dimensions");
 		}
 	}
+	// Send data
 	if (!xdrrec_endofrecord(&xdro, 1)) throw muscle_exception("Cannot send data");
-	
-	// Decode
+	// Start decoding
 	if (!xdrrec_skiprecord(&xdri)) throw muscle_exception("Cannot receive data");
 	
 	switch (opcode) {

@@ -73,6 +73,7 @@ public class Scale implements java.io.Serializable {
 		return hash;
 	}
 	
+	@Override
 	public boolean equals(Object obj) {
 		if(obj != null && obj.getClass().equals(this.getClass())) {
 			Scale other = (Scale)obj;
@@ -95,6 +96,7 @@ public class Scale implements java.io.Serializable {
 		return false;
 	}
 	
+	@Override
 	public String toString() {
 		StringBuilder text = new StringBuilder(30);
 		text.append("dt:").append(dt);

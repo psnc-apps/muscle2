@@ -25,7 +25,13 @@
 package muscle.net;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,27 +39,19 @@ import java.util.logging.Logger;
 public abstract class SocketFactory {
 	private final static Logger logger = Logger.getLogger(SocketFactory.class.getName());
 
-	protected static final String PROP_PORT_RANGE_MIN = "pl.psnc.mapper.muscle.portrange.min";
-	protected static final String PROP_PORT_RANGE_MAX = "pl.psnc.mapper.muscle.portrange.max";
+	private final static String PROP_PORT_RANGE_MIN = System.getProperty("pl.psnc.mapper.muscle.portrange.min");
+	private final static String PROP_PORT_RANGE_MAX = System.getProperty("pl.psnc.mapper.muscle.portrange.max");
+	protected final static String PROP_BIND_INTERFACE = System.getProperty("muscle.net.bindinf");
+	protected final static String PROP_BIND_HOST = System.getProperty("muscle.net.bindaddr");
 
-	protected int portMin = 9000;
-	protected int portMax = 9500;
+	protected final static int portMin = PROP_PORT_RANGE_MIN == null ? 9000 : Integer.valueOf(PROP_PORT_RANGE_MIN);
+	protected final static int portMax = PROP_PORT_RANGE_MAX == null ? 9500 : Integer.valueOf(PROP_PORT_RANGE_MAX);
 
-	public SocketFactory() {
-		if (System.getProperty(PROP_PORT_RANGE_MIN) != null) {
-			portMin = Integer.valueOf(System.getProperty(PROP_PORT_RANGE_MIN));
-		}
-
-		if (System.getProperty(PROP_PORT_RANGE_MAX) != null) {
-			portMax = Integer.valueOf(System.getProperty(PROP_PORT_RANGE_MAX));
-		}
-	}
-	
 	public abstract Socket createSocket();
 
 	public abstract ServerSocket createServerSocket(int port, int backlog, InetAddress addr) throws IOException;
 	
-	protected ServerSocket createServerSocketInRange(int backlog, InetAddress addr) throws IOException {
+	protected static ServerSocket createServerSocketInRange(int backlog, InetAddress addr) throws IOException {
 		ServerSocket ss = null;
 
 		for (int i = portMin; i <= portMax; i++) {
@@ -68,31 +66,28 @@ public abstract class SocketFactory {
 		
 		if (ss == null) {
 			throw new BindException("Failed to bind to ports between " + portMin + " and " + portMax + ", inclusive.");
-		}
-		else {
+		} else {
 			return ss;
 		}
 	}
 	
 	public static InetAddress getMuscleHost() throws UnknownHostException {
-		String addrStr = System.getProperty("muscle.net.bindaddr");
 		InetAddress addr = null;
-		if (addrStr != null) {
+		if (PROP_BIND_HOST != null) {
 			try {
-				addr = InetAddress.getByName(addrStr);
+				addr = InetAddress.getByName(PROP_BIND_HOST);
 			} catch (UnknownHostException e) {
-				logger.log(Level.WARNING, "Hostname {0} is not known. Using default host instead.", addrStr);
+				logger.log(Level.WARNING, "Hostname <{0}> is unknown. Using default host instead.", PROP_BIND_HOST);
 			} catch (SecurityException e) {					
-				logger.log(Level.WARNING, "Hostname " + addrStr + " is not allowed not be determined. Using default host instead.", e);
+				logger.log(Level.WARNING, "Hostname <" + PROP_BIND_HOST + "> is not allowed not be determined. Using default host instead.", e);
 			}
 		}
 
-		String interfaceStr = System.getProperty("muscle.net.bindinf");
-		if (interfaceStr != null) {
+		if (PROP_BIND_INTERFACE != null) {
 			try {
-				NetworkInterface inf = NetworkInterface.getByName(interfaceStr);
+				NetworkInterface inf = NetworkInterface.getByName(PROP_BIND_INTERFACE);
 				if (inf == null) {
-					logger.log(Level.WARNING, "Interface {0} could not be used. Using localhost instead.", interfaceStr);
+					logger.log(Level.WARNING, "Interface {0} could not be used. Using localhost instead.", PROP_BIND_INTERFACE);
 				} else {
 					Enumeration<InetAddress> addrs = inf.getInetAddresses();
 					if (addrs.hasMoreElements()) {
@@ -106,20 +101,19 @@ public abstract class SocketFactory {
 								}
 							}
 							if (!hasAddr) {
-								logger.log(Level.WARNING, "Given address {0} does not match interface {1}. Using {1}.", new Object[] {addrStr, interfaceStr});
+								logger.log(Level.WARNING, "Given address {0} does not match interface {1}. Using {1}.", new Object[] {PROP_BIND_HOST, PROP_BIND_INTERFACE});
 								addr = null;
 							}
 						}
 						if (addr == null) {
 							addr = inf.getInetAddresses().nextElement();
 						}
-					}
-					else {
-						logger.log(Level.WARNING, "Interface {0} does not have an IP address. Using localhost instead.", interfaceStr);
+					} else {
+						logger.log(Level.WARNING, "Interface {0} does not have an IP address. Using localhost instead.", PROP_BIND_INTERFACE);
 					}
 				}
 			} catch (SocketException ex) {
-				logger.log(Level.WARNING, "Interface " + addrStr + " could not be used. Using localhost instead.", ex);
+				logger.log(Level.WARNING, "Interface " + PROP_BIND_HOST + " could not be used. Using localhost instead.", ex);
 			}
 		}
 		if (addr == null) {

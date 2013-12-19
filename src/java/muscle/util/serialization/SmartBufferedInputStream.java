@@ -7,9 +7,6 @@ package muscle.util.serialization;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -87,6 +84,7 @@ public class SmartBufferedInputStream extends InputStream {
 		}
 	}
 
+	@Override
 	public void close() throws IOException {
 		size = 0;
 		in.close();
