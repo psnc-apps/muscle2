@@ -7,7 +7,8 @@
 //
 
 #include "custom_serializer.h"
-#include <cstdlib>
+#include <cstdlib> // free()
+#include <cstring> // memcpy, strlen
 
 #define NEGATIVE_BIT (0x80000000)
 
@@ -15,7 +16,7 @@ namespace muscle {
 	namespace net {
 		static bool isLittleEndian() {
 			union {
-				uint32_t input;
+				int32_t input;
 				char output[4];
 			} endianInt;
 			endianInt.input = 0x01020304;
@@ -332,7 +333,20 @@ namespace muscle {
 			}
 			return value;
 		}
-
+		
+		void custom_deserializer::readArrayLen(size_t *const len, const bool checklen)
+		{
+			if (len == NULL)
+				throw muscle_exception("Length argument is mandatory");
+			
+			const size_t recvLen = decodeInt();
+			if (checklen && *len < recvLen) {
+				logger::severe("Maximum array length %zu provided (%zu received)", *len, recvLen);
+				throw muscle_exception("Provided maximum array length is exceeded");
+			}
+			
+			*len = recvLen;
+		}
 	}
 }
 

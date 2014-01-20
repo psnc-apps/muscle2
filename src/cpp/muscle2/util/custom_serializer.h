@@ -10,7 +10,7 @@
 #define __CMuscle__custom_serializer__
 
 #include "msocket.h"
-#include "serialization.h"
+#include <sys/types.h>
 
 namespace muscle {
 	namespace net {
@@ -192,19 +192,7 @@ namespace muscle {
 				return *buffer_ptr++;
 			}
 			
-			inline void readArrayLen(size_t * const len, const bool checklen)
-			{
-				if (len == NULL)
-					throw muscle_exception("Length argument is mandatory");
-				
-				const size_t recvLen = decodeInt();
-				if (checklen && *len < recvLen) {
-					logger::severe("Maximum array length %zu provided (%zu received)", *len, recvLen);
-					throw muscle_exception("Provided maximum array length is exceeded");
-				}
-			
-				*len = recvLen;
-			}
+			void readArrayLen(size_t *len, bool checklen);
 			
 			void fill(size_t sz);
 			void read(size_t sz);
