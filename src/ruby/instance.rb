@@ -2,10 +2,17 @@ require 'set'
 
 class Component
 	@@comps = Components.instance
-	
+	@@instanceClsMap = {:native => 'muscle.core.standalone.NativeKernel',
+                      :mpi    => 'muscle.core.standalone.MPIKernel'}
+  
 	def initialize(name, cls, with_env = {})
-		@name = name
-		@cls = cls
+    @name = name
+
+    if @@instanceClsMap.has_key?(cls)
+      @cls = @@instanceClsMap[cls]
+    else
+      @cls = cls
+    end
 		@env = {}
 		@out = Set.new
 		@in = Set.new

@@ -1,5 +1,5 @@
 # declare kernels
-w = Instance.new('w', 'muscle.core.standalone.NativeKernel')
+w = Instance.new('w', :native)
 r = Instance.new('r', 'examples.simplejava.ConsoleWriter')
 
 # configure connection scheme
