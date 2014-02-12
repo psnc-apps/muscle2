@@ -75,6 +75,7 @@ class JVM
 		JVM.add_prop(env, command, Muscle.jclass,             'muscle.Env dump uri')
 		JVM.add_prop(env, command, 'java.io.tmpdir', 	        'tmp_path')
 		JVM.add_prop(env, command, 'muscle.native.tmpfile',   'native_tmp_file')
+		JVM.add_prop(env, command, 'muscle.native.reconnect', 'native_reconnect')
 		JVM.add_prop(env, command, 'muscle.manager.bindport', 'bindport')
 		JVM.add_prop(env, command, 'muscle.net.bindaddr',     'bindaddr')
 		JVM.add_prop(env, command, 'muscle.net.bindinf',      'bindinf')

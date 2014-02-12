@@ -113,7 +113,10 @@ muscle_error_t env::init(int *argc, char ***argv)
 	{
 		ep.resolve();
 #ifdef USE_XDR
-		comm = new XdrCommunicator(ep);
+		char *reconnect_str = getenv("MUSCLE_GATEWAY_RECONNECT");
+		bool reconnect = reconnect_str ? atoi(reconnect_str) > 0 : false;
+        
+		comm = new XdrCommunicator(ep, reconnect);
 #else
 		comm = new CustomCommunicator(ep);
 #endif
@@ -126,7 +129,6 @@ muscle_error_t env::init(int *argc, char ***argv)
 	kernel_name = comm->retrieve_string(PROTO_KERNEL_NAME, NULL);
 	tmp_path = comm->retrieve_string(PROTO_TMP_PATH, NULL);
 	comm->execute_protocol(PROTO_LOG_LEVEL, NULL, MUSCLE_INT32, NULL, 0, &log_level, NULL);
-	
 	logger::initialize(kernel_name.c_str(), tmp_path.c_str(), log_level, is_main_processor);
 	return MUSCLE_SUCCESS;
 }
@@ -139,7 +141,7 @@ void env::finalize(void)
 	logger::finest("muscle::env::finalize() ");
 #endif
 	comm->execute_protocol(PROTO_FINALIZE, NULL, MUSCLE_RAW, NULL, 0, NULL, NULL);
-	delete comm;
+    delete comm;
     comm = NULL;
     
 	if (muscle_pid > 0)

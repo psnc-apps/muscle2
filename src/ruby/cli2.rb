@@ -62,6 +62,7 @@ class MuscleCli
 		@parser.on('--mpi', 'runs MUSCLE on MPI rank 0, and calls the Java "execute()" method on other ranks') { @env['use_mpi'] = true }
 		@parser.on('-n','--native', 'start submodel binary first (for standalone native binary)') { @env['native'] = true }
 		@parser.on('-N','--native-tmp-file ARG', 'file to write host and port to when communicating with native code') { |arg| @env['native_tmp_file'] = arg }
+    @parser.on('--native-reconnect', 'Reset connection with native executable after each message (for BlueGene/Q)') { @env['native_reconnect'] = true }
 		@parser.on('-t','--threads N_THREADS', 'Specify the number of threads running the models. Only valid with classes inheriting Mapper or Submodel.') { |arg| @env['instancethreads'] = arg.to_i }
 
 		# Networking flags

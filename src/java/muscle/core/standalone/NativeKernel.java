@@ -51,6 +51,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 
 	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");
+	private final static boolean NATIVE_RECONNECT = System.getProperty("muscle.native.reconnect") == null ? false : Boolean.parseBoolean(System.getProperty("muscle.native.reconnect"));
 	private final Object childLock = new Object();
 	private SerializableDatatype type;
 	private Thread processThread;
@@ -193,7 +194,8 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 
 		pb.environment().put("MUSCLE_GATEWAY_PORT", port);
 		pb.environment().put("MUSCLE_GATEWAY_HOST", host);
-	
+		pb.environment().put("MUSCLE_GATEWAY_RECONNECT", NATIVE_RECONNECT ? "1" : "0");
+		
 		getLogger().log(Level.INFO, "Spawning standalone kernel: {0}", pb.command());
 		getLogger().log(Level.FINE, "Contact information: {0}", port);	
 		
@@ -253,7 +255,7 @@ public class NativeKernel extends CAController  implements NativeGateway.CallLis
 		NativeGateway gateway = null;
 
 		try {
-			gateway = new NativeGateway(this);
+			gateway = NATIVE_RECONNECT ? new NativeReconnectGateway(this) : new NativeGateway(this);
 			gateway.start();
 			String port = Integer.toString(gateway.getPort());
 			String host = gateway.getInetAddress().getHostAddress();

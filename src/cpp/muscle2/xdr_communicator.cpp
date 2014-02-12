@@ -36,7 +36,7 @@
 
 namespace muscle {
 
-XdrCommunicator::XdrCommunicator(net::endpoint &ep) : Communicator(ep), sockfd(sock->getReadSock()) {
+XdrCommunicator::XdrCommunicator(net::endpoint &ep, bool reconn) : Communicator(ep), sockfd(sock->getReadSock()), reconnect(reconn) {
 /*TODO: detect signature in CMake */
 #ifdef __APPLE__
 	xdrrec_create(&xdro, WRITE_BUFSIZE, READ_BUFSIZE, &sockfd, 0, (int (*) (void *, void *, int)) communicator_write_to_socket);
@@ -51,15 +51,19 @@ XdrCommunicator::XdrCommunicator(net::endpoint &ep) : Communicator(ep), sockfd(s
 
 int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len)
 {
+	if (reconnect && !sock) {
+		sock = createSocket();
+		sockfd = sock->getReadSock(); // updates socket in XDR-provided address
+	}
 	// Encode
-	int op = opcode;
-	if (!xdr_int(&xdro, &op)) throw muscle_exception("Cannot write int");
-	
-	if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY || opcode == PROTO_HAS_NEXT || opcode == PROTO_HAS_PROPERTY)
+     int op = opcode;
+     if (!xdr_int(&xdro, &op)) throw muscle_exception("Cannot write int");
+
+    if (opcode == PROTO_SEND || opcode == PROTO_RECEIVE || opcode == PROTO_PROPERTY || opcode == PROTO_HAS_NEXT || opcode == PROTO_HAS_PROPERTY)
 	{
 		char *cid = (char *)(*identifier).c_str(); //we are encoding only - so this is safe
 		if (!xdr_string(&xdro, &cid, (unsigned int)(*identifier).length())) throw muscle_exception("Cannot write identifier " + *identifier);
-	}
+    }
 	if (opcode == PROTO_SEND)
 	{
 		unsigned int count_int;
@@ -134,13 +138,16 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 	}
 	// Send data
 	if (!xdrrec_endofrecord(&xdro, 1)) throw muscle_exception("Cannot send data");
-	// Start decoding
-	if (!xdrrec_skiprecord(&xdri)) throw muscle_exception("Cannot receive data");
-	
-	switch (opcode) {
-		case PROTO_SEND:
-			break;
-		case PROTO_RECEIVE: {
+
+    // Start decoding
+    //Mohamed: no need to receive after PROTO_SEND. This need to change on the server side also.
+    if (opcode != PROTO_SEND)
+        if (!xdrrec_skiprecord(&xdri)) throw muscle_exception("Cannot receive data");
+
+    switch (opcode) {
+    case PROTO_SEND:
+        break;
+    case PROTO_RECEIVE: {
 			unsigned int len;
 			int complex_num;
 			if (!xdr_int(&xdri, &complex_num)) throw muscle_exception("Cannot read data type");
@@ -250,9 +257,19 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			break;
 		case PROTO_FINALIZE:
 			break;
-	}
+    }
+     /*
+     * Mohamed: here we decide to check or not the connection during the next  operation:
+     * - The server does not close the socket connection with the client if the current operation is a SEND.
+     * - The server is obliged to close the socket connection (forced flush)  with the client for
+     * the other operation since they required send/receive of data
+     */
+    if (reconnect && opcode != PROTO_SEND) {
+        delete sock;
+		sock = NULL;
+    }
 	
-	return 1;
+    return 1;
 }
 
 void XdrCommunicator::free_data(void *ptr, muscle_datatype_t type)
