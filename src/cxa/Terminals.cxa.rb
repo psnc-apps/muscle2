@@ -11,7 +11,9 @@ proc.couple(sink, 'largeMask')
 $env["max_timesteps"] = 4
 $env["default_dt"] = 1
 
-src['file'] = File.dirname(__FILE__) + "/../resources/terminal_in.dat"
+abort "Run 'source [MUSCLE_HOME]/etc/muscle.profile' before this script" unless ENV.has_key?('MUSCLE_HOME')
+
+src['file'] = ENV['MUSCLE_HOME'] + '/share/muscle/examples/resources/terminal_in.dat'
 
 sink['file'] = 'boolMask'
 sink['relative'] = true

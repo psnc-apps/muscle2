@@ -1,5 +1,5 @@
 # Set to true to get periodic boundary conditions
-wrapAround = false
+periodicBoundary = false
 
 # declare kernels
 east = Instance.new('east', 'examples.laplace.KernelEast')
@@ -9,7 +9,7 @@ west = Instance.new('west', 'examples.laplace.KernelWest')
 east.couple(west, 'westBoundary' => 'remoteEast')
 west.couple(east, 'eastBoundary' => 'remoteWest')
 
-if wrapAround
+if periodicBoundary
   east.couple(west, 'eastBoundary' => 'remoteWest')
   west.couple(east, 'westBoundary' => 'remoteEast')
 end
@@ -20,4 +20,4 @@ $env['default_dt'] = 1
 $env['nx'] = 100
 $env['ny'] = 50
 $env['dx'] = 4
-$env['wrapAround'] = wrapAround
+$env['wrapAround'] = periodicBoundary

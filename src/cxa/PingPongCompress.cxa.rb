@@ -7,6 +7,7 @@ $env['steps'] = 10
 pong = Instance.new('Pong', 'examples.pingpong.Pong')
 ping = Instance.new('Ping', 'examples.pingpong.Ping')
 
+# configure connection scheme
 ping.couple(pong, {'out' => 'in'}, ['compress'], ['decompress'])
 pong.couple(ping, {'out' => 'in'}, ['compress'], ['decompress'])
 

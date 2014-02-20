@@ -3,14 +3,14 @@ $env['tests_count'] = 5
 $env['start_kiB_per_message'] = 0;
 $env['steps'] = 10
 
-# declare kernels
-ping = Instance.new('Ping', 'examples.pingpong.Ping')
-pong = Instance.new('Pong', 'examples.pingpongcpp.Pong')
-
 abort "Run 'source [MUSCLE_HOME]/etc/muscle.profile' before this script" if not ENV.has_key?('MUSCLE_HOME')
 dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/pingpongcpp'
-pong['command'] = "#{dir}/pong"
 
+# declare kernels
+ping = Instance.new('Ping', 'examples.pingpong.Ping')
+pong = NativeInstance.new('Pong', "#{dir}/pong", java_class: 'examples.pingpongcpp.Pong')
+
+# configure connection scheme
 ping.couple(pong, 'out' => 'in')
 pong.couple(ping, 'out' => 'in')
 

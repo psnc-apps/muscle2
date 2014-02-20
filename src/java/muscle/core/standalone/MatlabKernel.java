@@ -67,7 +67,6 @@ public class MatlabKernel extends NativeKernel {
 		command.add("-nodisplay");
 
 		String muscleHome = System.getenv("MUSCLE_HOME");
-
 		if (muscleHome == null) {
 			throw new IllegalStateException("MUSCLE_HOME not set");
 		}
@@ -91,5 +90,4 @@ public class MatlabKernel extends NativeKernel {
 			command.addAll(Arrays.asList(args));
 		}
 	}
-
 }
