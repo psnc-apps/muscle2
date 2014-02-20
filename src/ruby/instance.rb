@@ -93,8 +93,8 @@ class MPIInstance < NativeInstance
   def initialize(name, command, env = {})
     env[:java_class] = :mpi unless env[:java_class]
     super(name, command, env)
-    self['mpiexec_command'] = env[:mpi_command]
-    self['mpiexec_args'] = env[:mpi_args]
+    self['mpiexec_command'] = env[:mpiexec]
+    self['mpiexec_args'] = env[:mpiexec_args]
   end
 end
 
