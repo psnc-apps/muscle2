@@ -26,7 +26,7 @@ namespace muscle {
 		const bool custom_serializer::needToConvert = !isLittleEndian();
 		const bool custom_deserializer::needToConvert = !isLittleEndian();
 		
-		custom_serializer::custom_serializer(muscle::net::ClientSocket *sock, size_t bufsize) : sock(sock), bufsize(bufsize)
+		custom_serializer::custom_serializer(muscle::net::ClientSocket **sock, size_t bufsize) : sock(sock), bufsize(bufsize)
 		{
 			if (bufsize < 1024)
 				throw muscle_exception("Minimum buffer size is 1024 bytes");
@@ -45,7 +45,7 @@ namespace muscle {
 			size_t len = buffer_ptr - buffer - 4;
 			buffer_ptr = buffer;
 			writeInt((uint32_t)(len | NEGATIVE_BIT));
-			sock->sendAll(buffer, len + 4);
+			(*sock)->sendAll(buffer, len + 4);
 		}
 		
 		void custom_serializer::encodeString(const char * const value)
@@ -119,8 +119,8 @@ namespace muscle {
 				// rewind buffer
 				buffer_ptr = buffer + 4;
 				
-				sock->sendAll(buffer, 8);
-				sock->sendAll(data, len);
+				(*sock)->sendAll(buffer, 8);
+				(*sock)->sendAll(data, len);
 			} else {
 				writeInt((uint32_t)reported_len);
 				memcpy(buffer_ptr, data, len);
@@ -133,10 +133,10 @@ namespace muscle {
 			size_t len = buffer_ptr - buffer - 4;
 			buffer_ptr = buffer;
 			writeInt((uint32_t)len);
-			sock->sendAll(buffer, len + 4);
+			(*sock)->sendAll(buffer, len + 4);
 		}
 		
-		custom_deserializer::custom_deserializer(muscle::net::ClientSocket *sock, size_t bufsize) : sock(sock), bufsize(bufsize), fragmentRemaining(0), lastFragment(false)
+		custom_deserializer::custom_deserializer(muscle::net::ClientSocket **sock, size_t bufsize) : sock(sock), bufsize(bufsize), fragmentRemaining(0), lastFragment(false)
 		{
 			if (bufsize < 1024)
 				throw muscle_exception("Minimum buffer size is 1024 bytes");
@@ -156,7 +156,7 @@ namespace muscle {
 			if (fragmentRemaining == 0) {
 				// In case there is no more data in the current XDR record
 				// (since we already saw the last fragment), throw an exception.
-				if (lastFragment) throw muscle_exception("Record empty.");
+				if (lastFragment) throw muscle_exception("Record empty");
 				
 				read(4);
 				fragmentRemaining = 4;
@@ -185,7 +185,7 @@ namespace muscle {
 					}
 					buffer_ptr = (unsigned char *)buffer;
 				}
-				filledSize += sock->recvAll(buffer + filledSize, minimal - filledSize, bufsize - filledSize);;
+				filledSize += (*sock)->recvAll(buffer + filledSize, minimal - filledSize, bufsize - filledSize);;
 			}
 		}
 		
@@ -202,7 +202,7 @@ namespace muscle {
 						fragmentRemaining -= filledSize;
 						buffer_ptr = (unsigned char *)buffer;
 						filledSize = 0;
-						ssize_t recvd = sock->recv(buffer, fragmentRemaining < bufsize ? fragmentRemaining : bufsize);
+						ssize_t recvd = (*sock)->recv(buffer, fragmentRemaining < bufsize ? fragmentRemaining : bufsize);
 						if (recvd == -1)
 							throw muscle_exception("Stream does not do full seek");
 						
@@ -268,7 +268,7 @@ namespace muscle {
 						filledSize -= newBytes;
 					}
 				} else if (toFill > 1024) {
-					newBytes = sock->recv(value + recvd, toFill);
+					newBytes = (*sock)->recv(value + recvd, toFill);
 					if (newBytes == -1)
 						throw muscle_exception("Stream does not do full seek");
 				} else {

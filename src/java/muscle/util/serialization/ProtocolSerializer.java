@@ -19,23 +19,40 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-package muscle.client.communication;
+package muscle.util.serialization;
 
-import muscle.util.serialization.Protocol;
+import java.io.IOException;
 
 /**
- * Values that are sent over the MUSCLE data connections over TCP/IP.
- * Converts between numeric and semantic variables explicitly, with valueOf()
- * and intValue().
- * 
- * @author Joris Borgdorff
+ * Manage the serialization and deserialization of a protocol
+ * @author joris
  */
-public enum TcpDataProtocol implements Protocol {
-	OBSERVATION(0), SIGNAL(1), KEEPALIVE(2), FINISHED(3), ERROR(-2), CLOSE(-1), MAGIC_NUMBER(134405);
-
-	private final int num;
+public class ProtocolSerializer<T extends Enum<T>&Protocol> {
+	private final T[] values;
+	private final int[] nums;
 	
-	TcpDataProtocol(int n) { num = n; }
-	@Override
-	public int intValue() { return num; }
+	public ProtocolSerializer(T[] enumBase) {
+		values = enumBase;
+		nums = new int[values.length];
+
+		for (int i = 0; i < values.length; i++) {
+			nums[i] = values[i].intValue();
+		}
+	}
+	
+	public T read(DeserializerWrapper in) throws IOException {
+		return valueOf(in.readInt());
+	}
+	public void write(SerializerWrapper out, T value) throws IOException {
+		out.writeInt(value.intValue());
+	}
+	
+	public T valueOf(int proto) {
+		for (int i = 0; i < nums.length; i++) {
+			if (nums[i] == proto) {
+				return values[i];
+			}
+		}
+		throw new IllegalArgumentException("Protocol " + proto + " not registered");
+	}
 }

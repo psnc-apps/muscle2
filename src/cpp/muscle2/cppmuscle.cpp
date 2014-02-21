@@ -19,7 +19,7 @@
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define USE_XDR
+//#define USE_XDR
 //#define CPPMUSCLE_TRACE
 
 #include "cppmuscle.hpp"
@@ -112,13 +112,12 @@ muscle_error_t env::init(int *argc, char ***argv)
 	try
 	{
 		ep.resolve();
-#ifdef USE_XDR
 		char *reconnect_str = getenv("MUSCLE_GATEWAY_RECONNECT");
 		bool reconnect = reconnect_str ? atoi(reconnect_str) > 0 : false;
-        
+#ifdef USE_XDR
 		comm = new XdrCommunicator(ep, reconnect);
 #else
-		comm = new CustomCommunicator(ep);
+		comm = new CustomCommunicator(ep, reconnect);
 #endif
 	} catch (muscle_exception& e) {
 		logger::severe("Could not connect to MUSCLE2 on address tcp://%s", ep.str().c_str());

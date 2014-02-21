@@ -18,7 +18,7 @@ namespace muscle {
 	class CustomCommunicator : public Communicator
 	{
 	public:
-		CustomCommunicator(net::endpoint& ep);
+		CustomCommunicator(net::endpoint& ep, bool reconn);
 		virtual ~CustomCommunicator();
 		
 		int execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len);
@@ -29,6 +29,8 @@ namespace muscle {
 
 		net::custom_deserializer *sin;
 		net::custom_serializer *sout;
+		
+		bool reconnect;
 		
 		static const size_t BUFSIZE_IN, BUFSIZE_OUT;
 	};

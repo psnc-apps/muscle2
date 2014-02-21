@@ -17,10 +17,10 @@ using namespace muscle::net;
 namespace muscle {
 	const size_t CustomCommunicator::BUFSIZE_IN = 65536;
 	const size_t CustomCommunicator::BUFSIZE_OUT = 65536;
-	CustomCommunicator::CustomCommunicator(net::endpoint& ep) : Communicator(ep)
+	CustomCommunicator::CustomCommunicator(net::endpoint& ep, bool reconn) : Communicator(ep), reconnect(reconn)
 	{
-		sin = new custom_deserializer(sock, BUFSIZE_IN);
-		sout = new custom_serializer(sock, BUFSIZE_OUT);
+		sin = new custom_deserializer(&sock, BUFSIZE_IN);
+		sout = new custom_serializer(&sock, BUFSIZE_OUT);
 	}
 	
 	CustomCommunicator::~CustomCommunicator()
@@ -29,9 +29,13 @@ namespace muscle {
 		delete sout;
 	}
 	
-	
 	int CustomCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *identifier, muscle_datatype_t type, const void *msg, size_t msg_len, void *result, size_t *result_len)
 	{
+		
+		if (reconnect && !sock) {
+			sock = createSocket();
+		}
+		
 		// Encode
 		sout->encodeInt(opcode);
 		
@@ -75,6 +79,9 @@ namespace muscle {
 		// Send data
 		sout->flush();
 
+//		if (opcode != PROTO_SEND)
+//			sin->endDecoding();
+		
 		switch (opcode) {
 			case PROTO_SEND:
 				break;
@@ -131,10 +138,22 @@ namespace muscle {
 				*(char **)result = sin->decodeString(*(char **)result, result_len);
 				break;
 			case PROTO_FINALIZE:
-				return 1; // don't call endDecoding: the socket will be closed
+				return 1; // XXXdon't call endDecoding: the socket will be closed
 		}
-		
-		sin->endDecoding();
+			
+		if (opcode != PROTO_SEND) {
+			sin->endDecoding();
+			/*
+			 * Mohamed: here we decide to check or not the connection during the next  operation:
+			 * - The server does not close the socket connection with the client if the current operation is a SEND.
+			 * - The server is obliged to close the socket connection (forced flush)  with the client for
+			 * the other operation since they required send/receive of data
+			 */
+			if (reconnect) {
+				delete sock;
+				sock = NULL;
+			}
+		}
 		
 		return 1;
 	}

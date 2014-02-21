@@ -47,7 +47,7 @@ import muscle.util.data.SerializableDatatype;
    * It builds the command line arguments from the parameters debugger, command and args. It keeps in contact
    * with the started command using a TCP IP connection that is controlled by NativeGateway.
    */
-public class NativeKernel extends CAController  implements NativeGateway.CallListener {
+public class NativeKernel extends CAController implements NativeController {
 
 	private final static Logger logger = Logger.getLogger(NativeKernel.class.toString());
 	private final static String TMPFILE = System.getProperty("muscle.native.tmpfile");

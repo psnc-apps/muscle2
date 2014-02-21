@@ -42,6 +42,7 @@ import muscle.util.serialization.CustomDeserializerWrapper;
 import muscle.util.serialization.CustomSerializer;
 import muscle.util.serialization.CustomSerializerWrapper;
 import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.serialization.SerializerWrapper;
 import muscle.util.serialization.SocketChannelInputStream;
 import muscle.util.serialization.SocketChannelOutputStream;
@@ -59,18 +60,19 @@ import muscle.util.serialization.XdrSerializerWrapper;
  */
 public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
-	protected final CallListener listener;
+	protected final NativeController listener;
 	protected Socket nativeSock;
 	protected DeserializerWrapper in;
 	protected SerializerWrapper out;
-		
+	protected final ProtocolSerializer<NativeProtocol> protocol = new ProtocolSerializer<NativeProtocol>(NativeProtocol.values());
+	
 	private final static Logger logger = Logger.getLogger(NativeGateway.class.getName());
 	private final static boolean USE_NIO = System.getProperty("muscle.core.standalone.use_nio") == null ? false : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_nio"));
-	private final static boolean USE_XDR = System.getProperty("muscle.core.standalone.use_xdr") == null ? true : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_xdr"));
+	private final static boolean USE_XDR = System.getProperty("muscle.core.standalone.use_xdr") == null ? false : Boolean.parseBoolean(System.getProperty("muscle.core.standalone.use_xdr"));
 	private volatile boolean isDone;
 	protected boolean isDisposed;
 	
-	public NativeGateway(CallListener listener) throws UnknownHostException, IOException {
+	public NativeGateway(NativeController listener) throws UnknownHostException, IOException {
 		super("NativeGateway-" + listener.getKernelName());
 		
 		if (USE_NIO) {
@@ -95,11 +97,11 @@ public class NativeGateway extends Thread implements Disposable {
 			if (isFinestLog) logger.finest("Starting decoding...");
 			in.refresh();
 
-			int proto = handleProtocol();
+			NativeProtocol proto = handleProtocol();
 
-			if (proto == 0) {
+			if (proto == NativeProtocol.FINALIZE) {
 				return; // Finalized, we can exit now
-			} else if (proto != 4) { // Flush, except when sending message onwards
+			} else if (proto != NativeProtocol.SEND) { // Flush, except when forwarding message
 				if (isFinestLog) logger.finest("flushing response");
 				out.flush();
 			}
@@ -109,29 +111,29 @@ public class NativeGateway extends Thread implements Disposable {
 		}
 	}
 	
-	protected int handleProtocol() throws IOException {
+	protected NativeProtocol handleProtocol() throws IOException {
 		boolean isFinestLog = logger.isLoggable(Level.FINEST);
-		int operationCode = in.readInt();
-		if (isFinestLog) logger.log(Level.FINEST, "Operation code = {0}", operationCode);
+		NativeProtocol proto = protocol.read(in);
+		if (isFinestLog) logger.log(Level.FINEST, "Operation code = {0}", proto.intValue());
 
-		switch (operationCode) {
-			case 0:
+		switch (proto) {
+			case FINALIZE:
 			{
 				if (isFinestLog) logger.finest("finalize() request.");
 				in.close();
 				out.close();
 				listener.isFinished();
 				if (isFinestLog) logger.finest("Native Process Gateway exiting...");
-				return 0;
+				break;
 			}	
-			case 1:
+			case GET_KERNEL_NAME:
 			{
 				if (isFinestLog) logger.finest("getKernelName() request.");
 				out.writeString(listener.getKernelName());
 				if (isFinestLog) logger.log(Level.FINEST, "Kernel name sent : {0}", listener.getKernelName());
 				break;
 			}
-			case 2:
+			case GET_PROPERTY:
 			{
 				if (isFinestLog) logger.finest("getProperty() request.");
 				String name = in.readString();
@@ -147,7 +149,7 @@ public class NativeGateway extends Thread implements Disposable {
 				}
 				break;
 			}
-			case 3:
+			case WILL_STOP:
 			{
 				if (isFinestLog) logger.finest("willStop() request.");
 				boolean stop = listener.willStop();
@@ -155,7 +157,7 @@ public class NativeGateway extends Thread implements Disposable {
 				if (isFinestLog) logger.log(Level.FINEST, "Stop?: {0}", stop);
 				break;
 			}
-			case 4:
+			case SEND:
 			{
 				if (isFinestLog) logger.finest("send() request.");
 				String entranceName = in.readString();
@@ -165,7 +167,7 @@ public class NativeGateway extends Thread implements Disposable {
 				if (isFinestLog) logger.finest("data sent");
 				break;
 			}
-			case 5:
+			case RECEIVE:
 			{
 				if (isFinestLog) logger.finest("receive() request.");
 				String exitName = in.readString();
@@ -182,19 +184,19 @@ public class NativeGateway extends Thread implements Disposable {
 				if (isFinestLog) logger.finest("data encoded");
 				break;
 			}
-			case 6:
+			case GET_PROPERTIES:
 			{
 				if (isFinestLog) logger.finest("getProperties() request.");
 				out.writeString(listener.getProperties());
 				break;
 			}
-			case 7:
+			case GET_TMP_PATH:
 			{
 				if (isFinestLog) logger.finest("getTmpPath() request.");
 				out.writeString(listener.getTmpPath());
 				break;
 			}
-			case 8:
+			case HAS_NEXT:
 			{
 				if (isFinestLog) logger.finest("hasNext() request.");
 				String exit = in.readString();
@@ -204,14 +206,14 @@ public class NativeGateway extends Thread implements Disposable {
 				if (isFinestLog) logger.log(Level.FINEST, "hasNext({0}) = {1}", new Object[] {exit, hasNext});
 				break;
 			}
-			case 9:
+			case GET_LOGLEVEL:
 			{
 				final int logLevel = listener.getLogLevel();
 				if (isFinestLog) logger.log(Level.FINEST, "request getLogLevel() = {0}", logLevel);
 				out.writeInt(logLevel);
 				break;
 			}
-			case 10:
+			case HAS_PROPERTY:
 			{
 				if (isFinestLog) logger.finest("hasProperty() request.");
 				String name = in.readString();
@@ -220,10 +222,8 @@ public class NativeGateway extends Thread implements Disposable {
 				if (isFinestLog) logger.log(Level.FINEST, "hasProperty({0}) = {1} request.", new Object[] {name, Boolean.valueOf(result)});
 				break;
 			}
-			default:
-				throw new IOException("Unknown operation code " + operationCode);	
 		}
-		return operationCode;
+		return proto;
 	}
 	
 	protected void acceptSocket() throws IOException {
@@ -318,33 +318,5 @@ public class NativeGateway extends Thread implements Disposable {
 				}
 			}
 		}
-	}
-	
-	/** Implement this interface to be able to communicate with a native MUSCLE command. */
-	public interface CallListener {
-		/* OPCODE = 0 */
-		public void isFinished();
-		/* OPCODE = 1 */
-		public String getKernelName();
-		/* OPCODE = 2 */
-		public String getProperty(String name);
-		/* OPCODE = 10 */
-		public boolean hasProperty(String name);
-		/* OPCODE = 3 */
-		public boolean willStop();
-		/* OPCODE = 4 */
-		public void send(String entranceName, SerializableData data);
-		/* OPCODE = 5 */
-		public SerializableData receive(String exitName);
-		/* OPCODE = 6 */
-		public String getProperties();
-		/* OPCODE = 7 */
-		public String getTmpPath();
-		/* OPCODE = 8 */
-		public boolean hasNext(String exitName);
-		/* OPCODE = 9 */
-		public int getLogLevel();
-		/* no opcode */
-		public void fatalException(Throwable thr);
 	}
 }

@@ -19,23 +19,23 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-package muscle.client.communication;
 
-import muscle.util.serialization.Protocol;
+package muscle.core.standalone;
 
-/**
- * Values that are sent over the MUSCLE data connections over TCP/IP.
- * Converts between numeric and semantic variables explicitly, with valueOf()
- * and intValue().
- * 
- * @author Joris Borgdorff
- */
-public enum TcpDataProtocol implements Protocol {
-	OBSERVATION(0), SIGNAL(1), KEEPALIVE(2), FINISHED(3), ERROR(-2), CLOSE(-1), MAGIC_NUMBER(134405);
+import muscle.util.data.SerializableData;
 
-	private final int num;
-	
-	TcpDataProtocol(int n) { num = n; }
-	@Override
-	public int intValue() { return num; }
+/** Implement this interface to be able to communicate with a native MUSCLE command. */
+public interface NativeController {
+	public void isFinished();
+	public String getKernelName();
+	public String getProperty(String name);
+	public boolean hasProperty(String name);
+	public boolean willStop();
+	public void send(String entranceName, SerializableData data);
+	public SerializableData receive(String exitName);
+	public String getProperties();
+	public String getTmpPath();
+	public boolean hasNext(String exitName);
+	public int getLogLevel();
+	public void fatalException(Throwable thr);	
 }

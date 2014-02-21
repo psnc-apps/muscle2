@@ -24,6 +24,9 @@
  */
 package muscle.manager;
 
+import muscle.util.serialization.Protocol;
+import muscle.util.serialization.ProtocolSerializer;
+
 /**
  *  Operation codes of the SimulationManagerProtocol.
  * 
@@ -49,34 +52,15 @@ package muscle.manager;
  * 
  * @author Joris Borgdorff
  */
-public enum SimulationManagerProtocol {
+public enum SimulationManagerProtocol implements Protocol {
 	LOCATE(0), REGISTER(1), PROPAGATE(2), DEREGISTER(3),
 	UNSUPPORTED(4), WILL_ACTIVATE(5), CLOSE(-1), ERROR(-2), MAGIC_NUMBER(2391029), MAGIC_NUMBER_KEEP_ALIVE(291934),
 	MANAGER_LOCATION(6);
 	
-	private final int num;
-	private final static SimulationManagerProtocol[] values = SimulationManagerProtocol.values();
-	private final static int[] nums = new int[values.length];
-	static {
-		for (int i = 0; i < nums.length; i++) {
-			nums[i] = values[i].num;
-		}
-	}
-	
-	SimulationManagerProtocol(int n) {
-		num = n;
-	}
-	
-	public static SimulationManagerProtocol valueOf(int n) {
-		for (int i = 0; i < nums.length; i++) {
-			if (nums[i] == n) {
-				return values[i];
-			}
-		}
-		return ERROR;
-	}
-	
-	public int intValue() {
-		return num;
-	}
+	public final static ProtocolSerializer<SimulationManagerProtocol> handler = new ProtocolSerializer<SimulationManagerProtocol>(SimulationManagerProtocol.values());
+
+	public final int num;
+	SimulationManagerProtocol(int n) { num = n; }
+	@Override
+	public int intValue() { return num; }
 }

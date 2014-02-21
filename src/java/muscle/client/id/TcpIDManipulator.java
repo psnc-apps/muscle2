@@ -234,7 +234,7 @@ public class TcpIDManipulator implements IDManipulator {
 			
 			// See if the command was understood
 			in.refresh();
-			SimulationManagerProtocol op = SimulationManagerProtocol.valueOf(in.readInt());
+			SimulationManagerProtocol op = SimulationManagerProtocol.handler.read(in);
 			if (op == SimulationManagerProtocol.UNSUPPORTED) {
 				logger.log(Level.WARNING, "Operation {0} is not understood", this.action);
 				in.cleanUp();

@@ -33,6 +33,7 @@ import muscle.id.InstanceID;
 import muscle.id.Location;
 import muscle.net.ProtocolHandler;
 import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -51,34 +52,35 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 
 	@Override
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
+		final ProtocolSerializer<SimulationManagerProtocol> protocol = SimulationManagerProtocol.handler;
 		boolean success = false;
 		boolean resubmit;
 		in.refresh();
-		SimulationManagerProtocol magic_number = SimulationManagerProtocol.valueOf(in.readInt());
-		if (magic_number == SimulationManagerProtocol.CLOSE) {
-			socket.close();
-			return true;
-		} else if (magic_number == SimulationManagerProtocol.MAGIC_NUMBER_KEEP_ALIVE) {
-			resubmit = true;
-		} else if (magic_number != SimulationManagerProtocol.MAGIC_NUMBER) {
-			resubmit = false;
-		} else {
-			out.writeInt(SimulationManagerProtocol.ERROR.intValue());
-			out.flush();
-			socket.close();
-			logger.warning("Protocol for communicating MUSCLE information is not recognized.");
-			return null;
+		SimulationManagerProtocol magic_number = protocol.read(in);
+		switch (magic_number) {
+			case CLOSE:
+				socket.close();
+				return true;
+			case MAGIC_NUMBER_KEEP_ALIVE:
+				resubmit = true;
+				break;
+			case MAGIC_NUMBER:
+				protocol.write(out, SimulationManagerProtocol.ERROR);
+				out.flush();
+				socket.close();
+				logger.warning("Protocol for communicating MUSCLE information is not recognized.");
+				return null;
+			default:
+				resubmit = false;
+				break;
 		}
-		InstanceID id = null;
-		int opnum = in.readInt();
-		SimulationManagerProtocol proto = SimulationManagerProtocol.valueOf(opnum);
-		String name = in.readString();
-		if (proto != SimulationManagerProtocol.MANAGER_LOCATION) {
-			id = new InstanceID(name);
-		}
+		
+		SimulationManagerProtocol proto = protocol.read(in);
+		InstanceID id = new InstanceID(in.readString());
+		
 		switch (proto) {
 			case LOCATE:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				// Flush, to indicate that we are waiting to resolve the location
 				out.flush();
 				try {
@@ -93,36 +95,36 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 				}
 				break;
 			case REGISTER:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				Location loc = decodeLocation(in);
 				id.resolve(loc);
 				success = listener.register(id);
 				out.writeBoolean(success);
 				break;
 			case PROPAGATE:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				success = listener.propagate(id);
 				out.writeBoolean(success);
 				break;
 			case DEREGISTER:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				success = listener.deregister(id);
 				out.writeBoolean(success);
 				break;
 			case WILL_ACTIVATE:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				success = listener.willActivate(id);
 				out.writeBoolean(success);
 				break;
 			case MANAGER_LOCATION:
-				out.writeInt(opnum);
+				protocol.write(out, proto);
 				Location mgrloc = listener.getLocation();
 				encodeLocation(out, mgrloc);
 				success = true;
 				break;
 			default:
 				logger.log(Level.WARNING, "Unsupported operation {0} requested", proto);
-				out.writeInt(SimulationManagerProtocol.UNSUPPORTED.intValue());
+				out.writeInt(SimulationManagerProtocol.UNSUPPORTED.num);
 				break;
 		}
 		out.flush();
@@ -143,6 +145,5 @@ public class SimulationManagerProtocolHandler extends ProtocolHandler<Boolean,Si
 	@Override
 	protected void handleThrowable(Throwable ex) {
 		listener.fatalException(ex);
-	}
-	
+	}	
 }

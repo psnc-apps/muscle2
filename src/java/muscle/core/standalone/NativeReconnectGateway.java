@@ -37,7 +37,7 @@ import muscle.util.concurrency.Disposable;
 public class NativeReconnectGateway extends NativeGateway implements Disposable {
 	private final static Logger logger = Logger.getLogger(NativeReconnectGateway.class.getName());
 	
-	public NativeReconnectGateway(CallListener listener) throws UnknownHostException, IOException {
+	public NativeReconnectGateway(NativeController listener) throws UnknownHostException, IOException {
 		super(listener);
 	}
 	
@@ -54,14 +54,13 @@ public class NativeReconnectGateway extends NativeGateway implements Disposable 
 			if (isFinestLog) logger.finest("Starting decoding...");
 			in.refresh();
 
-			int proto = handleProtocol();
+			NativeProtocol proto = handleProtocol();
 
-			if (isFinestLog) logger.finest("proceeding to next native call");
-			in.cleanUp();
-			
-			if (proto == 0) {
+			if (proto == NativeProtocol.FINALIZE) {
 				return; // Finalized, we can exit now
-			} else if (proto != 4) { // Flush, except when sending message onwards
+			} else if (proto == NativeProtocol.SEND) { // Flush and close socket, except when forwarding message
+				in.cleanUp();
+			} else {
 				if (isFinestLog) logger.finest("flushing response");
 				out.flush();
 				in.close();
@@ -73,6 +72,7 @@ public class NativeReconnectGateway extends NativeGateway implements Disposable 
 				nativeSock.close();
 				nativeSock = null;
 			}
+			if (isFinestLog) logger.finest("proceeding to next native call");
 		}
 	}
 }

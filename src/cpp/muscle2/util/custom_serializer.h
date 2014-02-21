@@ -16,7 +16,7 @@ namespace muscle {
 	namespace net {
 		class custom_serializer {
 		public:
-			custom_serializer(muscle::net::ClientSocket *sock, size_t bufsize);
+			custom_serializer(muscle::net::ClientSocket **sock, size_t bufsize);
 			virtual ~custom_serializer();
 			
 			inline void encodeInt(int32_t value) { writeInt(value); }
@@ -56,7 +56,7 @@ namespace muscle {
 			
 			void flush();
 		private:
-			muscle::net::ClientSocket * const sock;
+			muscle::net::ClientSocket ** const sock;
 			char *buffer;
 			const size_t bufsize;
 			char *buffer_end, *buffer_ptr;
@@ -104,7 +104,7 @@ namespace muscle {
 		
 		class custom_deserializer {
 		public:
-			custom_deserializer(muscle::net::ClientSocket *sock, size_t bufsize);
+			custom_deserializer(muscle::net::ClientSocket **sock, size_t bufsize);
 			virtual ~custom_deserializer();
 			
 			inline int32_t decodeInt() { return readInt(); }
@@ -145,7 +145,7 @@ namespace muscle {
 			
 			void endDecoding();
 		private:
-			muscle::net::ClientSocket * const sock;
+			muscle::net::ClientSocket ** const sock;
 			char *buffer;
 			const size_t bufsize;
 			size_t filledSize;
