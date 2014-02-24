@@ -19,10 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package muscle.client;
 
@@ -34,10 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import muscle.client.communication.PortFactory;
-import muscle.client.communication.TcpPortFactory;
-import muscle.client.communication.TcpIncomingConnectionHandler;
 import muscle.client.communication.LocalDataHandler;
+import muscle.client.communication.PortFactory;
+import muscle.client.communication.TcpIncomingConnectionHandler;
+import muscle.client.communication.TcpPortFactory;
 import muscle.client.id.DelegatingResolver;
 import muscle.client.id.TcpIDManipulator;
 import muscle.client.instance.MultiControllerRunner;
@@ -53,6 +49,9 @@ import muscle.net.CrossSocketFactory;
 import muscle.net.SocketFactory;
 import muscle.util.JVM;
 import muscle.util.concurrency.NamedRunnable;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
+import muscle.util.logging.PlainActivityLogger;
 
 /**
  * @author Joris Borgdorff
@@ -70,6 +69,8 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 	private DisposeOfControllersHook disposeOfControllersHook;
 	private ForcefulQuitHook forcefulQuitHook;
 	private volatile boolean isShutdown;
+	private ActivityListener actLogger;
+	private final static String ACTIVITY_LOGGER = System.getProperty("muscle.client.activity_logger");
 	
 	public static void main(String[] args) {
 		{
@@ -106,6 +107,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		idManipulator = null;
 		isDone = false;
 		isShutdown = false;
+		actLogger = null;
 	}
 	
 	private void init(LocalManagerOptions opts) throws IOException {
@@ -127,6 +129,13 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		String dir = JVM.ONLY.getTmpDirName();
 		TcpLocation loc = new TcpLocation(socketAddr, dir);
 		
+		if (ACTIVITY_LOGGER != null) {
+			if (ACTIVITY_LOGGER.equalsIgnoreCase("PLAIN"))
+				actLogger = new PlainActivityLogger(loc);
+			
+			actLogger.init();
+		}
+		
 		// Create a local resolver
 		idManipulator = new TcpIDManipulator(sf, opts.getManagerSocketAddress(), loc);
 		res = new DelegatingResolver(idManipulator, opts.getAgentNames());
@@ -140,7 +149,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		
 		((TcpLocation)idManipulator.getManagerLocation()).createSymlink("manager", loc);
 		ConnectionScheme connections = new ConnectionScheme(res, opts.getAgents().size());
-			
+		
 		int threads = opts.getThreads();
 		List<InstanceClass> agents = opts.getAgents();
 		if (threads == 0 || threads >= agents.size()) {
@@ -148,7 +157,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 			for (InstanceClass inst : agents) {
 				Identifier id = res.getIdentifier(inst.getName(), IDType.instance);
 				inst.setIdentifier(id);
-				ThreadedInstanceController tc = new ThreadedInstanceController(inst, this, res, factory, connections);
+				ThreadedInstanceController tc = new ThreadedInstanceController(inst, this, res, factory, connections, actLogger);
 				controllers.add(tc);
 			}
 		} else {
@@ -165,7 +174,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 					nextOffset++;
 				}
 				List<InstanceClass> ics = agents.subList(offset, nextOffset);
-				MultiControllerRunner mc = new MultiControllerRunner(ics, this, res, factory, connections);
+				MultiControllerRunner mc = new MultiControllerRunner(ics, this, res, factory, connections, actLogger);
 				controllers.add(mc);
 				offset = nextOffset;
 			}
@@ -216,6 +225,7 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 	@Override
 	public void isFinished(NamedRunnable ic) {
 		logger.log(Level.FINE, "Instance {0} is no longer running.", ic.getName());
+		if (actLogger != null) actLogger.activity(ActivityProtocol.STOP, ic.getName());
 		synchronized (controllers) {
 			controllers.remove(ic);
 			this.tryQuit();
@@ -348,6 +358,9 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 				isDone = true;
 
 				logger.log(Level.INFO, "All local submodels have finished; exiting.");
+				if (actLogger != null) {
+					actLogger.dispose();
+				}
 				if (factory != null) {
 					factory.dispose();
 				}

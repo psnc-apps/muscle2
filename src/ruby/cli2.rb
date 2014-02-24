@@ -55,6 +55,7 @@ class MuscleCli
 		@parser.on('-M','--manager HOST:PORT', 'IP address/hostname and port of the Simulation Manager') {|arg| @env['manager'] = arg; }
 		@parser.on('-a','--allkernels', 'launch all kernels') { @env['allkernels'] = true }
 		@parser.on('-p','--tmp-path ARG', 'path where MUSCLE and model output will go') {|arg| @env['tmp_path'] = mkTmpPath(arg) }
+		@parser.on('-l','--activity-logger ARG', 'activity to log (default: none, options: plain)') {|arg| @env['activity_logger'] = arg }
 		@parser.on('-s','--stage PATHS', 'stage in files or directories to tmp path before running, separated by colons ":"') { |arg| @env['stage_files'] = arg.split(':') }
 		@parser.on('-z','--gzip-stage PATHS', 'stage in zipped files or directories to tmp path before running, separated by colons ":"') { |arg| @env['gzip_stage_files'] = arg.split(':') }
 

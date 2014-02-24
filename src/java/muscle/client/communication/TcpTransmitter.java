@@ -37,6 +37,7 @@ import muscle.net.AliveSocket;
 import muscle.net.SocketFactory;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DataConverter;
+import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -53,6 +54,7 @@ public class TcpTransmitter<T extends Serializable> extends Transmitter<T, Seria
 	private final static Logger logger = Logger.getLogger(TcpTransmitter.class.getName());
 	private final static long socketKeepAlive = 5000*1000;
 	private final SocketFactory socketFactory;
+	private final static ProtocolSerializer<TcpDataProtocol> protocol = TcpDataProtocol.handler;
 	
 	public TcpTransmitter(SocketFactory sf, DataConverter<Observation<T>, Observation<SerializableData>> converter, PortalID portalID) {
 		super(converter, portalID);
@@ -97,7 +99,7 @@ public class TcpTransmitter<T extends Serializable> extends Transmitter<T, Seria
 				try {
 					SerializerWrapper out = liveSocket.getOutput();
 
-					out.writeInt(TcpDataProtocol.MAGIC_NUMBER.intValue());
+					protocol.write(out, TcpDataProtocol.MAGIC_NUMBER);
 					if (obs != null) {
 						sendMessage(out, obs);
 					}
@@ -153,7 +155,7 @@ public class TcpTransmitter<T extends Serializable> extends Transmitter<T, Seria
 		if (logger.isLoggable(Level.FINEST)) {
 			logger.log(Level.FINEST, "Sending data message of type {0} to {1}", new Object[] {obs.getData().getType(), portalID});
 		}
-		out.writeInt(TcpDataProtocol.OBSERVATION.intValue());
+		protocol.write(out, TcpDataProtocol.OBSERVATION);
 		out.writeString(portalID.getName());
 		out.writeInt(portalID.getType().ordinal());
 		out.writeDouble(obs.getTimestamp().doubleValue());
@@ -170,7 +172,7 @@ public class TcpTransmitter<T extends Serializable> extends Transmitter<T, Seria
 		}
 		logger.log(Level.FINEST, "Sending signal {0} to {1}", new Object[] {sig, portalID});
 
-		out.writeInt(TcpDataProtocol.SIGNAL.intValue());
+		protocol.write(out, TcpDataProtocol.SIGNAL);
 		out.writeString(portalID.getName());
 		out.writeInt(portalID.getType().ordinal());
 		out.writeInt(sig.ordinal());

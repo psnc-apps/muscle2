@@ -57,7 +57,7 @@ public enum SimulationManagerProtocol implements Protocol {
 	UNSUPPORTED(4), WILL_ACTIVATE(5), CLOSE(-1), ERROR(-2), MAGIC_NUMBER(2391029), MAGIC_NUMBER_KEEP_ALIVE(291934),
 	MANAGER_LOCATION(6);
 	
-	public final static ProtocolSerializer<SimulationManagerProtocol> handler = new ProtocolSerializer<SimulationManagerProtocol>(SimulationManagerProtocol.values());
+	public final static ProtocolSerializer<SimulationManagerProtocol> handler = new ProtocolSerializer<SimulationManagerProtocol>(values());
 
 	public final int num;
 	SimulationManagerProtocol(int n) { num = n; }

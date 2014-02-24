@@ -37,9 +37,9 @@ import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.Resolver;
 import muscle.net.ProtocolHandler;
-import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.data.SerializableData;
 import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.serialization.SerializerWrapper;
 
 /**
@@ -52,7 +52,6 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	private final static SignalEnum[] signals = SignalEnum.values();
 	private final TcpIncomingConnectionHandler connectionHandler;
 	private final Resolver resolver;
-	private final static ProtocolSerializer<TcpDataProtocol> protocol = new ProtocolSerializer<TcpDataProtocol>(TcpDataProtocol.values());
 	
 	public TcpIncomingMessageHandler(Socket s, Map<Identifier,Receiver> receivers, Resolver res, TcpIncomingConnectionHandler handler) {
 		super(s, receivers, false, true, 3);
@@ -64,9 +63,9 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 	@SuppressWarnings("unchecked")
 	protected Boolean executeProtocol(DeserializerWrapper in, SerializerWrapper out) throws IOException {
 		boolean success = false;
-
+	
 		in.refresh();
-		TcpDataProtocol magic = protocol.read(in);
+		TcpDataProtocol magic = TcpDataProtocol.handler.read(in);
 		if (magic == TcpDataProtocol.CLOSE) {
 			this.socket.close();
 			logger.finer("Closing stale incoming socket.");
@@ -78,7 +77,7 @@ public class TcpIncomingMessageHandler extends ProtocolHandler<Boolean,Map<Ident
 			return null;
 		}
 		// Protocol not executed.
-		TcpDataProtocol proto = protocol.read(in);
+		TcpDataProtocol proto = TcpDataProtocol.handler.read(in);
 		boolean shouldResubmit = true;
 		
 		if (proto != TcpDataProtocol.ERROR) {

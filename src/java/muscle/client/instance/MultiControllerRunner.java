@@ -32,6 +32,7 @@ import muscle.core.kernel.InstanceControllerListener;
 import muscle.id.InstanceClass;
 import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
+import muscle.util.logging.ActivityListener;
 
 /**
  * Runs multiple instance controllers in a single thread.
@@ -48,8 +49,9 @@ public class MultiControllerRunner implements NamedRunnable {
 	private static final Logger logger = Logger.getLogger(MultiControllerRunner.class.getName());
 	private final static int SLEEP_MS = Integer.valueOf(System.getProperty("muscle.client.sleep_when_idle", "0"));
 	private ConnectionScheme connectionScheme;
+	private ActivityListener actLogger;
 	
-	public MultiControllerRunner(List<InstanceClass> instances, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
+	public MultiControllerRunner(List<InstanceClass> instances, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs, ActivityListener actLogger) {
 		this.name = "MultiController-" + instances.iterator().next();
 		this.instances = instances;
 		this.listener = listener;
@@ -58,6 +60,7 @@ public class MultiControllerRunner implements NamedRunnable {
 		this.controllers = new FastArrayList<PassiveInstanceController>(instances.size());
 		this.isDone = false;
 		this.connectionScheme = cs;
+		this.actLogger = actLogger;
 	}
 	
 	private void init() {
@@ -66,7 +69,7 @@ public class MultiControllerRunner implements NamedRunnable {
 			if (this.isDisposed()) {
 				return;
 			}
-			PassiveInstanceController controller = new PassiveInstanceController(this, ic, listener, resolver, portFactory, connectionScheme);
+			PassiveInstanceController controller = new PassiveInstanceController(this, ic, listener, resolver, portFactory, connectionScheme, actLogger);
 			if (controller.init()) {
 				if (controller.canStep() || threaded == instances.size() - 1) {
 					synchronized (controllers) {

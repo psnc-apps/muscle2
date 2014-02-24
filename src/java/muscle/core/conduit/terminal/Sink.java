@@ -28,6 +28,7 @@ package muscle.core.conduit.terminal;
 import java.io.Serializable;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
+import muscle.util.logging.ActivityListener;
 
 /**
  * Receives messages.
@@ -37,21 +38,35 @@ import muscle.core.ConduitEntranceController;
 public abstract class Sink<T extends Serializable> extends Terminal implements ConduitEntranceController<T> {
 	private ConduitEntrance<T> entrance;
 	
+	public Sink() {
+		entrance = null;
+	}
+	
+	@Override
 	public ConduitEntrance<T> getEntrance() {
 		return this.entrance;
 	}
+	@Override
 	public void setEntrance(ConduitEntrance<T> entrance) {
 		this.entrance = entrance;
+		entrance.setActivityLogger(actLogger, getOpposingIdentifier());
 	}
-	
+	@Override
+	public void setActivityLogger(ActivityListener actLogger) {
+		this.actLogger = actLogger;
+		if (this.entrance != null) this.entrance.setActivityLogger(actLogger, getOpposingIdentifier());
+	}
+	@Override
 	public boolean waitUntilEmpty() {
 		return true;
 	}
 	
+	@Override
 	public boolean isEmpty() {
 		return true;
 	}
 	
+	@Override
 	public boolean hasTransmitter() {
 		return true;
 	}

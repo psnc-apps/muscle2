@@ -30,6 +30,7 @@ import muscle.core.kernel.Module;
 import muscle.core.model.Timestamp;
 import muscle.id.PortalID;
 import muscle.util.concurrency.Disposable;
+import muscle.util.logging.ActivityListener;
 
 /**
  * A base class for Source and Sink
@@ -39,10 +40,15 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	private volatile boolean isDone;
 	private Timestamp siTime;
 	private PortalID portalID;
+	private PortalID otherID;
+	protected ActivityListener actLogger;
 	
 	public Terminal() {
 		this.isDone = false;
 		this.siTime = new Timestamp(0);
+		this.actLogger = null;
+		this.portalID = null;
+		this.otherID = null;
 	}
 	
 	/**
@@ -96,14 +102,19 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 		this.siTime = time;
 	}
 
-	public void setIdentifier(PortalID id) {
+	public void setIdentifier(PortalID id, PortalID otherID) {
 		this.setLocalName(id.getOwnerID().getName());
 		this.portalID = id;
+		this.otherID = otherID;
 	}
 	
 	@Override
 	public PortalID getIdentifier() {
 		return this.portalID;
+	}
+	
+	protected PortalID getOpposingIdentifier() {
+		return this.otherID;
 	}
 	
 	@Override
@@ -115,4 +126,6 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	public boolean isDisposed() {
 		return this.isDone;
 	}
+	
+	public abstract void setActivityLogger(ActivityListener actLogger);
 }

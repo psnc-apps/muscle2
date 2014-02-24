@@ -35,6 +35,8 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
 
 /**
 this is the (remote) head of a conduit,
@@ -50,8 +52,9 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private boolean isDone;
 	private final FilterChain filters;
 	private boolean isSharedData;
+	private final ActivityListener actLogger;
 	
-	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc) {
+	public PassiveConduitEntranceController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc, ActivityListener actLogger) {
 		super(newPortalID, newOwnerAgent, newDataClass);
 		this.transmitter = null;
 		this.conduitEntrance = null;
@@ -60,6 +63,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		this.transmitterFound = false;
 		this.filters = createFilterChain(desc, threaded);
 		this.isSharedData = false;
+		this.actLogger = actLogger;
 	}
 
 	/** Create a filter chain from the given arguments. If threaded (asynchronous), it will first add a "thread" filter. */
@@ -117,6 +121,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	@Override
 	public void setEntrance(ConduitEntrance<T> entrance) {		
 		this.conduitEntrance = entrance;
+		entrance.setActivityLogger(actLogger, getIdentifier());
 	}
 	
 	/**
@@ -153,6 +158,7 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			this.wait(WAIT_FOR_ATTACHMENT_MILLIS);
 		}
 		this.transmitterFound = (transmitter != null);
+		if (actLogger != null && this.transmitterFound) actLogger.activity(ActivityProtocol.CONNECTED, getIdentifier());
 		return transmitterFound;
 	}
 	

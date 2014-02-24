@@ -38,6 +38,8 @@ import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.InstanceClass;
 import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
 
 /**
  *
@@ -46,8 +48,8 @@ import muscle.util.concurrency.NamedRunnable;
 public class ThreadedInstanceController extends AbstractInstanceController implements NamedRunnable {
 	private final static Logger logger = Logger.getLogger(ThreadedInstanceController.class.getName());
 	
-	public ThreadedInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
-		super(instanceClass, listener, res, portFactory, cs);
+	public ThreadedInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs, ActivityListener actLogger) {
+		super(instanceClass, listener, res, portFactory, cs, actLogger);
 	}
 	
 	@Override
@@ -66,6 +68,7 @@ public class ThreadedInstanceController extends AbstractInstanceController imple
 				this.disposeNoDeregister(false);
 				return;
 			}
+			if (actLogger != null) actLogger.activity(ActivityProtocol.START, id);
 			try {
 				instance.connectPortals();
 				propagate();

@@ -45,6 +45,7 @@ import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
 import muscle.util.data.TakeWrapper;
 import muscle.util.data.Takeable;
+import muscle.util.logging.ActivityListener;
 import muscle.util.serialization.DataConverter;
 
 /**
@@ -59,13 +60,15 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	protected DataConverter<Message<T>,BasicMessage> converter;
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
 	private final FilterChain filters;
+	private final ActivityListener actLogger;
 
-	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc) {
+	public PassiveConduitExitController(PortalID newPortalID, InstanceController newOwnerAgent, Class<T> newDataClass, boolean threaded, ConduitDescription desc, ActivityListener actLogger) {
 		super(newPortalID, newOwnerAgent, newDataClass);
 		this.queue = new LinkedBlockingQueue<Observation<T>>();
 		this.conduitExit = null;
 		this.isDone = false;
 		this.filters = createFilterChain(desc, threaded);
+		this.actLogger = actLogger;
 	}
 	
 	/** Create a filter chain from the given arguments */
@@ -109,10 +112,13 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		return fc;
 	}
 	
+	@Override
 	public void setExit(ConduitExit<T> exit) {
 		this.conduitExit = exit;
+		exit.setActivityLogger(actLogger, getIdentifier());
 	}
 
+	@Override
 	public ConduitExit<T> getExit() {
 		return this.conduitExit;
 	}
@@ -126,6 +132,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "in:" + this.getLocalName();
 	}
@@ -174,6 +181,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 		}
 	}
 
+	@Override
 	public void setDataConverter(DataConverter<Message<T>, BasicMessage> serializer) {
 		this.converter = serializer;
 	}

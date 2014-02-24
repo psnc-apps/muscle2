@@ -19,16 +19,12 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * 
- */
 
 package muscle.id;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import muscle.id.Location;
 import muscle.util.FileTool;
 import muscle.util.JVM;
 

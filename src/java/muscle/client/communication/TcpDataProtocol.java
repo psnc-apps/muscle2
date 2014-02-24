@@ -22,6 +22,7 @@
 package muscle.client.communication;
 
 import muscle.util.serialization.Protocol;
+import muscle.util.serialization.ProtocolSerializer;
 
 /**
  * Values that are sent over the MUSCLE data connections over TCP/IP.
@@ -32,7 +33,8 @@ import muscle.util.serialization.Protocol;
  */
 public enum TcpDataProtocol implements Protocol {
 	OBSERVATION(0), SIGNAL(1), KEEPALIVE(2), FINISHED(3), ERROR(-2), CLOSE(-1), MAGIC_NUMBER(134405);
-
+	public final static ProtocolSerializer<TcpDataProtocol> handler = new ProtocolSerializer<TcpDataProtocol>(TcpDataProtocol.values());
+	
 	private final int num;
 	
 	TcpDataProtocol(int n) { num = n; }

@@ -47,6 +47,7 @@ import muscle.id.Identifier;
 import muscle.id.InstanceClass;
 import muscle.id.PortalID;
 import muscle.id.Resolver;
+import muscle.util.logging.ActivityListener;
 
 /**
  *
@@ -68,11 +69,13 @@ public abstract class AbstractInstanceController implements InstanceController {
 	protected final List<ConduitExitController<?>> exits = new ArrayList<ConduitExitController<?>>(); // these are the conduit exits
 	protected final List<ConduitEntranceController<?>> entrances = new ArrayList<ConduitEntranceController<?>>(); //these are the conduit entrances
 	protected final InstanceControllerListener listener;
+	protected final ActivityListener actLogger;
+
 	private final Resolver resolver;
 	private final PortFactory portFactory;
 	private boolean isExecuting;
 
-	public AbstractInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
+	public AbstractInstanceController(InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs, ActivityListener actLogger) {
 		this.id = instanceClass.getIdentifier();
 		this.instanceClass = instanceClass.getInstanceClass();
 		this.instance = null;
@@ -83,6 +86,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		this.isExecuting = false;
 		this.entranceDescriptions = cs.entranceDescriptionsForIdentifier(id);
 		this.exitDescriptions = cs.exitDescriptionsForIdentifier(id);
+		this.actLogger = actLogger;
 	}
 	
 	public boolean init() {
@@ -108,7 +112,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 	public String getName() {
 		return id.getName();
 	}
-	
+		
 	@Override
 	public void dispose() {
 		synchronized (this) {
@@ -143,7 +147,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		ConduitExitController<T> exit;
 		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataClazz, threaded, desc);
+			ConduitExitControllerImpl<T> s = new PassiveConduitExitController<T>(currentID, this, newDataClazz, threaded, desc, actLogger);
 			portFactory.getReceiver(this, s, otherID);
 			exit = s;
 		} else {
@@ -155,7 +159,8 @@ public abstract class AbstractInstanceController implements InstanceController {
 				}
 				@SuppressWarnings("unchecked")
 				Source<T> src = (Source<T>) srcObj;
-				src.setIdentifier(otherID);
+				src.setActivityLogger(actLogger);
+				src.setIdentifier(otherID, currentID);
 				src.beforeExecute();
 				exit = src;
 			} catch (ClassNotFoundException ex) {
@@ -184,7 +189,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 		String[] portArgs = desc.getExitArgs();
 		if (portArgs.length == 0) {
 			@SuppressWarnings("unchecked")
-			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataClazz, threaded, desc);
+			ConduitEntranceControllerImpl<T> s = new PassiveConduitEntranceController<T>(currentID, this, newDataClazz, threaded, desc, actLogger);
 			portFactory.<T>getTransmitter(this, s, otherID, shared);
 			entrance = s;
 		} else {
@@ -196,7 +201,8 @@ public abstract class AbstractInstanceController implements InstanceController {
 				}
 				@SuppressWarnings("unchecked")
 				Sink<T> sink = (Sink<T>) sinkObj;
-				sink.setIdentifier(otherID);
+				sink.setActivityLogger(actLogger);
+				sink.setIdentifier(otherID, currentID);
 				sink.beforeExecute();
 				entrance = sink;
 			} catch (ClassNotFoundException ex) {

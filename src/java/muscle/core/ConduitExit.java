@@ -26,7 +26,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEConduitExhaustedException;
+import muscle.id.PortalID;
 import muscle.util.data.Takeable;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
 
 /**
  * A ConduitExit outputs messages that are sent over a conduit.
@@ -44,12 +47,16 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	private final static Logger logger = Logger.getLogger(ConduitExit.class.getName());
 	private boolean isDone;
 	private Observation<T> nextElem;
-
+	private ActivityListener actLogger;
+	private PortalID id;
+	
 	public ConduitExit(ConduitExitController<T> control) {
 		this.queue = control.getMessageQueue();
 		this.controller = control;
 		this.isDone = false;
 		this.nextElem = null;
+		this.actLogger = null;
+		this.id = null;
 	}
 
 	/**
@@ -114,7 +121,9 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 * @return a piece of data
 	 */
 	public Observation<T> receiveObservation() {
+		if (actLogger != null) actLogger.activity(ActivityProtocol.BEGIN_RECEIVE, id);
 		if (!hasNext()) {
+			if (actLogger != null) actLogger.activity(ActivityProtocol.RECEIVE_FAILED, id);			
 			throw new MUSCLEConduitExhaustedException("Can not receive from conduit: the other submodel has stopped.");
 		}
 		
@@ -123,11 +132,17 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		this.controller.messageReceived(nextElem);
 		Observation<T> tmp = this.nextElem;
 		this.nextElem = null;
+		if (actLogger != null) actLogger.activity(ActivityProtocol.END_RECEIVE, id);			
 		return tmp;
 	}
 	
 	@Override
 	public String toString() {
 		return this.controller.toString();
+	}
+	
+	public void setActivityLogger(ActivityListener actLogger, PortalID id) {
+		this.actLogger = actLogger;
+		this.id = id;
 	}
 }

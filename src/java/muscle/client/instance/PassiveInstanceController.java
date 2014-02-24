@@ -41,6 +41,8 @@ import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.InstanceClass;
 import muscle.id.Resolver;
 import muscle.util.concurrency.NamedRunnable;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
 
 /**
  * Runs a submodel in single steps
@@ -51,8 +53,8 @@ public class PassiveInstanceController extends AbstractInstanceController {
 	private final NamedRunnable runner;
 	private boolean isInitializing;
 	
-	public PassiveInstanceController(NamedRunnable runner, InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs) {
-		super(instanceClass, listener, res, portFactory, cs);
+	public PassiveInstanceController(NamedRunnable runner, InstanceClass instanceClass, InstanceControllerListener listener, Resolver res, PortFactory portFactory, ConnectionScheme cs, ActivityListener actLogger) {
+		super(instanceClass, listener, res, portFactory, cs, actLogger);
 		this.runner = runner;
 		this.isInitializing = true;
 	}
@@ -80,6 +82,7 @@ public class PassiveInstanceController extends AbstractInstanceController {
 			this.disposeNoDeregister(false);
 			return false;
 		}
+		if (actLogger != null) actLogger.activity(ActivityProtocol.START, id);
 		return true;
 	}
 	

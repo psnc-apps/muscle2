@@ -19,16 +19,15 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package muscle.core;
 
 import java.io.Serializable;
 import muscle.core.model.Distance;
 import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
+import muscle.id.PortalID;
+import muscle.util.logging.ActivityListener;
+import muscle.util.logging.ActivityProtocol;
 
 /**
  * A ConduitEntrance adds data to a conduit.
@@ -43,10 +42,15 @@ public class ConduitEntrance<T extends Serializable> {
 	private final ConduitEntranceController<T> controller;
 	protected Timestamp nextTime;
 	protected Distance dt;
+	protected ActivityListener actLogger;
+	private PortalID id;
 	
 	public ConduitEntrance(ConduitEntranceController<T> controller, Timestamp origin, Distance timeStep) {
 		this.nextTime = origin;
 		this.dt = timeStep;
+		
+		this.id = null;
+		this.actLogger = null;
 		
 		this.controller = controller;
 	}
@@ -92,8 +96,10 @@ public class ConduitEntrance<T extends Serializable> {
  	 * @see send(T)
 	 */
 	public void send(T data, Timestamp currentTime, Timestamp next) {
+		if (actLogger != null) actLogger.activity(ActivityProtocol.BEGIN_SEND, id);
 		this.nextTime = next;
 		this.controller.send(new Observation<T>(data, currentTime, next));
+		if (actLogger != null) actLogger.activity(ActivityProtocol.END_SEND, id);
 	}
 	
 	/**
@@ -103,8 +109,10 @@ public class ConduitEntrance<T extends Serializable> {
  	 * @see send(T)
 	 */
 	public void send(Observation<T> obs) {
+		if (actLogger != null) actLogger.activity(ActivityProtocol.BEGIN_SEND, id);
 		this.nextTime = obs.getNextTimestamp();
 		this.controller.send(obs);
+		if (actLogger != null) actLogger.activity(ActivityProtocol.END_SEND, id);
 	}
 	
 	/** Indicate that no more messages will be sent over the current conduit. */
@@ -115,5 +123,10 @@ public class ConduitEntrance<T extends Serializable> {
 	@Override
 	public String toString() {
 		return this.controller.toString();
+	}
+	
+	public void setActivityLogger(ActivityListener actLogger, PortalID id) {
+		this.actLogger = actLogger;
+		this.id = id;
 	}
 }

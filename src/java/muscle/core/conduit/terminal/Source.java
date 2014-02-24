@@ -30,6 +30,7 @@ import muscle.core.ConduitExit;
 import muscle.core.ConduitExitController;
 import muscle.core.model.Observation;
 import muscle.util.data.Takeable;
+import muscle.util.logging.ActivityListener;
 
 /**
  * Generates data each time receive is called.
@@ -53,8 +54,15 @@ public abstract class Source<T extends Serializable> extends Terminal implements
 	@Override
 	public void setExit(ConduitExit<T> exit) {
 		this.exit = exit;
+		this.exit.setActivityLogger(actLogger, getOpposingIdentifier());
 	}
-		
+	
+	@Override
+	public void setActivityLogger(ActivityListener actLogger) {
+		this.actLogger = actLogger;
+		if (exit != null) exit.setActivityLogger(actLogger, getOpposingIdentifier());
+	}
+	
 	@Override
 	public String toString() {
 		return getIdentifier().getPortName() + "<" + getClass().getSimpleName();
