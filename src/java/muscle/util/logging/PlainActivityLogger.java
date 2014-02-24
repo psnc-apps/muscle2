@@ -31,12 +31,7 @@ public class PlainActivityLogger extends ActivityWriter {
 	protected synchronized void write(ActivityProtocol action, String id, int sec, int nano) throws IOException {
 		wr.write(locHash);
 		wr.write(String.valueOf(sec));
-		wr.write('.');
-		String nanoStr = String.valueOf(nano);
-		
-		for (int i = nanoStr.length(); i < 9; i++) { wr.write('0'); }
-		
-		wr.write(nanoStr);
+		writeNano(nano);
 		wr.write(' ');
 		wr.write(action.name());
 		wr.write(':');
@@ -46,7 +41,7 @@ public class PlainActivityLogger extends ActivityWriter {
 	}
 
 	@Override
-	public void dispose(long sec, int nano) throws IOException {
+	public void dispose(int sec, int nano) throws IOException {
 		wr.write(locHash);
 		wr.write(String.valueOf(sec));
 		writeNano(nano);
@@ -56,14 +51,21 @@ public class PlainActivityLogger extends ActivityWriter {
 	}
 
 	@Override
-	protected void init(long sec, int nano) throws IOException {
+	protected void init(long sec, int milli) throws IOException {
 		wr.write(locHash);
 		wr.write(String.valueOf(sec));
-		writeNano(nano);
+		writeMilli(milli);
 		wr.write(" INIT ");
 		wr.write(loc.toString());
 		wr.write('\n');
 		wr.flush();
+	}
+	
+	private void writeMilli(int milli) throws IOException {
+		wr.write('.');
+		String milliStr = String.valueOf(milli);
+		for (int i = milliStr.length(); i < 3; i++) { wr.write('0'); }
+		wr.write(milliStr);		
 	}
 	
 	private void writeNano(int nano) throws IOException {

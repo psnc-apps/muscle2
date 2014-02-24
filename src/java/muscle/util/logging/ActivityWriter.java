@@ -36,14 +36,16 @@ public abstract class ActivityWriter implements ActivityListener {
 
 	@Override
 	public final void init() {
+		long milli = System.currentTimeMillis();
+		
 		try {
-			init(nano / 1000000000L, (int)(nano % 1000000000));
+			init(milli / 1000L, (int)(milli % 1000));
 		} catch (IOException ex) {
 			logger.log(Level.WARNING, "Cannot write to activity log", ex);
 		}
 	}
 	
-	protected abstract void init(long sec, int nano) throws IOException;
+	protected abstract void init(long sec, int milli) throws IOException;
 
 	@Override
 	public final synchronized boolean isDisposed() {
@@ -59,13 +61,13 @@ public abstract class ActivityWriter implements ActivityListener {
 			this.isDone = true;
 		}
 
-		long time = System.nanoTime();
+		final long diff = System.nanoTime() - nano;
 		try {
-			dispose(time / 1000000000L, (int)(time % 1000000000));
+			dispose((int)(diff / 1000000000), (int)(diff % 1000000000));
 		} catch (IOException ex) {
 			logger.log(Level.WARNING, "Cannot close activity log", ex);
 		}
 	}
 	
-	protected abstract void dispose(long sec, int nano) throws IOException;
+	protected abstract void dispose(int sec, int milli) throws IOException;
 }
