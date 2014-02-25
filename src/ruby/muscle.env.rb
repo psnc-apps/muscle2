@@ -27,6 +27,8 @@
 # default configuration file for the MUSCLE bootstrap utility
 abort 'this is a configuration file for to be used with the MUSCLE bootstrap utility' if __FILE__ == $0
 
+require 'uri'
+
 m = Muscle.LAST
 
 # some local variables to keep things simple

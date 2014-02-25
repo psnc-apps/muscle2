@@ -28,6 +28,8 @@
 # some of the settings below are mandatory
 abort 'this is a configuration file for to be used with the MUSCLE bootstrap utility' if __FILE__ == $0
 
+require 'uri'
+
 cxa = Cxa.LAST
 
 cxa.env['tmp_path'] = Muscle.LAST.env['tmp_path']

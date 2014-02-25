@@ -114,8 +114,8 @@ class Cxa
 		self.components.instances
 	end
 	
-	def generate_cs_file
-	  File.open(env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path, 'w') do |f|
+	def generate_cs_file(file=env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path)
+	  File.open(file, 'w') do |f|
       f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"
       f.puts self.components.coupling_s
     end

@@ -41,7 +41,7 @@ public class PlainActivityLogger extends ActivityWriter {
 	}
 
 	@Override
-	public void dispose(int sec, int nano) throws IOException {
+	public synchronized void dispose(int sec, int nano) throws IOException {
 		wr.write(locHash);
 		wr.write(String.valueOf(sec));
 		writeNano(nano);
@@ -51,7 +51,7 @@ public class PlainActivityLogger extends ActivityWriter {
 	}
 
 	@Override
-	protected void init(long sec, int milli) throws IOException {
+	protected synchronized void init(long sec, int milli) throws IOException {
 		wr.write(locHash);
 		wr.write(String.valueOf(sec));
 		writeMilli(milli);

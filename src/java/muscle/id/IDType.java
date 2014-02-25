@@ -30,5 +30,5 @@ package muscle.id;
  * @author Joris Borgdorff
  */
 public enum IDType {
-	port, instance, submodel, mapper, filter;
+	port, instance, submodel, mapper, filter, container;
 }

@@ -154,7 +154,7 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	 * @param out a stream to encode over; flush() will not be called over it.
 	 * @param loc must be a TcpLocation
 	 */
-	protected static void encodeLocation(SerializerWrapper out, Location loc) throws IOException {
+	public static void encodeLocation(SerializerWrapper out, Location loc) throws IOException {
 		if (!(loc instanceof TcpLocation)) {
 			throw new IllegalArgumentException("Location belonging to identity is not a TcpLocation; can only encode TcpLocation");
 		}
@@ -172,7 +172,7 @@ public abstract class ProtocolHandler<S,T> implements NamedCallable<S> {
 	 * @param in a stream to decode from; refresh() will not be called over it.
 	 * @returns the TcpLocation that was transmitted.
 	 */
-	protected static TcpLocation decodeLocation(DeserializerWrapper in) throws IOException {
+	public static TcpLocation decodeLocation(DeserializerWrapper in) throws IOException {
 		LocationType locType = LocationType.valueOf(in.readInt());
 		byte[] addr = in.readByteArray();
 		InetAddress inetAddr = InetAddress.getByAddress(addr);

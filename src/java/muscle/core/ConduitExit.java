@@ -88,7 +88,9 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 			return false;
 		}
 		try {
+			if (actLogger != null) actLogger.activity(ActivityProtocol.BEGIN_RECEIVE, id);
 			this.nextElem = this.queue.take();
+			if (actLogger != null) actLogger.activity(ActivityProtocol.END_RECEIVE, id);
 		} catch (InterruptedException ex) {
 			logger.log(Level.WARNING, "Receiving message interrupted.", ex);
 		}
@@ -121,7 +123,6 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 	 * @return a piece of data
 	 */
 	public Observation<T> receiveObservation() {
-		if (actLogger != null) actLogger.activity(ActivityProtocol.BEGIN_RECEIVE, id);
 		if (!hasNext()) {
 			if (actLogger != null) actLogger.activity(ActivityProtocol.RECEIVE_FAILED, id);			
 			throw new MUSCLEConduitExhaustedException("Can not receive from conduit: the other submodel has stopped.");
@@ -132,7 +133,6 @@ public class ConduitExit<T extends Serializable> { // generic T will be the unde
 		this.controller.messageReceived(nextElem);
 		Observation<T> tmp = this.nextElem;
 		this.nextElem = null;
-		if (actLogger != null) actLogger.activity(ActivityProtocol.END_RECEIVE, id);			
 		return tmp;
 	}
 	

@@ -52,6 +52,7 @@ import muscle.util.concurrency.NamedRunnable;
 import muscle.util.logging.ActivityListener;
 import muscle.util.logging.ActivityProtocol;
 import muscle.util.logging.PlainActivityLogger;
+import muscle.util.logging.UDPActivityLogger;
 
 /**
  * @author Joris Borgdorff
@@ -130,9 +131,13 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		TcpLocation loc = new TcpLocation(socketAddr, dir);
 		
 		if (ACTIVITY_LOGGER != null) {
-			if (ACTIVITY_LOGGER.equalsIgnoreCase("PLAIN"))
+			if (ACTIVITY_LOGGER.equalsIgnoreCase("PLAIN")) {
 				actLogger = new PlainActivityLogger(loc);
-			
+			} else if (ACTIVITY_LOGGER.toUpperCase().startsWith("UDP")) {
+				String[] values = ACTIVITY_LOGGER.split(":");
+				InetSocketAddress addr = new InetSocketAddress(values[1], Integer.valueOf(values[2]));
+				actLogger = new UDPActivityLogger(loc, addr);
+			}
 			actLogger.init();
 		}
 		
