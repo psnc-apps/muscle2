@@ -14,7 +14,7 @@ def milli_i(sec, milli)
 end
 
 def read_logs(files)
-  firstReg = /^(\w+) (\d+)\.(\d+) INIT .*\[(.*) \<.*(\d+)?$/
+  firstReg = /^(\w+) (\d+)\.(\d+) INIT .*\[(.*) \<.*$/
   midReg = /^(\w+) (\d+)\.(\d+) (\w+):(\w+(@\w+)?)$/
   lastReg = /^(\w+) (\d+)\.(\d+) FINALIZE$/
 
@@ -30,8 +30,8 @@ def read_logs(files)
     lines = File.read(log).each_line($/).to_a # not lines, gives enumerator in Ruby 1.9.3
 
     # parse first line separately
-    fHash, fSec, fMilli, fLoc, fNano = firstReg.match(lines.shift).captures
-    fSNano = fNano.nil? ? milli_i(fSec, fMilli) : fNano.to_i
+    fHash, fSec, fMilli, fLoc = firstReg.match(lines.shift).captures
+    fSNano = milli_i(fSec, fMilli)
     data.push( {time: fSNano, op: "INIT", id: fLoc, hash: fHash} )
   
     # discard finalize
