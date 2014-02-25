@@ -106,7 +106,8 @@ def print_statistics(instances, min_time, max_time)
   instances.each do |name,instance|
     next unless instance[:instance]
     inst_begin = instance[:instance][:begin][0]
-    inst_time = instance[:instance][:end][0] - inst_begin
+    inst_max = instance[:instance][:end].empty? ? max_time : instance[:instance][:end][0]
+    inst_time = inst_max - inst_begin
     print "Instance '#{name}': #{sec_s(inst_time)} s (#{perc_s(inst_time,sim_time)}% of total)\n"
   
     send_comm = 0
@@ -115,6 +116,7 @@ def print_statistics(instances, min_time, max_time)
     instance.each do |port,values|
       next if port == :instance
       comm = 0
+      comm += max_time * (values[:begin].length - values[:end].length)
       values[:end].each { |x| comm += x }
       values[:begin].each { |x| comm -= x }
       if values[:type] == :send
