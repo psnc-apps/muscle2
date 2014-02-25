@@ -14,7 +14,7 @@ def milli_i(sec, milli)
 end
 
 def read_logs(files)
-  firstReg = /^(\w+) (\d+)\.(\d+) INIT .*\[(.*) \<.*(\d*)?$/
+  firstReg = /^(\w+) (\d+)\.(\d+) INIT .*\[(.*) \<.*(\d+)?$/
   midReg = /^(\w+) (\d+)\.(\d+) (\w+):(\w+(@\w+)?)$/
   lastReg = /^(\w+) (\d+)\.(\d+) FINALIZE$/
 
