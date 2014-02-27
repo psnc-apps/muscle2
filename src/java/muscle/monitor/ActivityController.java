@@ -1,7 +1,3 @@
-/*
- * 
- */
-
 package muscle.monitor;
 
 import cern.colt.map.AbstractIntObjectMap;
@@ -20,6 +16,7 @@ import muscle.id.IDType;
 import muscle.id.Identifier;
 import muscle.id.Location;
 import muscle.id.PortalID;
+import muscle.id.TcpLocation;
 import muscle.util.logging.ActivityProtocol;
 
 /**
@@ -49,7 +46,7 @@ public class ActivityController {
 	public ActivityController(ConnectionScheme conns, DelegatingResolver resolver) {
 		this.conns = conns;
 		this.resolver = resolver;
-		activities = new LinkedBlockingQueue();
+		activities = new LinkedBlockingQueue<Activity>();
 		locations = new OpenIntObjectHashMap();
 		viewer = new GraphViewer();
 	}
@@ -57,7 +54,7 @@ public class ActivityController {
 	public void execute() throws InterruptedException {
 		viewer.display();
 		
-		while (true) {
+		while (!viewer.isClosed()) {
 			Activity act = activities.take();
 			
 			if (act.activity.type == IDType.instance) {
@@ -93,13 +90,22 @@ public class ActivityController {
 					case END_RECEIVE:
 					case RECEIVE_FAILED:
 						desc = conns.exitDescriptionForPortal(portid);
-						viewer.receive(act.activity, desc.getEntrance().getOwnerID().getName(), portid.getOwnerID().getName());
+						viewer.receive(act.activity, desc.getEntrance().getOwnerID().getName(), portid.getOwnerID().getName(), portid.getPortName());
 						break;
 					case BEGIN_SEND:
 					case END_SEND:
 					case CONNECTED:
 						desc = conns.entranceDescriptionForPortal(portid);
-						viewer.send(act.activity, portid.getOwnerID().getName(), desc.getExit().getOwnerID().getName());
+						viewer.send(act.activity, portid.getOwnerID().getName(), desc.getExit().getOwnerID().getName(), portid.getPortName());
+						break;
+				}
+			} else {
+				switch (act.activity) {
+					case INIT:
+						viewer.addContainer(act.hash, act.id, act.loc);
+						break;
+					case FINALIZE:
+						viewer.removeContainer(act.hash, act.id);
 						break;
 				}
 			}
@@ -110,9 +116,11 @@ public class ActivityController {
 	
 	public void addContainer(int hash, Location loc) {	
 		locations.put(hash, loc);
+		activities.add(new Activity(hash, loc, Integer.toHexString(hash), ActivityProtocol.INIT));
 	}
 
 	public void removeContainer(int hash) {
+		activities.add(new Activity(hash, (Location)locations.get(hash), Integer.toHexString(hash), ActivityProtocol.FINALIZE));
 	}
 
 	public void action(int hash, String id, ActivityProtocol activity) {

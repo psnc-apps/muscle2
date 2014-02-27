@@ -4,6 +4,13 @@
 
 package muscle.monitor;
 
+import cern.colt.map.OpenIntIntHashMap;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import javax.swing.JFrame;
+import javax.swing.WindowConstants;
+import muscle.id.Location;
+import muscle.id.TcpLocation;
 import muscle.util.logging.ActivityProtocol;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
@@ -19,28 +26,34 @@ import org.graphstream.ui.swingViewer.Viewer;
  */
 public class GraphViewer {
 	private final Graph graph;
-	private final static String stylesheet = "node { text-alignment: at-right; text-padding: 3px, 2px; text-background-mode: rounded-box; text-color: white; text-background-color: #800C; text-style: bold-italic; text-color: #FFF; text-offset: 5px, 0px; text-size: 16; fill-color: red; }\n"
+	private final static String stylesheet = "graph { padding: 100px; }\n"
+			+ "node { text-alignment: at-right; text-padding: 3px, 2px; text-background-mode: rounded-box; text-color: white; text-background-color: #800C; text-style: bold-italic; text-color: #FFF; text-offset: 5px, 0px; text-size: 16; fill-color: red; }\n"
 			+ "node.finished { fill-color: gray; text-background-color: gray; }\n"
 			+ "node.notcomputing { fill-color: black; text-background-color: #A7CC; }"
-			+ "edge { text-size: 16; }\n"
+			+ "edge { text-size: 16; text-padding: 3px, 2px; text-background-mode: rounded-box; text-background-color: #CCCC; }\n"
 			+ "edge.receiving { fill-color: #7FF; }\n"
 			+ "edge.connected { size: 3px; }\n"
 			+ "edge.sending { shadow-mode: plain; shadow-width: 3px; shadow-color: #FC0; shadow-offset: 0px; }\n"
-			+ "edge.failed { fill-color: red; }\n";
+			+ "edge.failed { fill-color: red; }\n"
+			+ "sprite { size: 0px; text-color: rgb(150,100,100); text-size: 14; }\n";
 	private final LinLog layout;
+	private final OpenIntIntHashMap hashes;
+	private final GraphPanel panel;
 	
 	public GraphViewer() {
-		System.setProperty("gs.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
+		System.setProperty("org.graphstream.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
 		
 		graph = new SingleGraph("graph");
 		graph.addAttribute("ui.stylesheet", stylesheet);
 		graph.addAttribute("ui.quality");
 		graph.addAttribute("ui.antialias");
 		graph.addAttribute("layout.quality", 2);
-//		graph.addAttribute("layout.force", 4);
 		graph.addAttribute("layout.weight", 0.5);
 		
+		hashes = new OpenIntIntHashMap();
+		
 		layout = new LinLog();
+		panel = new GraphPanel();
 	}
 	
 	void beginUpdate() {
@@ -50,26 +63,15 @@ public class GraphViewer {
 	
 	void addNode(int hash, String id) {
 		Node v = graph.addNode(id);
-		v.addAttribute("ui.label", id);
-
-//		Object parent;
-//		
-//		
-//		if (!locations.containsKey(hash)) {
-//			String hex = Integer.toHexString(hash);
-//			locations.put(hash, graph.insertVertex(graph.getDefaultParent(), hex, hex, 240, 150, 80, 30, "strokeColor=grey"));
-//		}
-//		parent = locations.get(hash);
-//		Object v = graph.insertVertex(parent, id, id, 240, 150, 80, 30, "strokeColor=black;ROUNDED");
-//		vertices.put(id, v);
+		int loc = hashes.get(hash) + 1;
+		v.addAttribute("ui.label", String.format("%s<at %d>", id, loc));
 	}
 
 	void addEdge(String from, String to, String label) {
 		Node vf = graph.getNode(from), vt = graph.getNode(to);
 		String id = from + "->" + to;
 		if (vf != null && vt != null && graph.getEdge(id) == null) {
-			Edge e = graph.addEdge(id, vf, vt, true);
-//			e.addAttribute("ui.label", label);
+			graph.addEdge(id, vf, vt, true);
 		}
 		layout.shake();
 	}
@@ -77,23 +79,23 @@ public class GraphViewer {
 	void removeNode(String id) {
 		Node v = graph.getNode(id);
 		addClass(v, "finished");
-		do {} while (removeClass(v, "notcomputing"));
-//		graph.removeNode(id);
 	}
 
-	void receive(ActivityProtocol activity, String from, String to) {
+	void receive(ActivityProtocol activity, String from, String to, String receivePort) {
 		Edge e = graph.getEdge(from + "->" + to);
-		if (e == null) return;
+		if (e == null) return; // don't show actions on edges that do not yet exist
 		Node vt = graph.getNode(to);
 		
 		switch (activity) {
-			case END_RECEIVE:
-				removeClass(e, "receiving");
-				removeClass(vt, "notcomputing");
-				break;
 			case BEGIN_RECEIVE:
 				addClass(e, "receiving");
 				addClass(vt, "notcomputing");
+				addLabel(e, "receiving " + receivePort, "receiving");
+				break;
+			case END_RECEIVE:
+				removeClass(e, "receiving");
+				removeClass(vt, "notcomputing");
+				removeLabel(e, "receiving");
 				break;
 			case RECEIVE_FAILED:
 				addClass(e, "failed");
@@ -102,65 +104,92 @@ public class GraphViewer {
 		}
 	}
 
-	void send(ActivityProtocol activity, String from, String to) {
+	void send(ActivityProtocol activity, String from, String to, String sendPort) {
 		Edge e = graph.getEdge(from + "->" + to);
-		if (e == null) return;
+		if (e == null) return; // don't show actions on edges that do not yet exist
 		Node vf = graph.getNode(from);
 		
 		switch (activity) {
-			case END_SEND:
-				removeClass(e, "sending");
-				removeClass(vf, "notcomputing");
-				break;
 			case BEGIN_SEND:
 				addClass(e, "sending");
 				addClass(vf, "notcomputing");
+				addLabel(e, "sending " + sendPort, "sending");
+				break;
+			case END_SEND:
+				removeClass(e, "sending");
+				removeClass(vf, "notcomputing");
+				removeLabel(e, "sending");
 				break;
 			case CONNECTED:
 				addClass(e, "connected");
 				break;
 		}
 	}
-	
+		
 	private void addClass(Element el, String clazz) {
 		String clazzes = el.getAttribute("ui.class");
-		System.out.println("Adding " + clazz + " to '" + clazzes + "' of " + el.getId());
-		if (clazzes == null) {
-			clazzes = clazz;
-		} else {
-			clazzes = clazzes + "," + clazz;
-		}
-		System.out.println("Result: " + clazzes);
-		el.addAttribute("ui.class", clazzes);
+		el.addAttribute("ui.class", addToList(clazzes, clazz, clazz, ","));
 	}
-	private boolean removeClass(Element el, String clazz) {
+	private void removeClass(Element el, String clazz) {
 		String clazzes = el.getAttribute("ui.class");
-		boolean ret = false;
-		System.out.println("Removing " + clazz + " from '" + clazzes + "' of " + el.getId());
-		if (clazzes != null) {
-			String[] clss = clazzes.split(",");
-			clazzes = "";
-			for (String cls : clss) {
-				if (cls.equals(clazz)) {
-					clazz = "========================"; // don't match again
-					ret = true;
-				} else {
-					clazzes +=  "," + cls;
-				}
-			}
-			System.out.println("Result: " + clazzes);
-			if (clazzes.isEmpty()) {
-				el.removeAttribute("ui.class");
+		el.addAttribute("ui.class", removeFromList(clazzes, clazz, ","));
+	}
+	private void addLabel(Element el, String label, String match) {
+		String oldLabel = el.getAttribute("ui.label");
+		el.addAttribute("ui.label", addToList(oldLabel, label, match, "; "));
+	}
+	private void removeLabel(Element el, String match) {
+		String oldLabel = el.getAttribute("ui.label");
+		el.addAttribute("ui.label", removeFromList(oldLabel, match, "; "));
+	}
+	
+	private String addToList(String list, String elem, String match, String delimiter) {
+		String newList = removeFromList(list, match, delimiter);
+		return newList == null ? elem : newList + delimiter + elem;
+	}
+	
+	private String removeFromList(String list, String match, String delimiter) {
+		if (list == null)
+			return null;
+		
+		String newList = null;
+		boolean matched = false;
+		for (String line : list.split(delimiter)) {
+			if (!matched && line.startsWith(match)) {
+				matched = true; // remove this match, once
+			} else if (newList == null) {
+				newList = line;
 			} else {
-				el.addAttribute("ui.class", clazzes.substring(1));
+				newList += delimiter + line;
 			}
 		}
-		return ret;
+		return newList;
 	}
-	void display() {
-		Viewer v = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_ANOTHER_THREAD);
-		v.addDefaultView(true);
 
+	void display() {
+		Viewer v = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_SWING_THREAD);
+		panel.setView(v.addDefaultView(false));
 		v.enableAutoLayout(layout);
+
+		JFrame main = new JFrame("MUSCLE monitor");
+		main.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		main.setSize(800, 600);
+		Container content = main.getContentPane();
+		content.setLayout(new BorderLayout());
+		content.add(panel, BorderLayout.CENTER);
+		main.setVisible(true);
+	}
+
+	void addContainer(int hash, String id, Location loc) {
+		int num = hashes.size();
+		hashes.put(hash, num);
+		panel.addMuscleText(String.format("%d: %s", num + 1, ((TcpLocation)loc).getSocketAddress()));
+	}
+
+	void removeContainer(int hash, String id) {
+	}
+
+	public boolean isClosed() {
+		return graph.hasAttribute("ui.viewClosed");
 	}
 }

@@ -15,7 +15,7 @@ import muscle.util.serialization.ProtocolSerializer;
  * @author joris
  */
 public enum ActivityProtocol implements Protocol {
-	INIT(0, IDType.container), FINALIZE(9, IDType.port),
+	INIT(0, IDType.container), FINALIZE(9, IDType.container),
 	BEGIN_SEND(1, IDType.port), END_SEND(2, IDType.port), CONNECTED(7, IDType.port),
 	BEGIN_RECEIVE(3, IDType.port), END_RECEIVE(4, IDType.port), RECEIVE_FAILED(8, IDType.port),
 	START(5, IDType.instance), STOP(6, IDType.instance);
