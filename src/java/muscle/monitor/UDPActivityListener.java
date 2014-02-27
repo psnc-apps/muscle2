@@ -10,6 +10,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import muscle.id.Location;
+import muscle.id.TcpLocation;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.SafeThread;
@@ -45,10 +46,6 @@ public class UDPActivityListener extends SafeThread {
 		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		sock.receive(packet);
 		inStream.reset(packet.getLength());
-//		int val = (buffer[0] & 0xff) | ((buffer[1] & 0xff) << 8) | ((buffer[1] & 0xff) << 16) | ((buffer[1] & 0xff) << 24);
-//		System.out.println(Integer.toHexString(val) + "; " + val);
-//		val = (buffer[4] & 0xff) | ((buffer[5] & 0xff) << 8) | ((buffer[6] & 0xff) << 16) | ((buffer[7] & 0xff) << 24);
-//		System.out.println(Integer.toHexString(val) + "; " + val);
 		
 		in.refresh();
 		

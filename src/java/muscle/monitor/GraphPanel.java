@@ -15,12 +15,14 @@ import org.graphstream.ui.swingViewer.View;
  */
 public class GraphPanel extends javax.swing.JPanel {
 	private static final long serialVersionUID = 1L;
+	private String muscleInstLabelText;
 	/**
 	 * Creates new form NewJPanel
 	 */
 	public GraphPanel() {
 		initComponents();
-		muscleInstLabel.setText("");
+		muscleInstLabelText = null;
+		muscleInstLabel.setText("<html></html>");
 	}
 	
 	public void setView(View v) {
@@ -28,7 +30,8 @@ public class GraphPanel extends javax.swing.JPanel {
 	}
 	
 	public void addMuscleText(String s) {
-		muscleInstLabel.setText(muscleInstLabel.getText() + "\n" + s);
+		muscleInstLabelText += muscleInstLabelText == null ? s : "<br>" + s;
+		muscleInstLabel.setText("<html>" + muscleInstLabelText + "</html>");
 	}
 
 	/**

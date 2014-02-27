@@ -64,7 +64,7 @@ public class GraphViewer {
 	void addNode(int hash, String id) {
 		Node v = graph.addNode(id);
 		int loc = hashes.get(hash) + 1;
-		v.addAttribute("ui.label", String.format("%s<at %d>", id, loc));
+		v.addAttribute("ui.label", String.format("%s [%d]", id, loc));
 	}
 
 	void addEdge(String from, String to, String label) {
@@ -82,48 +82,65 @@ public class GraphViewer {
 	}
 
 	void receive(ActivityProtocol activity, String from, String to, String receivePort) {
+		Node vt = graph.getNode(to);
+		switch (activity) {
+			case BEGIN_RECEIVE:
+				addClass(vt, "notcomputing");
+				break;
+			case END_RECEIVE:
+				removeClass(vt, "notcomputing");
+				break;
+			case RECEIVE_FAILED:
+				removeClass(vt, "notcomputing");
+				break;
+		}
+		
 		Edge e = graph.getEdge(from + "->" + to);
 		if (e == null) return; // don't show actions on edges that do not yet exist
-		Node vt = graph.getNode(to);
 		
 		switch (activity) {
 			case BEGIN_RECEIVE:
 				addClass(e, "receiving");
-				addClass(vt, "notcomputing");
 				addLabel(e, "receiving " + receivePort, "receiving");
 				break;
 			case END_RECEIVE:
 				removeClass(e, "receiving");
-				removeClass(vt, "notcomputing");
 				removeLabel(e, "receiving");
 				break;
 			case RECEIVE_FAILED:
 				addClass(e, "failed");
-				removeClass(vt, "notcomputing");
 				break;
 		}
 	}
 
 	void send(ActivityProtocol activity, String from, String to, String sendPort) {
-		Edge e = graph.getEdge(from + "->" + to);
-		if (e == null) return; // don't show actions on edges that do not yet exist
 		Node vf = graph.getNode(from);
 		
 		switch (activity) {
 			case BEGIN_SEND:
-				addClass(e, "sending");
 				addClass(vf, "notcomputing");
+				break;
+			case END_SEND:
+				removeClass(vf, "notcomputing");
+				break;
+		}
+		
+		Edge e = graph.getEdge(from + "->" + to);
+		if (e == null) return; // don't show actions on edges that do not yet exist
+		
+		switch (activity) {
+			case BEGIN_SEND:
+				addClass(e, "sending");
 				addLabel(e, "sending " + sendPort, "sending");
 				break;
 			case END_SEND:
 				removeClass(e, "sending");
-				removeClass(vf, "notcomputing");
 				removeLabel(e, "sending");
 				break;
 			case CONNECTED:
 				addClass(e, "connected");
 				break;
-		}
+		}		
 	}
 		
 	private void addClass(Element el, String clazz) {
@@ -183,7 +200,10 @@ public class GraphViewer {
 	void addContainer(int hash, String id, Location loc) {
 		int num = hashes.size();
 		hashes.put(hash, num);
-		panel.addMuscleText(String.format("%d: %s", num + 1, ((TcpLocation)loc).getSocketAddress()));
+		TcpLocation tloc = (TcpLocation) loc;
+		String hostname = tloc.getAddress().getHostName(); // resolve the host name for pretty printing
+		int port = tloc.getPort();
+		panel.addMuscleText(String.format("%d: %s:%d", num + 1, hostname, port));
 	}
 
 	void removeContainer(int hash, String id) {
