@@ -133,10 +133,12 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 		if (ACTIVITY_LOGGER != null) {
 			if (ACTIVITY_LOGGER.equalsIgnoreCase("PLAIN")) {
 				actLogger = new PlainActivityLogger(loc);
+				logger.log(Level.INFO, "Logging MUSCLE activity to activity.log in the output directory.");
 			} else if (ACTIVITY_LOGGER.toUpperCase().startsWith("UDP")) {
 				String[] values = ACTIVITY_LOGGER.split(":");
 				InetSocketAddress addr = new InetSocketAddress(values[1], Integer.valueOf(values[2]));
 				actLogger = new UDPActivityLogger(loc, addr);
+				logger.log(Level.INFO, "Logging MUSCLE activity to UDP socket {1}:{2}", values);
 			}
 			actLogger.init();
 		}
