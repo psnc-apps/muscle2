@@ -40,7 +40,7 @@ public class SmartBufferedOutputStream extends OutputStream {
 	
 	@Override
 	public void write(byte[] b, int offset, int len) throws IOException {
-		if (len > tradeoff_size || size + len > data.length) {
+		if (len > tradeoff_size || size + len >= data.length) {
 			writeBuffer();
 			out.write(b, offset, len);
 		} else if (len > 0) {
