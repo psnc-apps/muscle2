@@ -21,22 +21,15 @@
    along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 
 == Author
-   Jan Hegewald
+   Joris Borgdorff
 =end
 
-# default configuration file for a MUSCLE CxA
-# some of the settings below are mandatory
-abort 'this is a configuration file for to be used with the MUSCLE bootstrap utility' if __FILE__ == $0
-
-require 'uri'
+require 'cxa'
+require 'connectionscheme'
 
 cxa = Cxa.LAST
-
 cxa.env['tmp_path'] = Muscle.LAST.env['tmp_path']
-muscle_tmp_path = Muscle.LAST.muscle_tmp_path
-
 
 # configure muscle.client.ConnectionScheme class with path to legacy CS
-cxa.env['CONNECTION_SCHEME_CLASS'] = 'muscle.core.ConnectionScheme'
-cxa.env['muscle.core.ConnectionScheme legacy_cs_file_uri'] = URI.parse "file:#{File.join(muscle_tmp_path, 'connection_scheme')}"
-cxa.env['muscle.core.ConnectionScheme'] = {'cs_file_uri'=>"#{cxa.env['muscle.core.ConnectionScheme legacy_cs_file_uri'].to_s}"}
+cs_path = File.join(Muscle.LAST.muscle_tmp_path, 'connection_scheme')
+cxa.env[ConnectionScheme.jclass] = cs_path

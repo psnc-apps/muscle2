@@ -28,9 +28,6 @@
 require 'utilities'
 include MuscleUtils
 
-PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
-$LOAD_PATH << PARENT_DIR
-
 class MuscleCli
 	#
 	def initialize

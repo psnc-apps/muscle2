@@ -27,19 +27,11 @@
 =end
 
 # File will usually be symlinked: reference everything from the original file.
-if File.symlink? __FILE__
-	PARENT_DIR = File.dirname(File.expand_path(File.readlink(__FILE__)))
-else
-	PARENT_DIR = File.dirname(File.expand_path(__FILE__))
-end unless defined? PARENT_DIR
-$LOAD_PATH << PARENT_DIR
-
 require 'timeout'
 require 'utilities'
 require 'cli2'
 require 'cxa'
 include MuscleUtils
-require 'uri'
 require 'muscle.cls'
 
 cli = MuscleCli.new
@@ -225,7 +217,9 @@ if m.env['main']
 		end
 		
 		begin
-			Timeout::timeout(manager_timeout) { contact_addr = m.find_manager_contact(manager_pid) }
+			Timeout::timeout(manager_timeout) do
+        contact_addr = m.find_manager_contact(manager_pid)
+      end
 		rescue Timeout::Error
 			puts "Simulation Manager did not run correctly after #{manager_timeout} seconds. Aborting."
 			kill_processes($running_procs, 6)

@@ -46,7 +46,7 @@ class JVM
 
 		# the java platform should load CXA from JSON file, so we dump a file with the muscle env
 		# dump env
-		File.open(env['muscle.Env dump uri'].path, 'w') do |f|
+		File.open(env[Muscle.jclass], 'w') do |f|
 			f.puts JSON.dump(env)
 		end
 
@@ -72,7 +72,7 @@ class JVM
 			JVM.add_prop(env, command, 'java.util.logging.config.file', "logging_#{log_infix}config_path")
 		end
 
-		JVM.add_prop(env, command, Muscle.jclass,             'muscle.Env dump uri')
+		JVM.add_prop(env, command, Muscle.jclass,             Muscle.jclass)
 		JVM.add_prop(env, command, 'java.io.tmpdir', 	        'tmp_path')
 		JVM.add_prop(env, command, 'muscle.native.tmpfile',   'native_tmp_file')
 		JVM.add_prop(env, command, 'muscle.native.reconnect', 'native_reconnect')

@@ -23,39 +23,16 @@
    along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 
 == Author
-   Jan Hegewald
+   Joris Borgdorff
 =end
-
-# File will usually be symlinked: reference everything from the original file.
-if File.symlink? __FILE__
-	PARENT_DIR = File.dirname(File.expand_path(File.readlink(__FILE__)))
-else
-	PARENT_DIR = File.dirname(File.expand_path(__FILE__))
-end unless defined? PARENT_DIR
-$LOAD_PATH << PARENT_DIR
 
 require 'cxa'
 require 'muscle.cls'
 
-# see if we should do anything at all
-if ARGV.size != 1
-	puts "Usage: #{$0} CXA_FILE"
-	exit 1
-end
+abort "Usage: #{$0} CXA_FILE" unless ARGV.size == 1
 
 m = Muscle.new
-
-# Add environment classpath and libpath to MUSCLE
-if ENV['MUSCLE_CLASSPATH']
-	m.add_classpath ENV['MUSCLE_CLASSPATH']
-end
-
-if ENV['MUSCLE_LIBPATH']
-	m.add_libpath ENV['MUSCLE_LIBPATH']
-end
-
 m.env['cxa_file'] = ARGV[0]
-# m.env['verbose'] = true
 
 begin
 	# load CxA configuration
@@ -69,4 +46,7 @@ end
 cxa.generate_cs_file
 
 gui_class = 'muscle.monitor.ActivityController'
-m.run_command(gui_class, [])
+m.run_command('Monitor', gui_class, [])
+m.await_commands
+
+exit(0)

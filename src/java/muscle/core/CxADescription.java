@@ -25,8 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -40,10 +38,9 @@ singleton which holds information about the current CxA
 @author Jan Hegewald
  */
 public class CxADescription {
-	private final static Logger logger = Logger.getLogger(CxADescription.class.getName());
-	private final static String CS_FILE_URI_KEY = "cs_file_uri";
-	private final static String CS_KEY = "muscle.core.ConnectionScheme";
-	private final static String CXA_KEY = "muscle.core.CxADescription";
+	private final static Logger logger =  Logger.getLogger(CxADescription.class.getName());
+	private final static String CS_KEY = ConnectionScheme.class.getName();
+	private final static String CXA_KEY = CxADescription.class.getName();
 	private final static String ENV_PROPERTY = "muscle.Env";
 	
 	private final Map<String,Object> description;
@@ -80,7 +77,7 @@ public class CxADescription {
 			System.exit(1);
 		} else {
 			try {
-				final File envFile = new File(new URI(envFilename));
+				final File envFile = new File(envFilename);
 				Reader reader = new BufferedReader(new FileReader(envFile));
 				// treat input as a org.json.simple.JSONObject and put in our env
 				@SuppressWarnings("unchecked")
@@ -93,9 +90,6 @@ public class CxADescription {
 				}
 				// load (mandatory) cxa properties from muscle environment
 				description.putAll(cxaParams);
-			} catch(java.net.URISyntaxException e) {
-				logger.log(Level.SEVERE, "Cannot load MUSCLE parameters from <" + envFilename + ">", e);
-				System.exit(1);
 			} catch (FileNotFoundException e) {
 				logger.log(Level.SEVERE, "Cannot load MUSCLE parameters from <" + envFilename + ">: path does not exist", e);
 				System.exit(1);
@@ -125,10 +119,8 @@ public class CxADescription {
 	}
 	
 	// project-accessible
-	File getConnectionSchemeFile() throws URISyntaxException {
-		@SuppressWarnings("unchecked")
-		Map<String, Object> csMap = (Map<String,Object>)getRawProperty(CS_KEY);
-		return new File(new URI((String)csMap.get(CS_FILE_URI_KEY)));
+	File getConnectionSchemeFile() {
+		return new File(getProperty(CS_KEY));
 	}
 
 	public boolean getBooleanProperty(String key) {

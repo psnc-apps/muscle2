@@ -28,12 +28,6 @@ require 'connectionscheme'
 require 'components'
 require 'instance'
 
-if File.symlink? __FILE__
-	PARENT_DIR = File.dirname(File.expand_path(File.readlink(__FILE__)))
-else
-	PARENT_DIR = File.dirname(File.expand_path(__FILE__))
-end unless defined? PARENT_DIR
-
 class Cxa
 	@@LAST = nil
 	
@@ -47,7 +41,7 @@ class Cxa
 		@env = rootenv[self.class.jclass]		
 		
 		# load (machine specific) default env
-		load_file "#{PARENT_DIR}/cxa.env.rb"
+		load_file "#{MUSCLE_RUBY}/cxa.env.rb"
 		# load user cxa
 		unless cxa_file.nil?
 			load_file cxa_file
@@ -114,7 +108,7 @@ class Cxa
 		self.components.instances
 	end
 	
-	def generate_cs_file(file=env['muscle.core.ConnectionScheme legacy_cs_file_uri'].path)
+	def generate_cs_file(file=env[ConnectionScheme.jclass])
 	  File.open(file, 'w') do |f|
       f.puts "# DO NOT EDIT! This is file is generated automatically by <#{__FILE__}> at #{Time.now}"
       f.puts self.components.coupling_s

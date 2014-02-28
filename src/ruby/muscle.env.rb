@@ -24,49 +24,25 @@
    Jan Hegewald
 =end
 
-# default configuration file for the MUSCLE bootstrap utility
-abort 'this is a configuration file for to be used with the MUSCLE bootstrap utility' if __FILE__ == $0
-
-require 'uri'
-
-m = Muscle.LAST
-
-# some local variables to keep things simple
-base_dir = ENV['MUSCLE_HOME']
-
-if base_dir == nil
-  puts 'MUSCLE_HOME environment variable is not defined.'
-  exit 1
-end
-
 require 'tmpdir'
+require 'utilities'
 
-#
 ## configure java CLASSPATH
-## classpath must include jade and muscle classes
-## remember: path separator is ';' on windows systems, else ':' better just use File::PATH_SEPARATOR
-## be careful: ENV['CLASSPATH'] might be nil or an empty string
-#m.add_classpath ENV['CLASSPATH'].split(File::PATH_SEPARATOR) if ENV['CLASSPATH'] != nil
-#m.add_classpath File.expand_path(File.join(base_dir, 'build', 'muscle.jar'))
-#m.add_classpath Dir.glob('#{base_dir}/thirdparty/*.jar')
-
+## classpath must include muscle classes
+m = Muscle.LAST
 m.add_classpath default_classpaths
 
-# configure native library path (e.g. LD_LIBRARY_PATH, DYLD_LIBRYRA_PATH or PATH)
+# configure native library path (e.g. LD_LIBRARY_PATH, DYLD_LIBRARY_PATH or PATH)
 # some of the settings below are mandatory
 # add our standard path for native libraries
-require 'utilities'
 assert_LIBPATHENV(ENV)
 m.add_libpath ENV[ENV['LIBPATHENV']].to_s
 # Library path should be set in terminal, we will not append to it here.
-# Fixes issue where OS X can not find libjava.jnilib
-# m.add_libpath "#{base_dir}/lib"
 
-logging_path = "#{base_dir}/share/muscle/resources/logging"
-
+logging_path = "#{ENV['MUSCLE_HOME']}/share/muscle/resources/logging"
 tmp_path = mkTmpPath(Dir.tmpdir)
 
-e = {
+m.add_env({
 'execute' => true,
 'verbose' => false,
 'quiet' => false,
@@ -87,8 +63,6 @@ e = {
 'port_max' => ENV['MUSCLE_PORT_MAX'],
 'stage_files' => [],
 'gzip_stage_files' => [],
-'sleep_when_idle' => '0'
-}
-e['muscle.Env dump uri'] = URI.parse "file:#{tmp_path}/.muscle/#{Muscle.jclass}"
-
-m.add_env(e)
+'sleep_when_idle' => '0',
+Muscle.jclass => "#{tmp_path}/.muscle/#{Muscle.jclass}"
+})

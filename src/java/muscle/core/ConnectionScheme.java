@@ -136,8 +136,6 @@ public class ConnectionScheme implements Serializable {
 			}
 		} catch(IOException e) {
 			throw new RuntimeException(e);
-		} catch(java.net.URISyntaxException e) {
-			throw new RuntimeException(e);
 		}
 	}
 	

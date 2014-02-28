@@ -24,9 +24,6 @@
    Jan Hegewald
 =end
 
-PARENT_DIR = File.dirname(File.expand_path(__FILE__)) unless defined? PARENT_DIR
-$LOAD_PATH << PARENT_DIR
-
 require 'timeout'
 
 module MuscleUtils
@@ -95,7 +92,7 @@ module MuscleUtils
 	end
 
 	# set value for LIBPATHENV or abort
-	def assert_LIBPATHENV env
+	def assert_LIBPATHENV(env)
 		if(env['LIBPATHENV'] == nil)
 			# try fo figure out the lib path environment key automatically
 			require 'rbconfig'
@@ -127,16 +124,21 @@ module MuscleUtils
 
 	# Detect the MPI rank from common environment variables that are set when MPI is active.
 	def detect_mpi_rank
-		possible_mpi_rank_vars=['OMPI_MCA_orte_ess_vpid',
-			'OMPI_MCA_ns_nds_vpid',
-			'PMI_RANK',
-			'MP_CHILD',
-			'SLURM_PROCID',
-			'X10_PLACE',
-			'MP_CHILD']
+		possible_mpi_rank_vars=[
+      'OMPI_COMM_WORLD_RANK',
+      'MV2_COMM_WORLD_RANK',
+      'MPISPAWN_ID',
+      'MP_CHILD',
+      'PMI_RANK',
+      'X10_PLACE',
+      'OMPI_MCA_orte_ess_vpid',
+      'OMPI_MCA_ns_nds_vpid',
+      'SLURM_PROCID',
+      'LAMRANK',
+      'GMPI_ID']
 
 		rank = nil
-		possible_mpi_rank_vars.each {|var| rank = ENV[var] if ENV.has_key? var }
+		possible_mpi_rank_vars.each {|var| rank = ENV[var] if ENV.has_key?(var) }
 		return rank
 	end
 

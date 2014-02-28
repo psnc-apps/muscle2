@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env ruby
 
+# Set default installation path
+ENV['MUSCLE_HOME']='@MUSCLE_PREFIX@' unless ENV['MUSCLE_HOME']
 
-if [[ -z $MUSCLE_HOME ]] ; then
-	MUSCLE_HOME=@MUSCLE_PREFIX@
-fi
+# ensure that all files within MUSCLE Ruby are succesfully 'require'd.
+MUSCLE_RUBY = "#{ENV['MUSCLE_HOME']}/share/muscle/ruby"
+$LOAD_PATH << MUSCLE_RUBY
 
-export MUSCLE_HOME
-
-# Exec is needed so that the PID stays the same
-exec $MUSCLE_HOME/share/muscle/ruby/muscle2.rb  $@
-
+# explicitly load runtime to avoid namespace clash with general Ruby
+require "#{MUSCLE_RUBY}/@EXEC_SCRIPT@"

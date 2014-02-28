@@ -35,15 +35,17 @@ class Muscle
 		@@LAST = self
 		@env = {}
 		@cxa = nil
+    @running_command = false
+    $running_procs = {}
 		
 		# set value for LIBPATHENV or abort
 		assert_LIBPATHENV self.env
 
     begin
       # load (machine specific) default env
-      load_env(File.expand_path("#{PARENT_DIR}/muscle.env.rb"))
+      load_env(File.expand_path("#{MUSCLE_RUBY}/muscle.env.rb"))
     rescue Exception => e
-      puts "Failed to load MUSCLE configuration file <#{PARENT_DIR}/muscle.env.rb>:"
+      puts "Failed to load MUSCLE configuration file <#{MUSCLE_RUBY}/muscle.env.rb>:"
       puts e.message
       exit(1)
     end
@@ -159,7 +161,7 @@ class Muscle
 		self.env[:as_manager] = true
 
 		puts '=== Running MUSCLE2 Simulation Manager ==='
-		pid = run_command(clazz, args)
+		pid = run_command('Simulation Manager', clazz, args)
 
 		self.env.delete(:as_manager)		
 		self.env['Xms'] = tmpXms
@@ -222,7 +224,7 @@ class Muscle
 		end
 		
 		puts '=== Running MUSCLE2 Simulation ==='
-		run_command(clazz, args)
+		run_command('Simulation', clazz, args)
 	end
 	
 	def add_to_command(command, kernel_name, prop)
@@ -291,7 +293,7 @@ class Muscle
 		end
 	end
 
-	def run_command(clazz, args)
+	def run_command(name, clazz, args)
 		command = JVM.build_command(clazz, args, self.env)
 		if self.env['verbose']
 			puts command
@@ -300,10 +302,28 @@ class Muscle
 		if self.env.has_key?('execute') and not self.env['execute']
 			return -1
 		else
-			return Process.fork {exec(command)}
+      if not @running_command
+        @running_command = true
+        signals = ['HUP', 'INT', 'QUIT', 'ABRT', 'SYS',
+        	'PIPE', 'ALRM', 'TERM', 'TTIN', 'TTOU', 'XCPU', 'XFSZ',
+        	'PROF', 'USR1', 'USR2']
+        signals.each {|sig|
+        	Signal.trap(sig) do
+        		kill_processes($running_procs, 1)
+        		$running_procs = nil
+        	end
+        }
+      end
+			pid = Process.fork {exec(command)}
+      $running_procs[pid] = name
+      return pid
 		end
 	end
 	
+  def await_commands
+    MuscleUtils.await_commands($running_procs)
+  end
+  
 	def apply_intercluster
 		if(self.env['port_min'].nil? or self.env['port_max'].nil?)
 			puts 'Warning: intercluster specified, but no local port range given.'
