@@ -8,7 +8,7 @@ dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/pingpongcpp'
 
 # declare kernels
 ping = Instance.new('Ping', 'examples.pingpong.Ping')
-pong = NativeInstance.new('Pong', "#{dir}/pong", java_class: 'examples.pingpongcpp.Pong')
+pong = NativeInstance.new('Pong', "#{dir}/pong", {:java_class => 'examples.pingpongcpp.Pong'})
 
 # configure connection scheme
 ping.couple(pong, 'out' => 'in')

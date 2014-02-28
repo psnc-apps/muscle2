@@ -8,8 +8,8 @@ abort "Run 'source [MUSCLE_HOME]/etc/muscle.profile' before this script" if not 
 dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/pingpongcpp'
 
 # declare kernels
-ping = NativeInstance.new('Ping', "#{dir}/ping", java_class: 'examples.pingpongcpp.Ping')
-pong = NativeInstance.new('Pong', "#{dir}/pong", java_class: 'examples.pingpongcpp.Pong')
+ping = NativeInstance.new('Ping', "#{dir}/ping", {:java_class => 'examples.pingpongcpp.Ping'})
+pong = NativeInstance.new('Pong', "#{dir}/pong", {:java_class => 'examples.pingpongcpp.Pong'})
 
 # configure connection scheme
 ping.couple(pong, 'out' => 'in')

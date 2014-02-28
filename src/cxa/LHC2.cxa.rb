@@ -2,8 +2,8 @@ abort "Run 'source [MUSCLE_HOME]/etc/muscle.profile' before this script" if not 
 dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/mpiring'
 
 # declare kernels
-lhc = MPIInstance.new('LHC', "#{dir}/LHC", mpiexec_args: '-np 2', java_class: 'examples.mpiring.LHC2')
-psb = MPIInstance.new('PSB', "#{dir}/PSB", mpiexec_args: '-np 2', java_class: 'examples.mpiring.PSB2')
+lhc = MPIInstance.new('LHC', "#{dir}/LHC", {:mpiexec_args => '-np 2', :java_class => 'examples.mpiring.LHC2'})
+psb = MPIInstance.new('PSB', "#{dir}/PSB", {:mpiexec_args => '-np 2', :java_class => 'examples.mpiring.PSB2'})
 
 print lhc
 

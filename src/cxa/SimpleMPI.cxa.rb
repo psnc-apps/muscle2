@@ -2,7 +2,7 @@ abort "Run 'source [MUSCLE_HOME]/etc/muscle.profile' before this script" if not 
 dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/simplempi'
 
 # Declare kernels
-w = MPIInstance.new('w', "#{dir}/mpisender", mpiexec_args: '-np 4')
+w = MPIInstance.new('w', "#{dir}/mpisender", {:mpiexec_args => '-np 4'})
 r = Instance.new('r', 'examples.simplejava.ConsoleWriter')
 
 # Couple w to r

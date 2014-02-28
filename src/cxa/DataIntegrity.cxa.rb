@@ -3,7 +3,7 @@ dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/dataintegrity'
 
 # declare kernels
 bounce = NativeInstance.new('Bounce', "#{dir}/bounce")
-check = NativeInstance.new('Check', "#{dir}/check", java_class: 'examples.dataintegrity.Check')
+check = NativeInstance.new('Check', "#{dir}/check", {:java_class => 'examples.dataintegrity.Check'})
 
 # configure connection scheme
 check.couple(bounce, {'datatype' => 'datatype', 'out' => 'in'})
