@@ -70,7 +70,7 @@ muscle_error_t env::init(int *argc, char ***argv)
 	
 	// Only execute for rank 0
 	if (rank > 0) {
-        is_main_processor = false;
+		is_main_processor = false;
 		logger::initialize(NULL, NULL, MUSCLE_LOG_OFF, false);
 		return MUSCLE_SUCCESS;
 	}

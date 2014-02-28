@@ -67,21 +67,22 @@ Communicator::~Communicator()
 net::ClientSocket *Communicator::createSocket()
 {
 	net::socket_opts opts;
-    opts.blocking_connect = true;
-    opts.keep_alive = true;
+	opts.blocking_connect = true;
+	opts.keep_alive = true;
 
-    net::ClientSocket *csock = new net::CClientSocket(address, NULL, opts);
-    csock->setBlocking(true);
+	net::ClientSocket *csock = new net::CClientSocket(address, NULL, opts);
+	csock->setBlocking(true);
+	csock->setDelay(false);
 	return csock;
 }
 
 std::string Communicator::retrieve_string(muscle_protocol_t opcode, std::string *name) {
-    char *str = (char *)0;
-    size_t len = 65536;
-    execute_protocol(opcode, name, MUSCLE_STRING, NULL, 0, &str, &len);
-    std::string str_out(str);
-    free_data(str, MUSCLE_STRING);
-    return str_out;
+	char *str = (char *)0;
+	size_t len = 65536;
+	execute_protocol(opcode, name, MUSCLE_STRING, NULL, 0, &str, &len);
+	std::string str_out(str);
+	free_data(str, MUSCLE_STRING);
+	return str_out;
 }
 
 }

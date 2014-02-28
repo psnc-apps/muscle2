@@ -30,9 +30,9 @@ namespace muscle {
 	
 	const char *logger::logger_name = 0;
 	FILE *logger::logger_fd = 0;
-	int logger::logger_level = MUSCLE_LOG_ALL;
+	int logger::logger_level = MUSCLE_LOG_INFO;
 	int logger::logger_file_level = MUSCLE_LOG_OFF;
-	int logger::min_level = MUSCLE_LOG_ALL;
+	int logger::min_level = MUSCLE_LOG_INFO;
 	
 	void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 	{

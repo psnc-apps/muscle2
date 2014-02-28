@@ -246,6 +246,7 @@ public class NativeGateway extends Thread implements Disposable {
 			xdrOut = nativeSock.getOutputStream();
 			xdrIn = nativeSock.getInputStream();
 		}
+		nativeSock.setTcpNoDelay(true);
 		
 		logger.log(Level.FINE, "Accepted connection from: {0}", nativeSock.getRemoteSocketAddress());
 		
