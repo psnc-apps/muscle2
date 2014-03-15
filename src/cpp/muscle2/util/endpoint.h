@@ -32,14 +32,14 @@ namespace muscle {
 			void resolve();
 			inline bool isResolved() const
 			{
-				for (int i = 0; i < sizeof(addr); i++)
+				for (size_t i = 0; i < sizeof(addr); i++)
 					if (addr[i]) return true;
 				return false;
 			}
 			inline bool isWildcard() const
 			{
 				// If any other address part is set, it's not a wildcard
-				for (int i = 1; i < sizeof(addr); i++)
+				for (size_t i = 1; i < sizeof(addr); i++)
 					if (addr[i]) return false;
 				
 				return addr[0] == 1 || (addr[0] == 0 && host == "*");
