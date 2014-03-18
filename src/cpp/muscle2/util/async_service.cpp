@@ -479,7 +479,10 @@ void async_service::run_recv(int fd, bool hasErr)
 			recv->async_report_error(desc.code, desc.user_flag, ex);
 		}
 		
-		if (status >= 0)
+		if (status == 0) {
+			is_final = false;
+		}
+		else if (status > 0)
 		{
 			char *new_data_ptr = desc.data_ptr_advance(status);
 			is_final = (new_data_ptr == desc.data_end());
@@ -493,8 +496,7 @@ void async_service::run_recv(int fd, bool hasErr)
 		}
 		else
 		{
-			string msg = status == -1 ? "Closing connection" : "Sending end closed connection";
-			muscle_exception ex(msg, errno, true);
+			muscle_exception ex("Closing connection", errno, true);
 			recv->async_report_error(desc.code, desc.user_flag, ex);
 		}
 	}
