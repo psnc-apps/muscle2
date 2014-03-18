@@ -27,7 +27,7 @@
 
 #ifndef MSG_NOSIGNAL
 #ifdef SO_NOSIGPIPE
-#define MSG_NOSIGNAL SO_NOSIGPIPE
+#define MSG_NOSIGNAL 0
 #else
 #define MSG_NOSIGNAL msg_nosignal_is_not_defined
 #endif
@@ -92,6 +92,11 @@ void csocket::setOpts(const socket_opts &opts)
 		}
 		logger::finest("Set TCP send size to %d bytes", current_size);
 	}
+	
+#ifdef SO_NOSIGPIPE
+	int nosig = 1;
+	setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, &nosig, sizeof(nosig));
+#endif
 	
 	bool keep_alive = opts.keep_alive == -1 ? 1 : opts.keep_alive;
 	setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive));
