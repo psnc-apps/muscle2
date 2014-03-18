@@ -165,9 +165,6 @@ int csocket::select(int mask, duration timeoutDuration) const
 CClientSocket::CClientSocket(const ServerSocket& parent, int sockfd, const socket_opts& opts) : msocket(parent), csocket(sockfd), has_delay(true), has_cork(false)
 {
 	setOpts(opts);
-	this->isConnectFirstTime=true;
-    isCheckConnection=true;
-
 }
 	
 CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_opts& opts) : csocket(sockfd), msocket(ep, service), has_delay(true), has_cork(false)
@@ -175,9 +172,6 @@ CClientSocket::CClientSocket(endpoint& ep, async_service *service, const socket_
     create();
 	setOpts(opts);
 	connect(opts.blocking_connect != 0);
-	this->isConnectFirstTime=true;
-    isCheckConnection=true;
-
 }
 
 void CClientSocket::connect(bool blocking)
@@ -192,66 +186,11 @@ void CClientSocket::connect(bool blocking)
 	int res = ::connect(sockfd, &saddr, sizeof(struct sockaddr));
 	if (res < 0 && (blocking || errno != EINPROGRESS)) {
 		sockfd = -1;
-		throw muscle_exception("cannot connect to " + address.str(), errno);
+		throw muscle_exception("cannot connect to " + address.str(), errno, true);
 	}
 	
 	if (blocking)
 		setBlocking(false);
-}
-void CClientSocket::closeAndReconnect(){
-
-    ::close(sockfd);
-    muscle::net::socket_opts opts;
-    opts.blocking_connect = true;
-    opts.keep_alive = true;
-
-    create();
-    setOpts(opts);
-    while(true){
-        try{
-            connect(opts.blocking_connect != 0);
-            setBlocking(true);
-            break;
-        }catch (std::exception& e){
-            logger::warning("Could not reconnect to server %s", e.what());
-        }
-    }
-}
-
-bool CClientSocket::needCheckConnection(){
-    return isCheckConnection;
-}
-void CClientSocket::setCheckConnection(bool check){
-    isCheckConnection=check;
-}
-
-
-bool  CClientSocket::isConnected(){
-
-    if(this->isConnectFirstTime || !this->needCheckConnection())
-     {
-            this->isConnectFirstTime=false;
-            return true;
-     }
-    char  c;
-
-    ssize_t n= ::recv(sockfd, &c, 1, MSG_PEEK |MSG_DONTWAIT);// ((isWait)?MSG_WAITALL:MSG_DONTWAIT)); // MSG_DONTWAIT
-    if (  n< 0) {
-
-        switch(errno)
-        {
-        case EAGAIN :
-            return true;
-            break;
-        default:
-            return false;
-            break;
-        }
-    }else if(n == 0){
-        return false;
-    }else{
-        return true;
-    }
 }
 
 void CClientSocket::setDelay(const bool delay)

@@ -35,7 +35,7 @@ class muscle_exception : public std::runtime_error {
 public:
     const int error_code;
 
-    muscle_exception(const std::exception& ex) : std::runtime_error(ex.what()), error_code(errno)
+    muscle_exception(const std::exception& ex) throw() : std::runtime_error(ex.what()), error_code(errno)
     { log(); }
 	muscle_exception (std::string msg) throw() : std::runtime_error(msg), error_code(errno)
 	{ log(); }
@@ -53,7 +53,7 @@ public:
 		else
 			logger::severe(w);
 	}
-    muscle_exception(std::string msg, int code, bool silent) : std::runtime_error(msg), error_code(code) { if (!silent) log(); }
+    muscle_exception(std::string msg, int code, bool silent) throw() : std::runtime_error(msg), error_code(code) { if (!silent) log(); }
 };
 
 }

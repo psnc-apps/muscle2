@@ -59,36 +59,7 @@ namespace muscle {
 			// Data Transmission
 			virtual ssize_t send (const void* s, size_t size);
 			virtual ssize_t recv (void* s, size_t size);
-			//added by mohamed belgacem
-			/**
-			 * @brief isConnected:
-			 * Checks if the socket connection with the server (NativeGateway) is alive.
-			 * @return true if the socket is alive. False otherwise.
-			 */
-			bool isConnected();
 
-			/**
-			 * @brief closeAndReconnect: F
-			 * Forces the client socket to a clean close and reconnect to the server (NativeGateway).
-			 */
-			void closeAndReconnect();
-
-			/** -- my be private --
-			 * @brief needCheckConnection:
-			 * Tells if it needed to check the client socket connection status or not. This is useful to avoid
-			 * cheking the status of the socket since the problem of dead half peer
-			 * can occure: the server is dead and the client isn't notified
-			 * @return True if closeAndReconnect() is required. False otherwise. 
-			 */
-			bool needCheckConnection();
-
-			/** 
-			 * @brief setCheckConnection:
-			 * change the needCheckConnection() status.
-			 * @param check need to check the client socket status or not.
-			 */
-			void setCheckConnection(bool check);
-			//	
 			virtual int hasError();
 			virtual void async_cancel();
 		protected:
@@ -97,8 +68,6 @@ namespace muscle {
 		private:
 			CClientSocket(const CClientSocket& other) {}
 			bool has_delay, has_cork;
-			bool isConnectFirstTime;//to ckeck if it is the 1st time to connect to the java controller
-			bool isCheckConnection;
 		};
 
 		class CServerSocket : public ServerSocket, public csocket
