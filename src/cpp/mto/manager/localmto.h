@@ -9,8 +9,8 @@
 #ifndef __CMuscle__localmto__
 #define __CMuscle__localmto__
 
-#define MAX_INTERNAL_WAITING 10
-#define MAX_EXTERNAL_WAITING 64
+#define MAX_INTERNAL_WAITING 16
+#define MAX_EXTERNAL_WAITING 16
 
 #include "peercollection.h"
 #include "connectioncollection.h"

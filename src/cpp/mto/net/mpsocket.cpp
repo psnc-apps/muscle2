@@ -105,10 +105,10 @@ namespace muscle {
 			*ret = -1;
 		} else if (send) {
             *ret = _mpsocket_do_send(data, sz, sock->pathid);
-			sock->setWriteReady();
+			sock->addWriteReady(0);
 		} else {
             *ret = _mpsocket_do_recv(data, sz, sock->pathid);
-			sock->setReadReady();
+			sock->addReadReady(0);
 		}
         
 		if (cache.stop_condition && *ret != -1)
@@ -136,80 +136,22 @@ namespace muscle {
 		}
 
 		if (asServer)
-			sock->setReadReady();
+			sock->addReadReady(0);
 		else
-			sock->setWriteReady();
+			sock->addWriteReady(0);
         
         return res;
     }
     
     //////// mpsocket /////////////////
     
-    mpsocket::mpsocket() : msocket((async_service *)0)
-    {
-        int fd[2];
-        if (pipe(fd) == -1) throw muscle_exception("Could not create MPWide socket pipe", errno);
-        sockfd = fd[0];
-        writableReadFd = fd[1];
-
-        if (pipe(fd) == -1) throw muscle_exception("Could not create MPWide socket pipe", errno);
-        readableWriteFd = fd[0];
-        writableWriteFd = fd[1];
-    }
-    
-    mpsocket::~mpsocket()
-    {
-        ::close(sockfd);
-        ::close(writableReadFd);
-        ::close(readableWriteFd);
-        ::close(writableWriteFd);
-    }
-    
-	int mpsocket::getWriteSock() const
-	{
-		return readableWriteFd;
-	}
-	
-    void mpsocket::setReadReady() const
-    {
-        char c = 1;
-        ::write(writableReadFd, &c, 1);
-    }
-    void mpsocket::unsetReadReady() const
-    {
-        char c;
-        ::read(sockfd, &c, 1);
-    }
-	
-    bool mpsocket::isReadReady() const
-    {
-		int result = Socket_select(sockfd, 0, MPWIDE_SOCKET_WRMASK, 0, 1);
-		return result >= 0 && (result&MPWIDE_SOCKET_RDMASK)==MPWIDE_SOCKET_RDMASK;
-    }
-    void mpsocket::setWriteReady() const
-    {
-        char c = 1;
-        ::write(writableWriteFd, &c, 1);
-    }
-    void mpsocket::unsetWriteReady() const
-    {
-        char c;
-        ::read(readableWriteFd, &c, 1);
-    }
-	
-    bool mpsocket::isWriteReady() const
-    {
-		int result = Socket_select(readableWriteFd, 0, MPWIDE_SOCKET_WRMASK, 0, 1);
-		return result >= 0 && (result&MPWIDE_SOCKET_RDMASK)==MPWIDE_SOCKET_RDMASK;
-    }
-  
     /** CLIENT SIDE **/
 	
 	// Accept
     MPClientSocket::MPClientSocket(const ServerSocket& parent, int pathid, const socket_opts& opts) : msocket(parent), pathid(pathid), sendThread(0), recvThread(0), connectThread(0), last_send(0), last_recv(0)
     {
-        setReadReady();
-        setWriteReady();
+        addReadReady(0);
+        addWriteReady(0);
     }
 
     // Connect
@@ -226,8 +168,8 @@ namespace muscle {
             else if (opts.send_buffer_size != -1)
                 setWin(opts.send_buffer_size);
 
-            setWriteReady();
-			setReadReady();
+            addWriteReady(0);
+			addReadReady(0);
         }
         else
         {
@@ -293,9 +235,9 @@ namespace muscle {
 		{
             // Clear pipe
 			if (send)
-				unsetWriteReady();
+				removeWriteReady();
 			else
-				unsetReadReady();
+				removeReadReady();
 
 			last_thread = new mpsocket_thread(send, s, sz, this);
             // will send it, but up to now we sent nothing.
@@ -313,13 +255,13 @@ namespace muscle {
     
     bool MPClientSocket::isConnecting()
     {
-        if (connectThread && (connectThread->isDone() || isWriteReady())) {
+        if (connectThread && (connectThread->isDone() || hasWriteReady())) {
             int *res = (int *)connectThread->getResult();
             pathid = *res;
             delete res;
             delete connectThread;
             connectThread = 0;
-			setReadReady();
+			addReadReady(0);
         }
         
         return connectThread != NULL;
@@ -348,7 +290,7 @@ namespace muscle {
         int *res = (int *)listener->getResult();
         
         // Clear pipe buffer
-        unsetReadReady();
+        removeReadReady();
         
         ClientSocket *sock;
         if (*res == -1)

@@ -8,7 +8,7 @@ add_executable(${MTO}
             main.cpp
             initiators/connectors.cpp initiators/helloreader.cpp initiators/acceptors.cpp
             manager/peerconnectionhandler.cpp manager/connection.cpp manager/options.cpp manager/localmto.cpp manager/peercollection.cpp manager/connectioncollection.cpp
-            manager/messages.cpp net/mpsocket.cpp)
+            manager/messages.cpp net/MPWPathSocket.cpp net/mpsocket.cpp net/DecoupledSelectSocket.cpp net/ThreadPool.cpp)
 
 target_link_libraries(${MTO} ${MPWIDE_LIB} )
 target_link_libraries(${MTO} ${MUSCLE2_LIB} )

@@ -8,6 +8,7 @@
 
 #ifndef __CMuscle__mpsocket__
 #define __CMuscle__mpsocket__
+#include "DecoupledSelectSocket.h"
 #include "muscle2/util/msocket.h"
 #include "muscle2/util/thread.h"
 #include "muscle2/util/rwmutex.h"
@@ -56,25 +57,14 @@ namespace muscle {
         
     ///// Actual socket implementation ////
     
-    class mpsocket : virtual public msocket
+    class mpsocket : virtual public DecoupledSelectSocket
     {
     public:
-        virtual void setReadReady() const;
-        virtual void unsetReadReady() const;
-        virtual bool isReadReady() const;
-		virtual void setWriteReady() const;
-		virtual void unsetWriteReady() const;
-		virtual bool isWriteReady() const;
-		virtual int getWriteSock() const;
-		
         static mutex path_mutex;
-		
 		virtual bool selectWriteFdIsReadable() const { return true; }
-		virtual void setBlocking(bool) {}
     protected:
-        mpsocket();
-        virtual ~mpsocket();
-        int writableReadFd, readableWriteFd, writableWriteFd;
+        mpsocket() {}
+        virtual ~mpsocket() {}
     }; // end class socket
 
     class MPClientSocket : public ClientSocket, public mpsocket

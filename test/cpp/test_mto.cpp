@@ -11,6 +11,7 @@
 #include "muscle2/util/option_parser.hpp"
 #include "muscle2/util/thread.h"
 #include "mto/net/mpsocket.h"
+#include "mto/net/MPWPathSocket.h"
 #include "assertTemplates.h"
 
 #include <arpa/inet.h>
@@ -19,72 +20,110 @@ class async_ss : public muscle::net::async_acceptlistener, muscle::net::async_re
 {
 public:
     muscle::net::async_service * const service;
-    int i;
     muscle::net::ServerSocket *ss;
     muscle::net::ClientSocket *cs;
     muscle::net::ClientSocket *as;
-    async_ss(muscle::net::async_service *s, muscle::net::ServerSocket *ssock) : service(s), i(0), ss(ssock) {}
+	int i, f3, f4;
+	
+    async_ss(muscle::net::async_service *s, muscle::net::ServerSocket *ssock) : service(s), ss(ssock), i(0), f3(0), f4(0) {}
     
     virtual void async_accept(size_t code, int flag, muscle::net::ClientSocket *sock)
     {
-        i++;
-        if (i == 1) {
-            cout << "connected socket" << endl;
-            char *s = strdup("my string");
-            cs = sock;
-            cs->async_send(3, s, strlen(s)+1, this, 0);
-        } else {
-            char *s = new char[20];
+        if (code == 1) {
             cout << "accepted socket" << endl;
+			ss->async_cancel();
+			delete ss;
+		} else {
+			cout << "connected socket" << endl;
+		}
+		
+		const char *os1 = "my string";
+		const char *os2 = "my other";
+		const size_t sz_large = 1024*1024*64, sz_small = 1024*4;
+		if (++i == 1) {
+            char *s1 = strdup(os1);
+            char *s2 = strdup(os2);
+			char *s3 = new char[sz_large];
+			char *s4 = new char[sz_small];
+			char *s5 = new char[2];
+			s5[0] = 'a';
+			s5[1] = 0;
+            cs = sock;
+            cs->async_send(3, s1, strlen(os1)+1, this, 0);
+            cs->async_send(3, s2, strlen(os2)+1, this, 0);
+            cs->async_recv(3, s3, sz_large, this);
+            cs->async_recv(3, s4, sz_small, this);
+            cs->async_send(3, s5, 2, this, 0);
+        } else {
+            char *s1 = new char[strlen(os1) + 1];
+            char *s2 = new char[strlen(os2) + 1];
+			char *s3 = new char[sz_large];
+			char *s4 = new char[sz_small];
+			char *s5 = new char[2];
+			s3[0] = s4[0] = -1;
+			s3[sz_large-1] = s4[sz_small-1] = 127;
             as = sock;
-            as->async_recv(4, s, 20, this);
-            ss->async_cancel();
+            as->async_recv(4, s1, strlen(os1)+1, this);
+            as->async_recv(4, s2, strlen(os2)+1, this);
+            as->async_send(4, s3, sz_large, this, 0);
+            as->async_send(4, s4, sz_small, this, 0);
+            as->async_recv(4, s5, 2, this);
         }
     }
     
-    virtual void async_report_error(size_t,int,const muscle::muscle_exception&) {}
+    virtual void async_report_error(size_t,int,const muscle::muscle_exception& ex) {
+		assertFalse("Had error: " + string(ex.what()));
+	}
     virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final)
     {
         if (final == -1)
             assertFalse("Error during receiving data");
-        else if (len > 0)
-            cout << "received " << string((char *)data) << endl;
+		else if (final == 0)
+			return true;
+        else if (len > 0 && len < 20)
+            cout << "received '" << string((char *)data) << "' (len " << len << ")" << endl;
+		else if (len > 0) {
+			assertEquals<char>(((char *)data)[0], -1, "Data transfer start");
+			assertEquals<char>(((char *)data)[len - 1], 127, "Data transfer finish");
+		}
+		else
+			assertFalse("received nothing...");
         
         delete [] (char *)data;
+		if (flag == 3) f3++;
+		else f4++;
         
-        return false;
+        return true;
     }
     virtual void async_sent(size_t code, int flag, void *data, size_t len, int final)
     {
         if (final == 1)
         {
-            cout << "sent " << string((char *)data) << endl;
+            cout << "sent '" << string((char *)data) << "' (len " << len << ")" << endl;
             free(data);
         }
         if (final == -1)
             assertFalse("Error during sending data");
+		if (flag == 3) f3++;
+		else f4++;
     }
     virtual void async_done(size_t code, int flag)
     {
-        if (flag == 3) delete cs;
-        if (flag == 4) delete as;
+        if (flag == 3 && f3 == 5) delete cs;
+        if (flag == 4 && f4 == 5) delete as;
     }
 };
 
 void testAsyncConnect(muscle::net::async_service &service, muscle::net::SocketFactory& factory, muscle::net::endpoint& ep, muscle::net::socket_opts& opts)
 {
-    try
-    {
-        muscle::net::ServerSocket *ssock = factory.listen(ep, opts);
-        usleep(1000000);
-        async_ss ass(&service, ssock);
-        ssock->async_accept(1, &ass, &opts);
-        factory.async_connect(1, ep, &opts, &ass);
-        
-        service.run();
-    } catch (const muscle::muscle_exception& ex) {
-        cout << "Can not bind to port, use a different one: " << string(ex.what()) << endl;
-    }
+	ep.resolve();
+	muscle::net::ServerSocket *ssock = factory.listen(ep, opts);
+	usleep(10000);
+	async_ss ass(&service, ssock);
+	ssock->async_accept(1, &ass, &opts);
+	factory.async_connect(2, ep, &opts, &ass);
+	
+	service.run();
 }
 
 struct mutexThreadData {
@@ -177,19 +216,31 @@ void testAsyncMPConnectServerSocket()
     cout << endl << "async_connect/accept mpsocket" << endl << endl;
     muscle::net::endpoint ep("127.0.0.1", 40108);
     muscle::net::socket_opts opts(16);
-    muscle::net::async_service service;
+    muscle::net::async_service service(size_t(1024*1024*1024), 20);
     muscle::MPSocketFactory factory(&service);
     testAsyncConnect(service, factory, ep, opts);
 }
 
+void testAsyncMPWPathConnectServerSocket()
+{
+    cout << endl << "async_connect/accept mpwpathsocket" << endl << endl;
+    muscle::net::endpoint ep("127.0.0.1", 40108);
+    muscle::net::socket_opts opts(16);
+    muscle::net::async_service service(size_t(1024*1024*1024), 20);
+    muscle::MPWPathSocketFactory factory(&service, 16);
+    testAsyncConnect(service, factory, ep, opts);
+}
+
+
 int main(int argc, char * argv[])
 {
     muscle::util::mtime t0 = muscle::util::mtime::now();
-
+	muscle::logger::initialize("mto_tester", NULL, MUSCLE_LOG_ALL, MUSCLE_LOG_OFF, true);
     try {
         testMutex();
         testThread();
 //        testAsyncMPConnectServerSocket();
+        testAsyncMPWPathConnectServerSocket();
         cout << endl;
         assertTrue("run tests without uncaught exceptions");
     } catch (const muscle::muscle_exception& ex) {

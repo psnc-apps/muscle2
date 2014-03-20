@@ -10,256 +10,74 @@
 #include "muscle2/util/async_service.h"
 
 #include <sys/select.h>
+#include <cassert>
 
 #ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL SO_NOSIGPIPE
+#define MSG_NOSIGNAL 0
 #endif
 
-#define max(X,Y) (((X) > (Y)) ? (X) : (Y))
+#ifndef min
 #define min(X,Y) (((X) < (Y)) ? (X) : (Y))
-
-static int Socket_select_mpwpath(int rs, int ws, int mask, int timeout_s, int timeout_u);
+#endif
 
 using namespace muscle;
 using namespace muscle::net;
 using namespace muscle::util;
 using namespace std;
 
-const int MPWPathSocket::RDMASK = 1;
-const int MPWPathSocket::WRMASK = 2;
-
-MPWPathSocket::MPWPathSocket()
+void MPWPathClientSocket::clear(MPWPathSendRecvThread **commThreads)
 {
-	int fd[2];
-	if (pipe(fd) == -1)
-		throw muscle_exception("Could not create MPWide socket pipe", errno);
-	
-	sockfd = fd[0];
-	writableReadFd = fd[1];
-	
-	if (pipe(fd) == -1)
-		throw muscle_exception("Could not create MPWide socket pipe", errno);
-	
-	readableWriteFd = fd[0];
-	writableWriteFd = fd[1];
-}
-
-MPWPathSocket::~MPWPathSocket()
-{
-	close(sockfd);
-	close(writableReadFd);
-	close(readableWriteFd);
-	close(writableWriteFd);
-}
-
-int MPWPathClientSocket::getWriteSock() const
-{
-	return readableWriteFd;
-}
-
-void MPWPathSocket::setReadReady() const
-{
-	char c = 1;
-	::write(writableReadFd, &c, 1);
-}
-void MPWPathSocket::unsetReadReady() const
-{
-	char c;
-	::read(sockfd, &c, 1);
-}
-
-bool MPWPathSocket::isReadReady() const
-{
-	int result = Socket_select_mpwpath(sockfd, 0, WRMASK, 0, 1);
-	return result >= 0 && (result&RDMASK)==RDMASK;
-}
-void MPWPathClientSocket::setWriteReady() const
-{
-	char c = 1;
-	::write(writableWriteFd, &c, 1);
-}
-void MPWPathClientSocket::unsetWriteReady() const
-{
-	char c;
-	::read(readableWriteFd, &c, 1);
-}
-
-bool MPWPathClientSocket::isWriteReady() const
-{
-	int result = Socket_select_mpwpath(readableWriteFd, 0, WRMASK, 0, 1);
-	return result >= 0 && (result&RDMASK)==RDMASK;
-}
-
-
-void MPWPathClientSocket::clear(const bool send)
-{
-	MPWPathSendRecvThread **saveThreads = send ? sendThreads : recvThreads;
-	
 	for (int i = 0; i < num_threads; i++) {
-		if (saveThreads[i] == NULL)
-			break;
+		if (commThreads[i] == NULL)
+			continue;
 		
-		saveThreads[i]->cancel();
-		const int * const res = (const int *)saveThreads[i]->getResult();
-		delete saveThreads[i];
-		saveThreads[i] = NULL;
+		commThreads[i]->cancel();
+		const int * const res = (const int *)commThreads[i]->getResult();
 		if (res) delete res;
+
+		delete commThreads[i];
+		commThreads[i] = NULL;
 	}
 }
 
-MPWPathSendRecvThread::MPWPathSendRecvThread(bool send_, char *data_, size_t *indexes_, int *fds_, int num_channels_, const duration& pacing_time_, MPWPathClientSocket *employer_) : send(send_), data(data_), indexes(indexes_), num_channels(num_channels_), fds(fds_), employer(employer_), pacing_time(pacing_time_)
+MPWPathClientSocket::MPWPathClientSocket(ThreadPool *tpool_, endpoint& ep, async_service *server, const socket_opts& opts, int num_threads) : msocket(ep, server), num_threads(num_threads), num_channels(opts.max_connections), channels(NULL), sendData(NULL), recvData(NULL), MPWPathSocket(tpool_)
 {
-	commDone = new bool[num_channels]();
-	start();
-}
-
-MPWPathSendRecvThread::~MPWPathSendRecvThread()
-{
-	delete [] commDone;
-}
-
-int MPWPathSendRecvThread::select(const duration &timeout)
-{
-	struct timeval t = timeout.timeval();
-	
-	fd_set opset, errset;
-	FD_ZERO(&opset); FD_ZERO(&errset);
-	int max = 0;
-	for (int i = 0; i < num_channels; i++)
-	{
-		if (!commDone[i]) {
-			FD_SET(fds[i], &opset);
-			FD_SET(fds[i], &errset);
-			if (fds[i] > max)
-				max = fds[i];
-		}
-	}
-
-	int res;
-	if (send)
-		res = ::select(max + 1, 0, &opset, &errset, &t);
-	else
-		res = ::select(max + 1, &opset, 0, &errset, &t);
-	
-	if (res > 0)
-	{
-		for (int i = 0; i < num_channels; i++)
-		{
-			if (!commDone[i]) {
-				if (FD_ISSET(fds[i], &opset))
-					return i + 1;
-				else if (FD_ISSET(fds[i], &errset))
-					return -2;
-			}
-		}
-		return -3; // should not reach here
-	} else if (res == 0) {
-		return 0;
-	} else {
-		return -1;
-	}
-}
-
-void *MPWPathSendRecvThread::run()
-{
-	size_t *sz_communicated = new size_t[num_channels]();
-	int num_done = 0;
-	int *ret = new int(0);
-	ssize_t commResult;
-	duration timeout(10, 0);
-	
-	while (num_done < num_channels && !isDone())
-	{
-//		muscle::util::mtime start_time = muscle::util::mtime::now();
-		
-		int channel = select(timeout);
-		
-//		(pacing_time - start_time.duration_since()).sleep();
-		
-		if (channel < 0) {
-			*ret = -1;
-			break;
-		} else if (channel > 0) {
-			// Set channel index back to zero-based
-			channel--;
-			const size_t ifd = indexes[channel];
-			const size_t totalSize = indexes[channel + 1] - ifd;
-			size_t& sz_comm = sz_communicated[ifd];
-			
-			if (send)
-				commResult = ::send(fds[channel], data + ifd + sz_comm, totalSize - sz_comm, MSG_NOSIGNAL);
-			else
-				commResult = ::recv(fds[channel], data + ifd + sz_comm, totalSize - sz_comm, MSG_NOSIGNAL);
-			
-			if (commResult < 0 || (!send && commResult == 0)) {
-				*ret = -1;
-				break;
-			}
-			
-			sz_comm += commResult;
-			if (sz_comm == totalSize) {
-				commDone[channel] = true;
-				++num_done;
-			}
-		}
-	}
-	
-	delete [] sz_communicated;
-
-	if (send)
-		employer->setWriteReady();
-	else
-		employer->setReadReady();
-
-	return ret;
-}
-
-MPWPathClientSocket::MPWPathClientSocket(endpoint& ep, async_service *server, const socket_opts& opts, int num_threads) : msocket(ep, server), num_threads(num_threads), num_channels(opts.max_connections), channels(NULL)
-{
-	indexes = new size_t[num_channels + 1];
-	indexes[0] = 0;
-	fds = new int[num_channels];
+	sendIndexes = new size_t[num_channels + 1];
+	sendIndexes[0] = 0;
+	recvIndexes = new size_t[num_channels + 1];
+	recvIndexes[0] = 0;
 	sendThreads = new MPWPathSendRecvThread*[num_threads]();
 	recvThreads = new MPWPathSendRecvThread*[num_threads]();
+	fds = new int[num_channels];
 	
+	pacing_time = duration(0, 10000);
 	connector = new MPWPathConnectThread(num_channels, this, opts);
+	tpool->execute(connector);
 }
 
-MPWPathClientSocket::MPWPathClientSocket(endpoint& ep, async_service *server, const socket_opts& opts, int num_threads, int num_channels, CClientSocket ** channels_) : msocket(ep, server), num_threads(num_threads), num_channels(num_channels), channels(channels_)
+MPWPathClientSocket::MPWPathClientSocket(ThreadPool *tpool_, endpoint& ep, async_service *server, const socket_opts& opts, int num_threads, int num_channels, CClientSocket ** channels_) : msocket(ep, server), num_threads(num_threads), num_channels(num_channels), channels(channels_), sendData(NULL), recvData(NULL), MPWPathSocket(tpool_)
 {
-	indexes = new size_t[num_channels + 1];
-	indexes[0] = 0;
-	fds = new int[num_channels];
+	sendIndexes = new size_t[num_channels + 1];
+	sendIndexes[0] = 0;
+	recvIndexes = new size_t[num_channels + 1];
+	recvIndexes[0] = 0;
 	sendThreads = new MPWPathSendRecvThread*[num_threads]();
 	recvThreads = new MPWPathSendRecvThread*[num_threads]();
 	
+	fds = new int[num_channels];
 	for (int i = 0; i < num_channels; i++)
 		fds[i] = channels[i]->getReadSock();
-}
-
-int MPWPathClientSocket::hasError()
-{
-	if (connector && (connector->isDone() || isWriteReady())) {
-		channels = (CClientSocket **)connector->getResult();
-		delete connector;
-		connector = NULL;
-
-		if (channels == NULL) {
-			return ECONNREFUSED;
-		} else {
-			for (int i = 0; i < num_channels; i++)
-				fds[i] = channels[i]->getReadSock();
-			setReadReady();
-		}
-	}
-	return 0;
+	
+	pacing_time = duration(0, 1000);
+	addReadReady(-1);
+	addWriteReady(-1);
 }
 
 MPWPathClientSocket::~MPWPathClientSocket()
 {
 	// Delete threads
-	clear(true);
-	clear(false);
+	clear(sendThreads);
+	clear(recvThreads);
 	delete [] sendThreads;
 	delete [] recvThreads;
 	
@@ -271,7 +89,27 @@ MPWPathClientSocket::~MPWPathClientSocket()
 		delete [] channels;
 	}
 	delete [] fds;
-	delete [] indexes;
+	delete [] sendIndexes;
+	delete [] recvIndexes;
+}
+
+
+int MPWPathClientSocket::hasError()
+{
+	if (connector) {
+		channels = (CClientSocket **)connector->getResult();
+		delete connector;
+		connector = NULL;
+		
+		if (channels == NULL) {
+			return ECONNREFUSED;
+		} else {
+			for (int i = 0; i < num_channels; i++)
+				fds[i] = channels[i]->getReadSock();
+			addReadReady(-1);
+		}
+	}
+	return 0;
 }
 
 ssize_t MPWPathClientSocket::recv(void* s, size_t size)
@@ -286,10 +124,37 @@ ssize_t MPWPathClientSocket::send(const void* s, size_t size)
 
 ssize_t MPWPathClientSocket::runInThread(bool send, char *data, size_t size)
 {
-	MPWPathSendRecvThread **saveThreads = send ? sendThreads : recvThreads;
-
-	if (saveThreads[0] == NULL)
+	char** currentData;
+	size_t **currentIndexes;
+	MPWPathSendRecvThread **currentThreads;
+	int *currentNumThreads, *currentNumThreadsFinished;
+	ssize_t ret = 0;
+	
+	if (send) {
+		currentData = &sendData;
+		currentIndexes = &sendIndexes;
+		currentThreads = sendThreads;
+		currentNumThreads = &numSendThreads;
+		currentNumThreadsFinished = &numSendThreadsFinished;
+	} else {
+		currentData = &recvData;
+		currentIndexes = &recvIndexes;
+		currentThreads = recvThreads;
+		currentNumThreads = &numRecvThreads;
+		currentNumThreadsFinished = &numRecvThreadsFinished;
+	}
+	
+	if (*currentData == NULL)
 	{
+		// Needs to go before any thread is spawned
+		if (send)
+			removeWriteReady();
+		else
+			removeReadReady();
+
+		if (send ? hasWriteReady() : hasReadReady()) {
+			logger::warning("Socket control out of bounds");
+		}
 		const int use_channels = min(num_channels, 1 + int(size / (2*1024)));
 		
 		const size_t sz_per_channel = size / use_channels;
@@ -298,55 +163,62 @@ ssize_t MPWPathClientSocket::runInThread(bool send, char *data, size_t size)
 		// Zero is set in constructor
 		for (int i = 1; i <= use_channels; ++i)
 		{
-			indexes[i] = (i <= odd_sz_per_channel)
-			           ? indexes[i - 1] + sz_per_channel + 1
-			           : indexes[i - 1] + sz_per_channel;
+			(*currentIndexes)[i] = (i <= odd_sz_per_channel)
+			           ? (*currentIndexes)[i - 1] + sz_per_channel + 1
+			           : (*currentIndexes)[i - 1] + sz_per_channel;
 		}
 		
-		const int use_threads = min(num_threads, use_channels);
-		const int ch_per_thread = use_channels / use_threads;
-		int odd_channels = use_channels % use_threads;
+		
+		*currentNumThreads = min(num_threads, use_channels);
+		*currentNumThreadsFinished = 0;
+		const int ch_per_thread = use_channels / *currentNumThreads;
+		const int odd_channels = use_channels % *currentNumThreads;
 		
 		int channel = 0;
-		for (int i = 0; i < use_threads; ++i)
+		for (int i = 0; i < *currentNumThreads; ++i)
 		{
 			const int ch_in_thread = (i < odd_channels)
 			                       ? ch_per_thread + 1
 			                       : ch_per_thread;
 			
-			saveThreads[i] = new MPWPathSendRecvThread(send, data, &indexes[channel], &fds[channel], ch_in_thread, pacing_time, this);
+			currentThreads[i] = new MPWPathSendRecvThread(i, channel, send, data, &(*currentIndexes)[channel], &fds[channel], ch_in_thread, pacing_time, this);
+			tpool->execute(currentThreads[i]);
+			channel += ch_in_thread;
 		}
-		if (send)
-			unsetWriteReady();
-		else
-			unsetReadReady();
-	} else if (saveThreads[0]->data == data) {
-		bool hasErr = false;
-		for (int i = 0; i < num_threads; i++) {
-			if (saveThreads[i] == NULL)
-				break;
-			
-			if (saveThreads[i]->isDone()) {
-				int *res = (int *)(saveThreads[i])->getResult();
-				delete saveThreads[i];
-				saveThreads[i] = NULL;
-				
-				if (*res == -1) {
-					hasErr = true;
-				}
-				delete res;
-			}
-		}
+		*currentData = data;
+	} else if (*currentData == data) {
+		int threadNum = send ? removeWriteReady() : removeReadReady();
 		
-		if (hasErr) {
-			clear(send);
-			return -1;
+		int *res = (int *)(currentThreads[threadNum])->getResult();
+		delete currentThreads[threadNum];
+		currentThreads[threadNum] = NULL;
+		
+		(*currentNumThreadsFinished)++;
+		
+		// final call
+		if (*currentNumThreadsFinished == *currentNumThreads || *res == -1) {
+			if (*res == -1) {
+				clear(currentThreads);
+				if (send)
+					while (hasWriteReady()) { removeWriteReady(); }
+				else
+					while (hasReadReady()) { removeReadReady(); }
+				
+				ret = -1;
+			} else {
+				ret = size;
+			}
+			// we can accept a new data packet
+			*currentData = NULL;
+			if (send)
+				addWriteReady(-1);
+			else
+				addReadReady(-1);
 		}
-		else if (saveThreads[0] == NULL)
-			return size;
+		delete res;
 	}
 	
-	return 0;
+	return ret;
 }
 
 void MPWPathClientSocket::async_cancel()
@@ -399,12 +271,12 @@ void *MPWPathConnectThread::run()
 				}
 			}
 			sockets[i]->setBlocking(false);
-		} catch (const muscle_exception& ex) {
+		} catch (...) {
 			return clear(sockets);
 		}
 	}
 	
-	employer->setWriteReady();
+	employer->addWriteReady(-1);
 	
 	return sockets;
 }
@@ -417,7 +289,6 @@ void *MPWPathConnectThread::clear(const CClientSocket * const * const sockets)
 	}
 	delete sockets;
 
-	employer->setWriteReady();
 	return NULL;
 }
 
@@ -429,7 +300,7 @@ void *MPWPathAcceptThread::clear(const CClientSocket * const latest_sock, const 
 		for (int i = 0; i < current_size; i++) {
 			delete sockets[i];
 		}
-		delete sockets;
+		delete [] sockets;
 	}
 	return NULL;
 }
@@ -499,12 +370,12 @@ void *MPWPathAcceptThread::run()
 		sockets[current_size++] = sock;
 	}
 	
-	employer->setReadReady();
+	employer->addReadReady(-1);
 	
 	return sockets;
 }
 
-MPWPathServerSocket::MPWPathServerSocket(endpoint& ep, async_service *server, const socket_opts &opts) : msocket(ep, server), ServerSocket(opts), currentId(1), num_threads(opts.max_connections), copts(opts)
+MPWPathServerSocket::MPWPathServerSocket(ThreadPool *tpool, endpoint& ep, async_service *server, const socket_opts &opts) : msocket(ep, server), ServerSocket(opts), MPWPathSocket(tpool), currentId(1), num_threads(opts.max_connections), copts(opts)
 {
 	// Allow for two connecting parties at a time
 	copts.max_connections = num_threads*2;
@@ -519,11 +390,10 @@ ClientSocket *MPWPathServerSocket::accept(const socket_opts &opts)
 	CClientSocket **sockets = (CClientSocket **)acceptor->getResult();
 	
 	if (sockets != NULL) {
-		csock = new MPWPathClientSocket(address, server, opts, num_threads, acceptor->target_size, sockets);
-		delete [] sockets;
+		csock = new MPWPathClientSocket(tpool, address, server, opts, num_threads, acceptor->target_size, sockets);
 	}
 	
-	unsetReadReady();
+	removeReadReady();
 	delete acceptor;
 	acceptor = new MPWPathAcceptThread(copts, serversock, currentId++, opts.max_connections, this);
 	
@@ -536,58 +406,149 @@ void MPWPathServerSocket::async_cancel()
 		server->erase_listen(sockfd);
 }
 
+MPWPathSocketFactory::MPWPathSocketFactory(async_service * service, int num_threads_) : SocketFactory(service), num_threads(num_threads_)
+{
+	tpool = new ThreadPool(num_threads * 2);
+}
+
+MPWPathSocketFactory::~MPWPathSocketFactory()
+{
+	delete tpool;
+}
+
 ClientSocket *MPWPathSocketFactory::connect(endpoint& ep, const socket_opts &opts)
 {
-	return new MPWPathClientSocket(ep, service, opts, num_threads);
+	return new MPWPathClientSocket(tpool, ep, service, opts, num_threads);
 }
 
 ServerSocket *MPWPathSocketFactory::listen(endpoint& ep, const socket_opts &opts)
 {
-	return new MPWPathServerSocket(ep, service, opts);
+	return new MPWPathServerSocket(tpool, ep, service, opts);
 }
 
-/**
- Returns:
- -1 on error
- 0 if no access.
- MPWIDE_SOCKET_RDMASK if read.
- MPWIDE_SOCKET_WRMASK if write.
- MPWIDE_SOCKET_RDMASK|MPWIDE_SOCKET_WRMASK if both.
- int mask is...
- 0 if we check for read & write.
- MPWIDE_SOCKET_RDMASK if we check for write only.
- MPWIDE_SOCKET_WRMASK if we check for read only.
- */
-int Socket_select_mpwpath(int rs, int ws, int mask, int timeout_s, int timeout_u)
+
+MPWPathSendRecvThread::MPWPathSendRecvThread(int thread_num, int channel_num, bool send_, char *data_, size_t *indexes_, int *fds_, int num_channels_, const duration& pacing_time_, MPWPathClientSocket *employer_) : thread_num(thread_num), channel_num(channel_num), send(send_), data(data_), indexes(indexes_), num_channels(num_channels_), fds(fds_), employer(employer_), pacing_time(pacing_time_)
 {
-    struct timeval timeout;
-    timeout.tv_sec  = timeout_s;
-    timeout.tv_usec = timeout_u;
+	commDone = new bool[num_channels]();
+}
+
+MPWPathSendRecvThread::~MPWPathSendRecvThread()
+{
+	delete [] commDone;
+}
+
+int MPWPathSendRecvThread::select(const duration &timeout)
+{
+	struct timeval t = timeout.timeval();
 	
-  	fd_set *rsock = 0, *wsock = 0;
-	fd_set rfd, wfd;
-	
-	if ((mask&MPWPathSocket::RDMASK) != MPWPathSocket::RDMASK) {
-		rsock = (fd_set *)&rfd;
-		FD_ZERO(rsock);
-		FD_SET(rs,rsock);
+	fd_set opset, errset;
+	FD_ZERO(&opset); FD_ZERO(&errset);
+	int max = 0;
+	for (int i = 0; i < num_channels; i++)
+	{
+		if (!commDone[i]) {
+			FD_SET(fds[i], &opset);
+			FD_SET(fds[i], &errset);
+			if (fds[i] > max)
+				max = fds[i];
+		}
 	}
-	if ((mask&MPWPathSocket::WRMASK) != MPWPathSocket::WRMASK) {
-		wsock = (fd_set *)&wfd;
-		FD_ZERO(wsock);
-		FD_SET(ws,wsock);
-	}
 	
-	/* args: FD_SETSIZE,writeset,readset,out-of-band sent, timeout*/
-	const int ok = select(max(rs, ws)+1, rsock, wsock, (fd_set *)0, &timeout);
+	int res;
+	if (send)
+		res = ::select(max + 1, 0, &opset, &errset, &t);
+	else
+		res = ::select(max + 1, &opset, 0, &errset, &t);
 	
-	if(ok > 0) {
-		return (rsock && FD_ISSET(rs,rsock) ? MPWPathSocket::RDMASK : 0)
-		| (wsock && FD_ISSET(ws,wsock) ? MPWPathSocket::WRMASK : 0);
-	} else if (ok == 0 || errno == EINTR) { // Interruptions don't matter
+	if (res > 0)
+	{
+		for (int i = 0; i < num_channels; i++)
+		{
+			if (!commDone[i]) {
+				if (FD_ISSET(fds[i], &opset))
+					return i + 1;
+				else if (FD_ISSET(fds[i], &errset))
+					return -2;
+			}
+		}
+		return -3; // should not reach here
+	} else if (res == 0) {
 		return 0;
 	} else {
 		return -1;
 	}
 }
 
+void *MPWPathSendRecvThread::run()
+{
+	size_t sz_communicated[num_channels];
+	memset(sz_communicated, 0, sizeof(sz_communicated));
+	
+	int num_done = 0;
+	int *ret = new int(0);
+	ssize_t commResult;
+	duration timeout(10, 0);
+	
+	while (num_done < num_channels && !isDone())
+	{
+		muscle::util::mtime start_time = muscle::util::mtime::now();
+		
+		int channel = select(timeout);
+		
+		if (channel < 0) {
+			const char * const str = strerror(errno);
+			int channel_str = channel_num + channel;
+			logger::severe("Cannot select on channel %d: %s", channel_str, str);
+			*ret = -1;
+			break;
+		} else if (channel > 0) {
+			// Set channel index back to zero-based
+			channel--;
+			const size_t ifd = indexes[channel];
+			const size_t totalSize = indexes[channel + 1] - ifd;
+			const size_t sz_comm = sz_communicated[channel];
+			
+			if (send) {
+				commResult = ::send(fds[channel], data + ifd + sz_comm, totalSize - sz_comm, MSG_NOSIGNAL);
+				if (commResult < 0) {
+					const char * const str = strerror(errno);
+					int channel_str = channel_num + channel;
+					logger::severe("Cannot send on channel %d (fd %d, size %zu): %s", channel_str, fds[channel], totalSize, str);
+					*ret = -1;
+					break;
+				}
+			} else {
+				commResult = ::recv(fds[channel], data + ifd + sz_comm, totalSize - sz_comm, MSG_NOSIGNAL);
+				if (commResult <= 0) {
+					const char * const str = strerror(errno);
+					int channel_str = channel_num + channel;
+					logger::severe("Cannot receive on channel %d (fd %d, size %zu): %s", channel_str, fds[channel], totalSize, str);
+					*ret = -1;
+					break;
+				}
+			}
+			
+			sz_communicated[channel] += commResult;
+			if (sz_communicated[channel] == totalSize) {
+				commDone[channel] = true;
+				++num_done;
+			} else {
+				duration sleeping = pacing_time - start_time.duration_since();
+				if (sleeping.useconds() > 0) {
+					logger::finer("Pacing to sleep for %s on thread %d", sleeping.str().c_str(), thread_num);
+					sleeping.sleep();
+				}
+			}
+		}
+	}
+	
+	if (send) {
+		logger::finest("Finished MPWPath send with thread %d", thread_num);
+		employer->addWriteReady((char)thread_num);
+	} else {
+		logger::finest("Finished MPWPath receive with thread %d", thread_num);
+		employer->addReadReady((char)thread_num);
+	}
+	
+	return ret;
+}

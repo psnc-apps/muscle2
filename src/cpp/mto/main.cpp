@@ -18,14 +18,19 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
+#define USE_MPWPATH 1
+
 #include "muscle2/util/logger.hpp"
 #include "muscle2/util/exception.hpp"
 
 #include "constants.hpp"
 #include "manager/localmto.h"
 #include "muscle2/util/csocket.h"
+#if USE_MPWPATH == 1
+#include "net/MPWPathSocket.h"
+#else
 #include "net/mpsocket.h"
-//#include "net/MPWPathSocket.h"
+#endif
 
 #include <iostream>
 #include <map>
@@ -38,6 +43,8 @@
 
 using namespace std;
 using namespace muscle;
+using namespace muscle::net;
+using namespace muscle::util;
 
 // // // // //           Variables           // // // // //
 async_service *asyncService;
@@ -131,8 +138,11 @@ int main(int argc, char **argv)
         SocketFactory *intSockFactory = new CSocketFactory(asyncService);
         SocketFactory *extSockFactory; 
         if (opts.useMPWide) {
+#if USE_MPWPATH == 1
+			extSockFactory = new MPWPathSocketFactory(asyncService, 4);
+#else
             extSockFactory = new MPSocketFactory(asyncService);
-//			  extSockFactory = new MPWPathSocketFactory(asyncService, 8);
+#endif
 		} else {
             extSockFactory = new CSocketFactory(asyncService);
 		}
