@@ -16,7 +16,7 @@ namespace muscle {
 	namespace util {
 		static void *_run_cmuscle_util_thread(void *);
 		
-		thread::thread() : result(0)
+		thread::thread() : result(0), isStarted(false)
 		{}
 		
 		thread::~thread()
@@ -27,6 +27,9 @@ namespace muscle {
 		
 		void thread::start()
 		{
+			if (isStarted)
+				return;
+			isStarted = true;
 			cache.setThread(this);
 			int ret;
 			if ((ret = ::pthread_create(&t, NULL, &_run_cmuscle_util_thread, &cache)) != 0)
@@ -41,18 +44,35 @@ namespace muscle {
 		void thread::cancel()
 		{
 			cache.stop_condition = true;
-			::pthread_join(t, &result);
+			if (isStarted)
+				::pthread_join(t, &result);
 		}
 		
 		void *thread::getResult()
 		{
 			if (!cache.stop_condition)
 			{
-				::pthread_join(t, &result);
+				if (isStarted) {
+					::pthread_join(t, &result);
+				} else {
+					mutex_lock lock = noThreadMutex.acquire();
+					while (!cache.stop_condition && !cache.done)
+						lock.wait();
+				}
 				// No need for a mutex: this will only be called from outside the thread
 				cache.stop_condition = true;
 			}
 			return result;
+		}
+		
+		void thread::runWithoutThread()
+		{
+			if (!cache.stop_condition) {
+				mutex_lock lock = noThreadMutex.acquire();
+				result = run();
+				cache.done = true;
+				lock.notify();
+			}
 		}
 		
 		void *_run_cmuscle_util_thread(void *t)

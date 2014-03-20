@@ -41,11 +41,13 @@ namespace muscle {
 			virtual ~thread();
 			
 			virtual void *run() = 0;
+			virtual void runWithoutThread();
 			// Non-blocking
 			virtual bool isDone() { return cache.done; } // Read from owner
 			// Blocking
 			virtual void *getResult(); // Read from owner, sets stop signal
 			virtual void cancel(); // Called from owner, sets stop signal
+			virtual void start(); // May be called from constructor
 		private:
 			// copy not allowed
 			thread(const thread& other) {}
@@ -53,7 +55,8 @@ namespace muscle {
 		protected:
 			pthread_t t;
 			_shared_thread_cache cache;
-			virtual void start();
+			bool isStarted;
+			mutex noThreadMutex;
 		};
 	}
 }
