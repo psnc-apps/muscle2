@@ -33,6 +33,7 @@ namespace muscle {
 	int logger::logger_level = MUSCLE_LOG_INFO;
 	int logger::logger_file_level = MUSCLE_LOG_OFF;
 	int logger::min_level = MUSCLE_LOG_INFO;
+	util::mutex logger::fmutex, logger::cmutex;
 	
 	void logger::log_message(muscle_loglevel_t level, const char *message, ...)
 	{
@@ -149,6 +150,7 @@ namespace muscle {
 		{
 			strftime(timebuf, 9, "%H:%M:%S", tm_info);
 			
+			util::mutex_lock lock = cmutex.acquire();
 			if (logger_name)
 				printf("(%8s %6s) %s", timebuf, logger_name, level_str);
 			else
@@ -162,6 +164,7 @@ namespace muscle {
 		{
 			strftime(timebuf, 20, "%Y-%m-%d %H:%M:%S", tm_info);
 			
+			util::mutex_lock lock = fmutex.acquire();
 			if (logger_name)
 				fprintf(logger_fd, "(%19s %8s) %s", timebuf, logger_name, level_str);
 			else

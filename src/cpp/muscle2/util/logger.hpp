@@ -22,6 +22,7 @@
 #define MSUCLE_LOGGER_HPP
 
 #include "../muscle_types.h"
+#include "mutex.h"
 
 #include <stdarg.h>
 #include <cstdio>
@@ -52,6 +53,8 @@ namespace muscle {
         static int logger_level;
         static int logger_file_level;
         static int min_level;
+		// Locking for exclusive printing
+		static muscle::util::mutex fmutex, cmutex;
 	};
 	
 } // EO namespace muscle
