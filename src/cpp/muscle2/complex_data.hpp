@@ -25,7 +25,6 @@
 #include <cstring>
 #include "muscle_types.h"
 
-// For 
 // Keep in sync with muscle.util.data.SerializableDatatype!
 typedef enum {
 	COMPLEX_NULL, COMPLEX_MAP, COMPLEX_COLLECTION,

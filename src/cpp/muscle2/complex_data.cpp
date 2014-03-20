@@ -31,18 +31,9 @@ true, true, true, true, true, true, true, true,// string_arr + simple types arra
 false, false, false, false, false, false, false,// simple types matrix 2D
 false, false, false, false, false, false, false,// simple types matrix 3D
 false, false, false, false, false, false, false, // simple types matrix 4D
-true // java object
+true // java object byte array
 };
 
-static const bool is_muscle_complex_t_matrix[] = {
-false, false, false, // null, map, collection
-false, false, false, false, false, false, false, false, // string + simple types
-false, false, false, false, false, false, false, false,// string_arr + simple types array
-true, true, true, true, true, true, true,// simple types matrix 2D
-true, true, true, true, true, true, true,// simple types matrix 3D
-true, true, true, true, true, true, true, // simple types matrix 4D
-false // java object
-};
 static const bool is_muscle_complex_t_matrix_2D[] = {
 false, false, false, // null, map, collection
 false, false, false, false, false, false, false, false, // string + simple types
@@ -50,7 +41,7 @@ false, false, false, false, false, false, false, false,// string_arr + simple ty
 true, true, true, true, true, true, true,// simple types matrix 2D
 false, false, false, false, false, false, false,// simple types matrix 3D
 false, false, false, false, false, false, false, // simple types matrix 4D
-false // java object
+false // java object byte array
 };
 static const bool is_muscle_complex_t_matrix_3D[] = {
 false, false, false, // null, map, collection
@@ -59,7 +50,7 @@ false, false, false, false, false, false, false, false,// string_arr + simple ty
 false, false, false, false, false, false, false,// simple types matrix 2D
 true, true, true, true, true, true, true,// simple types matrix 3D
 false, false, false, false, false, false, false, // simple types matrix 4D
-false // java object
+false // java object byte array
 };
 static const bool is_muscle_complex_t_matrix_4D[] = {
 false, false, false, // null, map, collection
@@ -68,7 +59,7 @@ false, false, false, false, false, false, false, false,// string_arr + simple ty
 false, false, false, false, false, false, false,// simple types matrix 2D
 false, false, false, false, false, false, false,// simple types matrix 3D
 true, true, true, true, true, true, true, // simple types matrix 4D
-false // java object
+false // java object byte array
 };
 
 static const size_t muscle_complex_t_sizeof[] = {
