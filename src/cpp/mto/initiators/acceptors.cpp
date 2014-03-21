@@ -48,7 +48,7 @@ void InternalAcceptor::async_accept(size_t code, int flag, ClientSocket *sock)
 
 InitConnection::InitConnection(ClientSocket *sock, LocalMto *mto) : sock(sock), mto(mto), refs(1)
 {
-    reqBuf = new char[Request::getSize()];
+    char *reqBuf = new char[Request::getSize()];
     sock->async_recv(MAIN_INTERNAL_ACCEPT, reqBuf, Request::getSize(), this);
 }
 
@@ -57,8 +57,9 @@ bool InitConnection::async_received(size_t code, int user_flag, void *data, void
     // errors are handled in async_report_error
     if (is_final != 1) return true;
     
-    Request request(reqBuf);
-    
+    Request request((char *)data);
+    delete [] (char *)data;
+	
     switch(request.type){
         case Request::Register:
             registerAddress(request);
@@ -147,6 +148,7 @@ void InitPeerConnection::allHellosRead()
 {
     mto->peers.introduce(sock);
     mto->peers.create(sock, hellos);
+	delete this;
 }
 
 void InitPeerConnection::allHellosFailed(const muscle_exception& ex)
@@ -154,4 +156,5 @@ void InitPeerConnection::allHellosFailed(const muscle_exception& ex)
     logger::finest("Reading hellos from peer %s failed - occurred error: %s",
                   sock->str().c_str(), ex.what());
     delete sock;
+	delete this;
 }

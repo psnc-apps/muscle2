@@ -474,7 +474,7 @@ void async_service::run_recv(int fd, bool hasErr)
 	{
 		try {
 			status = sock->recv(desc.data_ptr, desc.data_remain());
-			logger::fine("Received %zd/%zu bytes", status, desc.data_remain());
+			logger::finest("Received %zd/%zu bytes", status, desc.data_remain());
 		} catch (exception& ex) {
 			recv->async_report_error(desc.code, desc.user_flag, ex);
 		}

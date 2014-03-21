@@ -76,11 +76,11 @@ public:
 	}
     virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final)
     {
+		if (final == 0) return true;
+		
         if (final == -1)
             assertFalse("Error during receiving data");
-		else if (final == 0)
-			return true;
-        else if (len > 0 && len < 20)
+		else if (len > 0 && len < 20)
             cout << "received '" << string((char *)data) << "' (len " << len << ")" << endl;
 		else if (len > 0) {
 			assertEquals<char>(((char *)data)[0], -1, "Data transfer start");
@@ -90,27 +90,24 @@ public:
 			assertFalse("received nothing...");
         
         delete [] (char *)data;
-		if (flag == 3) f3++;
-		else f4++;
-        
+		
         return true;
     }
     virtual void async_sent(size_t code, int flag, void *data, size_t len, int final)
     {
-        if (final == 1)
-        {
-            cout << "sent '" << string((char *)data) << "' (len " << len << ")" << endl;
+		if (final == 0) return;
+		
+		if (final == -1) {
+            assertFalse("Error during sending data");
+		} else {
+			cout << "sent '" << string((char *)data) << "' (len " << len << ")" << endl;
             free(data);
         }
-        if (final == -1)
-            assertFalse("Error during sending data");
-		if (flag == 3) f3++;
-		else f4++;
     }
     virtual void async_done(size_t code, int flag)
     {
-        if (flag == 3 && f3 == 5) delete cs;
-        if (flag == 4 && f4 == 5) delete as;
+        if (flag == 3 && ++f3 == 5) delete cs;
+        if (flag == 4 && ++f4 == 5) delete as;
     }
 };
 
@@ -227,7 +224,7 @@ void testAsyncMPWPathConnectServerSocket()
     muscle::net::endpoint ep("127.0.0.1", 40108);
     muscle::net::socket_opts opts(16);
     muscle::net::async_service service(size_t(1024*1024*1024), 20);
-    muscle::MPWPathSocketFactory factory(&service, 16);
+    muscle::MPWPathSocketFactory factory(&service, 16, true);
     testAsyncConnect(service, factory, ep, opts);
 }
 
@@ -235,7 +232,7 @@ void testAsyncMPWPathConnectServerSocket()
 int main(int argc, char * argv[])
 {
     muscle::util::mtime t0 = muscle::util::mtime::now();
-	muscle::logger::initialize("mto_tester", NULL, MUSCLE_LOG_ALL, MUSCLE_LOG_OFF, true);
+	muscle::logger::initialize("mto_tester", NULL, MUSCLE_LOG_SEVERE, MUSCLE_LOG_OFF, true);
     try {
         testMutex();
         testThread();

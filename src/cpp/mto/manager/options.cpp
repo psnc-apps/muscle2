@@ -45,6 +45,10 @@ void Options::setOptions(option_parser& opts)
     
     opts.add("debug", "Causes the program NOT to go to background and sets logLevel to TRACE", false);
     opts.add("MPWide", "Use the MPWide library in the MTO backbone", false);
+    opts.add("MPWPath", "Use the alternative MPWide Path implementation in the MTO backbone (more stable than MPWide)", false);
+    opts.add("threads", "Number of threads per MPWide(Path) send or receive operation (Path default: 4, MPWide default: number of channels)");
+    opts.add("channels", "Number of channels in the MPWide(Path) (default: 128)");
+	opts.add("noThreadPool", "Do not use thread pool with MPWide Path", false);
     opts.add("logLevel", "Level for logging (TRACE,DEBUG,CONFIG,INFO,WARNING,ERROR, default CONFIG)");
     opts.add("logFile", "Path to the log file (default behavior - logging to standard error)");
     
@@ -53,7 +57,7 @@ void Options::setOptions(option_parser& opts)
 
 bool Options::setLog(const char * const path, const string strlevel){
     int level;
-    const string up = to_upper_ascii(strlevel);
+    string up = to_upper_ascii(strlevel);
     
     if(up=="TRACE"){
         level = MUSCLE_LOG_FINEST;
@@ -68,10 +72,9 @@ bool Options::setLog(const char * const path, const string strlevel){
     } else if(up=="ERROR") {
         level = MUSCLE_LOG_SEVERE;
     } else {
-        stringstream ss(up);
-        ss >> level;
-        if(!ss.eof())
-            return false;
+		logger::warning("Log level '%s' not recognized.", up.c_str());
+		up = "CONFIG";
+		level = MUSCLE_LOG_CONFIG;
     }
     
     if (path) {
@@ -176,9 +179,20 @@ bool Options::load(int argc, char **argv)
     sockAutoCloseTimeout = duration(timeoutSec, 0);
     logger::fine("Auto close timeout: %s", sockAutoCloseTimeout.str().c_str());
     
-    useMPWide = opts.has("MPWide");
-    if (useMPWide)
-        logger::config("Using MPWide");
+	useMPWPath = opts.has("MPWPath");
+	if (useMPWPath) {
+		useThreadPool = !opts.has("noThreadPool");
+		num_threads = opts.get<int>("threads", 4);
+		num_channels = opts.get<int>("channels", 128);
+		const char *tpstr = useThreadPool ? "with" : "without";
+        logger::config("Using MPWide Path with %d threads, %d channels, %s thread pool", num_threads, num_channels, tpstr);
+	} else {
+		useMPWide = opts.has("MPWide");
+		if (useMPWide) {
+			num_channels = opts.get<int>("channels", 128);
+			logger::config("Using MPWide with %d channels", num_channels);
+		}
+	}
     
     tcpBufSize = opts.get<int>("TCPBufSize", 0);
     if (tcpBufSize)

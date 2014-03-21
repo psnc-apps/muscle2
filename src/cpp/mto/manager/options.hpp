@@ -22,7 +22,9 @@ private:
     std::string myName;                              ///< Name as in config file
     bool daemonize;                             ///< If the MTO should go to background
     int tcpBufSize;			      ///< TCP Buff size
-    muscle::util::duration sockAutoCloseTimeout;         ///< Iddle time after which sockets are closed (until first access)
+    muscle::util::duration sockAutoCloseTimeout;         ///< Idle time after which sockets are closed (until first access)
+	int num_channels;
+	int num_threads;
     
     std::string topologyFilePath;                    ///< Location of the topology
     
@@ -43,6 +45,8 @@ public:
     
     /* Getters */
     
+	int numChannels() { return num_channels; }
+	int numThreads() { return num_channels; }
     unsigned short getLocalPortLow() const {return localPortLow;}
     unsigned short getLocalPortHigh() const {return localPortHigh;}
     muscle::net::endpoint getInternalEndpoint() const {return internalEndpoint;}
@@ -53,6 +57,8 @@ public:
     const muscle::util::duration& getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
 
     bool useMPWide;			      ///< use MPWide
+    bool useMPWPath;			      ///< use MPWide Path
+	bool useThreadPool; // Use threadpool
 private:
     bool setLog(const char *path, std::string level);
 };

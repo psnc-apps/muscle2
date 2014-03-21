@@ -47,11 +47,13 @@ namespace muscle {
 			// Blocking
 			virtual void *getResult(); // Read from owner, sets stop signal
 			virtual void cancel(); // Called from owner, sets stop signal
+			virtual bool isCancelled() { return cache.stop_condition; }
 			virtual void start(); // May be called from constructor
 		private:
 			// copy not allowed
 			thread(const thread& other) {}
 			void *result;
+			bool resultCollected;
 		protected:
 			pthread_t t;
 			_shared_thread_cache cache;

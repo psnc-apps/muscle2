@@ -19,9 +19,9 @@ Barrier::Barrier(const int num_clients) : num_clients(num_clients), signals(0), 
 
 Barrier::~Barrier()
 {
-	cache.stop_condition = true;
-	signalMutex.acquire().notify();
 	cancel();
+	signalMutex.acquire().notify();
+	getResult();
 }
 
 void Barrier::signal()
@@ -35,8 +35,11 @@ void Barrier::fillBuffer(char *buffer)
 {
 	{
 		mutex_lock lock = signalMutex.acquire();
-		while (epBuffer == NULL)
+		while (epBuffer == NULL && !cache.stop_condition)
 			lock.wait();
+
+		if (cache.stop_condition)
+			return;
 	}
 	
 	memcpy(buffer, epBuffer, endpoint::getSize());

@@ -16,13 +16,15 @@ namespace muscle {
 	namespace util {
 		static void *_run_cmuscle_util_thread(void *);
 		
-		thread::thread() : result(0), isStarted(false)
+		thread::thread() : result(NULL), isStarted(false), resultCollected(false)
 		{}
 		
 		thread::~thread()
 		{
-			if (!cache.stop_condition)
+			if (!cache.stop_condition) {
 				cancel();
+				getResult();
+			}
 		}
 		
 		void thread::start()
@@ -43,44 +45,44 @@ namespace muscle {
 		
 		void thread::cancel()
 		{
-			cache.stop_condition = true;
-			if (isStarted)
-				::pthread_join(t, &result);
+			cache.stop_condition = true; // Set to true outside of mutex
 		}
 		
 		void *thread::getResult()
 		{
-			if (!cache.stop_condition)
+			if (!resultCollected)
 			{
 				if (isStarted) {
 					::pthread_join(t, &result);
 				} else {
 					mutex_lock lock = noThreadMutex.acquire();
-					while (!cache.stop_condition && !cache.done)
-						lock.wait();
+					while (!cache.done) { lock.wait(); }
 				}
-				// No need for a mutex: this will only be called from outside the thread
-				cache.stop_condition = true;
+				resultCollected = true;
 			}
 			return result;
 		}
 		
 		void thread::runWithoutThread()
 		{
+			mutex_lock lock = noThreadMutex.acquire();
 			if (!cache.stop_condition) {
-				mutex_lock lock = noThreadMutex.acquire();
 				result = run();
-				cache.done = true;
-				lock.notify();
 			}
+			// Notify done, whether actually run or not
+			cache.done = true;
+			lock.notify();
 		}
 		
 		void *_run_cmuscle_util_thread(void *t)
 		{
 			_shared_thread_cache *thread_cache = (_shared_thread_cache *)t;
-			if (thread_cache->stop_condition)
-				return NULL;
-			void *result = thread_cache->run();
+			void *result;
+			if (thread_cache->stop_condition) {
+				result = NULL;
+			} else {
+				result = thread_cache->run();
+			}
 			thread_cache->done = true;
 			return result;
 		}

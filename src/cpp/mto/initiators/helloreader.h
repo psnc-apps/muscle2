@@ -21,7 +21,6 @@ public:
     virtual ~Initiator() {}
     virtual void allHellosRead() = 0;
     virtual void allHellosFailed(const muscle::muscle_exception& ex) = 0;
-    virtual void done() { delete this; }
 };
 
 /**

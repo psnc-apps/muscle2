@@ -23,12 +23,9 @@ bool HelloReader::async_received(size_t code, int flag, void *data, void *last_d
     
     MtoHello hello(buf);
     hellos.push_back(hello);
-    if(hello.isLastMtoHello)
-    {
+    if (hello.isLastMtoHello) {
         initiator->allHellosRead();
-    }
-    else
-    {
+    } else {
         refs++;
         sock->async_recv(0, buf, MtoHello::getSize(), this);
     }

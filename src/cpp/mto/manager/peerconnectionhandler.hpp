@@ -96,7 +96,7 @@ private:
         PeerConnectionHandler *t;
 		muscle::net::socket_opts opts;
         HandleConnected(Header& header, PeerConnectionHandler *thiz);
-        
+        virtual ~HandleConnected() {}
         virtual void async_accept(size_t code, int user_flag, muscle::net::ClientSocket *newSocket);
         virtual void async_report_error(size_t code, int user_flag, const muscle::muscle_exception& ex);
         virtual void async_done(size_t code, int user_flag);
@@ -113,7 +113,7 @@ private:
     }
     inline void decrementPending() {
         --pendingOperations;
-        tryClose();
+        if (closing) tryClose();
 	}
 };
 

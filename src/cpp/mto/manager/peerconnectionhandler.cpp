@@ -12,8 +12,6 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
     logger::info("Established a connection with peer (receiver is %s)",
                  str().c_str());
     
-//	socket->setBlocking(true);
-
     // Start normal operation
     readHeader();
 }
@@ -21,7 +19,6 @@ PeerConnectionHandler::PeerConnectionHandler(ClientSocket * _socket, LocalMto *m
 PeerConnectionHandler::~PeerConnectionHandler()
 {
     delete [] headerBuffer;
-//	socket->setBlocking(false);
     delete socket;
 }
 
@@ -272,6 +269,7 @@ void PeerConnectionHandler::done()
     incrementPending();
     
     while (!fwdMap.empty()) {
+		logger::fine("Closing forward connection to %s", fwdMap.begin()->first.str().c_str());
 		Header h(Header::Close, fwdMap.begin()->first);
         forwardToPeer(h, true);
     }
@@ -295,8 +293,7 @@ void PeerConnectionHandler::errorOccurred(string message)
 
 void PeerConnectionHandler::tryClose()
 {
-    if (!closing)
-		return;
+    assert(closing);
 
 	if (pendingOperations == 0) {
 		--pendingOperations; // Go into a negative regime; do not erase again.

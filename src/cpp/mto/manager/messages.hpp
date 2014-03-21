@@ -71,6 +71,15 @@ public:
     { return src < other.src || (src == other.src && dst < other.dst); }
     
     muscle::net::endpoint src, dst;
+
+    std::string str() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
+    }
+private:
+    friend std::ostream& operator<<(std::ostream &os, const Identifier& r)
+	{ return os << r.src << " - " << r.dst; }
 };
 
 /** Hash for storing the Identifiers in a hash map */

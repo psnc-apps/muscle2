@@ -16,7 +16,7 @@ namespace muscle {
 		class ThreadRunner : public thread {
 		public:
 			ThreadRunner() : task(NULL) { start(); }
-			virtual ~ThreadRunner() {}
+			virtual ~ThreadRunner();
 			
 			virtual void *run();
 			bool isBusy();

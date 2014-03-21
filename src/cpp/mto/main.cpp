@@ -18,19 +18,14 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-#define USE_MPWPATH 1
-
 #include "muscle2/util/logger.hpp"
 #include "muscle2/util/exception.hpp"
 
 #include "constants.hpp"
 #include "manager/localmto.h"
 #include "muscle2/util/csocket.h"
-#if USE_MPWPATH == 1
 #include "net/MPWPathSocket.h"
-#else
 #include "net/mpsocket.h"
-#endif
 
 #include <iostream>
 #include <map>
@@ -136,13 +131,11 @@ int main(int argc, char **argv)
 		const int numPeers = int(mtoConfigs.size() > 1 ? mtoConfigs.size() - 1 : 1);
 		asyncService = new async_service(size_t(6*1024*1024)*numPeers, numPeers*6);
         SocketFactory *intSockFactory = new CSocketFactory(asyncService);
-        SocketFactory *extSockFactory; 
-        if (opts.useMPWide) {
-#if USE_MPWPATH == 1
-			extSockFactory = new MPWPathSocketFactory(asyncService, 4);
-#else
+        SocketFactory *extSockFactory;
+		if (opts.useMPWPath) {
+			extSockFactory = new MPWPathSocketFactory(asyncService, opts.numThreads(), opts.useThreadPool);
+		} else if (opts.useMPWide) {
             extSockFactory = new MPSocketFactory(asyncService);
-#endif
 		} else {
             extSockFactory = new CSocketFactory(asyncService);
 		}
@@ -162,6 +155,7 @@ int main(int argc, char **argv)
         signal(SIGQUIT, signalReceived);
         
         asyncService->run();
+		logger::fine("Exiting MTO...");
         delete localMto;
 		delete asyncService;
 		

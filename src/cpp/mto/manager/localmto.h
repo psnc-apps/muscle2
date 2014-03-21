@@ -10,7 +10,7 @@
 #define __CMuscle__localmto__
 
 #define MAX_INTERNAL_WAITING 16
-#define MAX_EXTERNAL_WAITING 16
+#define MAX_EXTERNAL_WAITING 256
 
 #include "peercollection.h"
 #include "connectioncollection.h"
@@ -23,8 +23,7 @@ class LocalMto
 {
 public:
     MtoHello hello;
-    muscle::net::socket_opts sock_opts;
-    muscle::net::socket_opts client_opts;
+    muscle::net::socket_opts intSockOpts, intClientOpts, extSockOpts, extClientOpts;
     const std::string name;
     muscle::net::endpoint internalEp;
     muscle::net::endpoint externalEp;

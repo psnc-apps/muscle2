@@ -77,7 +77,6 @@ private:
     // Set to null if it needs to be preserved for another object
     muscle::net::ClientSocket *sock;
     LocalMto * const mto;
-    char *reqBuf;
     int refs;
     
     void registerAddress(const Request &request);

@@ -63,10 +63,6 @@ PeerConnectionHandler *PeerCollection::create(ClientSocket *sock, std::vector<Mt
             (*peer)->propagateHellos(directNeighbours);
     }
 
-//    handler->connectionEstablished();
-
-    //    handler->setReconnect(true);
-
     unsigned short hiPort = hellos.back().portHigh;
     connectionsIncomming[hiPort] = handler;
     if(connectionsOutgoing.find(hiPort)!=connectionsOutgoing.end())
@@ -122,21 +118,17 @@ void PeerCollection::newConnectionPairFormed(uint16_t portHigh){
     
     // new connections will use proper PeerConnectionHandler
     connectionsIncToOut[inc] = out;
-    
-    // Autoclose will work because there is a bi-directional connection
-    //out->enableAutoClose(true);
 }
 
-template <typename M, typename V> bool removeFirstKeyFromMap (M m, V v)
+template <typename M, typename V> void removeFirstKeyFromMap (M& m, V v)
 {
     for(typename M::iterator it = m.begin(); it != m.end(); ++it)
     {
-        if(v == it->second){
-            m.erase(it);
-            return true;
+        if(v == it->second) {
+			m.erase(it);
+			break;
         }
     }
-    return false;
 }
 
 void PeerCollection::erase(PeerConnectionHandler *handler)
@@ -161,8 +153,8 @@ void PeerCollection::erase(PeerConnectionHandler *handler)
             ++it;
     }
     
-    removeFirstKeyFromMap(connectionsIncomming, handler);
-    removeFirstKeyFromMap(connectionsOutgoing, handler);
+	removeFirstKeyFromMap(connectionsIncomming, handler);
+	removeFirstKeyFromMap(connectionsOutgoing, handler);
     
     mto->peerDied(handler);
     
@@ -248,13 +240,16 @@ void PeerCollection::introduce(ClientSocket *sock)
 
 void PeerCollection::clear()
 {
-    for (map<uint16_t,PeerConnectionHandler *>::iterator peer = connectionsIncomming.begin(); peer != connectionsIncomming.end(); peer++)
-    {
-        peer->second->done();
+	size_t sz = connectionsIncomming.size();
+	if (sz > 0) logger::fine("Clearing %zu incoming connection(s)...", sz);
+	while (!connectionsIncomming.empty()) {
+		connectionsIncomming.begin()->second->done();
     }
-    for (map<uint16_t,PeerConnectionHandler *>::iterator peer = connectionsOutgoing.begin(); peer != connectionsOutgoing.end(); peer++)
-    {
-        peer->second->done();
+	
+	sz = connectionsIncomming.size();
+	if (sz > 0) logger::fine("Clearing %zu outgoing connection(s)...", sz);
+	while (!connectionsOutgoing.empty()) {
+		connectionsOutgoing.begin()->second->done();
     }
 }
 

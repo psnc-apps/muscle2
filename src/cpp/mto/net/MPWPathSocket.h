@@ -75,7 +75,6 @@ namespace muscle {
 			{}
 			virtual void *run();
 		private:
-			void *clear(const CClientSocket * const * sockets);
 			const int num_channels;
 			socket_opts opts;
 			MPWPathClientSocket * const employer;
@@ -136,7 +135,7 @@ namespace muscle {
 			virtual void *run();
 			int target_size;
 		private:
-			static void *clear(const CClientSocket *latest_sock, const CClientSocket * const * sockets, int current_size);
+			static void clear(const CClientSocket *latest_sock, const CClientSocket * const * sockets, int current_size);
 			socket_opts opts;
 			ServerSocket * const serversock;
 			MPWPathServerSocket * const employer;
@@ -148,7 +147,7 @@ namespace muscle {
 		class MPWPathSocketFactory : public SocketFactory
 		{
 		public:
-			MPWPathSocketFactory(async_service * service, int num_threads_);
+			MPWPathSocketFactory(async_service * service, int num_threads_, bool useThreadPool);
 			virtual ~MPWPathSocketFactory();
 			virtual ClientSocket *connect(endpoint& ep, const socket_opts& opts);
 			virtual ServerSocket *listen(endpoint& ep, const socket_opts& opts);

@@ -32,6 +32,12 @@ void MPWPathClientSocket::clear(MPWPathSendRecvThread **commThreads)
 			continue;
 		
 		commThreads[i]->cancel();
+	}
+
+	for (int i = 0; i < num_threads; i++) {
+		if (commThreads[i] == NULL)
+			continue;
+		
 		const int * const res = (const int *)commThreads[i]->getResult();
 		if (res) delete res;
 
@@ -50,7 +56,7 @@ MPWPathClientSocket::MPWPathClientSocket(ThreadPool *tpool_, endpoint& ep, async
 	recvThreads = new MPWPathSendRecvThread*[num_threads]();
 	fds = new int[num_channels];
 	
-	pacing_time = duration(0, 10000);
+	pacing_time = duration(0, 1);
 	connector = new MPWPathConnectThread(num_channels, this, opts);
 	tpool->execute(connector);
 }
@@ -252,28 +258,39 @@ void *MPWPathConnectThread::run()
 	serializeInt(header, num_channels);
 	serializeInt(header+4, 0);
 	
-	for (int i = 0; i < num_channels && !isDone(); i++) {
+	int i;
+	for (i = 0; i < num_channels && !cache.stop_condition; i++) {
 		try {
 			sockets[i] = new CClientSocket(ep, server, opts);
 
 			sockets[i]->setBlocking(true);
-			if (sockets[i]->send(header, 8) == -1)
-				throw muscle_exception("Could not initialize connection with " + ep.getHost());
+			if (sockets[i]->send(header, 8) == -1) {
+				logger::fine("Could not initialize connection with %s", ep.getHost().c_str());
+				break;
+			}
 			
 			if (i == 0) {
-				if (sockets[i]->recv(header+4, 4) == -1)
-					throw muscle_exception("Busy server, could not initialize connection with " + ep.getHost());
+				if (sockets[i]->recv(header+4, 4) == -1) {
+					logger::fine("Busy server, could not initialize connection with %s", ep.getHost().c_str());
+					break;
+				}
 				if (deserializeInt(header+4) == -1) {
-					stringstream ss;
-					ss << "Number of streams requested " << num_channels << " is too large for server ";
-					ss << ep.getHost();
-					throw muscle_exception(ss.str());
+					logger::fine("Number of streams requested %d is too large for server", num_channels);
+					break;
 				}
 			}
 			sockets[i]->setBlocking(false);
 		} catch (...) {
-			return clear(sockets);
+			break;
 		}
+	}
+	if (i < num_channels) {
+		for (int j = 0; j <= i; j++) {
+			// may be null if stop_condition is true
+			if (sockets[j] != NULL)	delete sockets[j];
+		}
+		delete [] sockets;
+		sockets = NULL;
 	}
 	
 	employer->addWriteReady(-1);
@@ -281,19 +298,8 @@ void *MPWPathConnectThread::run()
 	return sockets;
 }
 
-// Delete all sockets, including the last acquired one, and mark the employer ready
-void *MPWPathConnectThread::clear(const CClientSocket * const * const sockets)
-{
-	for (int i = 0; i < num_channels && sockets[i] != NULL; i++) {
-		delete sockets[i];
-	}
-	delete sockets;
-
-	return NULL;
-}
-
 // Delete all sockets, including the last acquired one
-void *MPWPathAcceptThread::clear(const CClientSocket * const latest_sock, const CClientSocket * const * const sockets, const int current_size)
+void MPWPathAcceptThread::clear(const CClientSocket * const latest_sock, const CClientSocket * const * const sockets, const int current_size)
 {
 	delete latest_sock;
 	if (sockets != NULL) {
@@ -302,7 +308,6 @@ void *MPWPathAcceptThread::clear(const CClientSocket * const latest_sock, const 
 		}
 		delete [] sockets;
 	}
-	return NULL;
 }
 
 // Accepts target_size sockets from on a single server socket, using a unique ID.
@@ -327,13 +332,15 @@ void *MPWPathAcceptThread::run()
 	int current_size = 0;
 	CClientSocket **sockets = NULL;
 	
-	while (current_size < target_size && !isDone())
+	while (current_size < target_size && !cache.stop_condition)
 	{
 		CClientSocket *sock = (CClientSocket *)serversock->accept(opts);
 		sock->setBlocking(true);
 		
-		if (sock->recv(header, 8) == -1)
-			return clear(sock, sockets, current_size);
+		if (sock->recv(header, 8) == -1) {
+			clear(sock, sockets, current_size);
+			return NULL;
+		}
 		
 		const int num_channels = deserializeInt(header);
 		const int sent_id = deserializeInt(header+4);
@@ -358,13 +365,17 @@ void *MPWPathAcceptThread::run()
 			}
 			
 			serializeInt(header+4, use_id);
-			if (sock->send(header+4, 4) == -1)
-				return clear(sock, sockets, current_size);
+			if (sock->send(header+4, 4) == -1) {
+				clear(sock, sockets, current_size);
+				return NULL;
+			}
 
 			sockets = new CClientSocket*[target_size];
 		}
-		else if (target_size != num_channels)
-			return clear(sock, sockets, current_size);
+		else if (target_size != num_channels) {
+			clear(sock, sockets, current_size);
+			return NULL;
+		}
 		
 		sock->setBlocking(false);
 		sockets[current_size++] = sock;
@@ -406,9 +417,9 @@ void MPWPathServerSocket::async_cancel()
 		server->erase_listen(sockfd);
 }
 
-MPWPathSocketFactory::MPWPathSocketFactory(async_service * service, int num_threads_) : SocketFactory(service), num_threads(num_threads_)
+MPWPathSocketFactory::MPWPathSocketFactory(async_service * service, int num_threads_, bool useThreadPool) : SocketFactory(service), num_threads(num_threads_)
 {
-	tpool = new ThreadPool(num_threads * 2);
+	tpool = new ThreadPool(useThreadPool ? num_threads * 2 : 0);
 }
 
 MPWPathSocketFactory::~MPWPathSocketFactory()
@@ -487,9 +498,9 @@ void *MPWPathSendRecvThread::run()
 	int num_done = 0;
 	int *ret = new int(0);
 	ssize_t commResult;
-	duration timeout(10, 0);
+	duration timeout(1, 0);
 	
-	while (num_done < num_channels && !isDone())
+	while (num_done < num_channels && !cache.stop_condition)
 	{
 		muscle::util::mtime start_time = muscle::util::mtime::now();
 		
@@ -497,8 +508,8 @@ void *MPWPathSendRecvThread::run()
 		
 		if (channel < 0) {
 			const char * const str = strerror(errno);
-			int channel_str = channel_num + channel;
-			logger::severe("Cannot select on channel %d: %s", channel_str, str);
+			int channel_to = channel_num + num_channels;
+			logger::severe("Cannot select on channel %d-%d: %s", channel_num, channel_to, str);
 			*ret = -1;
 			break;
 		} else if (channel > 0) {

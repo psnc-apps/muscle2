@@ -46,14 +46,14 @@ void ThreadPool::execute(thread *t)
 
 void *ThreadRunner::run()
 {
-	while (!isDone()) {
+	while (!cache.stop_condition) {
 		{
 			mutex_lock lock = tmutex.acquire();
-			while (task == NULL && !isDone())
+			while (task == NULL && !cache.stop_condition)
 				lock.wait();
 		}
 		
-		if (!isDone()) {
+		if (!cache.stop_condition) {
 			task->runWithoutThread();
 			mutex_lock lock = tmutex.acquire();
 			task = NULL;
@@ -62,11 +62,27 @@ void *ThreadRunner::run()
 	return NULL;
 }
 
+ThreadRunner::~ThreadRunner()
+{
+	thread::cancel();
+	mutex_lock lock = tmutex.acquire();
+	if (task == NULL) {
+		lock.notify();
+	} else {
+		task->cancel();
+		task->getResult();
+	}
+}
+
 void ThreadRunner::cancel()
 {
 	thread::cancel();
 	mutex_lock lock = tmutex.acquire();
-	if (task != NULL) task->cancel();
+	if (task == NULL) {
+		lock.notify();
+	} else {
+		task->cancel();
+	}
 }
 
 bool ThreadRunner::isBusy()
