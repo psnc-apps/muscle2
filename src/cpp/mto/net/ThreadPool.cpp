@@ -46,14 +46,15 @@ void ThreadPool::execute(thread *t)
 
 void *ThreadRunner::run()
 {
-	while (!cache.stop_condition) {
+	while (!isCancelled())
+	{
 		{
 			mutex_lock lock = tmutex.acquire();
-			while (task == NULL && !cache.stop_condition)
+			while (task == NULL && !isCancelled())
 				lock.wait();
 		}
 		
-		if (!cache.stop_condition) {
+		if (!isCancelled()) {
 			task->runWithoutThread();
 			mutex_lock lock = tmutex.acquire();
 			task = NULL;

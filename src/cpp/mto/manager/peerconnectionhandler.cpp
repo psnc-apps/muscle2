@@ -38,7 +38,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
 {
     if (closing || is_final == -1)
     {
-        if (data && data != headerBuffer)
+        if (data != headerBuffer)
             delete [] (char *)data;
         return false;
     }

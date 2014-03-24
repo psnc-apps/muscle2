@@ -101,47 +101,47 @@ namespace muscle {
     void *mpsocket_thread::run()
     {
 		ssize_t *ret = new ssize_t;
-        if (cache.stop_condition) {
-			*ret = -1;
-		} else if (send) {
+		if (send) {
             *ret = _mpsocket_do_send(data, sz, sock->pathid);
-			sock->addWriteReady(0);
 		} else {
             *ret = _mpsocket_do_recv(data, sz, sock->pathid);
-			sock->addReadReady(0);
 		}
-        
-		if (cache.stop_condition && *ret != -1)
-			*ret = -1;
-
         return ret;
     }
-    
+	
+	void mpsocket_thread::afterRun() {
+		if (send)
+			sock->addWriteReady(0);
+		else
+			sock->addReadReady(0);
+	}
+	
     // The code seems a bit round-about, but we need to avoid
     // taking too strict locks, and to avoid double locking.
     void *mpsocket_connect_thread::run()
     {
-        if (cache.stop_condition)
-            return NULL;
-
         int *res = new int;
         *res = _mpsocket_do_connect(ep, opts, asServer);
-  
-        // if the stop signal was sent but the socket was valid
-        // destroy it anyway.
-		if (cache.stop_condition && *res != -1) {
+        return res;
+    }
+	
+	void mpsocket_connect_thread::deleteResult(void *result)
+	{
+		int *res = (int *)result;
+		if (*res != -1) {
 			mutex_lock lock = mpsocket::path_mutex.acquire();
 			MPW_DestroyPath(*res);
-			*res = -1;
 		}
-
+		delete res;
+	}
+	
+	void mpsocket_connect_thread::afterRun()
+	{
 		if (asServer)
 			sock->addReadReady(0);
 		else
 			sock->addWriteReady(0);
-        
-        return res;
-    }
+	}
     
     //////// mpsocket /////////////////
     
@@ -183,17 +183,15 @@ namespace muscle {
     {
 		async_cancel();
 		
-        if (recvThread) delete recvThread;
-		if (sendThread) delete sendThread;
+        delete recvThread;
+		delete sendThread;
 
         if (connectThread) {
 			connectThread->cancel();
 			int *res = (int *)connectThread->getResult();
-			if (res) {
-				if (*res != -1)
-					pathid = *res;
-				delete res;
-			}
+			if (res && *res != -1)
+				pathid = *res;
+			delete res;
 			delete connectThread;
 		}
 		
@@ -223,7 +221,7 @@ namespace muscle {
             
 			// wait until the previous message is sent
 			const ssize_t * const res = (ssize_t *)last_thread->getResult();
-			const ssize_t ret = *res;
+			const ssize_t ret = res == NULL ? -1 : *res;
             delete last_thread;
 			delete res;
 			last_thread = 0;
@@ -257,7 +255,7 @@ namespace muscle {
     {
         if (connectThread && (connectThread->isDone() || hasWriteReady())) {
             int *res = (int *)connectThread->getResult();
-            pathid = *res;
+			if (res) pathid = *res;
             delete res;
             delete connectThread;
             connectThread = 0;
@@ -293,7 +291,7 @@ namespace muscle {
         removeReadReady();
         
         ClientSocket *sock;
-        if (*res == -1)
+        if (res == NULL || *res == -1)
             sock = NULL;
         else
 		{

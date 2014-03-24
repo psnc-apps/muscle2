@@ -35,10 +35,10 @@ void Barrier::fillBuffer(char *buffer)
 {
 	{
 		mutex_lock lock = signalMutex.acquire();
-		while (epBuffer == NULL && !cache.stop_condition)
+		while (epBuffer == NULL && !isCancelled())
 			lock.wait();
 
-		if (cache.stop_condition)
+		if (isCancelled())
 			return;
 	}
 	
@@ -76,7 +76,7 @@ void *Barrier::run()
 	// 3. Accept clients
 	socket_opts client_opts;
 	ClientSocket **socks = new ClientSocket*[num_clients];
-	while (!cache.stop_condition)
+	while (!isCancelled())
 	{
 		const char *msg = NULL;
 		int err = 0;
@@ -104,7 +104,7 @@ void *Barrier::run()
 	{
 		{
 			mutex_lock lock = signalMutex.acquire();
-			while (signals == 0 && !cache.stop_condition)
+			while (signals == 0 && !isCancelled())
 				lock.wait();
 			
 			if (signals == 0)

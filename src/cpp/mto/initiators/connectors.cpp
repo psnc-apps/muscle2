@@ -28,7 +28,7 @@ StubbornConnecter::StubbornConnecter(const endpoint& where_, async_service *serv
 StubbornConnecter::~StubbornConnecter()
 {
 	if (sockId != 0) service->erase_connect(sockId);
-	else if (sock) delete sock;
+	else delete sock;
 }
 
 void StubbornConnecter::async_execute(size_t code, int flag, void *user_data)

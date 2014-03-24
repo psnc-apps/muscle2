@@ -15,7 +15,7 @@ using namespace std;
 using namespace muscle;
 using namespace muscle::net;
 
-LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSockFactory, SocketFactory *extSockFactory, const endpoint& externalEp) : hello(opts.getLocalPortLow(), opts.getLocalPortHigh(), 0), name(opts.getMyName()), internalEp(opts.getInternalEndpoint()), willDaemonize(opts.getDaemonize()), service(service), intSockFactory(intSockFactory), extSockFactory(extSockFactory), sockTimeout(opts.getSockAutoCloseTimeout()), externalEp(externalEp), peers(this), conns(this), extAcceptor(NULL), intAcceptor(NULL), intSockOpts(MAX_INTERNAL_WAITING), intClientOpts(MAX_INTERNAL_WAITING), extSockOpts(MAX_EXTERNAL_WAITING), extClientOpts(opts.numChannels())
+LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSockFactory, SocketFactory *extSockFactory, const endpoint& externalEp) : hello(opts.getLocalPortLow(), opts.getLocalPortHigh(), 0), name(opts.getMyName()), internalEp(opts.getInternalEndpoint()), willDaemonize(opts.getDaemonize()), service(service), intSockFactory(intSockFactory), extSockFactory(extSockFactory), sockTimeout(opts.getSockAutoCloseTimeout()), externalEp(externalEp), peers(this), conns(this), extAcceptor(NULL), intAcceptor(NULL), intSockOpts(MAX_INTERNAL_WAITING), intClientOpts(MAX_INTERNAL_WAITING), extSockOpts(MAX_EXTERNAL_WAITING), extClientOpts(opts.numChannels()), done(false)
 {
 	logger::info("Setting custom socket options");
     
@@ -54,7 +54,7 @@ void LocalMto::peerDied(PeerConnectionHandler *handler)
 {
     conns.peerDied(handler);
     const endpoint& ep = handler->address();
-    if (ep != externalEp) {
+    if (ep != externalEp && !done) {
         // Self-destruct
 		new StubbornConnecter(ep, service, extSockFactory, extClientOpts, sockTimeout, this);
     }
@@ -77,8 +77,9 @@ void LocalMto::startListeningForPeers()
 
 LocalMto::~LocalMto()
 {
-    if (extAcceptor) delete extAcceptor;
-    if (intAcceptor) delete intAcceptor;
+	done = true;
+    delete extAcceptor;
+    delete intAcceptor;
 	peers.clear();
 }
 

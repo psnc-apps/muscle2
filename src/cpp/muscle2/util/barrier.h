@@ -46,6 +46,7 @@ namespace muscle {
 			 * createBuffer, to data that the BarrierClient needs.
 			 */
 			virtual void fillBuffer(char *buffer);
+			virtual void deleteResult(void *) {}
 		private:
 			/** Number of processes that are involved in the barrier */
 			const int num_clients;

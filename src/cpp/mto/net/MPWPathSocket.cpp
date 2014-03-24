@@ -38,9 +38,7 @@ void MPWPathClientSocket::clear(MPWPathSendRecvThread **commThreads)
 		if (commThreads[i] == NULL)
 			continue;
 		
-		const int * const res = (const int *)commThreads[i]->getResult();
-		if (res) delete res;
-
+		commThreads[i]->getResult();
 		delete commThreads[i];
 		commThreads[i] = NULL;
 	}
@@ -195,15 +193,17 @@ ssize_t MPWPathClientSocket::runInThread(bool send, char *data, size_t size)
 	} else if (*currentData == data) {
 		int threadNum = send ? removeWriteReady() : removeReadReady();
 		
-		int *res = (int *)(currentThreads[threadNum])->getResult();
+		int *resPtr = (int *)(currentThreads[threadNum])->getResult();
+		int res = resPtr == NULL ? -1 : *resPtr;
+		
 		delete currentThreads[threadNum];
 		currentThreads[threadNum] = NULL;
 		
 		(*currentNumThreadsFinished)++;
 		
 		// final call
-		if (*currentNumThreadsFinished == *currentNumThreads || *res == -1) {
-			if (*res == -1) {
+		if (*currentNumThreadsFinished == *currentNumThreads || res == -1) {
+			if (res == -1) {
 				clear(currentThreads);
 				if (send)
 					while (hasWriteReady()) { removeWriteReady(); }
@@ -221,7 +221,7 @@ ssize_t MPWPathClientSocket::runInThread(bool send, char *data, size_t size)
 			else
 				addReadReady(-1);
 		}
-		delete res;
+		delete resPtr;
 	}
 	
 	return ret;
@@ -259,55 +259,45 @@ void *MPWPathConnectThread::run()
 	serializeInt(header+4, 0);
 	
 	int i;
-	for (i = 0; i < num_channels && !cache.stop_condition; i++) {
+	for (i = 0; i < num_channels && !isCancelled(); i++) {
 		try {
 			sockets[i] = new CClientSocket(ep, server, opts);
 
 			sockets[i]->setBlocking(true);
 			if (sockets[i]->send(header, 8) == -1) {
 				logger::fine("Could not initialize connection with %s", ep.getHost().c_str());
-				break;
-			}
-			
-			if (i == 0) {
+				cancel();
+			} else if (i == 0) {
 				if (sockets[i]->recv(header+4, 4) == -1) {
 					logger::fine("Busy server, could not initialize connection with %s", ep.getHost().c_str());
-					break;
-				}
-				if (deserializeInt(header+4) == -1) {
+					cancel();
+				} else if (deserializeInt(header+4) == -1) {
 					logger::fine("Number of streams requested %d is too large for server", num_channels);
-					break;
+					cancel();
 				}
 			}
 			sockets[i]->setBlocking(false);
 		} catch (...) {
-			break;
+			// set error condition
+			cancel();
 		}
 	}
-	if (i < num_channels) {
-		for (int j = 0; j <= i; j++) {
-			// may be null if stop_condition is true
-			if (sockets[j] != NULL)	delete sockets[j];
-		}
-		delete [] sockets;
-		sockets = NULL;
-	}
-	
-	employer->addWriteReady(-1);
 	
 	return sockets;
 }
 
-// Delete all sockets, including the last acquired one
-void MPWPathAcceptThread::clear(const CClientSocket * const latest_sock, const CClientSocket * const * const sockets, const int current_size)
+void MPWPathConnectThread::deleteResult(void *result)
 {
-	delete latest_sock;
-	if (sockets != NULL) {
-		for (int i = 0; i < current_size; i++) {
-			delete sockets[i];
-		}
-		delete [] sockets;
+	CClientSocket **sockets = (CClientSocket **)result;
+	for (int i = 0; i < num_channels; i++) {
+		delete sockets[i];
 	}
+	delete [] sockets;
+}
+
+void MPWPathConnectThread::afterRun()
+{
+	employer->addWriteReady(-1);
 }
 
 // Accepts target_size sockets from on a single server socket, using a unique ID.
@@ -332,26 +322,40 @@ void *MPWPathAcceptThread::run()
 	int current_size = 0;
 	CClientSocket **sockets = NULL;
 	
-	while (current_size < target_size && !cache.stop_condition)
+	while (current_size < target_size && !isCancelled())
 	{
+		mtime start = mtime::now();
 		CClientSocket *sock = (CClientSocket *)serversock->accept(opts);
 		sock->setBlocking(true);
 		
 		if (sock->recv(header, 8) == -1) {
-			clear(sock, sockets, current_size);
-			return NULL;
+			delete sock;
+			cancel();
+			break;
 		}
 		
 		const int num_channels = deserializeInt(header);
 		const int sent_id = deserializeInt(header+4);
 		
-		// Another accept is running through this one
-		if (sent_id != (sockets == NULL ? 0 : use_id)) {
-			delete sock;
-			continue;
+		// start new range of sockets if the current is taking too long
+		if (sent_id != use_id &&
+			sockets != NULL	&&
+			start.duration_since() > timeout) {
+			for (int i = 0; i < current_size; i++) {
+				delete sockets[i];
+			}
+			delete [] sockets;
+			sockets = NULL;
+			current_size = 0;
 		}
 		
 		if (sockets == NULL) {
+			// Another accept is running through this one
+			if (sent_id != 0) {
+				delete sock;
+				continue;
+			}
+			
 			target_size = num_channels;
 			
 			// Signal that the number of connections
@@ -366,24 +370,42 @@ void *MPWPathAcceptThread::run()
 			
 			serializeInt(header+4, use_id);
 			if (sock->send(header+4, 4) == -1) {
-				clear(sock, sockets, current_size);
-				return NULL;
+				delete sock;
+				continue;
 			}
 
 			sockets = new CClientSocket*[target_size];
 		}
-		else if (target_size != num_channels) {
-			clear(sock, sockets, current_size);
-			return NULL;
+		// another login attempt
+		else if (sent_id != use_id) {
+			// ignore new range of sockets
+			delete sock;
+			continue;
+		} else if (target_size != num_channels) {
+			delete sock;
+			cancel();
+			break;
 		}
 		
 		sock->setBlocking(false);
 		sockets[current_size++] = sock;
 	}
 	
-	employer->addReadReady(-1);
-	
 	return sockets;
+}
+
+void MPWPathAcceptThread::afterRun()
+{
+	employer->addReadReady(-1);
+}
+
+void MPWPathAcceptThread::deleteResult(void *result)
+{
+	CClientSocket **sockets = (CClientSocket **)result;
+	for (int i = 0; i < target_size; i++) {
+		delete sockets[i];
+	}
+	delete [] sockets;
 }
 
 MPWPathServerSocket::MPWPathServerSocket(ThreadPool *tpool, endpoint& ep, async_service *server, const socket_opts &opts) : msocket(ep, server), ServerSocket(opts), MPWPathSocket(tpool), currentId(1), num_threads(opts.max_connections), copts(opts)
@@ -392,7 +414,7 @@ MPWPathServerSocket::MPWPathServerSocket(ThreadPool *tpool, endpoint& ep, async_
 	copts.max_connections = num_threads*2;
 	copts.blocking_connect = true;
 	serversock = new CServerSocket(ep, server, copts);
-	acceptor = new MPWPathAcceptThread(copts, serversock, currentId++, opts.max_connections, this);
+	acceptor = new MPWPathAcceptThread(copts, serversock, currentId++, opts.max_connections, this, duration(1,0));
 }
 
 ClientSocket *MPWPathServerSocket::accept(const socket_opts &opts)
@@ -406,7 +428,7 @@ ClientSocket *MPWPathServerSocket::accept(const socket_opts &opts)
 	
 	removeReadReady();
 	delete acceptor;
-	acceptor = new MPWPathAcceptThread(copts, serversock, currentId++, opts.max_connections, this);
+	acceptor = new MPWPathAcceptThread(copts, serversock, currentId++, opts.max_connections, this, duration(1,0));
 	
 	return csock;
 }
@@ -500,7 +522,7 @@ void *MPWPathSendRecvThread::run()
 	ssize_t commResult;
 	duration timeout(1, 0);
 	
-	while (num_done < num_channels && !cache.stop_condition)
+	while (num_done < num_channels && !isCancelled())
 	{
 		muscle::util::mtime start_time = muscle::util::mtime::now();
 		
@@ -531,9 +553,13 @@ void *MPWPathSendRecvThread::run()
 			} else {
 				commResult = ::recv(fds[channel], data + ifd + sz_comm, totalSize - sz_comm, MSG_NOSIGNAL);
 				if (commResult <= 0) {
-					const char * const str = strerror(errno);
 					int channel_str = channel_num + channel;
-					logger::severe("Cannot receive on channel %d (fd %d, size %zu): %s", channel_str, fds[channel], totalSize, str);
+					if (commResult == 0) {
+						logger::severe("Cannot receive on channel %d (fd %d, size %zu): other side closed socket", channel_str, fds[channel], totalSize);
+					} else {
+						const char * const str = strerror(errno);
+						logger::severe("Cannot receive on channel %d (fd %d, size %zu): %s", channel_str, fds[channel], totalSize, str);
+					}
 					*ret = -1;
 					break;
 				}
@@ -553,6 +579,11 @@ void *MPWPathSendRecvThread::run()
 		}
 	}
 	
+	return ret;
+}
+
+void MPWPathSendRecvThread::afterRun()
+{	
 	if (send) {
 		logger::finest("Finished MPWPath send with thread %d", thread_num);
 		employer->addWriteReady((char)thread_num);
@@ -560,6 +591,4 @@ void *MPWPathSendRecvThread::run()
 		logger::finest("Finished MPWPath receive with thread %d", thread_num);
 		employer->addReadReady((char)thread_num);
 	}
-	
-	return ret;
 }

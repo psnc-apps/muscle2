@@ -74,6 +74,8 @@ namespace muscle {
 			MPWPathConnectThread(int num_channels, MPWPathClientSocket *employer, const socket_opts& opts) : num_channels(num_channels), employer(employer), opts(opts)
 			{}
 			virtual void *run();
+			virtual void afterRun();
+			virtual void deleteResult(void *);
 		private:
 			const int num_channels;
 			socket_opts opts;
@@ -86,9 +88,12 @@ namespace muscle {
 			MPWPathSendRecvThread(int thread_num, int channel_num, bool send, char *data, size_t *indexes, int *fds, int num_channels, const muscle::util::duration& pacing_time, MPWPathClientSocket *employer);
 			virtual ~MPWPathSendRecvThread();
 			virtual void *run();
+			virtual void afterRun();
+			virtual void deleteResult(void *res) { delete (int*)res; }
+		private:
 			// Data to be sent. This pointer is equal for all send/receive threads.
 			char * const data;
-		private:
+
 			const int thread_num, channel_num;
 			// Contains the indexes of the data to be sent, one index per channel
 			const size_t * const indexes;
@@ -131,14 +136,16 @@ namespace muscle {
 		class MPWPathAcceptThread : public muscle::util::thread
 		{
 		public:
-			MPWPathAcceptThread(socket_opts& opts, ServerSocket *ss, int use_id, int max_connections, MPWPathServerSocket *employer) : opts(opts), serversock(ss), use_id(use_id), max_connections(max_connections), employer(employer) { start(); }
+			MPWPathAcceptThread(socket_opts& opts, ServerSocket *ss, int use_id, int max_connections, MPWPathServerSocket *employer, muscle::util::duration timeout) : opts(opts), serversock(ss), use_id(use_id), max_connections(max_connections), employer(employer), timeout(timeout) { start(); }
 			virtual void *run();
+			virtual void afterRun();
+			virtual void deleteResult(void *);
 			int target_size;
 		private:
-			static void clear(const CClientSocket *latest_sock, const CClientSocket * const * sockets, int current_size);
 			socket_opts opts;
 			ServerSocket * const serversock;
 			MPWPathServerSocket * const employer;
+			muscle::util::duration timeout;
 			const int use_id, max_connections;
 		};
 		

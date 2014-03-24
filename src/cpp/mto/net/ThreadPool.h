@@ -10,6 +10,7 @@
 #define __CMuscle__ThreadPool__
 
 #include "muscle2/util/thread.h"
+#include "muscle2/util/mutex.h"
 
 namespace muscle {
 	namespace util {
@@ -22,6 +23,7 @@ namespace muscle {
 			bool isBusy();
 			void setTask(thread *t);
 			virtual void cancel();
+			virtual void deleteResult(void *) {}
 		private:
 			thread *task;
 			mutex tmutex;

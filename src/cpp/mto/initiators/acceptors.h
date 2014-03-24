@@ -83,7 +83,7 @@ private:
     void connect(const Request &request);
 public:
     InitConnection(muscle::net::ClientSocket *sock, LocalMto *mto);
-    virtual ~InitConnection() { if (sock) delete sock; }
+    virtual ~InitConnection() { delete sock; }
     
     virtual void async_report_error(size_t code, int flag, const muscle::muscle_exception& ex);
     virtual bool async_received(size_t code, int flag, void *data, void *last_data_ptr, size_t len, int final);

@@ -46,7 +46,7 @@ public:
     /* Getters */
     
 	int numChannels() { return num_channels; }
-	int numThreads() { return num_channels; }
+	int numThreads() { return num_threads; }
     unsigned short getLocalPortLow() const {return localPortLow;}
     unsigned short getLocalPortHigh() const {return localPortHigh;}
     muscle::net::endpoint getInternalEndpoint() const {return internalEndpoint;}

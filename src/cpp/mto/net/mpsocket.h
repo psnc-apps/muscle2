@@ -40,6 +40,8 @@ namespace muscle {
         mpsocket_thread(bool send, void *data, size_t sz, const MPClientSocket *sock) : send(send), data((char *)data), sz(sz), sock(sock) { start(); }
         
         virtual void *run();
+		virtual void afterRun();
+		virtual void deleteResult(void *res) { delete (ssize_t*)res; }
 		char * const data;
     };
     
@@ -53,6 +55,8 @@ namespace muscle {
     public:
         mpsocket_connect_thread(endpoint ep, const socket_opts& opts, const mpsocket *sock, bool asServer) : ep(ep), opts(opts), sock(sock), asServer(asServer) { start(); }
         virtual void *run();
+		virtual void deleteResult(void *res);
+		virtual void afterRun();
     };
         
     ///// Actual socket implementation ////

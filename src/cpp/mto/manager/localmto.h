@@ -22,21 +22,12 @@
 class LocalMto
 {
 public:
-    MtoHello hello;
-    muscle::net::socket_opts intSockOpts, intClientOpts, extSockOpts, extClientOpts;
-    const std::string name;
-    muscle::net::endpoint internalEp;
-    muscle::net::endpoint externalEp;
-    const bool willDaemonize;
-    muscle::net::async_service * const service;
-    muscle::net::SocketFactory * const intSockFactory;
-    muscle::net::SocketFactory * const extSockFactory;
-    muscle::util::duration sockTimeout;
+	MtoHello hello;
     PeerCollection peers;
     ConnectionCollection conns;
-    ExternalAcceptor *extAcceptor;
-    InternalAcceptor *intAcceptor;
-    
+	muscle::net::SocketFactory * const intSockFactory;
+    muscle::net::SocketFactory * const extSockFactory;
+
     void startConnectingToPeers(std::map<std::string, muscle::net::endpoint>& mtoConfigs);
     void startListeningForClients();
     void startListeningForPeers();
@@ -47,6 +38,18 @@ public:
     ~LocalMto();
     
     void setSocketOptions(muscle::net::socket_opts& opts);
+private:
+	bool done;
+	ExternalAcceptor *extAcceptor;
+    InternalAcceptor *intAcceptor;
+	muscle::net::async_service * const service;
+    muscle::util::duration sockTimeout;
+	muscle::net::endpoint internalEp;
+    muscle::net::endpoint externalEp;
+    const bool willDaemonize;
+	
+    muscle::net::socket_opts intSockOpts, intClientOpts, extSockOpts, extClientOpts;
+    const std::string name;
 };
 
 #endif /* defined(__CMuscle__localmto__) */

@@ -10,7 +10,6 @@
 #define __CMuscle__thread__
 
 #include "mutex.h"
-#include <pthread.h>
 
 namespace muscle {
 	namespace util {
@@ -46,19 +45,29 @@ namespace muscle {
 			virtual bool isDone() { return cache.done; } // Read from owner
 			// Blocking
 			virtual void *getResult(); // Read from owner, sets stop signal
-			virtual void cancel(); // Called from owner, sets stop signal
+			virtual void *getRawResult() { return result; } // Read without other operations
+			virtual void cancel() { cache.stop_condition = true; } // Called from owner, sets stop signal
 			virtual bool isCancelled() { return cache.stop_condition; }
+			virtual void beforeRun() {}
+			virtual void afterRun() {}
 			virtual void start(); // May be called from constructor
+			virtual void deleteResult(void *) = 0;
+			void deleteResult() {
+				if (result != NULL) {
+					deleteResult(result);
+					result = NULL;
+				}
+			}
 		private:
 			// copy not allowed
 			thread(const thread& other) {}
 			void *result;
 			bool resultCollected;
+			bool isStarted;
 		protected:
 			pthread_t t;
+			mutex cancelMutex;
 			_shared_thread_cache cache;
-			bool isStarted;
-			mutex noThreadMutex;
 		};
 	}
 }
