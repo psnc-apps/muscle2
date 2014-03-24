@@ -42,6 +42,8 @@ import muscle.util.serialization.CustomDeserializerWrapper;
 import muscle.util.serialization.CustomSerializer;
 import muscle.util.serialization.CustomSerializerWrapper;
 import muscle.util.serialization.DeserializerWrapper;
+import muscle.util.serialization.ModifiableInputStream;
+import muscle.util.serialization.ModifiableOutputStream;
 import muscle.util.serialization.ProtocolSerializer;
 import muscle.util.serialization.SerializerWrapper;
 import muscle.util.serialization.SocketChannelInputStream;
@@ -62,8 +64,10 @@ public class NativeGateway extends Thread implements Disposable {
 	protected final ServerSocket ss;
 	protected final NativeController listener;
 	protected Socket nativeSock;
-	protected DeserializerWrapper in;
-	protected SerializerWrapper out;
+	protected final ModifiableInputStream inStream;
+	protected final ModifiableOutputStream outStream;
+	protected final DeserializerWrapper in;
+	protected final SerializerWrapper out;
 	protected final ProtocolSerializer<NativeProtocol> protocol = new ProtocolSerializer<NativeProtocol>(NativeProtocol.values());
 	
 	private final static Logger logger = Logger.getLogger(NativeGateway.class.getName());
@@ -81,6 +85,19 @@ public class NativeGateway extends Thread implements Disposable {
 			ss.bind(new InetSocketAddress(SocketFactory.getMuscleHost(), 0), 1);
 		} else {
 			ss = new ServerSocket(0, 1, SocketFactory.getMuscleHost());		
+		}
+		
+		inStream = new ModifiableInputStream();
+		outStream = new ModifiableOutputStream();
+		
+		final int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
+		
+		if (USE_XDR) {
+			in =  new XdrDeserializerWrapper(new XdrIn(inStream, buffer_size));
+			out = new XdrSerializerWrapper(new XdrOut(outStream, buffer_size), buffer_size);
+		} else {
+			in =  new CustomDeserializerWrapper(new CustomDeserializer(inStream, buffer_size));
+			out = new CustomSerializerWrapper(new CustomSerializer(outStream, buffer_size), buffer_size);
 		}
 		
 		this.listener = listener;
@@ -227,36 +244,23 @@ public class NativeGateway extends Thread implements Disposable {
 	}
 	
 	protected void acceptSocket() throws IOException {
-		nativeSock = null;
-		in = null;
-		out = null;
 		final int buffer_size = XdrSerializerWrapper.DEFAULT_BUFFER_SIZE;
-		OutputStream xdrOut;
-		InputStream xdrIn;
 		if (USE_NIO) {
 			SocketChannel sc = ss.getChannel().accept();
 			sc.configureBlocking(true);
 			nativeSock = sc.socket();
 
-			xdrOut = new SocketChannelOutputStream(sc, buffer_size);
-			xdrIn = new SocketChannelInputStream(sc, buffer_size);
+			inStream.setInputStream(new SocketChannelInputStream(sc, buffer_size));
+			outStream.setOutputStream(new SocketChannelOutputStream(sc, buffer_size));
 		} else {
 			nativeSock = ss.accept();
 
-			xdrOut = nativeSock.getOutputStream();
-			xdrIn = nativeSock.getInputStream();
+			inStream.setInputStream(nativeSock.getInputStream());
+			outStream.setOutputStream(nativeSock.getOutputStream());
 		}
 		nativeSock.setTcpNoDelay(true);
 		
 		logger.log(Level.FINE, "Accepted connection from: {0}", nativeSock.getRemoteSocketAddress());
-		
-		if (USE_XDR) {
-			in =  new XdrDeserializerWrapper(new XdrIn(xdrIn, buffer_size));
-			out = new XdrSerializerWrapper(new XdrOut(xdrOut, buffer_size), buffer_size);
-		} else {
-			in =  new CustomDeserializerWrapper(new CustomDeserializer(xdrIn, buffer_size));
-			out = new CustomSerializerWrapper(new CustomSerializer(xdrOut, buffer_size), buffer_size);
-		}
 	}
 	
 	@Override

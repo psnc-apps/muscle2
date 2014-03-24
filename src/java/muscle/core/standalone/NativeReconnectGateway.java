@@ -63,10 +63,11 @@ public class NativeReconnectGateway extends NativeGateway implements Disposable 
 			} else {
 				if (isFinestLog) logger.finest("flushing response");
 				out.flush();
-				in.close();
-				in = null;
-				out.close();
-				out = null;
+				outStream.close();
+				outStream.setOutputStream(null);
+				in.cleanUp();
+				inStream.close();
+				inStream.setInputStream(null);
 				
 				if (isFinestLog) logger.finest("closing socket ...");
 				nativeSock.close();
