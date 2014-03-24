@@ -16,13 +16,13 @@
 #define PERF_TIMING
 
 // Run a performance monitoring thread
-#define MONITORING 1
+#define MONITORING 0
 
 // Report the buffer sizes of sockets
-#define REPORT_BUFFERSIZES 1
+#define REPORT_BUFFERSIZES 0
 
 // Immediately exit if a send or receive error is found
-#define EXIT_ON_SENDRECV_ERROR 1
+#define EXIT_ON_SENDRECV_ERROR 0
 
 // Use a smaller number of streams for small messages 
 #define OptimizeStreamCount 1

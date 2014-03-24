@@ -61,7 +61,7 @@ Communicator::Communicator(net::endpoint &ep) : address(ep)
 
 Communicator::~Communicator()
 {
-	if (sock) delete sock;
+	delete sock;
 }
 
 net::ClientSocket *Communicator::createSocket()
