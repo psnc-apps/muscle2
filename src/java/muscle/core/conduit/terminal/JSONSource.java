@@ -59,7 +59,7 @@ public class JSONSource extends Source<HashMap<String,Object>> {
 	 * The keys of the hashmap are keys, the objects should be tested for their
 	 * datatype, which can be Boolean, Long, String, HashMap or Double, ArrayList or null.
 	 */
-	public Observation<HashMap<String, Object>> take() throws InterruptedException {
+	protected Observation<HashMap<String, Object>> generate() throws InterruptedException {
 		BufferedReader in = null;
 		Observation<HashMap<String,Object>> obs = null;
 		

@@ -26,8 +26,14 @@
 package muscle.core.conduit.terminal;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import muscle.core.ConduitExit;
 import muscle.core.ConduitExitController;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.model.Observation;
 import muscle.util.data.Takeable;
 import muscle.util.logging.ActivityListener;
@@ -35,9 +41,15 @@ import muscle.util.logging.ActivityListener;
 /**
  * Generates data each time receive is called.
  * @author Joris Borgdorff
+ * @param <T> datatype that the Source generates
  */
 public abstract class Source<T extends Serializable> extends Terminal implements ConduitExitController<T>, Takeable<Observation<T>> {
 	private ConduitExit<T> exit;
+	private final Queue<Observation<T>> queue;
+
+	public Source() {
+		this.queue = new LinkedList<Observation<T>>();
+	}
 	
 	@Override
 	public Takeable<Observation<T>> getMessageQueue() {
@@ -45,7 +57,7 @@ public abstract class Source<T extends Serializable> extends Terminal implements
 	}
 	@Override
 	public void messageReceived(Observation<T> obs) {
-		super.resetTime(obs.getNextTimestamp());
+		resetTime(obs.getNextTimestamp());
 	}
 	@Override
 	public ConduitExit<T> getExit() {
@@ -67,4 +79,35 @@ public abstract class Source<T extends Serializable> extends Terminal implements
 	public String toString() {
 		return getIdentifier().getPortName() + "<" + getClass().getSimpleName();
 	}
+	
+	@Override
+	public final Observation<T> take() throws InterruptedException {
+		if (this.filters == null) {
+			return generate();
+		} else {
+			while (queue.isEmpty()) {
+				this.filters.process(generate());
+				this.filters.apply();
+			}
+			return queue.remove();
+		}
+	}
+	
+	@Override
+	protected final void modifyFilterArgs(List<String> args) {
+		args.remove("thread");
+		args.remove("muscle.core.conduit.filter.ThreadedFilter");
+	}
+	
+	@Override
+	protected final FilterChain createFilterChainObject() {
+		return new FilterChain() {
+			@Override @SuppressWarnings("unchecked")
+			public void queue(Observation subject) {
+				queue.add(subject);
+			}
+		};
+	}
+	
+	protected abstract Observation<T> generate() throws InterruptedException;
 }

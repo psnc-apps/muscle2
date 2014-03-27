@@ -28,12 +28,15 @@ package muscle.core.conduit.terminal;
 import java.io.Serializable;
 import muscle.core.ConduitEntrance;
 import muscle.core.ConduitEntranceController;
+import muscle.core.conduit.filter.FilterChain;
+import muscle.core.model.Observation;
 import muscle.util.logging.ActivityListener;
 
 /**
  * Receives messages.
  * Override to implement useful behavior.
  * @author Joris Borgdorff
+ * @param <T> datatype that the Sink accepts
  */
 public abstract class Sink<T extends Serializable> extends Terminal implements ConduitEntranceController<T> {
 	private ConduitEntrance<T> entrance;
@@ -75,4 +78,28 @@ public abstract class Sink<T extends Serializable> extends Terminal implements C
 	public String toString() {
 		return getIdentifier().getPortName() + ">" + getClass().getSimpleName();
 	}
+
+	@Override
+	public void send(Observation<T> msg) {
+		resetTime(msg.getTimestamp());
+		if (filters == null) {
+			process(msg);
+		} else {
+			filters.process(msg);
+			filters.apply();
+		}
+	}
+	
+	
+	@Override
+	protected final FilterChain createFilterChainObject() {
+		return new FilterChain() {
+			@Override @SuppressWarnings("unchecked")
+			public void queue(Observation subject) {
+				Sink.this.process(subject);
+			}
+		};
+	}
+	
+	protected abstract void process(Observation<T> msg);
 }

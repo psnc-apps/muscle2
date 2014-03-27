@@ -34,7 +34,7 @@ import muscle.core.model.Observation;
  */
 public class NullSink extends Sink {
 	@Override
-	public void send(Observation msg) {
+	public void process(Observation msg) {
 		// Return void
 	}
 }

@@ -35,7 +35,7 @@ import muscle.core.model.Observation;
  */
 public class PrintSink extends Sink {
 	@Override
-	public void send(Observation msg) {
+	public void process(Observation msg) {
 		String dataString = Arrays.deepToString(new Object[] {msg.getData()});
 		System.out.println("PrintSink " + getLocalName() + ": received message " + msg);
 		System.out.println("PrintSink " + getLocalName() + ": with data " + dataString);

@@ -64,7 +64,7 @@ public abstract class FileSink<T extends Serializable> extends Sink<T> {
 	
 	/** Delegates the send operation to the write method. */
 	@Override
-	public final void send(Observation<T> obs) {
+	protected final void process(Observation<T> obs) {
 		Writer out = null;
 		try {
 			File output = getLocalFile(getInfix());

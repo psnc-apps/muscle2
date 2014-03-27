@@ -24,10 +24,21 @@
  */
 package muscle.core.conduit.terminal;
 
+import eu.mapperproject.jmml.util.FastArrayList;
 import java.io.File;
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.logging.Level;
+import muscle.client.instance.PassiveConduitExitController;
+import muscle.core.ConduitDescription;
 import muscle.core.Portal;
+import muscle.core.conduit.filter.FilterChain;
 import muscle.core.kernel.Module;
+import muscle.core.model.Observation;
 import muscle.core.model.Timestamp;
+import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
 import muscle.util.concurrency.Disposable;
 import muscle.util.logging.ActivityListener;
@@ -42,10 +53,11 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	private PortalID portalID;
 	private PortalID otherID;
 	protected ActivityListener actLogger;
-	
+	protected FilterChain filters;
+		
 	public Terminal() {
 		this.isDone = false;
-		this.siTime = new Timestamp(0);
+		this.siTime = Timestamp.ZERO;
 		this.actLogger = null;
 		this.portalID = null;
 		this.otherID = null;
@@ -102,11 +114,35 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 		this.siTime = time;
 	}
 
-	public void setIdentifier(PortalID id, PortalID otherID) {
+	public void setIdentifier(ConduitDescription desc, PortalID id, PortalID otherID, boolean threaded) {
 		this.setLocalName(id.getOwnerID().getName());
 		this.portalID = id;
 		this.otherID = otherID;
+		this.filters = createFilterChain(desc, threaded);
 	}
+	
+	/** Create a filter chain from the given arguments */
+	private FilterChain createFilterChain(ConduitDescription desc, boolean threaded) {
+		List<String> filterArgs = new FastArrayList<String>(desc.getArgs());
+		filterArgs.remove("");
+		
+		if (threaded) {
+			filterArgs.add(0, "thread");
+		}
+		modifyFilterArgs(filterArgs);
+		
+		if (filterArgs.isEmpty()) {
+			return null;
+		}
+		
+		FilterChain fc = createFilterChainObject();
+		
+		fc.init(filterArgs);
+		getLogger().log(Level.INFO, "Terminal ''{0}'' will use filter(s) {1}.", new Object[] {getIdentifier().getName(), filterArgs});
+		return fc;
+	}
+	
+	protected void modifyFilterArgs(List<String> args) {}
 	
 	@Override
 	public PortalID getIdentifier() {
@@ -120,6 +156,9 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	@Override
 	public void dispose() {
 		this.isDone = true;
+		if (filters != null) {
+			filters.dispose();
+		}
 	}
 	
 	@Override
@@ -128,4 +167,6 @@ public abstract class Terminal extends Module implements Disposable, Portal {
 	}
 	
 	public abstract void setActivityLogger(ActivityListener actLogger);
+
+	protected abstract FilterChain createFilterChainObject();
 }

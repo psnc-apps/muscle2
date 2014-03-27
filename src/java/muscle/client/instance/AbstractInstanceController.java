@@ -160,7 +160,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 				@SuppressWarnings("unchecked")
 				Source<T> src = (Source<T>) srcObj;
 				src.setActivityLogger(actLogger);
-				src.setIdentifier(otherID, currentID);
+				src.setIdentifier(desc, otherID, currentID, threaded);
 				src.beforeExecute();
 				exit = src;
 			} catch (ClassNotFoundException ex) {
@@ -202,7 +202,7 @@ public abstract class AbstractInstanceController implements InstanceController {
 				@SuppressWarnings("unchecked")
 				Sink<T> sink = (Sink<T>) sinkObj;
 				sink.setActivityLogger(actLogger);
-				sink.setIdentifier(otherID, currentID);
+				sink.setIdentifier(desc, otherID, currentID, threaded);
 				sink.beforeExecute();
 				entrance = sink;
 			} catch (ClassNotFoundException ex) {

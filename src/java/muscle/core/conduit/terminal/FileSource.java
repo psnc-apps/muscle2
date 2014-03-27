@@ -57,7 +57,7 @@ public abstract class FileSource<T extends Serializable> extends Source<T> {
 
 	@Override
 	/** Delegates the take operation to the read method. */
-	public final Observation<T> take() {
+	protected final Observation<T> generate() {
 		Reader in = null;
 		try {
 			File input = getLocalFile(getInfix());
