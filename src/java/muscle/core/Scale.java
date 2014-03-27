@@ -38,15 +38,21 @@ public class Scale implements java.io.Serializable {
 	private final Distance dt; // time step (must be seconds when used without quantity)
 	private final Distance omegaT; // total time
 	private final List<Distance> dx; // scale(s) in space
+	private final List<Distance> lx; // scale(s) in space
 	
 	public Scale(Distance newDt, Distance newOmegaT, Distance ... newDx) {
 		this(newDt, newOmegaT, new ArrayList<Distance>(Arrays.asList(newDx)));
 	}
 	
 	public Scale(Distance newDt, Distance newOmegaT, List<Distance> newDx) {
+		this(newDt, newOmegaT, newDx, null);
+	}
+	
+	public Scale(Distance newDt, Distance newOmegaT, List<Distance> newDx, List<Distance> newLx) {
 		this.dt = newDt.withDimension(Dimension.TIME);
 		this.omegaT = newOmegaT.withDimension(Dimension.TIME);
 		this.dx = newDx;
+		this.lx = newLx;
 	}
 	
 	public Distance getDt() {
@@ -55,6 +61,10 @@ public class Scale implements java.io.Serializable {
 
 	public Distance getOmegaT() {
 		return this.omegaT;
+	}
+	
+	public Distance getOmegaX(int i) {
+		return lx.get(i);
 	}
 	
 	public Distance getDx(int index) {

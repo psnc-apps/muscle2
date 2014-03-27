@@ -69,7 +69,6 @@ public class CxADescription {
 		logger.log(Level.INFO, "Using directory <{0}>", tmpDir);
 		
 		description = new HashMap<String,Object>();
-		description.put(Key.MAX_TIMESTEPS.toString(), Integer.valueOf(1));
 		
 		final String envFilename = System.getProperty(ENV_PROPERTY);
 		if(envFilename == null) {
