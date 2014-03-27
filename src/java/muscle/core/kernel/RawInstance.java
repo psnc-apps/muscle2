@@ -62,7 +62,12 @@ public abstract class RawInstance extends Module {
 			originTime = Timestamp.ZERO;
 		}
 		if (maxTime == null) {
-			maxTime = Timestamp.valueOf(CxADescription.ONLY.getProperty(CxADescription.Key.MAX_TIMESTEPS));
+			String maxKey = CxADescription.Key.MAX_TIMESTEPS.toString();
+			if (hasProperty(maxKey)) {
+				maxTime = Timestamp.valueOf(getProperty(maxKey));
+			} else {
+				maxTime = Timestamp.valueOf("1.0E32 s");
+			}
 		}
 		Distance omegaInterval = getScale().getOmegaT();
 		Timestamp omegaT;
@@ -74,7 +79,7 @@ public abstract class RawInstance extends Module {
 				omegaT = maxTime;
 			}
 		}
-		Timestamp portalTime = originTime;
+		Timestamp maxPortalTime = originTime;
 
 		final boolean isLogFiner = logger.isLoggable(Level.FINER);
 		Object[] msg = isLogFiner ? new Object[2] : null;
@@ -85,8 +90,9 @@ public abstract class RawInstance extends Module {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Entrance SI Time of {0} is {1}", msg);
 			}
-			if (p.getSITime().compareTo(portalTime) > 0) {
-				portalTime = p.getSITime();
+			final Timestamp portalTime = p.getSITime();
+			if (portalTime != null && portalTime.compareTo(maxPortalTime) > 0) {
+				maxPortalTime = portalTime;
 			}
 		}
 		for (ConduitExitController<?> p : exits.values()) {
@@ -94,12 +100,13 @@ public abstract class RawInstance extends Module {
 				msg[0] = p; msg[1] = p.getSITime();
 				logger.log(Level.FINER, "Exit SI Time of {0} is {1}", msg);
 			}
-			if (p.getSITime().compareTo(portalTime) > 0) {
-				portalTime = p.getSITime();
+			final Timestamp portalTime = p.getSITime();
+			if (portalTime != null && portalTime.compareTo(maxPortalTime) > 0) {
+				maxPortalTime = portalTime;
 			}
 		}
 
-		return portalTime.compareTo(omegaT) >= 0;
+		return maxPortalTime.compareTo(omegaT) >= 0;
 	}
 
 	/**
@@ -134,23 +141,30 @@ public abstract class RawInstance extends Module {
 		if (this.currentScale == null) {
 			Distance dt, omegaT, next;
 			List<Distance> dx = new ArrayList<Distance>(3);
+			List<Distance> lx = new ArrayList<Distance>(3);
 
 			dt = getScaleProperty("dt", "default_dt", true);
 			omegaT = getScaleProperty("T", "max_timesteps", true);
+			
 			next = getScaleProperty("dx", "default_dx", false);
-			if (next != null) {
-				dx.add(next);
-			}
+			if (next != null) dx.add(next);
+			
 			next = getScaleProperty("dy", "default_dy", false);
-			if (next != null) {
-				dx.add(next);
-			}
+			if (next != null) dx.add(next);
+			
 			next = getScaleProperty("dz", "default_dz", false);
-			if (next != null) {
-				dx.add(next);
-			}
+			if (next != null) dx.add(next);
+			
+			next = getScaleProperty("lX", "default_lX", false);
+			if (next != null) lx.add(next);
+			
+			next = getScaleProperty("lY", "default_lY", false);
+			if (next != null) lx.add(next);
+			
+			next = getScaleProperty("lZ", "default_lZ", false);
+			if (next != null) lx.add(next);
 
-			currentScale = new Scale(dt, omegaT, dx);
+			currentScale = new Scale(dt, omegaT, dx, lx);
 		}
 		return currentScale;
 	}

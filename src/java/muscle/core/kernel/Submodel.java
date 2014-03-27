@@ -61,6 +61,9 @@ public abstract class Submodel extends Instance {
 				previousDt = getScale().getDt();
 				this.operationsAllowed = RECV;
 				originTime = this.init(originTime);
+				if (originTime == null) {
+					originTime = Timestamp.ZERO;
+				}
 				if (currentTime != null && currentTime.compareTo(originTime) > 0) {
 					logger.log(Level.WARNING, "Jumping back in time when restarting submodel; from {0} to {1}", new Object[]{currentTime, originTime});
 				}
