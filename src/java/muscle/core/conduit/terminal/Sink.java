@@ -40,7 +40,6 @@ import muscle.util.logging.ActivityListener;
  */
 public abstract class Sink<T extends Serializable> extends Terminal implements ConduitEntranceController<T> {
 	private ConduitEntrance<T> entrance;
-	
 	public Sink() {
 		entrance = null;
 	}
@@ -60,13 +59,13 @@ public abstract class Sink<T extends Serializable> extends Terminal implements C
 		if (this.entrance != null) this.entrance.setActivityLogger(actLogger, getOpposingIdentifier());
 	}
 	@Override
-	public boolean waitUntilEmpty() {
-		return true;
+	public boolean waitUntilEmpty() throws InterruptedException {
+		return !isDisposed() && (filters == null || filters.waitForFilters());
 	}
 	
 	@Override
 	public boolean isEmpty() {
-		return true;
+		return filters == null || !filters.isBusy();
 	}
 	
 	@Override

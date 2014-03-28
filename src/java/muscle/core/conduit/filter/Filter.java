@@ -26,11 +26,14 @@ import muscle.core.model.Observation;
 
 /**
 interface for conduit filters
+ * @param <E> Incoming datatype
+ * @param <F> Outgoing datatype
 */
 public interface Filter<E extends Serializable,F extends Serializable> {
 	/** Set the queue containing the incoming messages.
 	 * 
 	 * Unless apply() is called after a message has been added to the queue, it is not guaranteed to be read.
+	 * @param obs message to be filtered
 	 */
 	public void queue(Observation<E> obs);
 	
@@ -39,7 +42,10 @@ public interface Filter<E extends Serializable,F extends Serializable> {
 	
 	public void setNextFilter(Filter<F,?> filter);
 	
-	/** Whether the filter is currently processing something. */
+	/** Whether the filter is currently processing something.
+	 * @return true if processing */
 	public boolean isProcessing();
+	
+	public boolean waitUntilEmpty() throws InterruptedException;
 }
 

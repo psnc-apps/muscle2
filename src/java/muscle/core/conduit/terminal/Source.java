@@ -96,7 +96,6 @@ public abstract class Source<T extends Serializable> extends Terminal implements
 	@Override
 	protected final void modifyFilterArgs(List<String> args) {
 		args.remove("thread");
-		args.remove("muscle.core.conduit.filter.ThreadedFilter");
 	}
 	
 	@Override

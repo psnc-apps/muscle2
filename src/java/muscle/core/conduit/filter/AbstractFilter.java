@@ -30,41 +30,16 @@ import muscle.core.model.Observation;
 @author Joris Borgdorff
 */
 public abstract class AbstractFilter<E extends Serializable,F extends Serializable> implements Filter<E,F> {
-	protected BlockingQueue<Observation<E>> incomingQueue;
 	protected Filter<F,?> nextFilter;
-	private final static boolean applyDirect = Boolean.valueOf(System.getProperty("muscle.core.conduit.filter.applydirect", "true"));
-	
-	protected AbstractFilter() {
-		if (!applyDirect) {
-			incomingQueue = new LinkedBlockingQueue<Observation<E>>();
-		}
-	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public void apply() {
-		if (!applyDirect) {
-			while (!incomingQueue.isEmpty()) {
-				Observation<E> message = incomingQueue.remove();
-				if (message != null) {
-					if (message.hasNull()) {
-						put((Observation<F>)message);
-					} else {
-						this.apply(message);
-					}
-				}
-			}
-		}
 		nextFilter.apply();
 	}
 	
 	@Override
-	public void queue(Observation<E> obs) {
-		if (applyDirect) {
-			apply(obs);
-		} else {
-			this.incomingQueue.add(obs);
-		}
+	public final void queue(Observation<E> obs) {
+		apply(obs);
 	}
 	
 	/**
@@ -87,7 +62,13 @@ public abstract class AbstractFilter<E extends Serializable,F extends Serializab
 		this.nextFilter = qc;
 	}
 	
+	@Override
 	public synchronized boolean isProcessing() {
 		return nextFilter.isProcessing();
+	}
+	
+	@Override
+	public boolean waitUntilEmpty() throws InterruptedException {
+		return nextFilter.waitUntilEmpty();
 	}
 }

@@ -54,7 +54,7 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 	
 	@Override
 	protected synchronized boolean continueComputation() throws InterruptedException {
-		while (!isDisposed() && (incomingQueue == null || incomingQueue.isEmpty())) {
+		while (!isDisposed() && incomingQueue.isEmpty()) {
 			wait();
 		}
 		return !isDisposed();
@@ -68,11 +68,12 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 			message = incomingQueue.remove();
 		}
 		if (message != null) {
-			this.nextFilter.queue(message);
+			nextFilter.queue(message);
 			nextFilter.apply();
 		}
 		synchronized (this) {
-			this.processing = false;
+			processing = false;
+			notifyAll();
 		}
 	}
 	
@@ -81,21 +82,32 @@ public class ThreadedFilter<E extends Serializable> extends SafeThread implement
 	public void queue(Observation<E> obs) {
 		Observation<E> obsCopy = obs.privateCopy(converter);
 		synchronized (this) {
-			this.incomingQueue.add(obsCopy);
-			this.notifyAll();
+			incomingQueue.add(obsCopy);
+			notifyAll();
 		}
 	}
 
 	/** Apply the filter to at least all the messages queued so far. */
 	@Override
 	public synchronized void apply() {
-		this.notifyAll();
+		notifyAll();
 	}
 	
 	/** A threadedfilter is processing when it is processing itself, or a thread further down the filterchain is. */
 	@Override
 	public synchronized boolean isProcessing() {
-		return this.processing || !this.incomingQueue.isEmpty() || nextFilter.isProcessing();
+		return processing || !incomingQueue.isEmpty() || nextFilter.isProcessing();
+	}
+	
+	@Override
+	public synchronized boolean waitUntilEmpty() throws InterruptedException {
+		while ((this.processing || !incomingQueue.isEmpty()) && !this.isDisposed()) {
+			wait();
+		}
+		if (this.isDisposed()) {
+			return false;
+		}
+		return nextFilter.waitUntilEmpty();
 	}
 	
 	@Override

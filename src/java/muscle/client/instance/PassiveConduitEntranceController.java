@@ -48,7 +48,6 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	private Transmitter<T,?> transmitter;
 	private boolean transmitterFound;
 	private final static Logger logger = Logger.getLogger(PassiveConduitEntranceController.class.getName());
-	private volatile boolean processingMessage;
 	private boolean isDone;
 	private final FilterChain filters;
 	private boolean isSharedData;
@@ -58,7 +57,6 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		super(newPortalID, newOwnerAgent, newDataClass);
 		this.transmitter = null;
 		this.conduitEntrance = null;
-		this.processingMessage = false;
 		this.isDone = false;
 		this.transmitterFound = false;
 		this.filters = createFilterChain(desc, threaded);
@@ -140,15 +138,12 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 	 */
 	@Override
 	public synchronized boolean waitUntilEmpty() throws InterruptedException {
-		while ((this.processingMessage || (this.filters != null && this.filters.isBusy())) && !isDisposed()) {
-			wait();
-		}
-		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
+		return !isDisposed() && (filters == null || filters.waitForFilters());
 	}
 	
 	@Override
 	public synchronized boolean isEmpty() {
-		return !this.processingMessage && (this.filters == null || !this.filters.isBusy());
+		return this.filters == null || !this.filters.isBusy();
 	}
 	
 	/** Waits for a resume call if the thread was paused. Returns the transmitter if the thread is no longer paused and false if the thread should stop. */
@@ -229,7 +224,6 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 			if (this.isDisposed()) {
 				throw new IllegalStateException("Can not send message over disposed ConduitEntrance");
 			}
-			this.processingMessage = true;
 		}
 		T data = msg.getData();
 		if (data != null && dataClass != null && !dataClass.isInstance(data)) {
@@ -242,11 +236,6 @@ public class PassiveConduitEntranceController<T extends Serializable> extends Pa
 		// Update the willStop timestamp as soon as the message is sent by the Instance, not when it is processed.
 		this.resetTime(msg.getNextTimestamp());
 		this.transmit(msg);
-
-		synchronized (this) {
-			this.processingMessage = false;
-			this.notifyAll();
-		}
 	}
 
 	@Override

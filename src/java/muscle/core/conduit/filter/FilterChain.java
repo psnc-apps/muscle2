@@ -19,10 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package muscle.core.conduit.filter;
 
 import eu.mapperproject.jmml.util.FastArrayList;
@@ -54,7 +50,17 @@ public abstract class FilterChain implements Filter {
 		return this.nextFilter.isProcessing();
 	}
 	
-	public boolean isProcessing() {
+	public boolean waitForFilters() throws InterruptedException {
+		return nextFilter.waitUntilEmpty();
+	}
+	
+	@Override
+	public synchronized boolean waitUntilEmpty() throws InterruptedException {
+		return !isDone;
+	}
+	
+	@Override
+	public synchronized boolean isProcessing() {
 		return false;
 	}
 	
@@ -134,6 +140,7 @@ public abstract class FilterChain implements Filter {
 			ThreadedFilter tfilter = new ThreadedFilter();
 			tfilter.start();
 			this.threadedFilters.add(tfilter);
+			filter = tfilter;
 		}// filters with mandatory args
 		else if (name.equals("multiply")) {
 			filter = new MultiplyFilterDouble(Double.valueOf(remainder));
@@ -207,6 +214,7 @@ public abstract class FilterChain implements Filter {
 		}
 	}
 	
+	@Override
 	public void setNextFilter(Filter filter) {
 		this.nextFilter = filter;
 	}
