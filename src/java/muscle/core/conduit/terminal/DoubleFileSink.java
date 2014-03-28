@@ -26,6 +26,8 @@
 package muscle.core.conduit.terminal;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import muscle.core.model.Observation;
 
@@ -48,16 +50,17 @@ public class DoubleFileSink extends FileSink<double[]> {
 	 * Writes the doubles to a file with a delimeter between them.
 	 */
 	@Override
-	protected void write(Writer out, Observation<double[]> obs) throws IOException {
+	protected void write(OutputStream out, Observation<double[]> obs) throws IOException {
+		Writer writer = new OutputStreamWriter(out);
 		double[] data = obs.getData();
 		if (data != null) {
 			int sz = data.length - 1;
 			for (int i = 0; i < sz; i++) {
-				out.write(String.valueOf(data[i]));
-				out.write(delimiter);
+				writer.write(String.valueOf(data[i]));
+				writer.write(delimiter);
 			}
 			if (sz >= 0) {
-				out.write(String.valueOf(data[sz]));
+				writer.write(String.valueOf(data[sz]));
 			}
 		}
 	}

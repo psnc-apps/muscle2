@@ -25,10 +25,13 @@
 
 package muscle.core.conduit.terminal;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.Writer;
 import java.util.logging.Level;
@@ -60,15 +63,15 @@ public abstract class FileSink<T extends Serializable> extends Sink<T> {
 	 * @param out to write to file with. It should not be closed.
 	 * @param obs observation to write
 	 */
-	protected abstract void write(Writer out, Observation<T> obs) throws IOException;
+	protected abstract void write(OutputStream out, Observation<T> obs) throws IOException;
 	
 	/** Delegates the send operation to the write method. */
 	@Override
 	protected final void process(Observation<T> obs) {
-		Writer out = null;
+		OutputStream out = null;
 		try {
 			File output = getLocalFile(getInfix());
-			out = new BufferedWriter(new FileWriter(output));
+			out = new BufferedOutputStream(new FileOutputStream(output));
 			write(out, obs);
 		} catch (IOException ex) {
 			Logger.getLogger(FileSink.class.getName()).log(Level.SEVERE, getLocalName() + " could not write to file", ex);
