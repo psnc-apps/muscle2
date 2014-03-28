@@ -190,12 +190,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 	public synchronized boolean isDisposed() {
 		return this.isDone;
 	}
-		
-	@Override
-	public Message<T> receive() {
-		throw new UnsupportedOperationException("Not supported.");
-	}
-
+	
 	@Override
 	public void start() {
 		// Do nothing

@@ -32,9 +32,6 @@ import muscle.client.communication.message.Message;
  * @param <F> Serialized datatype that is communicated
  */
 public interface Receiver<E extends Serializable, F> extends CommunicatingPoint<Message<E>,F> {
-	/** Receives a message.
-	 * @return a received message or null if no more messages can be received */
-	public Message<E> receive();
-	
+	/** Set the message to be received. */
 	void put(F msg);
 }

@@ -262,7 +262,8 @@ public class LocalManager implements InstanceControllerListener, ExceptionListen
 
 	@Override
 	public void fatalException(Throwable ex) {
-		throw new UnsupportedOperationException("Not supported yet.");
+		logger.log(Level.SEVERE, "Fatal exception", ex);
+		shutdown(49);
 	}
 
 	@Override
