@@ -28,7 +28,8 @@ import java.text.DecimalFormat;
 
 /**
  * An unsynchronized timer, based on a stopwatch.
- * It reports wall-clock time.
+ * It reports wall-clock time for internal use only. It is not comparable between processors or machines, only
+ * within a single execution.
  * @author Joris Borgdorff
  */
 public class Timer {
@@ -44,7 +45,8 @@ public class Timer {
 	}
 
 	/**
-	 * Reset the timer and returns its current value. The timer will start running again immediately after calling reset.
+	 * Reset the timer. The timer will start running again immediately after calling reset.
+	 * @return current value of the timer
 	 */
 	public long reset() {
 		long diff = nanosec();
@@ -81,6 +83,7 @@ public class Timer {
 	
 	/**
 	 * Whether the timer is paused.
+	 * @return true if paused 
 	 */
 	public boolean isPaused() {
 		return paused;
@@ -88,6 +91,7 @@ public class Timer {
 
 	/**
 	 * Returns a string representation of the current time. This resets the timer.
+	 * @return floating point time appended with " s" for second.
 	 */
 	@Override
 	public String toString() {
@@ -96,6 +100,8 @@ public class Timer {
 
 	/**
 	 * Returns a string representation of a given number of nanoseconds.
+	 * @param diff time in nanoseconds
+	 * @return four-decimal time in seconds
 	 */
 	public static String toString(long diff) {
 		return doubleFormat.format((diff / 100000)/10000.d);
@@ -109,12 +115,16 @@ public class Timer {
 		System.out.println(msg + " (" + toString() + ")");
 	}
 
-	/** The current time of the timer in milliseconds. */
+	/** The current time of the timer in milliseconds.
+	 * @return time in milliseconds
+	 */
 	public long millisec() {
 		return nanosec() / 1000000;
 	}
 
-	/** The current time of the timer in nanoseconds. */
+	/** The current time of the timer in nanoseconds.
+	 * @return time in nanoseconds
+	 */
 	public long nanosec() {
 		long newTime = getTime();
 
@@ -132,6 +142,7 @@ public class Timer {
 
 	/**
 	 * Get the starting time of the timer, or the time of the last reset.
+	 * @return time of last reset or time of initialization
 	 */
 	public long getBaseTime() {
 		return baseTime;
@@ -139,6 +150,7 @@ public class Timer {
 
 	/**
 	 * Set the starting time to a certain value. If the timer was paused, it will no longer be paused
+	 * @param time time in nanoseconds
 	 */
 	public void setTime(long time) {
 		this.unpause();
@@ -147,7 +159,9 @@ public class Timer {
 	}
 
 	/**
-	 * Get the current time in nanoseconds. Override for different time standards.
+	 * Get the current time in nanoseconds. Override for different time standards. Not comparable
+	 * between machines or processors.
+	 * @return time in nanoseconds
 	 */
 	protected long getTime() {
 		return System.nanoTime();

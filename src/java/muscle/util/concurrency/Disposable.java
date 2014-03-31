@@ -40,6 +40,7 @@ public interface Disposable {
 	
 	/**
 	 * Whether the current object has been disposed of.
+	 * @return true if disposed
 	 */
 	public boolean isDisposed();
 }

@@ -43,7 +43,6 @@ import muscle.core.kernel.InstanceController;
 import muscle.core.model.Observation;
 import muscle.exception.MUSCLEDatatypeException;
 import muscle.id.PortalID;
-import muscle.util.data.TakeWrapper;
 import muscle.util.data.Takeable;
 import muscle.util.logging.ActivityListener;
 import muscle.util.serialization.DataConverter;
@@ -139,7 +138,7 @@ public class PassiveConduitExitController<T extends Serializable> extends Passiv
 
 	@Override
 	public Takeable<Observation<T>> getMessageQueue() {
-		return new TakeWrapper<Observation<T>>(this.queue);
+		return new Takeable.TakeWrapper<Observation<T>>(this.queue);
 	}
 
 	@Override

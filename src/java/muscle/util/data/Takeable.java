@@ -21,6 +21,8 @@
 */
 package muscle.util.data;
 
+import java.util.concurrent.BlockingQueue;
+
 /**
  * Take data (blocking) until empty
  * @author jborgdo1
@@ -29,4 +31,21 @@ package muscle.util.data;
 public interface Takeable<T> {
 	public T take() throws InterruptedException;
 	public boolean isEmpty();
+	
+	public static class TakeWrapper<T> implements Takeable<T> {
+		private final BlockingQueue<T> queue;
+		public TakeWrapper(BlockingQueue<T> queue) {
+			this.queue = queue;
+		}
+
+		@Override
+		public T take() throws InterruptedException {
+			return queue.take();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return queue.isEmpty();
+		}
+	}
 }

@@ -37,7 +37,6 @@ import muscle.core.Portal;
 import muscle.core.Scale;
 import muscle.core.model.Distance;
 import muscle.core.model.Timestamp;
-import muscle.exception.IgnoredException;
 import muscle.exception.MUSCLERuntimeException;
 
 /**
@@ -328,7 +327,7 @@ public abstract class RawInstance extends Module {
 
 	private <T extends Serializable> void addExitToList(String portName, ConduitExitController<T> exit) {
 		if (!acceptPortals) {
-			throw new IgnoredException("adding of portals not allowed here");
+			throw new MUSCLERuntimeException("adding of portals not allowed here");
 		}
 		ConduitExitController<?> old = exits.put(portName, exit);
 		// only add if not already added
@@ -340,7 +339,7 @@ public abstract class RawInstance extends Module {
 	
 	private <T extends Serializable> void addEntranceToList(String portName, ConduitEntranceController<T> entrance) {
 		if (!acceptPortals) {
-			throw new IgnoredException("adding of portals not allowed here");
+			throw new MUSCLERuntimeException("adding of portals not allowed here");
 		}
 		
 		ConduitEntranceController<?> old = entrances.put(portName, entrance);
