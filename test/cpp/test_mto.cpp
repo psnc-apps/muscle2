@@ -191,6 +191,7 @@ public:
         ++(*data);
         return data;
     }
+    virtual void deleteResult(void *) {}
 };
 
 void testThread()
