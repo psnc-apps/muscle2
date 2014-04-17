@@ -47,6 +47,6 @@ cxa.generate_cs_file
 
 gui_class = 'muscle.monitor.ActivityController'
 m.run_command('Monitor', gui_class, [])
-m.await_commands
+m.await_processes
 
 exit(0)
