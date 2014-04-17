@@ -27,6 +27,7 @@ namespace muscle {
 		private:
 			thread *task;
 			mutex tmutex;
+			bool waitForTask();
 		};
 		class ThreadPool {
 		public:

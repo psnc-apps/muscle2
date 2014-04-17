@@ -41,12 +41,13 @@ namespace muscle {
 			
 			virtual void *run() = 0;
 			virtual void runWithoutThread();
+			virtual void setDone();
 			// Non-blocking
 			virtual bool isDone() { return cache.done; } // Read from owner
 			// Blocking
 			virtual void *getResult(); // Read from owner, sets stop signal
 			virtual void *getRawResult() { return result; } // Read without other operations
-			virtual void cancel() { cache.stop_condition = true; } // Called from owner, sets stop signal
+			virtual void cancel() { cache.stop_condition = true; } // Non-blocking, called from owner, sets stop signal
 			virtual bool isCancelled() { return cache.stop_condition; }
 			virtual void beforeRun() {}
 			virtual void afterRun() {}

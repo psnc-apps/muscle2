@@ -37,6 +37,7 @@ namespace muscle {
 		void *_shared_thread_cache::run()
 		{
 			runner->runWithoutThread();
+			runner->setDone();
 			return runner->getRawResult();
 		}
 		
@@ -64,6 +65,10 @@ namespace muscle {
 			if (!isCancelled()) result = run();
 			// Notify done, whether actually run or not
 			afterRun();
+		}
+		
+		void thread::setDone()
+		{
 			if (isStarted) {
 				cache.done = true;
 			} else {
