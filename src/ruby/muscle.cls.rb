@@ -320,8 +320,8 @@ class Muscle
 		end
 	end
 	
-  def await_commands
-    MuscleUtils.await_commands($running_procs)
+  def await_processes
+    MuscleUtils.await_processes($running_procs)
   end
   
 	def apply_intercluster

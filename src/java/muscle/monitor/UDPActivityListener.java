@@ -4,13 +4,11 @@
 
 package muscle.monitor;
 
-import java.io.ByteArrayInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import muscle.id.Location;
-import muscle.id.TcpLocation;
 import muscle.net.ProtocolHandler;
 import muscle.net.SocketFactory;
 import muscle.util.concurrency.SafeThread;

@@ -30,7 +30,11 @@ public class GraphPanel extends javax.swing.JPanel {
 	}
 	
 	public void addMuscleText(String s) {
-		muscleInstLabelText += muscleInstLabelText == null ? s : "<br>" + s;
+		if (muscleInstLabelText == null) {
+			muscleInstLabelText = s;
+		} else {
+			muscleInstLabelText += "<br>" + s;
+		}
 		muscleInstLabel.setText("<html>" + muscleInstLabelText + "</html>");
 	}
 
