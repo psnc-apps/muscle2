@@ -1,4 +1,4 @@
-MUSCLE 2.0
+MUSCLE 2.1
 ==========
 
 The multiscale coupling library and environment 2 (MUSCLE 2) computes multiscale
@@ -15,7 +15,7 @@ For more information, please contact <muscle@mapper-project.eu>.
 
 ----
 
-The MAPPER project receives funding from the EC's Seventh Framework Programme (FP7/2007-2013) under grant agreement no. RI-261507.
+The MAPPER project receives funding from the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreement no. RI-261507.
 
 [1]: http://apps.man.poznan.pl/trac/muscle "PSNC repository for MUSCLE"
 [2]: http://www.complex-automata.org/ "Complex Automata"

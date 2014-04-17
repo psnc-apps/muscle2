@@ -26,3 +26,13 @@ Website: http://msgpack.org/
 Download: http://mvnrepository.com/artifact/org.msgpack/msgpack/0.6.7
 License: Apache License 2.0
 
+File: colt-1.2.0.jar
+Website: http://acs.lbl.gov/software/colt/
+Download: http://acs.lbl.gov/software/colt/colt-download/releases/colt-1.2.0.zip
+License: Copyright (c) 1999 CERN - European Organization for Nuclear Research. 
+Permission to use, copy, modify, distribute and sell this software and its documentation for any purpose is hereby granted without fee, provided that the above copyright notice appear in all copies and that both that copyright notice and this permission notice appear in supporting documentation. CERN makes no representations about the suitability of this software for any purpose. It is provided "as is" without expressed or implied warranty.
+
+Files: gs-*-1.2.jar
+Website: http://graphstream-project.org/
+Download: http://graphstream-project.org/media/data/gs-*-1.2.zip
+License: This program is free software distributed under the terms of two licenses, the CeCILL-C license that fits European law, and the GNU Lesser General Public License. 
