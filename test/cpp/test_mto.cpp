@@ -12,6 +12,7 @@
 #include "muscle2/util/thread.h"
 #include "mto/net/mpsocket.h"
 #include "mto/net/MPWPathSocket.h"
+#include "mto/net/ThreadPool.h"
 #include "assertTemplates.h"
 
 #include <arpa/inet.h>
@@ -181,10 +182,10 @@ void testMutex()
 
 class test_thread : public muscle::util::thread
 {
-    int *data;
-    muscle::util::duration timeout;
+    int * const data;
+    const muscle::util::duration timeout;
 public:
-    test_thread(int *data, muscle::util::duration timeout) : data(data), timeout(timeout) { start(); }
+    test_thread(int *data, const muscle::util::duration& timeout) : data(data), timeout(timeout) {}
     virtual void *run()
     {
         timeout.sleep();
@@ -201,12 +202,42 @@ void testThread()
     int data = 0;
     muscle::util::duration timeout(0, 100);
     test_thread t(&data, timeout);
+	t.start();
     assertEquals(t.isDone(), false, "Not done before execution");
     assertEquals(data, 0, "Increase only after timeout");
     int newResult = *(int *)t.getResult();
     assertEquals(t.isDone(), true, "Done after execution");
     assertEquals(data, newResult, "Result matches");
     assertEquals(data, 1, "Result is expected");
+}
+
+void testThreadPool()
+{
+    cout << endl << "threadpool" << endl << endl;
+    
+    int d1 = 0, d2 = 0;
+    const muscle::util::duration timeout(0, 100), timeout2(0, 150);
+	muscle::ThreadPool tp(1);
+    test_thread t1(&d1, timeout), t2(&d2, timeout2);
+	tp.execute(&t1);
+	tp.execute(&t2);
+
+    assertEquals(t1.isDone(), false, "1: Not done before execution");
+    assertEquals(t2.isDone(), false, "2: Not done before execution");
+    assertEquals(d1, 0, "1: Increase only after timeout");
+    assertEquals(d2, 0, "2: Increase only after timeout");
+    int newResult1 = *(int *)t1.getResult();
+    assertEquals(t1.isDone(), true, "1: Done after execution");
+    assertEquals(d1, newResult1, "1: Result matches");
+    assertEquals(d1, 1, "1: Result is expected");
+	if (!t2.isDone()) {
+		cout << "very shortly sleeping" << endl;
+		muscle::util::duration(0, 50).sleep();
+	}
+    assertEquals(t2.isDone(), true, "2: Done after execution");
+    int newResult2 = *(int *)t2.getResult();
+    assertEquals(d2, newResult2, "2: Result matches");
+    assertEquals(d2, 1, "2: Result is expected");
 }
 
 void testAsyncMPConnectServerSocket()
@@ -236,7 +267,8 @@ int main(int argc, char * argv[])
 	muscle::logger::initialize("mto_tester", NULL, MUSCLE_LOG_SEVERE, MUSCLE_LOG_OFF, true);
     try {
         testMutex();
-        testThread();
+		testThread();
+        testThreadPool();
 //        testAsyncMPConnectServerSocket();
         testAsyncMPWPathConnectServerSocket();
         cout << endl;
