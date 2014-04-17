@@ -66,7 +66,7 @@ namespace muscle {
 			bool isStarted;
 		protected:
 			pthread_t t;
-			mutex cancelMutex;
+			mutex waitMutex;
 			_shared_thread_cache cache;
 		};
 	}

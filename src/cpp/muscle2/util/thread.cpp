@@ -44,15 +44,15 @@ namespace muscle {
 		{
 			if (!resultCollected)
 			{
-				if (isStarted)
+				if (isStarted) {
 					::pthread_join(t, &result);
-				if (isCancelled()) {
-					{
-						mutex_lock lock = cancelMutex.acquire();
-						while (!isDone()) { lock.wait(); }
-					}
-					deleteResult();
+				} else {
+					mutex_lock lock = waitMutex.acquire();
+					while (!isDone()) { lock.wait(); }
 				}
+				if (isCancelled())
+					deleteResult();
+
 				resultCollected = true;
 			}
 			return result;
@@ -63,10 +63,14 @@ namespace muscle {
 			beforeRun();
 			if (!isCancelled()) result = run();
 			// Notify done, whether actually run or not
-			cache.done = true;
 			afterRun();
-			if (isCancelled())
-				cancelMutex.acquire().notify();
+			if (isStarted) {
+				cache.done = true;
+			} else {
+				mutex_lock lock = waitMutex.acquire();
+				cache.done = true;
+				lock.notify();
+			}
 		}
 		
 		void *_run_cmuscle_util_thread(void *t)
