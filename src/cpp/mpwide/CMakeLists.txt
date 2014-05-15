@@ -2,10 +2,22 @@ PROJECT(mpwide CXX)
 
 set(MPWIDE_VERSION "1.0")
 
+find_package(Threads)
+
 set(MPWIDE_CPP_FILES MPWide.cpp Socket.cpp)
 
 add_library(${MPWIDE_LIB} SHARED ${MPWIDE_CPP_FILES})
+target_link_libraries(${MPWIDE_LIB} ${CMAKE_THREAD_LIBS_INIT} )
 set_target_properties(${MPWIDE_LIB} PROPERTIES VERSION ${MPWIDE_VERSION})
 set_target_properties(${MPWIDE_LIB} PROPERTIES OUTPUT_NAME MPW)
 
 install(TARGETS ${MPWIDE_LIB} DESTINATION lib)
+
+if (BUILD_STATIC_LIBS)
+	add_library(${MPWIDE_LIB_STATIC} STATIC ${MPWIDE_CPP_FILES})
+	target_link_libraries(${MPWIDE_LIB_STATIC} ${CMAKE_THREAD_LIBS_INIT})
+	set_target_properties(${MPWIDE_LIB_STATIC} PROPERTIES VERSION ${MPWIDE_VERSION})
+	set_target_properties(${MPWIDE_LIB_STATIC} PROPERTIES OUTPUT_NAME MPW)
+
+	install(TARGETS ${MPWIDE_LIB_STATIC} DESTINATION lib)	
+endif()
