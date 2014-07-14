@@ -23,6 +23,11 @@
 
 #include <string>
 #include <cstring>
+#include <map>
+
+static char *kernel_name = NULL;
+typedef std::map<std::string,char *> propertymap;
+static propertymap properties;
 
 muscle_error_t MUSCLE_Init(int *argc, char ***argv)
 {
@@ -31,12 +36,24 @@ muscle_error_t MUSCLE_Init(int *argc, char ***argv)
 
 const char* MUSCLE_Kernel_Name(void)
 {
-	return strdup(muscle::cxa::kernel_name().c_str());
+	if (kernel_name == NULL) {
+		kernel_name = strdup(muscle::cxa::kernel_name().c_str());
+	}	
+	return kernel_name;
 }
 
 const char* MUSCLE_Get_Property(const char* name)
 {
-	return strdup(muscle::cxa::get_property(std::string(name)).c_str());
+	std::string name_str = name;
+	propertymap::iterator it = properties.find(name_str);
+	char *value;
+	if (it != properties.end()) {
+		value = it->second;
+	} else {
+		value = strdup(muscle::cxa::get_property(std::string(name)).c_str());
+		properties[name_str] = value;
+	}
+	return value;
 }
 
 int MUSCLE_Has_Property(const char *name)
@@ -62,6 +79,12 @@ int MUSCLE_Will_Stop(void) {
 
 void MUSCLE_Finalize(void)
 {
+	if (kernel_name != NULL)
+		free(kernel_name);
+	for (propertymap::iterator i = properties.begin(); i != properties.end(); ++i) {
+		free(i->second);
+	}
+	properties.clear();
 	muscle::env::finalize();
 }
 
@@ -69,10 +92,38 @@ int MUSCLE_Barrier_Init(char **barrier, size_t *len, int num_procs)
 {
 	return muscle::env::barrier_init(barrier, len, num_procs);
 }
-int MUSCLE_Barrier(const char *barrier) {
+int MUSCLE_Barrier(const char *barrier)
+{
 	return muscle::env::barrier(barrier);
 }
 
-void MUSCLE_Barrier_Destroy(char *barrier) {
+void MUSCLE_Barrier_Destroy(char *barrier)
+{
 	return muscle::env::barrier_destroy(barrier);
 }
+
+void MUSCLE_Log_Info(const char * const msg, ...)
+{
+	if (!muscle::logger::isLoggable(MUSCLE_LOG_INFO))
+		return;
+    va_list args;
+    va_start(args, msg);
+    muscle::logger::format(MUSCLE_LOG_INFO, msg, &args);
+    va_end(args);
+}
+
+void MUSCLE_Log(const muscle_loglevel_t level, const char * const msg, ...)
+{
+	if (!muscle::logger::isLoggable(level))
+		return;
+    va_list args;
+    va_start(args, msg);
+	muscle::logger::format(level, msg, &args);
+    va_end(args);
+}
+
+void MUSCLE_Free(void *data, muscle_datatype_t type)
+{
+	muscle::env::free_data(data, type);
+}
+

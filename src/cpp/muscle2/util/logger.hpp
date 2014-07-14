@@ -43,11 +43,11 @@ namespace muscle {
 		static void initialize(const char *_name, const char *_tmp_path, int level, bool will_log);
 		static void initialize(const char *_name, FILE *file, int level, int file_level, bool will_log);
 		static void finalize();
+		static void format(const muscle_loglevel_t level, const char *message, va_list *args);
 		
 		inline static bool isLoggable(muscle_loglevel_t level)
         { return level >= min_level; }
 	private:
-		static void format(const muscle_loglevel_t level, const char *message, va_list *args);
         static const char *logger_name;
         static FILE *logger_fd;
         static int logger_level;

@@ -39,6 +39,9 @@ int MUSCLE_Will_Stop(void);
 int MUSCLE_Barrier_Init(char **barrier, size_t *len, int num_procs);
 int MUSCLE_Barrier(const char *barrier);
 void MUSCLE_Barrier_Destroy(char *barrier);
+void MUSCLE_Log_Info(const char *message, ...);
+void MUSCLE_Log(muscle_loglevel_t level, const char *message, ...);
+void MUSCLE_Free(void *data, muscle_datatype_t type);
 
 muscle_error_t MUSCLE_Send(const char *exit_name, void *array, size_t size, muscle_datatype_t type);
 void* MUSCLE_Receive(const char *entrance_name, void *array, size_t *size, muscle_datatype_t type);

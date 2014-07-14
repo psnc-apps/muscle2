@@ -108,7 +108,7 @@ namespace muscle {
 		va_end(args);
 	}
 	
-	inline void logger::format(const muscle_loglevel_t level, const char *message, va_list *args)
+	void logger::format(const muscle_loglevel_t level, const char *message, va_list *args)
 	{
 		const char *level_str;
 		switch (level)
