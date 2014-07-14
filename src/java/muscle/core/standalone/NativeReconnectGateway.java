@@ -57,6 +57,18 @@ public class NativeReconnectGateway extends NativeGateway implements Disposable 
 			NativeProtocol proto = handleProtocol();
 
 			if (proto == NativeProtocol.FINALIZE) {
+				// we can close and exit now
+				out.flush();
+				outStream.close();
+				outStream.setOutputStream(null);
+				out.close();
+				nativeSock.close();
+				nativeSock = null;
+				in.cleanUp();
+				inStream.close();
+				inStream.setInputStream(null);
+				in.close();
+				listener.isFinished();
 				return; // Finalized, we can exit now
 			} else if (proto == NativeProtocol.SEND) { // Flush and close socket, except when forwarding message
 				in.cleanUp();

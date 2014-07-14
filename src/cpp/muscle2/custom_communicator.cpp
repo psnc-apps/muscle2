@@ -138,7 +138,9 @@ namespace muscle {
 				*(char **)result = sin->decodeString(*(char **)result, result_len);
 				break;
 			case PROTO_FINALIZE:
-				return 1; // XXXdon't call endDecoding: the socket will be closed
+				if (!sin->decodeBoolean())
+					throw muscle_exception("Finalization not handled correctly");
+				//return 1; // don't call endDecoding: the socket will be closed
 		}
 			
 		if (opcode != PROTO_SEND) {

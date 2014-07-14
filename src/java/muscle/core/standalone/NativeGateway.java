@@ -116,15 +116,21 @@ public class NativeGateway extends Thread implements Disposable {
 
 			NativeProtocol proto = handleProtocol();
 
-			if (proto == NativeProtocol.FINALIZE) {
-				return; // Finalized, we can exit now
-			} else if (proto != NativeProtocol.SEND) { // Flush, except when forwarding message
+			if (proto != NativeProtocol.SEND) { // Flush, except when forwarding message
 				if (isFinestLog) logger.finest("flushing response");
 				out.flush();
 			}
 
-			if (isFinestLog) logger.finest("proceeding to next native call");
-			in.cleanUp();
+			if (proto == NativeProtocol.FINALIZE) {
+				// we can close and exit now
+				out.close();
+				in.close();
+				listener.isFinished();
+				break;
+			} else { 
+				if (isFinestLog) logger.finest("proceeding to next native call");
+				in.cleanUp();
+			}
 		}
 	}
 	
@@ -137,9 +143,7 @@ public class NativeGateway extends Thread implements Disposable {
 			case FINALIZE:
 			{
 				if (isFinestLog) logger.finest("finalize() request.");
-				in.close();
-				out.close();
-				listener.isFinished();
+				out.writeBoolean(true);
 				if (isFinestLog) logger.finest("Native Process Gateway exiting...");
 				break;
 			}	

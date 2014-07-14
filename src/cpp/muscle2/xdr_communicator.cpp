@@ -256,6 +256,8 @@ int XdrCommunicator::execute_protocol(muscle_protocol_t opcode, std::string *ide
 			if (!xdr_string(&xdri, (char **)result, (unsigned int)*result_len)) throw muscle_exception("Cannot read internal string");
 			break;
 		case PROTO_FINALIZE:
+			if (!xdr_bool(&xdri, &success)) throw muscle_exception("Cannot read finalize success status");
+			if (!success) throw muscle_exception("Finalization not handled correctly");
 			break;
     }
      /*
