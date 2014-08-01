@@ -122,6 +122,9 @@ void MUSCLE_Log(const muscle_loglevel_t level, const char * const msg, ...)
     va_end(args);
 }
 
+void MUSCLE_Log_String(muscle_loglevel_t level, const char *message)
+{ MUSCLE_Log(level, message); }
+
 void MUSCLE_Free(void *data, muscle_datatype_t type)
 {
 	muscle::env::free_data(data, type);
