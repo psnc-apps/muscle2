@@ -32,8 +32,8 @@ string Request::type_str() const
         default:
         {
             stringstream ss;
-            ss << "Type " << (int)type << " is not well-specified";
-            throw muscle_exception(ss.str());
+            ss << "Type " << (int)type << " is unknown";
+			return ss.str();
         }
     }
 }

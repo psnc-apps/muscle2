@@ -15,7 +15,7 @@ public:
         Data = 4,             ///< One proxy sends client data to the other proxy
         Close = 5,            ///< A client closed the connection on one end
         PortRangeInfo = 6,    ///< Proxy tells what ports it owns
-		DataInLength = 7
+		DataInLength = 7      ///< For sending data that fits in a single int (length)
     };
     
     /** Converts the Type value ot it's textual representation */

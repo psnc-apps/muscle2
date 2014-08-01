@@ -72,7 +72,7 @@ bool PeerConnectionHandler::async_received(size_t code, int user_flag, void *dat
 				handleHello(h);
 				break;
 			default:
-				errorOccurred("Unknown message: " + h.type_str() + "!");
+				errorOccurred("Peer MTO sent malformed header: " + h.type_str());
 				return false;
 		}
 	} else if (user_flag == RECV_DATA) {

@@ -69,7 +69,7 @@ bool InitConnection::async_received(size_t code, int user_flag, void *data, void
             break;
         default:
         {
-            logger::severe("Client from %s sent unknown message (type %s)",
+            logger::severe("Client from %s sent malformed header (type %s)",
                           sock->getAddress().str().c_str(),
                           request.type_str().c_str());
         }
