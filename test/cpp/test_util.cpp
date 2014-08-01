@@ -179,10 +179,10 @@ void testSocket()
         muscle::net::CClientSocket sock(ep, NULL, opts);
         assert(true, "Connection to existing host");
         char s[] = "some string";
-		assertEquals<int>(sock.impl->select(0, sock.getWriteSock(), muscle::net::msocket_impl::RDMASK, 1, 0), muscle::net::msocket_impl::WRMASK, "Select sending");
+		assertEquals<int>(sock.select(MUSCLE_SOCKET_W), MUSCLE_SOCKET_W, "Select sending");
         assert(sock.send(s, sizeof(s)) > 0, "Sending");
         ssize_t len;
-		assertEquals<int>(sock.impl->select(sock.getReadSock(), 0, muscle::net::msocket_impl::WRMASK, 1, 0), muscle::net::msocket_impl::RDMASK, "Select receiving");
+		assertEquals<int>(sock.select(MUSCLE_SOCKET_R), MUSCLE_SOCKET_R, "Select receiving");
         assert((len = sock.recv(s, sizeof(s)-1)) > 0, "Receiving");
         s[len] = '\0';
         cout << "\t\t(received: " << string(s) << ")" << endl;
