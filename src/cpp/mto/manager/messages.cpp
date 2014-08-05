@@ -33,7 +33,8 @@ string Request::type_str() const
         {
             stringstream ss;
             ss << "Type " << (int)type << " is not well-specified";
-            throw muscle_exception(ss.str());
+            return ss;
+            //throw muscle_exception(ss.str());
         }
     }
 }
@@ -45,6 +46,16 @@ size_t Request::getSize()
 
 Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::net::endpoint::getSize())
 {
+	// Print the buffer, with format:
+	// <TYPE len 1> <SRC_IPV4/6 len 1> <SRC_PORT len 2> <SRC_IP_ADDRESS len 16> <DST_IPV4/6 len 1> <DST_PORT len 2> <DST_IP_ADDRESS len 16> <SESSION_ID len 4>
+	muscle::logger::info("Hexadecimal request:");
+	for (int i = 0; i < Request::getSize(); i++) {
+	        muscle::logger::info("%2x", buf[i]);
+	}
+	muscle::logger::info(“Decimal request:");
+	for (int i = 0; i < Request::getSize(); i++) {
+	        muscle::logger::info("%d", buf[i]);
+	}
     buf += 1+2*endpoint::getSize();
     sessionId = readFromBuffer<int32_t,4>(buf);
 	src.resolve();
