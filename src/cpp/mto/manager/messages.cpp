@@ -52,7 +52,7 @@ Request::Request(char *buf) : type(*buf), src(1+buf), dst(1+buf+muscle::net::end
 	for (int i = 0; i < Request::getSize(); i++) {
 	        muscle::logger::info("%2x", buf[i]);
 	}
-	muscle::logger::info(“Decimal request:");
+	muscle::logger::info("Decimal request:");
 	for (int i = 0; i < Request::getSize(); i++) {
 	        muscle::logger::info("%d", buf[i]);
 	}
