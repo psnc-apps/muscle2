@@ -33,7 +33,7 @@ string Request::type_str() const
         {
             stringstream ss;
             ss << "Type " << (int)type << " is not well-specified";
-            return ss;
+            return ss.str();
             //throw muscle_exception(ss.str());
         }
     }
