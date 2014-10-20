@@ -21,26 +21,8 @@
 */
 package muscle.net;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileOutputStream;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -57,6 +39,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /** 
+ * 
  * @author Mariusz Mamonski
  */
 
@@ -95,24 +78,14 @@ public class CrossSocketFactory extends SocketFactory {
 		}
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b = {3}, pos = {4}", new Object[] {id, off, len, bytesToHex(b, off, len), pos});
+			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b[off] = {3}, b[last] = {4}, pos = {5}", new Object[] {id, off, len, b[off], b[off+len-1], pos});
 			out.write(b, off, len);
 			pos+=len;
 			
 			traceFile.write(b, off, len);
 		}
-	}
-	
-	public static String bytesToHex(byte[] bytes, int off, int len) {
-		final char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-		char[] hexChars = new char[len * 2];
-		int v;
-		for (int j = 0; j < len; j++) {
-			v = bytes[off + j] & 0xFF;
-			hexChars[j * 2] = hexArray[v >>> 4];
-			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-		}
-		return new String(hexChars);
+
+		
 	}
 
 	public static class LoggableInputStream extends FilterInputStream {
@@ -158,10 +131,10 @@ public class CrossSocketFactory extends SocketFactory {
 			try {
 				int bread = in.read(b, off, len);
 				
-				if (bread >= 0) {
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, off = {2}, b = {3}, pos = {4}", new Object[] {id, bread, off, bytesToHex(b, off, bread), pos});
+				if (bread != -1) {
+					logger.log(Level.FINEST, "id = {0},  bread = {1}, b[{2}] = {3}, b[{4}] = {5}, pos = {6}", new Object[] {id, bread, off, b[off], off+bread-1, b[off+bread-1], pos});
 					traceFile.write(b, off, bread);
-					pos += bread;
+					pos+=bread;
 				} else {
 					logger.log(Level.FINEST, "id = {0},  bread = {1}, pos = {2}", new Object[] {id, bread, pos});
 				}
@@ -170,6 +143,9 @@ public class CrossSocketFactory extends SocketFactory {
 			} catch (IOException ex) {
 				logger.log(Level.WARNING, "read failed", ex);
 				throw ex;
+			} catch (Exception ex) {
+				logger.log(Level.SEVERE, "Unchecked exception", ex);
+				throw new AssertionError(ex);
 			}
 			/* not reached */
 		}	
@@ -236,14 +212,18 @@ public class CrossSocketFactory extends SocketFactory {
 			InetAddress addr) throws IOException {
 		
 		ServerSocket ss;
-		if (port == qcgMagicPort || port == 0) {
+		if (port == qcgMagicPort) {
+			logger.log(Level.FINE, "binding socket on MAIN port and addr {0}", addr);
+			 ss = createServerSocketInRange(backlog, addr);
+		} else if (port == 0) {
 			logger.log(Level.FINE, "binding socket on ANY port and addr {0}", addr);
-			ss = createServerSocketInRange(backlog, addr);
-			logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
+			 ss = createServerSocketInRange(backlog, addr);
 		} else {
 			logger.log(Level.FINE, "binding socket on port {0} and addr {1}", new Object[]{port, addr});
 			ss = new ServerSocket(port, backlog, addr);
 		}
+
+		logger.log(Level.FINE, "bound to port: {0}", ss.getLocalPort());
 
 		if (mtoAddr == null || mtoPort == -1) {
 			logger.fine("Missing MTO address / port. MTO will not be used.");
@@ -261,9 +241,7 @@ public class CrossSocketFactory extends SocketFactory {
 			try {
 				putConnectionData(InetAddress.getLocalHost()
 					.getHostAddress(), ss.getLocalPort());
-				logger.info("Registered to QCG-Coordinator");
 			} catch (IOException ex) {
-				ss.close();
 				throw new IOException("Cannot communicate with QCG-Coordinator", ex);
 			}
 		}
@@ -388,9 +366,12 @@ public class CrossSocketFactory extends SocketFactory {
 	 * result. Only one query to the Coordinator is performed at a time, managed by a wait/notify scheme.
 	 */
 	private InetSocketAddress getConnectionData() throws IOException {
+		logger.log(Level.FINE, "Getting connection data from QCG-Coordinator");
 		synchronized (this) {
+			logger.log(Level.FINE, "Checking if other thread is not getting connection data");
 			try {
 				while (this.isRetrievingMainPort) {
+					logger.log(Level.FINE, "The other thread is retrieving data, wait");
 					wait();
 				}
 			} catch (InterruptedException ex) {
@@ -398,8 +379,10 @@ public class CrossSocketFactory extends SocketFactory {
 			}
 			
 			if (this.mainAddr != null) {
+				logger.log(Level.FINE, "mainAddr already set, returning it");
 				return this.mainAddr;
 			} else {
+				logger.log(Level.FINE, "We have to connect to QCG-Coordinator to retrive data");
 				this.isRetrievingMainPort = true;
 			}
 		}
@@ -457,19 +440,19 @@ public class CrossSocketFactory extends SocketFactory {
 
 		logger.log(Level.FINE, "Master host: {0}", host);
 		logger.log(Level.FINE, "Master port: {0}", port);
-
 		synchronized (this) {
+			logger.log(Level.FINE, "Creating new InetSocketAddresss: " + host + ":" + port);
 			this.mainAddr = new InetSocketAddress(host, port);
 			this.isRetrievingMainPort = false;
 			this.notifyAll();
+			logger.log(Level.FINE, "Done");
 			return this.mainAddr;
 		}
 	}
 
-	@Override
 	public Socket createSocket() {
 		logger.fine("creating new client socket");
-        return new CrossSocket();
+		return new CrossSocket();
 	}
 	
 
@@ -546,9 +529,11 @@ public class CrossSocketFactory extends SocketFactory {
 			super.connect(new InetSocketAddress(mtoAddr, mtoPort), timeout);
 
 			// prepare & send request
-			MtoRequest req = new MtoRequest(MtoRequest.TYPE_CONNECT,
-				(InetSocketAddress)getLocalSocketAddress(), processedEndpoint);
-			
+			MtoRequest req = new MtoRequest();
+			req.setSource((InetSocketAddress) getLocalSocketAddress());
+			req.setDestination(processedEndpoint);
+			req.type = MtoRequest.TYPE_CONNECT;
+
 			super.getOutputStream().write(req.write().array());
 
 			// Read answer
@@ -561,7 +546,7 @@ public class CrossSocketFactory extends SocketFactory {
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
-			long response = new DataInputStream(super.getInputStream()).readLong();
+			int response = new DataInputStream(super.getInputStream()).readInt();
 			if (response != 0) {
 				close();
 				throw new IOException("MTO denied connection");
@@ -581,7 +566,6 @@ public class CrossSocketFactory extends SocketFactory {
 			this.selectorName = selectorName;
 		}
 
-		@Override
 		public void characters(char[] ch, int start, int length)
 				throws SAXException {
 
@@ -591,7 +575,6 @@ public class CrossSocketFactory extends SocketFactory {
 			}
 		}
 
-		@Override
 		public void startElement(String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
 			if (qName.endsWith(selectorName)) {
@@ -620,14 +603,21 @@ public class CrossSocketFactory extends SocketFactory {
 		// If one registers loopback, do it only if the MTO is on loopback as well
 		if(isa.getAddress().isLoopbackAddress() && ! mtoAddr.isLoopbackAddress()) {
 			return;
-		}		
+		}
 		
-		MtoRequest r = new MtoRequest(MtoRequest.TYPE_REGISTER, isa, null);
+		if( ! (isa.getAddress() instanceof Inet4Address ) ) {
+			return;
+		}
+		
+		
+		MtoRequest r = new MtoRequest();
+		r.type = MtoRequest.TYPE_REGISTER;
+		r.setSource(isa);
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(mtoAddr, mtoPort));
 		try {
 			s.getOutputStream().write(r.write().array());
-		} finally {
+		}  finally {
 			s.close();
 		}
 	}
