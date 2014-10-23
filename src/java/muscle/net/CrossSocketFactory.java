@@ -488,9 +488,12 @@ public class CrossSocketFactory extends SocketFactory {
 			logger.log(Level.FINE, "connecting to: {0}", endpoint);
 			processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
 
+			logger.log(Level.FINE, "Connecting to the processed endpoint: {0}", processedEndpoint);
+			
 			int port = processedEndpoint.getPort();
 			if (port >= portMin && port <= portMax) {
 				// direct connection
+				logger.log(Level.FINE, "Connecting directly to the endpoint");
 				super.connect(processedEndpoint, timeout);
 			} else {
 				if (mtoPort == -1 || mtoAddr == null) {
@@ -498,7 +501,7 @@ public class CrossSocketFactory extends SocketFactory {
 					super.connect(processedEndpoint, timeout);
 					return;
 				}
-
+				logger.log(Level.FINE, "Connecting to the endpoint via MTO");
 				mtoConnect(timeout, processedEndpoint);
 			}
 		}
