@@ -552,7 +552,7 @@ public class CrossSocketFactory extends SocketFactory {
 
 		private void mtoConnect(int timeout, InetSocketAddress processedEndpoint)
 				throws IOException {
-			logger.log(Level.FINE, "Connecting to MTO {0}:{1}", mtoAddr, mtoPort);
+			logger.log(Level.FINE, "Connecting to MTO {0}:{1}", new Object[]{mtoAddr, mtoPort});
 			super.connect(new InetSocketAddress(mtoAddr, mtoPort), timeout);
 
 			// prepare & send request
