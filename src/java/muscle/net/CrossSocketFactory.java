@@ -388,7 +388,9 @@ public class CrossSocketFactory extends SocketFactory {
 	 * result. Only one query to the Coordinator is performed at a time, managed by a wait/notify scheme.
 	 */
 	private InetSocketAddress getConnectionData() throws IOException {
+		logger.log(Level.FINE, "Getting connection data");
 		synchronized (this) {
+			logger.log(Level.FINE, "Checking if other thread is currently retrieving the connection port");
 			try {
 				while (this.isRetrievingMainPort) {
 					wait();
@@ -398,11 +400,13 @@ public class CrossSocketFactory extends SocketFactory {
 			}
 			
 			if (this.mainAddr != null) {
+				logger.log(Level.FINE, "Returning already set address");
 				return this.mainAddr;
 			} else {
 				this.isRetrievingMainPort = true;
 			}
 		}
+		
 		String coordinatorURL = System.getenv(ENV_COORDINATOR_URL);
 		String sessionID = System.getenv(ENV_SESSION_ID);
 		StringBuilder message = new StringBuilder(4096);
@@ -459,9 +463,11 @@ public class CrossSocketFactory extends SocketFactory {
 		logger.log(Level.FINE, "Master port: {0}", port);
 
 		synchronized (this) {
+			logger.log(Level.FINE, "Creating new address...");
 			this.mainAddr = new InetSocketAddress(host, port);
 			this.isRetrievingMainPort = false;
 			this.notifyAll();
+			logger.log(Level.FINE, "... Successfull");
 			return this.mainAddr;
 		}
 	}
