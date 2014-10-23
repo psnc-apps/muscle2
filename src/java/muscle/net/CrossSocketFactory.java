@@ -552,17 +552,22 @@ public class CrossSocketFactory extends SocketFactory {
 
 		private void mtoConnect(int timeout, InetSocketAddress processedEndpoint)
 				throws IOException {
+			logger.log(Level.FINE, "Connecting to MTO {0}:{1}", mtoAddr, mtoPort);
 			super.connect(new InetSocketAddress(mtoAddr, mtoPort), timeout);
 
 			// prepare & send request
+			logger.log(Level.FINE, "Preparing request for MTO");
 			MtoRequest req = new MtoRequest(MtoRequest.TYPE_CONNECT,
 				(InetSocketAddress)getLocalSocketAddress(), processedEndpoint);
-			
+			logger.log(Level.FINE, "Sending request to MTO");
 			super.getOutputStream().write(req.write().array());
 
+			
 			// Read answer
 			ByteBuffer buffer = ByteBuffer.allocate(MtoRequest.byteSize());
 			super.getInputStream().read(buffer.array());
+			
+			logger.log(Level.FINE, "Reading answer from MTO");
 			MtoRequest res = MtoRequest.read(buffer);
 
 			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
@@ -570,6 +575,7 @@ public class CrossSocketFactory extends SocketFactory {
 			assert res.type == MtoRequest.TYPE_CONNECT_RESPONSE;
 
 			// React
+			logger.log(Level.FINE, "Validating response");
 			long response = new DataInputStream(super.getInputStream()).readLong();
 			if (response != 0) {
 				close();
