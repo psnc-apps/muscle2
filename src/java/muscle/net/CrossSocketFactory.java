@@ -563,11 +563,14 @@ public class CrossSocketFactory extends SocketFactory {
 			super.getOutputStream().write(req.write().array());
 
 			
+			
 			// Read answer
+			logger.log(Level.FINE, "Allocating memory for the answer");
 			ByteBuffer buffer = ByteBuffer.allocate(MtoRequest.byteSize());
+			logger.log(Level.FINE, "Reading answer from MTO");
 			super.getInputStream().read(buffer.array());
 			
-			logger.log(Level.FINE, "Reading answer from MTO");
+			logger.log(Level.FINE, "Converting response to MtoRequest");
 			MtoRequest res = MtoRequest.read(buffer);
 
 			assert res.dstA.equals(req.dstA) && res.dstP == req.dstP
