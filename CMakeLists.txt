@@ -1,17 +1,6 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.3)
 
 PROJECT(MUSCLE)
-
-# Set policy to use modules from CMake if available,
-# but use the ones in cmake_scripts otherwise
-if(POLICY CMP00017)
-	cmake_policy(SET CMP0017 NEW)
-endif()
-
-if(NOT CMAKE_MODULE_PATH)
-  set(CMAKE_MODULE_PATH)
-endif()
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_scripts")
 
 option(BUILD_CPP "Build C/C++ part of MUSCLE" ON)
 option(BUILD_FORTRAN "Build FORTRAN part of MUSCLE (depends on C++)" ON)
@@ -129,15 +118,8 @@ if (BUILD_MPI_EXAMPLES)
 	
 	message ( STATUS "Searching for available MPI implementations" )
 
-	if (DEFINED CMAKE_CURRENT_LIST_DIR)
-		find_package (MPIMuscle)
-	else(DEFINED CMAKE_CURRENT_LIST_DIR)
-		# Compatibility CMake <2.83
-		set(CMAKE_CURRENT_LIST_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
-		find_package (MPIMuscle)
-		set(CMAKE_CURRENT_LIST_DIR)
-	endif(DEFINED CMAKE_CURRENT_LIST_DIR)
-		
+	find_package(MPI)
+
 	if (MPI_C_FOUND)
 		message (STATUS "Found MPI Compiler: " ${MPI_C_COMPILER} )
         add_subdirectory(src/cpp/examples/simplempi)

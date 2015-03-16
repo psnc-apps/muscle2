@@ -1,7 +1,6 @@
 PROJECT(MUSCLE Java) # The project has a name MUSCLE and utilizes CXX compiler
 
-set(JavaMuscle_DIR "${CMAKE_SOURCE_DIR}/cmake_scripts")
-find_package(JavaMuscle COMPONENTS Runtime Development REQUIRED NO_MODULE)
+find_package(Java COMPONENTS Runtime Development REQUIRED)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_JAVA_COMPILE_FLAGS -g:none -nowarn)
@@ -10,7 +9,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_JAVA_COMPILE_FLAGS -Xlint:all -g -Xlint:-rawtypes)
 endif()
 
-include(UseJavaMuscle)
+include(UseJava)
 
 FILE(GLOB THIRDPARTY_JAR ${CMAKE_SOURCE_DIR}/thirdparty/*.jar) 
 FILE(GLOB CMAKE_JAVA_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/thirdparty/*.jar ${CMAKE_SOURCE_DIR}/src/cpp/examples/mpiring/*.jar) 
