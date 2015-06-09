@@ -3,7 +3,7 @@ dir = ENV['MUSCLE_HOME'] + '/share/muscle/examples/simplecpp2'
 
 # declare kernels
 w = NativeInstance.new('w', "#{dir}/simplecpp2")
-w = NativeInstance.new('r', "#{dir}/simplecpp2r")
+r = NativeInstance.new('r', "#{dir}/simplecpp2r")
 
 # configure connection scheme
 w.couple(r, 'data')
