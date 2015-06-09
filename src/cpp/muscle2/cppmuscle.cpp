@@ -252,7 +252,7 @@ std::string cxa::get_properties()
 	return comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
-bool env::has_next(string port)
+bool env::has_next(std::string port)
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::has_next() from main MPI processor (MPI rank 0)");
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
@@ -262,7 +262,7 @@ bool env::has_next(string port)
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::has_next(%s)", port.c_str());
 #endif
-	comm->execute_protocol(PROTO_HAS_NEXT, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_has_next, NULL);
+	comm->execute_protocol(PROTO_HAS_NEXT, &port, MUSCLE_BOOLEAN, NULL, 0, &is_has_next, NULL);
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::has_next -> %d", is_has_next);
 #endif

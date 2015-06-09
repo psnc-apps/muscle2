@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 		cout << "c++: begin "<< argv[0] <<endl;
 		cout << "Kernel Name: " << muscle::cxa::kernel_name() << endl;
 
-		for(int time = 0; !muscle::env::will_stop(); time ++) {
+		for(int time = 0; muscle::env::has_next("data"); time ++) {
 			data = (double *)muscle::env::receive("data", (void *)0, len, MUSCLE_DOUBLE);
 			// process data
 			muscle::logger::info("Length: %zu; min: %f; max: %f", len, data[0], data[len - 1]);
