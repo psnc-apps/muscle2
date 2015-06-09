@@ -53,6 +53,7 @@ static PyMethodDef MuscleMethods[] = {
     {"severe",  muscle_severe, METH_VARARGS,"Log and output an error."},
     {"warning",  muscle_warning, METH_VARARGS,"Log and output a warning."},
     {"fine",  muscle_fine, METH_VARARGS,"Log a debug statement."},
+    {"has_next",  muscle_has_next, METH_VARARGS,"Has a next message."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -250,6 +251,18 @@ static PyObject *muscle_receive(PyObject *self, PyObject *args)
 	MUSCLE_PY_CALL(muscle::env::free_data(data, type));
 	
 	return result;
+}
+static PyObject *muscle_has_next(PyObject *self, PyObject *args)
+{
+  const char *port;
+	if (!PyArg_ParseTuple(args, "s", &port))
+		MUSCLE_PY_ERR("has_next takes a port name argument");
+  string portStr(port);
+  
+  int result;
+	MUSCLE_PY_SET(result, muscle::env::has_next(portStr));
+  
+  return Py_BuildValue("i", result);
 }
 
 static PyObject *muscle_tmp_path(PyObject *self, PyObject *args)

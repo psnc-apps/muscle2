@@ -252,6 +252,24 @@ std::string cxa::get_properties()
 	return comm->retrieve_string(PROTO_PROPERTIES, NULL);
 }
 
+bool env::has_next(string port)
+{
+	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::has_next() from main MPI processor (MPI rank 0)");
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
+
+	bool is_has_next;
+
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::has_next(%s)", port.c_str());
+#endif
+	comm->execute_protocol(PROTO_HAS_NEXT, NULL, MUSCLE_BOOLEAN, NULL, 0, &is_has_next, NULL);
+#ifdef CPPMUSCLE_TRACE
+	logger::finest("muscle::env::has_next -> %d", is_has_next);
+#endif
+  
+  return is_has_next;
+}
+
 std::string env::get_tmp_path()
 {
 	if (!env::is_main_processor) throw muscle_exception("can only call muscle::env::get_tmp_path() from main MPI processor (MPI rank 0)");
@@ -268,7 +286,7 @@ bool env::will_stop(void)
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 	bool is_will_stop = false;
-	
+
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::will_stop()");
 #endif

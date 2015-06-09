@@ -32,6 +32,7 @@ static PyObject *muscle_will_stop(PyObject *self, PyObject *args);
 static PyObject *muscle_init(PyObject *self, PyObject *args);
 static PyObject *muscle_finalize(PyObject *self, PyObject *args);
 static PyObject *muscle_kernel_name(PyObject *self, PyObject *args);
+static PyObject *muscle_has_next(PyObject *self, PyObject *args);
 static PyObject *muscle_send(PyObject *self, PyObject *args);
 static PyObject *muscle_receive(PyObject *self, PyObject *args);
 static PyObject *muscle_tmp_path(PyObject *self, PyObject *args);
