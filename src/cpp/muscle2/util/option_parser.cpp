@@ -201,7 +201,7 @@ bool muscle::util::loadTopology(string fname, map<string, endpoint> & results)
     return true;
 }
 
-vector<string> muscle::util::split(const string& str, const string& chars)
+vector<string> muscle::util::split(const string& str, const string chars)
 {
     vector<string> list;
     size_t ptr = str.find_first_not_of(chars);

@@ -10,7 +10,7 @@
 
 namespace muscle {
 	namespace util {
-		std::vector<std::string> split(const std::string& str, const std::string& chars);
+		std::vector<std::string> split(const std::string& str, const std::string chars);
 		std::string to_upper_ascii(const std::string& str);
 		
 		struct option_parser

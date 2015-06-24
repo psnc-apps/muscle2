@@ -19,6 +19,7 @@ class Options
 private:
     uint16_t localPortLow, localPortHigh; ///< Local port range
     muscle::net::endpoint internalEndpoint;             ///< Address and port for listening to clients
+    muscle::net::endpoint qcgEndpoint;
     std::string myName;                              ///< Name as in config file
     bool daemonize;                             ///< If the MTO should go to background
     int tcpBufSize;			      ///< TCP Buff size
@@ -55,6 +56,7 @@ public:
     int getTCPBufSize() const {return tcpBufSize;}
     std::string getTopologyFilePath() const {return topologyFilePath;}
     const muscle::util::duration& getSockAutoCloseTimeout() const {return sockAutoCloseTimeout;}
+    muscle::net::endpoint getQCGEndpoint() const {return qcgEndpoint;}
 
     bool useMPWide;			      ///< use MPWide
     bool useMPWPath;			      ///< use MPWide Path
