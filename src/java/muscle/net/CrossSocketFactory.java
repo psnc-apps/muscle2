@@ -21,18 +21,17 @@
 */
 package muscle.net;
 
+import muscle.util.data.LoggableInputStream;
+import muscle.util.data.LoggableOutputStream;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.FileOutputStream;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -61,146 +60,32 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 
 public class CrossSocketFactory extends SocketFactory {
-	
-	public static class LoggableOutputStream extends FilterOutputStream {
-		protected String id;
-		protected long pos = 0;
-		protected FileOutputStream traceFile;
-		
-		public LoggableOutputStream(String id, OutputStream out) throws IOException {
-			super(out);
-			logger.log(Level.FINEST, "id = {0}", id);
-			this.id = id;
-			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
-		}
-		
-		@Override
-		public void write(int b) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, b = {1}, pos = {2}", new Object[] {id, b, pos});
-			out.write(b);
-			pos++;
-			
-			traceFile.write(b);
-		}
-		@Override
-		public void close() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", id);
-			out.close();
-			traceFile.close();
-		}
-		@Override
-		public void flush() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", id);
-			out.flush();
-		}
-		@Override
-		public void write(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "id = {0}, off = {1}, len = {2}, b = {3}, pos = {4}", new Object[] {id, off, len, bytesToHex(b, off, len), pos});
-			out.write(b, off, len);
-			pos+=len;
-			
-			traceFile.write(b, off, len);
-		}
-	}
-	
-	public static String bytesToHex(byte[] bytes, int off, int len) {
-		final char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-		char[] hexChars = new char[len * 2];
-		int v;
-		for (int j = 0; j < len; j++) {
-			v = bytes[off + j] & 0xFF;
-			hexChars[j * 2] = hexArray[v >>> 4];
-			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-		}
-		return new String(hexChars);
-	}
-
-	public static class LoggableInputStream extends FilterInputStream {
-		protected String id;
-		protected long pos = 0;
-		protected FileOutputStream traceFile;
-		
-		public LoggableInputStream(String id, InputStream in) throws IOException {
-			super(in);
-			logger.log(Level.FINEST, "id = {0}", id);
-			this.id = id;
-			this.traceFile =  new FileOutputStream(System.getProperty("java.io.tmpdir") + "/" + id);
-		}
-		@Override
-		public int read() throws IOException {
-			int b = in.read();
-			
-			logger.log(Level.FINEST, "id = {0}, b = {1}, pos = {2}", new Object[] {id, b, pos});
-			if (b != -1) {
-				pos++;
-			}
-			
-			traceFile.write(b);
-			
-			return b;
-		}
-		@Override
-		public void close() throws IOException {
-			logger.log(Level.FINEST, "id = {0}", id);
-			in.close();
-			traceFile.close();
-		}
-		@Override
-		public int available() throws IOException {
-			int av = in.available();
-			logger.log(Level.FINEST, "id = {0}, available bytes = {1}", new Object[] {id, av});
-			return av;
-		}
-		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
-			logger.log(Level.FINEST, "trying to read: id = {0}, off = {1}, len = {2} ", new Object[] {id, off, len});
-			
-			try {
-				int bread = in.read(b, off, len);
-				
-				if (bread >= 0) {
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, off = {2}, b = {3}, pos = {4}", new Object[] {id, bread, off, bytesToHex(b, off, bread), pos});
-					traceFile.write(b, off, bread);
-					pos += bread;
-				} else {
-					logger.log(Level.FINEST, "id = {0},  bread = {1}, pos = {2}", new Object[] {id, bread, pos});
-				}
-
-				return bread;
-			} catch (IOException ex) {
-				logger.log(Level.WARNING, "read failed", ex);
-				throw ex;
-			}
-			/* not reached */
-		}	
-	}
-	
 	private final static Logger logger = Logger.getLogger(CrossSocketFactory.class.getName());
 	
-	public static final String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
-	public static final String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
-	public static final String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
-	public static final String PROP_MTO_TRACE = "pl.psnc.mapper.muscle.mto.trace";
+	private final static String PROP_MAIN_PORT = "pl.psnc.mapper.muscle.magicPort";
+	private final static String PROP_MTO_ADDRESS = "pl.psnc.mapper.muscle.mto.address";
+	private final static String PROP_MTO_PORT = "pl.psnc.mapper.muscle.mto.port";
+	public final static String PROP_MTO_TRACE = "pl.psnc.mapper.muscle.mto.trace";
 
 
-	public static final String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
-	public static final String ENV_SESSION_ID = "SESSION_ID";
-	public static final String ENV_QCG_COORDINATOR_VIA_MTO = "QCG_COORDINATOR_VIA_MTO";
+	private final static String ENV_COORDINATOR_URL = "QCG_COORDINATOR_URL";
+	private final static String ENV_SESSION_ID = "SESSION_ID";
+	private final static String ENV_QCG_COORDINATOR_VIA_MTO = "QCG_COORDINATOR_VIA_MTO";
 
-	public static final String PUT_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"> "
+	private final static String PUT_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"> "
 			+ "<SOAP-ENV:Body><smoacoordinator:PutProcessEntry xmlns:smoacoordinator=\"http://schemas.qoscosgrid.org/coordinator/2009/04/service\"><smoacoordinator:ProcessEntry>"
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
-	public static final String PUT_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader>"
+	private final static String PUT_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader>"
 			+ "<smoacoordinator:ProcessData><items><items>";
-	public static final String PUT_MSG_TEMPLATE_3 = /* @MASTER_HOST@ */"</items><items>";
-	public static final String PUT_MSG_TEMPLATE_4 = /* @MASTER_PORT@ */"</items></items></smoacoordinator:ProcessData>"
+	private final static String PUT_MSG_TEMPLATE_3 = /* @MASTER_HOST@ */"</items><items>";
+	private final static String PUT_MSG_TEMPLATE_4 = /* @MASTER_PORT@ */"</items></items></smoacoordinator:ProcessData>"
 			+ "</smoacoordinator:ProcessEntry></smoacoordinator:PutProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
 
-	public static final String GET_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+	private final static String GET_MSG_TEMPLATE_1 = "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">"
 			+ "<SOAP-ENV:Body><smoacoordinator:GetProcessEntry xmlns:smoacoordinator=\"http://schemas.qoscosgrid.org/coordinator/2009/04/service\">"
 			+ "<smoacoordinator:ProcessEntryHeader><smoacoordinator:Key>";
-	public static final String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
-
+	private final static String GET_MSG_TEMPLATE_2 = /* @SESSION_KEY@ */"</smoacoordinator:Key></smoacoordinator:ProcessEntryHeader></smoacoordinator:GetProcessEntry></SOAP-ENV:Body></SOAP-ENV:Envelope>";
+    
 	/** Port number that signifies that QCG Coordinator should be notified of the actually used port number. */
 	protected final int qcgMagicPort;	
 	protected final int mtoPort;
@@ -310,71 +195,43 @@ public class CrossSocketFactory extends SocketFactory {
 	*/
 	private String sendHTTPRequest(URL url, String request) throws IOException {
 		StringBuffer response = new StringBuffer(4096);
-		OutputStreamWriter osw = null;
-		BufferedReader brd = null;
-	
+		
+        Socket s;
+        
 		if (System.getenv(ENV_QCG_COORDINATOR_VIA_MTO) == null) {
-			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+            s = new Socket();
+        } else {
+            logger.log(Level.INFO, "Connecting to QCG-Coordinator via MTO");
+            s = new CrossSocket(true);
+        }
 
-			try {
-				logger.log(Level.FINEST, "Request Message: {0}", request);
+        try {
+            s.connect(new InetSocketAddress(url.getHost(), url.getPort()));
 
-				conn.setDoOutput(true);
-				conn.setRequestMethod("POST");
+            OutputStreamWriter osw = new OutputStreamWriter( s.getOutputStream() );
+            osw.write("POST ");
+            osw.write(url.getFile());
+            osw.write(" HTTP/1.1\r\nHost ");
+            osw.write(url.getHost());
+            osw.write("\r\nConnection: close\r\n\r\n");
+            osw.write(request);
+            osw.flush();
 
-				osw = new OutputStreamWriter(conn.getOutputStream());
-				osw.write(request);
-				osw.flush();
+            BufferedReader brd = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
-				if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-					throw new IOException("Call to " + url + " failed with code "
-							+ conn.getResponseCode());
-				}
-
-				brd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				
-				String line;
-				while ((line = brd.readLine()) != null) {
-					response.append(line);
-				}
-			} finally {
-
-				if (osw != null) {
-					osw.close();
-				}
-
-				if (brd != null) {
-					brd.close();
-				}
-			}
-		} else {
-			logger.log(Level.INFO, "Connecting to QCG-Coordinator via MTO");
-
-			CrossSocket s = new CrossSocket();
-			
-			try {
-				s.connect(new InetSocketAddress(url.getHost(), url.getPort()));
-				
-				osw = new OutputStreamWriter( s.getOutputStream() );
-				osw.write(request);
-				osw.flush();
-				
-				brd = new BufferedReader(new InputStreamReader(s.getInputStream()));
-				
-				String line;
-				boolean content = false;
-				while ((line = brd.readLine()) != null) {
-					if (line.matches(".*SOAP-ENV:Envelope.*")) {
-						content = true;
-					}
-					if (content) {
-						response.append(line);
-					}
-				}
-			} finally {
-				s.close();
-			}
-		}
+            String line;
+            boolean content = false;
+            while ((line = brd.readLine()) != null) {
+                if (line.matches(".*SOAP-ENV:Envelope.*")) {
+                    content = true;
+                }
+                if (content) {
+                    response.append(line);
+                }
+            }
+        } finally {
+            s.close();
+        }
 		
 		logger.log(Level.FINEST, "Response Message: {0}", response);
 
@@ -475,18 +332,25 @@ public class CrossSocketFactory extends SocketFactory {
 
 	protected class CrossSocket extends Socket {
 		protected InetSocketAddress processedEndpoint;
-		
+		private final boolean forceMto;
+        
+        CrossSocket(boolean forceMto) {
+            super();
+            this.forceMto = forceMto;
+        }
+        
+        CrossSocket() {
+            this(false);
+        }
+        
 		@Override
 		public void connect(SocketAddress endpoint, int timeout)
 				throws IOException {
 			logger.log(Level.FINE, "connecting to: {0}", endpoint);
 			processedEndpoint = (InetSocketAddress) processEndpoint(endpoint);
 
-			int port = processedEndpoint.getPort();
-			if (port >= portMin && port <= portMax) {
-				// direct connection
-				super.connect(processedEndpoint, timeout);
-			} else {
+            int port = processedEndpoint.getPort();
+            if (forceMto || port < portMin || port > portMax) {
 				if (mtoPort == -1 || mtoAddr == null) {
 					logger.warning("non-default TCP port used and no MTO to resolve it.");
 					super.connect(processedEndpoint, timeout);
@@ -494,7 +358,10 @@ public class CrossSocketFactory extends SocketFactory {
 				}
 
 				mtoConnect(timeout, processedEndpoint);
-			}
+			} else {
+				// direct connection
+				super.connect(processedEndpoint, timeout);			
+            }
 		}
 		
 		@Override
@@ -504,7 +371,8 @@ public class CrossSocketFactory extends SocketFactory {
 			}
 			else {
 				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
-				return new LoggableInputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getInputStream());
+                String id = processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString();
+				return new LoggableInputStream(logger, id, super.getInputStream());
 			}
 		}
 
@@ -514,7 +382,8 @@ public class CrossSocketFactory extends SocketFactory {
 				return super.getOutputStream();
 			} else {
 				logger.log(Level.FINE, "id = {0} remote = {1}", new Object[]{processedEndpoint,  super.getRemoteSocketAddress()});
-				return new LoggableOutputStream(processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString(), super.getOutputStream());
+                String id = processedEndpoint != null ? processedEndpoint.toString() :  super.getRemoteSocketAddress().toString();
+				return new LoggableOutputStream(logger, id, super.getOutputStream());
 			}
 		}
 		
@@ -573,11 +442,12 @@ public class CrossSocketFactory extends SocketFactory {
 	}
 
 	private class XMLToListHandler extends DefaultHandler {
-		protected List<String> parsedValues = new ArrayList<String>();
-		protected String selectorName;
+		protected final List<String> parsedValues;
+		protected final String selectorName;
 		protected boolean activated;
 
-		public XMLToListHandler(String selectorName) {
+		XMLToListHandler(String selectorName) {
+            this.parsedValues = new ArrayList<String>(2);
 			this.selectorName = selectorName;
 		}
 

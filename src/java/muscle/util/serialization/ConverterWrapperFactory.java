@@ -31,9 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 import muscle.net.CrossSocketFactory;
-
+import muscle.util.data.LoggableInputStream;
 import org.msgpack.MessagePack;
 import org.msgpack.packer.Packer;
 import org.msgpack.unpacker.Unpacker;
@@ -47,6 +48,7 @@ public class ConverterWrapperFactory {
 	private final static int CONTROL_BUFFER_SIZE = 1024;
 	private final static int TCP_MTU_ESTIMATE = 1380;
 	private final static boolean isXdr = System.getProperty("muscle.core.serialization.method") != null && System.getProperty("muscle.core.serialization.method").equals("XDR");
+    private final static Logger logger = Logger.getLogger(ConverterWrapperFactory.class.getName());
 	
 	public static SerializerWrapper getDataSerializer(Socket s) throws IOException {
 		if (isXdr) {
@@ -79,7 +81,7 @@ public class ConverterWrapperFactory {
 		} else {
 			MessagePack msgPack = new MessagePack();
 			InputStream socketStream = System.getProperty(CrossSocketFactory.PROP_MTO_TRACE) == null ? s.getInputStream() : 
-				new CrossSocketFactory.LoggableInputStream(s.getRemoteSocketAddress().toString(), s.getInputStream()); // * temporary, there is no way to do it in cleaner way */
+				new LoggableInputStream(logger, s.getRemoteSocketAddress().toString(), s.getInputStream()); // * temporary, there is no way to do it in cleaner way */
 			// TEST
 			InputStream stream = new SmartBufferedInputStream(socketStream, DATA_BUFFER_SIZE, 2);
 			Unpacker unpacker = msgPack.createUnpacker(stream);
@@ -100,4 +102,8 @@ public class ConverterWrapperFactory {
 			return new UnpackerWrapper(unpacker);
 		}
 	}
+
+    private ConverterWrapperFactory() {
+        // do not instantiate
+    }
 }

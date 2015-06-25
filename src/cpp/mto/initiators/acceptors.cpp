@@ -12,6 +12,7 @@
 #include "../manager/messages.hpp"
 #include "../manager/localmto.h"
 #include "../manager/connection.hpp"
+#include "../manager/externalconnection.hpp"
 #include "muscle2/util/logger.hpp"
 
 #define INIT_CONNECTION_REJECT 61
@@ -105,8 +106,11 @@ void InitConnection::connect(const Request &request)
             
             sock = NULL; // Don't delete at self-delete
         }
-        else
-        {
+        else if (request.dst == mto->qcgEp) {
+            new ExternalConnection(sock, h, mto->intSockFactory); // self-destruct
+            
+            sock = NULL;
+        } else {
             logger::severe("Requested connection to port out of range (%s) by %s",
                           request.dst.str().c_str(), request.src.str().c_str());
             refs++;

@@ -15,7 +15,7 @@ using namespace std;
 using namespace muscle;
 using namespace muscle::net;
 
-LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSockFactory, SocketFactory *extSockFactory, const endpoint& externalEp) : hello(opts.getLocalPortLow(), opts.getLocalPortHigh(), 0), name(opts.getMyName()), internalEp(opts.getInternalEndpoint()), willDaemonize(opts.getDaemonize()), service(service), intSockFactory(intSockFactory), extSockFactory(extSockFactory), sockTimeout(opts.getSockAutoCloseTimeout()), externalEp(externalEp), peers(this), conns(this), extAcceptor(NULL), intAcceptor(NULL), intSockOpts(MAX_INTERNAL_WAITING), intClientOpts(MAX_INTERNAL_WAITING), extSockOpts(MAX_EXTERNAL_WAITING), extClientOpts(opts.numChannels()), done(false)
+LocalMto::LocalMto(Options& opts, async_service *service, SocketFactory *intSockFactory, SocketFactory *extSockFactory, const endpoint& externalEp) : hello(opts.getLocalPortLow(), opts.getLocalPortHigh(), 0), name(opts.getMyName()), internalEp(opts.getInternalEndpoint()), qcgEp(opts.getQCGEndpoint()), willDaemonize(opts.getDaemonize()), service(service), intSockFactory(intSockFactory), extSockFactory(extSockFactory), sockTimeout(opts.getSockAutoCloseTimeout()), externalEp(externalEp), peers(this), conns(this), extAcceptor(NULL), intAcceptor(NULL), intSockOpts(MAX_INTERNAL_WAITING), intClientOpts(MAX_INTERNAL_WAITING), extSockOpts(MAX_EXTERNAL_WAITING), extClientOpts(opts.numChannels()), done(false)
 {
 	logger::info("Setting custom socket options");
     

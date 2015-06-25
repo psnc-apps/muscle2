@@ -19,10 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with MUSCLE.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package muscle.util.data;
 
@@ -32,6 +28,7 @@ import java.io.Serializable;
  *
  * @author Joris Borgdorff
  */
+@SuppressWarnings("SuspiciousSystemArraycopy")
 public class MatrixTool {
 	public static long deepSizeOf(Serializable value, SerializableDatatype type) {
 		long size = type.getDimensions()*4;
@@ -855,4 +852,8 @@ public class MatrixTool {
 				throw new IllegalArgumentException("Can only instantiate arrays, not type "+ type);
 		}
 	}
+
+    private MatrixTool() {
+        // do not instantiate
+    }
 }

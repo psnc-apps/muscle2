@@ -7,7 +7,7 @@ include_directories(..)
 set(MTO_FILES
     main.cpp
     initiators/connectors.cpp initiators/helloreader.cpp initiators/acceptors.cpp
-    manager/peerconnectionhandler.cpp manager/connection.cpp manager/options.cpp manager/localmto.cpp manager/peercollection.cpp manager/connectioncollection.cpp
+    manager/peerconnectionhandler.cpp manager/connection.cpp manager/externalconnection.cpp manager/options.cpp manager/localmto.cpp manager/peercollection.cpp manager/connectioncollection.cpp
     manager/messages.cpp net/MPWPathSocket.cpp net/mpsocket.cpp net/DecoupledSelectSocket.cpp net/ThreadPool.cpp)
 
 add_executable(${MTO} ${MTO_FILES})

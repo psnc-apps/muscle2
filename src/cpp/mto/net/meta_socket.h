@@ -18,21 +18,21 @@ namespace muscle {
     {
     public:
         virtual ~meta_socket_protocol() {}
-        virtual void initiateSocket(const ClientSocket *sock) = 0;
+        virtual void initiateSocket(const net::ClientSocket *sock) = 0;
         virtual bool socketFailed(int times) = 0;
     };
     
-    class meta_socket : public ClientSocket
+    class meta_socket : public net::ClientSocket
     {
     protected:
         ClientSocket *sock;
         bool locked;
-        const duration timeout;
+        const util::duration timeout;
 
         virtual void recreate() = 0;
         virtual void invalidate();
     public:
-        meta_socket(endpoint& ep, async_service *service, duration& timeout);
+        meta_socket(net::endpoint& ep, net::async_service *service, util::duration& timeout);
         virtual ~meta_socket();
         
         /* ====== Reconnect issues ====== */
@@ -53,7 +53,7 @@ namespace muscle {
         size_t iddleTimer;
         //  void iddleTimerFired();
         void iddleSocketClose();
-        muscle::time lastOperation;
+        util::mtime lastOperation;
         void updateLastOperationTimer();
     };
 }

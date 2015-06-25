@@ -24,6 +24,7 @@ class LocalMto
 public:
 	MtoHello hello;
     PeerCollection peers;
+    muscle::net::endpoint qcgEp;
     ConnectionCollection conns;
 	muscle::net::SocketFactory * const intSockFactory;
     muscle::net::SocketFactory * const extSockFactory;

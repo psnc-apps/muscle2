@@ -7,9 +7,12 @@
 //
 
 #include "meta_socket.h"
-#include "../muscle2/exception.hpp"
+#include "muscle2/util/exception.hpp"
 
 namespace muscle {
+
+using namespace net;
+using namespace util;
 
 meta_socket::meta_socket(endpoint& ep, async_service *service, duration& timeout) : socket(ep, service), locked(false), timeout(timeout)
 {
@@ -49,14 +52,14 @@ void meta_socket::enableAutoClose(bool on)
     autoClose = on;
     updateLastOperationTimer();
     
-    muscle::time triggerTime = lastOperation + Options::getInstance().getSockAutoCloseTimeout();
+    mtime triggerTime = lastOperation + Options::getInstance().getSockAutoCloseTimeout();
     iddleTimer = asyncService->timer(PCH_IDLE, triggerTime, this, this, NULL);
     //    iddleTimer.async_wait(bind(&PeerConnectionHandler::iddleTimerFired, this, _1));
 }
 
 void meta_socket::updateLastOperationTimer()
 {
-    lastOperation = muscle::time();
+    lastOperation = mtime();
 }
 
 void meta_socket::async_execute(size_t code, int user_flag, void *user_data)
