@@ -195,7 +195,7 @@ bool Options::load(int argc, char **argv)
 	}
 
     if (opts.has("qcgCoordinator")) {
-        string qcgAddr = opts.get<string>("qcgCoordinator");
+        string qcgAddr = opts.forceGet<string>("qcgCoordinator");
         vector<string> qcgSplit = split(qcgAddr, ":");
         if (qcgSplit.size() != 2) {
             logger::severe("qcgEndpoint is not configured as HOST:PORT");
