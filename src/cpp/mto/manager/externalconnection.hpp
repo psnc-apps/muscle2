@@ -11,7 +11,7 @@
 #include <exception>
 
 /** Size of a receive data buffer for each connection */
-#define EXT_MTO_CONNECTION_BUFFER_SIZE 4096
+#define EXT_MTO_CONNECTION_BUFFER_SIZE 1024
 
 class PeerCollection;
 class PeerConnectionHandler;
@@ -38,8 +38,8 @@ private:
     /** How many completion hooks still will call this class */
     int pendingOperations;
     
-	void receive(muscle::net::ClientSocket *sock, void *buffer, size_t sz, int user_flag);
-    void send(muscle::net::ClientSocket *sock, void *data, size_t length, int user_flag);
+	void receive(muscle::net::ClientSocket *sock, int user_flag, void *buffer, size_t sz);
+    void send(muscle::net::ClientSocket *sock, int user_flag, void *data, size_t length);
     bool forward(muscle::net::ClientSocket *fromSock, muscle::net::ClientSocket *toSock, char *buffer, const size_t count, bool is_eof, int recvFlag, int sendFlag);
     
     void tryClose();
@@ -50,8 +50,7 @@ private:
         INT_RECEIVE = 3,
         EXT_SEND = 4,
         EXT_RECEIVE = 5,
-        INT_SEND = 6,
-		TIMER_CLOSE = 7
+        INT_SEND = 6
 	};
     /** Fires when the response for connection request is received */
     void remoteConnected(bool success);

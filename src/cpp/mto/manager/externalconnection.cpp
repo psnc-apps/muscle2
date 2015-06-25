@@ -16,9 +16,10 @@ using namespace muscle::util;
 
 /* from remote */
 ExternalConnection::ExternalConnection(ClientSocket * const s, Header h, SocketFactory * const factory)
-: sock(s), header(h), pendingOperations(1)
+: sock(s), header(h), pendingOperations(1), remoteSock(NULL)
 {
     sockOpts = new socket_opts;
+    h.dst.resolve();
     factory->async_connect(EXT_CONNECT, h.dst, sockOpts, this);
 }
 
@@ -41,7 +42,7 @@ ExternalConnection::~ExternalConnection()
     delete remoteSock;
 }
 
-void ExternalConnection::receive(ClientSocket *sock, void *buffer, size_t sz, int user_flag)
+void ExternalConnection::receive(ClientSocket *sock, int user_flag, void *buffer, size_t sz)
 {
 	pendingOperations++;
 	sock->async_recv(user_flag, buffer, sz, this);
@@ -58,33 +59,32 @@ bool ExternalConnection::async_received(size_t code, int user_flag, void *buffer
 
 bool ExternalConnection::forward(ClientSocket * const fromSock, ClientSocket * const toSock, char * const buffer, const size_t count, const bool is_eof, const int recvFlag, const int sendFlag)
 {
-    // Receive some more information
-    if (count == 0 && !is_eof) return true;
-    
-    if (count > 0) {
-        char *sendData;
-        if (is_eof) {
-            sendData = buffer;
-        } else {
-            sendData = new char[count];
-            memcpy(sendData, buffer, count);
-
-            receive(fromSock, buffer, EXT_MTO_CONNECTION_BUFFER_SIZE, recvFlag);
-        }
-        
-        send(toSock, sendData, count, sendFlag);
-    } else {
-        logger::severe("External connection from %s to %s failed", header.src.str().c_str(), header.dst.str().c_str());
+    if (is_eof) {
         delete [] buffer;
+        return false;
     }
+
+    // Receive some more information
+    if (count == 0) return true;
+    
+    char *sendData = new char[count];
+    memcpy(sendData, buffer, count);
+
+    receive(fromSock, recvFlag, buffer, EXT_MTO_CONNECTION_BUFFER_SIZE);
+    send(toSock, sendFlag, sendData, count);
+    
     // Don't try to receive more information, we sent what we received
     return false;
 }
 
-void ExternalConnection::send(ClientSocket *sock, void *data, size_t length, int user_flag)
+void ExternalConnection::send(ClientSocket *sock, int user_flag, void *data, size_t length)
 {
-	if (logger::isLoggable(MUSCLE_LOG_FINEST))
-		logger::finest("[__W] Sending directly %zu bytes on %s", length, sock->getAddress().str().c_str());
+    if (logger::isLoggable(MUSCLE_LOG_FINEST)) {
+        char *buffer = (char *)data;
+        buffer[length] = '\0';
+        logger::finest("[__W] Sending directly %zu bytes on %s", length, sock->getAddress().str().c_str());
+        logger::finest("[__W] Sending %s", buffer);
+    }
     
     pendingOperations++;
     sock->async_send(user_flag, data, length, this, 0);
@@ -97,6 +97,7 @@ void ExternalConnection::async_sent(size_t, int, void *data, size_t, int is_fina
 
 void ExternalConnection::async_accept(size_t code, int user_flag, muscle::net::ClientSocket *newSocket)
 {
+    remoteSock = newSocket;
     remoteConnected(true);
 }
 
@@ -107,6 +108,10 @@ void ExternalConnection::async_report_error(size_t code, int user_flag, const mu
     } else if (user_flag == INT_SEND || user_flag == EXT_SEND) {
         sock->async_cancel();
         remoteSock->async_cancel();
+    } else if (user_flag == EXT_RECEIVE) {
+        sock->getServer()->erase_socket(sock->getReadSock(), -1, -1);
+    } else if (user_flag == INT_RECEIVE) {
+        return; // don't report
     }
 
     logger::severe("Error occurred in connection between %s (%s)",
@@ -115,19 +120,19 @@ void ExternalConnection::async_report_error(size_t code, int user_flag, const mu
 
 void ExternalConnection::remoteConnected(bool success)
 {
-    pendingOperations--;
     delete sockOpts;
     sockOpts = NULL;
 
     header.type = Header::ConnectResponse;
     char *packet;
     const size_t len = header.makePacket(&packet, success ? 0 : 1);
-    send(sock, packet, len, INT_CONNECT_RESPONSE);
+    send(sock, INT_CONNECT_RESPONSE, packet, len);
     
     if (success) {
         logger::fine("Remote connection succeeded (%s)",
                      header.str().c_str());
-        receive(sock, new char[EXT_MTO_CONNECTION_BUFFER_SIZE], EXT_MTO_CONNECTION_BUFFER_SIZE, INT_RECEIVE);
+        receive(sock, INT_RECEIVE, new char[EXT_MTO_CONNECTION_BUFFER_SIZE], EXT_MTO_CONNECTION_BUFFER_SIZE);
+        receive(remoteSock, EXT_RECEIVE, new char[EXT_MTO_CONNECTION_BUFFER_SIZE], EXT_MTO_CONNECTION_BUFFER_SIZE);
     } else {
         logger::fine("Got negative response for connection request (%s)",
                      header.str().c_str());

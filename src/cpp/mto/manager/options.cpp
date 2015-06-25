@@ -40,7 +40,7 @@ void Options::setOptions(option_parser& opts)
     
     opts.add("internalPort", "Port to listen for connections to be transported");
     opts.add("internalAddress", "Address to listen for connections to be transported (default: *)");
-    opts.add("qcgCoordinator", "QCG_Host:Port to be registered automatically (used for accessing QCG-Coordinator)", false);
+    opts.add("qcgCoordinator", "QCG_Host:Port to be registered automatically (used for accessing QCG-Coordinator)");
     
     
     opts.add("debug", "Causes the program NOT to go to background and sets logLevel to TRACE", false);
@@ -198,7 +198,7 @@ bool Options::load(int argc, char **argv)
         string qcgAddr = opts.forceGet<string>("qcgCoordinator");
         vector<string> qcgSplit = split(qcgAddr, ":");
         if (qcgSplit.size() != 2) {
-            logger::severe("qcgEndpoint is not configured as HOST:PORT");
+            logger::severe("qcgCoordinator '%s' is not configured as HOST:PORT", qcgAddr.c_str());
             return false;
         }
         uint16_t qcgPort;
@@ -207,6 +207,7 @@ bool Options::load(int argc, char **argv)
         
         qcgEndpoint = endpoint(qcgSplit[0], qcgPort);
         qcgEndpoint.resolve();
+        logger::config("QCG Coordinator configured on %s", qcgEndpoint.str().c_str());
     }
 
     tcpBufSize = opts.get<int>("TCPBufSize", 0);

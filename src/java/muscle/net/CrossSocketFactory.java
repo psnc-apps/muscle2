@@ -42,6 +42,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -213,16 +214,20 @@ public class CrossSocketFactory extends SocketFactory {
             osw.write(url.getFile());
             osw.write(" HTTP/1.1\r\nHost ");
             osw.write(url.getHost());
-            osw.write("\r\nConnection: close\r\n\r\n");
+            osw.write("\r\nConnection: close");
+            osw.write("\r\nContent-Encoding: UTF-8");
+            osw.write("\r\nContent-Length: ");
+            osw.write(Integer.toString(request.getBytes(Charset.forName("UTF-8")).length));
+            osw.write("\r\n\r\n");
             osw.write(request);
             osw.flush();
-
+            
             BufferedReader brd = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
             String line;
             boolean content = false;
             while ((line = brd.readLine()) != null) {
-                if (line.matches(".*SOAP-ENV:Envelope.*")) {
+                if (!content && line.matches(".*SOAP-ENV:Envelope.*")) {
                     content = true;
                 }
                 if (content) {
