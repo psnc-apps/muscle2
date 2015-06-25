@@ -1,6 +1,12 @@
+#.rst:
+# UseJavaSymlinks
+# ---------------
+#
+#
+#
+#
 #
 # Helper script for UseJava.cmake
-#
 
 #=============================================================================
 # Copyright 2010-2011 Andreas schneider <asn@redhat.com>
@@ -26,7 +32,7 @@ if (UNIX AND _JAVA_TARGET_OUTPUT_LINK)
             COMMAND ${LN_EXECUTABLE} -sf "${_JAVA_TARGET_OUTPUT_NAME}" "${_JAVA_TARGET_OUTPUT_LINK}"
             WORKING_DIRECTORY ${_JAVA_TARGET_DIR}
         )
-    else (_JAVA_TARGET_OUTPUT_NAME)
+    else ()
         message(SEND_ERROR "FATAL: Can't find _JAVA_TARGET_OUTPUT_NAME")
-    endif (_JAVA_TARGET_OUTPUT_NAME)
-endif (UNIX AND _JAVA_TARGET_OUTPUT_LINK)
+    endif ()
+endif ()
