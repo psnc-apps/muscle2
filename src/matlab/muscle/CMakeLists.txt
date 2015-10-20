@@ -15,6 +15,8 @@ if("${MEX_OUT}" MATCHES ${MATLAB_STRING})
 	file(GLOB MEX_INPUTS "*.c")
 	add_custom_target( MexLibs ALL )
 
+	target_link_libraries(MexLibs ${MUSCLE2_LIB})
+
 	foreach(mexInput ${MEX_INPUTS})
 		get_filename_component(mf ${mexInput} NAME_WE)
 		add_custom_command(
