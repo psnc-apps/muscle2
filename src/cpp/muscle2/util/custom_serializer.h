@@ -43,6 +43,7 @@ namespace muscle {
 				writeLong(double2long.output);
 			}
 			void encodeString(const char *value);
+			void encodeStringSafe(const char *value, size_t max_len);
 
 			void encodeByteArray(const char *value, size_t len);
 			void encodeDoubleArray(const double *value, size_t len)

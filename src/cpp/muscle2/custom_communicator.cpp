@@ -62,7 +62,7 @@ namespace muscle {
 			sout->encodeInt(ctype);
 			
 			if (ctype == COMPLEX_STRING) {
-				sout->encodeString((const char *)msg);
+				sout->encodeStringSafe((const char *)msg, msg_len);
 			} else {
 				if (count_int + 8 >= M2_XDR_BUFSIZE)
 					throw muscle_exception("Message too large, cannot send arrays with more than 2 147 483 639 elements.");

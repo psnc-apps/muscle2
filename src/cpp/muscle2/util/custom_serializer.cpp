@@ -54,6 +54,12 @@ namespace muscle {
 			encodeByteArray(value, len);
 		}
 		
+		void custom_serializer::encodeStringSafe(const char * const value, size_t maxlen)
+		{
+			size_t len = strnlen(value, maxlen - 1);
+			encodeByteArray(value, len);
+		}
+
 		void custom_serializer::encodeByteArray(const char * const value, const size_t len)
 		{
 			writeData(value, len, len);
