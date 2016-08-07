@@ -32,6 +32,7 @@ namespace muscle {
 			
 			void wait() const;
 			void notify() const;
+			void notifyAll() const;
 		};
 		
 		class mutex

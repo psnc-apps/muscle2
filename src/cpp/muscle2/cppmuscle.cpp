@@ -518,9 +518,11 @@ int env::barrier(const char * const barrier)
 void env::barrier_destroy(char * const barrier)
 {
 	if (barrier_client) {
+		logger::finer("Destroying MUSCLE barrier client");
 		delete barrier_client;
 		barrier_client = NULL;
 	} else if (barrier_server) {
+		logger::fine("Destroying MUSCLE barrier");
 		delete barrier_server;
 		barrier_server = NULL;
 	}
