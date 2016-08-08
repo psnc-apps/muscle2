@@ -24,6 +24,7 @@ package muscle.net;
 import muscle.util.data.LoggableInputStream;
 import muscle.util.data.LoggableOutputStream;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -48,9 +50,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -209,19 +213,20 @@ public class CrossSocketFactory extends SocketFactory {
         try {
             s.connect(new InetSocketAddress(url.getHost(), url.getPort()));
 
-            OutputStreamWriter osw = new OutputStreamWriter( s.getOutputStream() );
-            osw.write("POST ");
-            osw.write(url.getFile());
-            osw.write(" HTTP/1.1\r\nHost ");
-            osw.write(url.getHost());
-            osw.write("\r\nConnection: close");
-            osw.write("\r\nContent-Encoding: UTF-8");
-            osw.write("\r\nContent-Length: ");
-            osw.write(Integer.toString(request.getBytes(Charset.forName("UTF-8")).length));
-            osw.write("\r\n\r\n");
-            osw.write(request);
+            byte[] requestBytes = request.getBytes("UTF-8");
+            PrintStream osw = new PrintStream(s.getOutputStream(), false, "UTF-8");
+            osw.print("POST ");
+            osw.print(url.getFile());
+            osw.print(" HTTP/1.1\r\nHost ");
+            osw.print(url.getHost());
+            osw.print("\r\nConnection: close");
+            osw.print("\r\nContent-Encoding: UTF-8");
+            osw.print("\r\nContent-Length: ");
+            osw.print(Integer.toString(requestBytes.length));
+            osw.print("\r\n\r\n");
+            osw.write(requestBytes);
             osw.flush();
-            
+
             BufferedReader brd = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
             String line;

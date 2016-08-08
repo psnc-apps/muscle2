@@ -62,8 +62,11 @@ namespace muscle {
 			const char *epBuffer;
 			/** Mutex to keep the thread and its calls in sync */
 			mutex signalMutex;
+			
+			/** Whether the barrier init sequence has finished */
+			bool isInitialized;
 		};
-		
+
 		/**
 		 * The BarrierClient connects to a Barrier given its buffer, and waits 
 		 * for its signal. Only one BarrierClient should be created per waiting

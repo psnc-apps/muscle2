@@ -47,6 +47,11 @@ void mutex_lock::notify() const
     pthread_cond_signal(cond);
 }
 
+void mutex_lock::notifyAll() const
+{
+	pthread_cond_broadcast(cond);
+}
+
 bool mutex_lock::isValid() const
 {
     return mut != NULL;

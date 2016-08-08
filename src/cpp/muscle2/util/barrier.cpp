@@ -12,15 +12,18 @@
 using namespace muscle::util;
 using namespace muscle::net;
 
-Barrier::Barrier(const int num_clients) : num_clients(num_clients), signals(0), epBuffer(NULL)
+Barrier::Barrier(const int num_clients) : num_clients(num_clients), signals(0), epBuffer(NULL), isInitialized(false)
 {
 	start();
 }
 
 Barrier::~Barrier()
 {
-	cancel();
-	signalMutex.acquire().notify();
+	{
+		mutex_lock lock = signalMutex.acquire();
+		cancel();
+		lock.notifyAll();
+	}
 	getResult();
 }
 
@@ -29,6 +32,9 @@ void Barrier::signal()
 	mutex_lock lock = signalMutex.acquire();
 	signals++;
 	lock.notify();
+	while (!isInitialized && !isCancelled()) {
+		lock.wait();
+	}
 }
 
 void Barrier::fillBuffer(char *buffer)
@@ -76,7 +82,7 @@ void *Barrier::run()
 	// 3. Accept clients
 	socket_opts client_opts;
 	ClientSocket **socks = new ClientSocket*[num_clients];
-	while (!isCancelled())
+	while (!isCancelled() && num_csocks < num_clients)
 	{
 		const char *msg = NULL;
 		int err = 0;
@@ -94,27 +100,35 @@ void *Barrier::run()
 				logger::info("Barrier failed to accept socket: %s (%s)", msg, errstr);
 			else
 				logger::info("Barrier failed to accept socket: %s", errstr);
-		} else if (++num_csocks == num_clients) {
-			break;
+		} else {
+			num_csocks++;
 		}
 	}
 	// 4. Send notifications until stop_condition
-	char data = 1;
-	while (true)
-	{
+	//    only if all csocks were initialized
+	if (num_csocks == num_clients) {
 		{
 			mutex_lock lock = signalMutex.acquire();
-			while (signals == 0 && !isCancelled())
-				lock.wait();
-			
-			if (signals == 0)
-				break;
-
-			signals--;
+			isInitialized = true;
+			lock.notify();
 		}
-		
-		for (int i = 0; i < num_clients; i++) {
-			socks[i]->send(&data, 1);
+		char data = 1;
+		while (true)
+		{
+			{
+				mutex_lock lock = signalMutex.acquire();
+				while (signals == 0 && !isCancelled())
+					lock.wait();
+				
+				if (signals == 0)
+					break;
+				
+				signals--;
+			}
+
+			for (int i = 0; i < num_clients; i++) {
+				socks[i]->send(&data, 1);
+			}
 		}
 	}
 	// 5. Clean up (only for accepted sockets num_csocks)
