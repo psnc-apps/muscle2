@@ -110,7 +110,7 @@ void muscle_receive_(const char *entrance_name, void *array, int *size, muscle_d
 	char *cstr = f2cstr(entrance_name, len);
 	std::string sname(cstr);
 	free(cstr);
-	size_t sz;
+	size_t sz = *size;
 	muscle::env::receive(sname, array, sz, *type);
 	*size = (int)sz;
 }
