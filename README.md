@@ -1,5 +1,7 @@
 # MUSCLE 2
 
+<img alt="MUSCLE overview" align="right" src="https://github.com/psnc-apps/muscle2/wiki/images/muscle_overview_vertical.png" />
+
 MUSCLE 2 - The Multiscale Coupling Library and Environment is a portable framework to do multiscale modeling and simulation on distributed computing resources. The generic coupling mechanism of MUSCLE is suitable for many types of multiscale applications, notably for multiscale models as defined by the [MAPPER project](http://www.mapper-project.eu/). Submodels can be implemented from scratch, but legacy code can also be used with only minor adjustments. The runtime environment solves common problems in distributed computing and couples submodels of a multiscale model, whether they are built for high-performance supercomputers or for local execution. MUSCLE supports Java, C, C++, Fortran, Python, MATLAB and Scala code, using MPI, OpenMP, or threads.
 
 MUSCLE is being enhanced and adapted to the Grid infrastructures. Parts of the reservation and management interacts with the [QCG-Computing middleware stack](http://www.qoscosgrid.org/), intended for job management on e-Infrastructure.
