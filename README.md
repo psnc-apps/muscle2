@@ -9,16 +9,16 @@ MUSCLE is being enhanced and adapted to the Grid infrastructures. Parts of the r
 ## Getting started
 
 Most information is in the wiki, see
-* [Installation](wiki/Installation)
-* [Documentation](wiki)
-* [Tutorial](wiki/Tutorial)
+* [Installation](https://github.com/psnc-apps/muscle2/wiki/Installation)
+* [Documentation](https://github.com/psnc-apps/muscle2/wiki)
+* [Tutorial](https://github.com/psnc-apps/muscle2/wiki/Tutorial)
 
 ## How to cite
 
 Publications resulting from simulations with MUSCLE 2 are invited to cite the following:
 J. Borgdorff, M. Mamonski, B. Bosak, K. Kurowski, M. Ben Belgacem, B. Chopard, D. Groen, P. V. Coveney, and A. G. Hoekstra, “Distributed Multiscale Computing with MUSCLE 2, the Multiscale Coupling Library and Environment,” Journal of Computational Science. 5 (2014) 719–731. doi:[10.1016/j.jocs.2014.04.004](http://dx.doi.org/10.1016/j.jocs.2014.04.004)
 
-Other publications and applications using MUSCLE are listed on the [Publication page](wiki/publications).
+Other publications and applications using MUSCLE are listed on the [Publication page](https://github.com/psnc-apps/muscle2/wiki/publications).
 
 ## Contact
 
