@@ -1,0 +1,17 @@
+language: c++
+addons:
+  apt:
+    packages:
+      - default-java
+      - openmpi-bin
+      - libopenmpi-dev
+      - ruby
+      - gfortran
+      - python-dev
+install:
+  - cd build
+  - MUSCLE_CMAKE_OPTIONS="-DBUILD_PYTHON=ON -DBUILD_FORTRAN=ON -DBUILD_MATLAB=OFF"
+  - ./build.sh ~/muscle.install
+script:
+  - . ~/muscle.install/etc/muscle.profile
+  - make test
