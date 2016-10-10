@@ -33,6 +33,12 @@
 #include "custom_communicator.h"
 #endif
 
+#ifdef CPPMUSCLE_PERF
+#include "muscle_perf.h"
+#include <time.h> // TODO OSX alternative?
+#include <assert.h>
+#endif //CPPMUSCLE_PERF
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -60,6 +66,16 @@ BarrierClient *env::barrier_client = NULL;
 static Communicator *comm = NULL;
 pid_t env::muscle_pid = -1;
 std::string env::kernel_name, env::tmp_path;
+
+#ifdef CPPMUSCLE_PERF
+struct muscle_perf_t env::muscle_perf_send    = {0};
+struct muscle_perf_t env::muscle_perf_receive = {0};
+struct muscle_perf_t env::muscle_perf_barrier = {0};
+struct timespec env::muscle_perf_last_call_start_time = {0};
+bool env::muscle_perf_is_in_call = false;
+muscle_perf_counter_t env::muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_LAST;
+std::string env::muscle_perf_string("");
+#endif //CPPMUSCLE_PERF
 
 muscle_error_t env::init(int *argc, char ***argv)
 {
@@ -300,6 +316,14 @@ bool env::will_stop(void)
 
 void env::send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type)
 {
+#ifdef CPPMUSCLE_PERF
+	muscle_perf_is_in_call = true;
+	muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_SEND_DURATION;
+	struct timespec time_start = {0, 0}, time_end = {0, 0};
+	clock_gettime(CLOCK_MONOTONIC, &time_start); // start timing
+	muscle_perf_last_call_start_time = time_start;
+#endif //CPPMUSCLE_PERF
+
 	// No error: simply ignore send in all MPI processes except 0.
 	if (!env::is_main_processor) return;
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
@@ -312,6 +336,14 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 #endif
 
 	comm->execute_protocol(PROTO_SEND, &entrance_name, type, data, count, NULL, NULL);
+
+#ifdef CPPMUSCLE_PERF
+	clock_gettime(CLOCK_MONOTONIC, &time_end); // finish timing
+	muscle_perf_send.duration += duration_ns(time_start, time_end);
+	muscle_perf_send.calls++;
+	muscle_perf_send.size     += count;
+	muscle_perf_is_in_call     = false;
+#endif //CPPMUSCLE_PERF
 }
 
 void env::sendDoubleVector(std::string entrance_name, const std::vector<double>& data)
@@ -325,6 +357,14 @@ void env::sendDoubleVector(std::string entrance_name, const std::vector<double>&
 
 void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_datatype_t type)
 {
+#ifdef CPPMUSCLE_PERF
+	muscle_perf_is_in_call = true;
+	muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_RECEIVE_DURATION;
+	struct timespec time_start = {0, 0}, time_end = {0, 0};
+	clock_gettime(CLOCK_MONOTONIC, &time_start); // start timing
+	muscle_perf_last_call_start_time = time_start;
+#endif //CPPMUSCLE_PERF
+
 	// No error: simply ignore receive in all MPI processes except 0.
 	if (!env::is_main_processor) return (void *)0;
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
@@ -334,6 +374,14 @@ void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_dat
 #endif
 
 	comm->execute_protocol(PROTO_RECEIVE, &exit_name, type, NULL, 0, &data, &count);
+
+#ifdef CPPMUSCLE_PERF
+	clock_gettime(CLOCK_MONOTONIC, &time_end); // finish timing
+	muscle_perf_receive.duration += duration_ns(time_start, time_end);
+	muscle_perf_receive.size  += count;
+	muscle_perf_receive.calls++;
+	muscle_perf_is_in_call = false;
+#endif //CPPMUSCLE_PERF
 
 	return data;
 }
@@ -491,15 +539,24 @@ int env::barrier_init(char **barrier, size_t *len, const int num_procs)
 			logger::fine("MUSCLE barrier address is %s", ep.str().c_str());
 		}
 	}
-	
 	return 0;
 }
 
 int env::barrier(const char * const barrier)
 {
+#ifdef CPPMUSCLE_PERF
+	muscle_perf_is_in_call = true;
+	muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_BARRIER_DURATION;
+#endif //CPPMUSCLE_PERF
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::barrier()");
-#endif
+#endif //CPPMUSCLE_TRACE
+#ifdef CPPMUSCLE_PERF
+	struct timespec time_start = {0, 0}, time_end = {0, 0};
+	clock_gettime(CLOCK_MONOTONIC, &time_start); // start timing
+	muscle_perf_last_call_start_time = time_start;
+#endif //CPPMUSCLE_PERF
+
 	if (env::is_main_processor) {
 		if (barrier_server) {
 			barrier_server->signal();
@@ -512,6 +569,13 @@ int env::barrier(const char * const barrier)
 
 		barrier_client->wait();
 	}
+
+#ifdef CPPMUSCLE_PERF
+	clock_gettime(CLOCK_MONOTONIC, &time_end); // finish timing
+	muscle_perf_barrier.duration += duration_ns(time_start, time_end);
+	muscle_perf_barrier.calls++;
+	muscle_perf_is_in_call = false;
+#endif //CPPMUSCLE_PERF
 	return 0;
 }
 
@@ -771,12 +835,147 @@ pid_t env::spawn(char * const *argv)
 	}
 }
 
+#ifdef CPPMUSCLE_PERF
+/** Writes a performance metric value denoted by id to the location pointed to by value. 
+ *  @param [in]  id enum denoting a counter
+ *  @param [out] value pointer to 64-bit int to write to
+ *  @return 0 on success, -1 on failure. */
+int env::get_perf_counter(muscle_perf_counter_t id, uint64_t *value)
+{
+	const int SUCCESS = 0;
+	const int FAILURE = -1;
+	switch (id) {
+	case MUSCLE_PERF_COUNTER_SEND_CALLS: 
+		*value = env::muscle_perf_send.calls;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_SEND_DURATION:
+		*value = env::muscle_perf_send.duration;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_SEND_SIZE:
+		*value = env::muscle_perf_send.size;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_RECEIVE_CALLS: 
+		*value = env::muscle_perf_receive.calls;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_RECEIVE_DURATION:
+		*value = env::muscle_perf_receive.duration;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_RECEIVE_SIZE:
+		*value = env::muscle_perf_receive.size;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_BARRIER_CALLS:
+		*value = env::muscle_perf_barrier.calls;
+		return SUCCESS;
+	case MUSCLE_PERF_COUNTER_BARRIER_DURATION:
+		*value = env::muscle_perf_barrier.duration;
+		return SUCCESS;
+	default:
+		assert(false);
+		*value = -1;
+		return FAILURE;
+	}
+}
+
+/** Returns the name of the performance counter. */
+const string& env::get_perf_label(muscle_perf_counter_t counter_id)
+{
+	switch (counter_id) {
+	case MUSCLE_PERF_COUNTER_SEND_CALLS: 
+		static const string send_calls("number of send calls");
+		return send_calls;
+	case MUSCLE_PERF_COUNTER_SEND_DURATION:
+		static const string send_duration("time spent in send calls (ns)");
+		return send_duration;
+	case MUSCLE_PERF_COUNTER_SEND_SIZE:
+		static const string send_size("total number of bytes sent");
+		return send_size;
+	case MUSCLE_PERF_COUNTER_RECEIVE_CALLS: 
+		static const string receive_calls("number of receive calls");
+		return receive_calls;
+	case MUSCLE_PERF_COUNTER_RECEIVE_DURATION:
+		static const string receive_duration("time spent in receive calls (ns)");
+		return receive_duration;
+	case MUSCLE_PERF_COUNTER_RECEIVE_SIZE:
+		static const string receive_size("total number of bytes received");
+		return receive_size;
+	case MUSCLE_PERF_COUNTER_BARRIER_CALLS:
+		static const string barrier_calls("number of barrier calls");
+		return barrier_calls;
+	case MUSCLE_PERF_COUNTER_BARRIER_DURATION:
+		static const string barrier_duration("time spent in barrier calls (ns)");
+		return barrier_duration;
+	default:
+		assert(false);
+		static const string invalid("invalid counter id!");
+		return invalid;
+	}
+}
+
+/* Returns a statically allocated char *, big enough to hold a pretty print of all the performance counters. 
+ * It is only valid until the next call to this function. */
+const char * env::get_perf_string(void)
+{
+	env::muscle_perf_string.clear();
+	for (int i = 0; i < MUSCLE_PERF_COUNTER_LAST; i++) {
+		muscle_perf_counter_t counter_id = static_cast<muscle_perf_counter_t>(i);
+		const string& label = env::get_perf_label(counter_id);
+		uint64_t value;
+		bool result = env::get_perf_counter(counter_id, &value);
+		if (result != 0) {
+			return "ERROR: failed to get counter value";
+		}
+		env::muscle_perf_string += label;
+		env::muscle_perf_string += ": ";
+		ostringstream o; // pre C++11 way of converting uint64_t to std::string
+		o << value;
+		env::muscle_perf_string += o.str();
+		env::muscle_perf_string += "\n";
+	}
+	return env::muscle_perf_string.c_str();
+}
+
+/** Writes the timestamp of the start of the last send/receive/barrier call to start_time, and the duration counter
+ *  id of the call to @a id (e.g. MUSCLE_PERF_COUNTER_BARRIER_DURATION, if we're in a barrier call). 
+ *  If MUSCLE2 is not in an API call, sets both @a start_time and @a id to NULL.
+ *  \param [out] start_time   location to contain the start of the last API call. Ignored if NULL
+ *  \param [out] id           location to contain the duration id of the current API call. Ignored if NULL
+ *  \return true if MUSCLE is inside an API call (send, receive, barrier) */
+bool env::is_in_call(struct timespec *start_time, muscle_perf_counter_t *id)
+{
+	if (env::muscle_perf_is_in_call) {
+		*start_time = env::muscle_perf_last_call_start_time;
+
+		if (start_time) {
+			*start_time = env::muscle_perf_last_call_start_time;
+		}
+		if (id) {
+			assert(muscle_perf_current_call_id < MUSCLE_PERF_COUNTER_LAST);
+			*id = env::muscle_perf_current_call_id;
+		}
+
+		return true;
+	}
+	start_time = NULL;
+	id = NULL;
+	return false;
+}
+
+/** Helper function to get the time difference between two <time.h> timespec structs in nanoseconds */
+inline uint64_t env::duration_ns(const struct timespec &start, const struct timespec &end)
+{
+	const uint64_t SEC_TO_NS = 1000000000;
+	uint64_t start_nanosec   = start.tv_sec * SEC_TO_NS + start.tv_nsec;
+	uint64_t end_nanosec     = end.tv_sec * SEC_TO_NS + end.tv_nsec;
+	return (end_nanosec - start_nanosec);
+}
+#endif //CPPMUSCLE_PERF
+
 void env::free_data(void *ptr, muscle_datatype_t type)
 {
 	// No error: simply ignore send in all MPI processes except 0
 	// we did not create any data in other ranks to free.
 	if (!env::is_main_processor) return;
 	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
-	
+
 	comm->free_data(ptr, type);
 }
