@@ -1,16 +1,30 @@
 #!/bin/bash
 
 function usage {
-	echo "USAGE: $0 [-h|--help|INSTALL_PREFIX]"
+	echo "USAGE: $0 [-h|--help|-p|--performance] [INSTALL_PREFIX]"
 	echo "Builds and installs MUSCLE to INSTALL_PREFIX (default: /opt/muscle)."
 	echo "If file \`hostname\`.conf is present, a RELEASE and DEBUG version are installed"
 	echo "in \$INSTALL_PREFIX/devel and \$INSTALL_PREFIX/devel-debug, respectively."
+	echo ""
+	echo "Arguments:"
+	echo "  -p, --performance        include C++ performance counters"
+	echo "  -h, --help               display this message"
 	exit $1
 }
 
-if [ $# -eq 1 ] && { [ "$1" = "--help" ] || [ "$1" = "-h" ];}; then
-	usage 0
-fi
+#0. handle arguments
+BUILD_PERF="OFF"   # don't include perf counters by default
+
+for arg in "$@"; do
+	case "$arg" in
+		"-h" | "--help")
+			usage 0
+		;;
+		"-p" | "--performance")
+			BUILD_PERF="ON"
+		;;
+	esac
+done
 
 #1. Update to the latest version
 echo -n "Updating MUSCLE: "
@@ -33,10 +47,17 @@ else
 	echo "No preset configuration for $HOSTNAME is present; performing regular installation"
 fi
 
-if [ $# -ge 1 ] && [ "$1" != "install" ] && [ "$1" != "maintenance" ]
+# get install prefix
+prefix_index=1;
+if [ "$BUILD_PERF" = "ON" ]; then
+	prefix_index=$[$prefix_index+1]
+fi
+pref_arg=${!prefix_index}
+ 
+if [ $# -ge $prefix_index ] && [ "$pref_arg" != "install" ] && [ "$pref_arg" != "maintenance" ]
 then
 	# If given, always use install prefix from argument
-	INSTALL_PREFIX="$1"
+	INSTALL_PREFIX="$pref_arg"
 fi
 if [ "$INSTALL_PREFIX" = "" ]; then
 	# If no INSTALL_PREFIX is set yet, use the default
@@ -76,7 +97,9 @@ fi
 
 #3. Install MUSCLE
 echo "========== BUILDING MUSCLE ==========="
-cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS .. \
+cmake -DMUSCLE_INSTALL_PREFIX=$INSTALL_PREFIX \
+      -DCMAKE_BUILD_TYPE=Release $MUSCLE_CMAKE_OPTIONS \
+      -DBUILD_PERF=$BUILD_PERF .. \
 && make clean && (make -j 4; make install)
 if [ $? -eq 0 ]; then
 	echo "----------- MUSCLE INSTALLED IN $INSTALL_PREFIX -----------"
