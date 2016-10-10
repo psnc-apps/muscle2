@@ -31,6 +31,10 @@
 #include "util/logger.hpp"
 #include "util/msocket.h"
 
+#ifdef CPPMUSCLE_PERF
+#include "muscle_perf.h"
+#endif //CPPMUSCLE_PERF
+
 namespace muscle {
 	namespace net {
 		class endpoint;
@@ -76,6 +80,12 @@ public:
 	static bool has_next(std::string exit_name);
 	static bool is_main_processor;
     static std::string kernel_name;
+
+#ifdef CPPMUSCLE_PERF
+    static int get_perf_counter(muscle_perf_counter_t id, uint64_t *value);
+    static const char * get_perf_string(void);
+    static bool is_in_call(struct timespec *start_time = NULL, muscle_perf_counter_t *id = NULL);
+#endif //CPPMUSCLE_PERF
 private:
 	static int detect_mpi_rank(void);
 	static pid_t spawn(char * const *argv);
@@ -86,11 +96,28 @@ private:
 	static void muscle2_sighandler(int signal);
 	static void install_sighandler();
 
+#ifdef CPPMUSCLE_PERF
+    static uint64_t duration_ns(const struct timespec &start, const struct timespec &end);
+    static const std::string& get_perf_label(muscle_perf_counter_t counter);
+#endif //CPPMUSCLE_PERF
+
 	static util::Barrier *barrier_server;
 	static util::BarrierClient *barrier_client;
     
     static pid_t muscle_pid;
     static std::string tmp_path;
+
+#ifdef CPPMUSCLE_PERF
+    static std::string muscle_perf_string;    //< Pretty print of the performance counters 
+    static muscle_perf_t muscle_perf_send;    //< Tracks number, duration and size of MUSCLE send calls
+    static muscle_perf_t muscle_perf_receive; //< Tracks number, duration and size of MUSCLE receive calls
+    static muscle_perf_t muscle_perf_barrier; //< Tracks the number and duration of waits in MUSCLE2 barriers
+                                              //  `size` field is unused
+    static struct timespec muscle_perf_last_call_start_time; //< Timestamp of the start of the last call
+                                                             //  (send/receive/barrier)
+    static bool muscle_perf_is_in_call;       //< True iff MUSCLE2 is in a send/receive/barrier call
+    static muscle_perf_counter_t muscle_perf_current_call_id; //< Duration id of the current call (if any)
+#endif //CPPMUSCLE_PERF
 };
 
 class cxa
