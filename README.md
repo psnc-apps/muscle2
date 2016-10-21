@@ -6,6 +6,8 @@ MUSCLE 2 - The Multiscale Coupling Library and Environment is a portable framewo
 
 MUSCLE is being enhanced and adapted to the Grid infrastructures. Parts of the reservation and management interacts with the [QCG-Computing middleware stack](http://www.qoscosgrid.org/), intended for job management on e-Infrastructure.
 
+This branch is dedicated for further development and enhancements of MUSCLE2 according to the requirements and expectations of the [ComPat project](http://www.compat-project.eu).
+
 ## Getting started
 
 Most information is in the wiki, see
@@ -16,7 +18,8 @@ Most information is in the wiki, see
 ## How to cite
 
 Publications resulting from simulations with MUSCLE 2 are invited to cite the following:
-J. Borgdorff, M. Mamonski, B. Bosak, K. Kurowski, M. Ben Belgacem, B. Chopard, D. Groen, P. V. Coveney, and A. G. Hoekstra, “Distributed Multiscale Computing with MUSCLE 2, the Multiscale Coupling Library and Environment,” Journal of Computational Science. 5 (2014) 719–731. doi:[10.1016/j.jocs.2014.04.004](http://dx.doi.org/10.1016/j.jocs.2014.04.004)
+
+*J. Borgdorff, M. Mamonski, B. Bosak, K. Kurowski, M. Ben Belgacem, B. Chopard, D. Groen, P. V. Coveney, and A. G. Hoekstra, “Distributed Multiscale Computing with MUSCLE 2, the Multiscale Coupling Library and Environment,” Journal of Computational Science. 5 (2014) 719–731. doi:[10.1016/j.jocs.2014.04.004](http://dx.doi.org/10.1016/j.jocs.2014.04.004)*
 
 Other publications and applications using MUSCLE are listed on the [Publication page](https://github.com/psnc-apps/muscle2/wiki/publications).
 
