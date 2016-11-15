@@ -39,6 +39,12 @@ while true; do
   esac
 done
 
+#1. Create a properties file for version info
+GITTAG=$(git describe --tags)
+if [ -n "$GITTAG" ]; then 
+	echo "gittag=$GITTAG" > ../src/java/muscle/gittag.properties
+fi
+
 #1. Source local configuration
 HOSTNAME=`hostname -f`
 if [ -f "$CONFIG" ]; then

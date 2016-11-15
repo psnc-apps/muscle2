@@ -21,17 +21,43 @@ This file is part of MUSCLE (Multiscale Coupling Library and Environment).
 
 package muscle;
 
-import muscle.util.JVM;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
 just the version of this MUSCLE
 @author Jan Hegewald
 */
 public class Version {
-	private final static String VERSION_NUM = "2.0";
-	private final static String INFO_TEXT = "Multiscale Coupling Library and Environment (MUSCLE) version " + VERSION_NUM + "\n\t$Revision$\n\t$Date$\n\t";
-	
+	private final static String VERSION_NUM = "2.1";
+	private final static String gittag;
+	private final static Properties config;
+
+	static {
+		Properties fallback = new Properties();
+		fallback.put("gittag", "unknown");
+		config = new Properties(fallback);
+		try {
+			InputStream stream = Version.class.getResourceAsStream("gittag.properties");
+			if (stream != null) {
+				try {
+					config.load(stream);
+				}
+				finally {
+					stream.close();
+				}
+			}
+		}
+		catch (IOException ex) {
+			/* Handle exception. */
+		}
+		gittag = config.getProperty("gittag", "unknown");
+	}
+
+	private final static String INFO_TEXT = "Multiscale Coupling Library and Environment (MUSCLE) version " + VERSION_NUM + "\n\tGit tag: " + gittag;
+
 	public static void main(String[] args) {
-		System.out.println(INFO_TEXT.replaceAll("$$", ""));
+		System.out.println(INFO_TEXT);
 	}
 }
