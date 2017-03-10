@@ -13,3 +13,7 @@ bool MUSCLE_Perf_In_Call(struct timespec *start_time, muscle_perf_counter_t *id)
 const char * MUSCLE_Perf_Dump(void) {
 	return muscle::env::get_perf_string();
 }
+
+void MUSCLE_Perf_Reset_Counters() {
+	return muscle::env::reset_perf_counters();
+}

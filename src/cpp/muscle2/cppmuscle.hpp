@@ -50,6 +50,10 @@ public:
 
 	/** Initialize MUSCLE. Call before any other function, with pointers to the number of arguments and arguments. */
 	static muscle_error_t init(int* argc, char ***argv);
+
+	/** Initialize the perf counters */
+	static void reset_perf_counters();
+
 	/** Finalize MUSCLE. Call after any other function. */
 	static void finalize(void);
 
