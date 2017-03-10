@@ -68,9 +68,9 @@ pid_t env::muscle_pid = -1;
 std::string env::kernel_name, env::tmp_path;
 
 #ifdef CPPMUSCLE_PERF
-struct muscle_perf_t env::muscle_perf_send    = {0};
-struct muscle_perf_t env::muscle_perf_receive = {0};
-struct muscle_perf_t env::muscle_perf_barrier = {0};
+struct muscle_perf_t env::muscle_perf_send;
+struct muscle_perf_t env::muscle_perf_receive;
+struct muscle_perf_t env::muscle_perf_barrier;
 struct timespec env::muscle_perf_last_call_start_time = {0};
 bool env::muscle_perf_is_in_call = false;
 muscle_perf_counter_t env::muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_LAST;
@@ -83,7 +83,12 @@ muscle_error_t env::init(int *argc, char ***argv)
 	logger::finest("muscle::env::init() ");
 #endif
 	int rank = env::detect_mpi_rank();
-	
+
+#ifdef CPPMUSCLE_PERF
+        //Initialise the perf counters
+	env::reset_perf_counters();
+#endif //CPPMUSCLE_PERF
+
 	// Only execute for rank 0
 	if (rank > 0) {
 		is_main_processor = false;
@@ -147,6 +152,26 @@ muscle_error_t env::init(int *argc, char ***argv)
 	logger::initialize(kernel_name.c_str(), tmp_path.c_str(), log_level, is_main_processor);
 	return MUSCLE_SUCCESS;
 }
+
+
+void env::reset_perf_counters()
+{
+#ifdef CPPMUSCLE_PERF
+	muscle_perf_send.duration = 0;
+	muscle_perf_send.calls = 0;
+	muscle_perf_send.size  = 0;
+
+	muscle_perf_receive.duration = 0;
+	muscle_perf_receive.calls = 0;
+	muscle_perf_receive.size  = 0;
+
+	muscle_perf_barrier.duration = 0;
+	muscle_perf_barrier.calls = 0;
+	muscle_perf_barrier.size  = 0;
+#endif //CPPMUSCLE_PERF
+}
+
+
 
 void env::finalize(void)
 {
@@ -316,6 +341,11 @@ bool env::will_stop(void)
 
 void env::send(std::string entrance_name, const void *data, size_t count, muscle_datatype_t type)
 {
+
+	// No error: simply ignore send in all MPI processes except 0.
+	if (!env::is_main_processor) return;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
+
 #ifdef CPPMUSCLE_PERF
 	muscle_perf_is_in_call = true;
 	muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_SEND_DURATION;
@@ -323,11 +353,6 @@ void env::send(std::string entrance_name, const void *data, size_t count, muscle
 	clock_gettime(CLOCK_MONOTONIC, &time_start); // start timing
 	muscle_perf_last_call_start_time = time_start;
 #endif //CPPMUSCLE_PERF
-
-	// No error: simply ignore send in all MPI processes except 0.
-	if (!env::is_main_processor) return;
-	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
-
 #ifdef CPPMUSCLE_TRACE
 	{
 	const char *entrance_str = entrance_name.c_str();
@@ -357,6 +382,11 @@ void env::sendDoubleVector(std::string entrance_name, const std::vector<double>&
 
 void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_datatype_t type)
 {
+	// No error: simply ignore receive in all MPI processes except 0.
+	if (!env::is_main_processor) return (void *)0;
+	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
+
+
 #ifdef CPPMUSCLE_PERF
 	muscle_perf_is_in_call = true;
 	muscle_perf_current_call_id = MUSCLE_PERF_COUNTER_RECEIVE_DURATION;
@@ -365,9 +395,6 @@ void* env::receive(std::string exit_name, void *data, size_t& count,  muscle_dat
 	muscle_perf_last_call_start_time = time_start;
 #endif //CPPMUSCLE_PERF
 
-	// No error: simply ignore receive in all MPI processes except 0.
-	if (!env::is_main_processor) return (void *)0;
-	if (comm == NULL) throw muscle_exception("cannot call MUSCLE functions without initializing MUSCLE");
 
 #ifdef CPPMUSCLE_TRACE
 	logger::finest("muscle::env::receive()");

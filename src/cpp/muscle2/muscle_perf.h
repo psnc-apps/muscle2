@@ -44,6 +44,9 @@ int MUSCLE_Perf_Get_Counter(muscle_perf_counter_t id, uint64_t *value);
  * to id (e.g. MUSCLE_PERF_COUNTER_BARRIER_DURATION). If we aren't in any call, sets both start_time and id to NULL. */
 bool MUSCLE_Perf_In_Call(struct timespec *start_time, muscle_perf_counter_t *id);
 
+/* Initialize the counters to zero */
+void MUSCLE_Perf_Reset_Counters();
+
 #ifdef __cplusplus
 }
 #endif //__cplusplus
