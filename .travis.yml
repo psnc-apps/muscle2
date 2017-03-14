@@ -2,7 +2,7 @@ language: c++
 addons:
   apt:
     packages:
-      - default-java
+      - openjdk-7-jre
       - openmpi-bin
       - libopenmpi-dev
       - ruby
