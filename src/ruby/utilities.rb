@@ -226,4 +226,41 @@ module MuscleUtils
     end
     return nil
   end
+
+	# Convert an object consisting of Hashes, Arrays, Strings and numbers
+    # and nestings thereof to JSON.
+	def to_json(value)
+		ret = ''
+        if value.nil?
+            ret << 'null'
+		elsif value.is_a? String
+			qval = value.gsub('\\') { '\\\\' }
+			qval = qval.gsub('"', '\"')
+			ret << %Q("#{qval}")
+		elsif value.is_a? Hash
+			ret << '{'
+			first = true
+			value.each do |key, val|
+				qval = to_json(val)
+				qkey = to_json(key)
+				ret << ',' unless first
+				first = false
+				ret << "#{qkey}:#{qval}"
+			end
+			ret << '}'
+		elsif value.is_a? Array
+			ret << '['
+			first = true
+			value.each do |val|
+				qval = to_json(val)
+				ret << ',' unless first
+				first = false
+				ret << qval
+			end
+			ret << ']'
+		else
+			ret << String(value)
+		end
+		ret
+	end
 end # module MuscleUtils

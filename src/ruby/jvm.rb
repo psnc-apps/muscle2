@@ -24,7 +24,7 @@
    Jan Hegewald
 =end
 
-require 'json'
+include MuscleUtils
 
 PROP_PORT_RANGE_MIN = 'pl.psnc.mapper.muscle.portrange.min'
 PROP_PORT_RANGE_MAX = 'pl.psnc.mapper.muscle.portrange.max'
@@ -47,7 +47,7 @@ class JVM
 		# the java platform should load CXA from JSON file, so we dump a file with the muscle env
 		# dump env
 		File.open(env[Muscle.jclass], 'w') do |f|
-			f.puts JSON.dump(env)
+            f.puts MuscleUtils.to_json(env)
 		end
 
 		JVM.add_pref(env, command, '-Xms', 'Xms')
